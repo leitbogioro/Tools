@@ -306,7 +306,7 @@ if [[ "$SpikCheckDIST" == '0' ]]; then
 fi
 
 [[ "$ddMode" == '1' ]] && {
-  export SSL_SUPPORT='https://raw.githubusercontent.com/leitbogioro/WedTools/master/Linux_reinstall/wget_udeb_amd64.tar.gz';
+  export SSL_SUPPORT='https://git.io/fxCTx';
   if [[ -n "$tmpURL" ]]; then
     DDURL="$tmpURL"
     echo "$DDURL" |grep -q '^http://\|^ftp://\|^https://';
