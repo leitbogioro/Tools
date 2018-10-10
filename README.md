@@ -8,7 +8,7 @@ If your VPS is base by Bandwagon and reinstalled OS which constructed by Bandwag
 ## Install
 ### Useage
 <pre><code>bash InstallNET.sh -[OS name] [OS version] -v [Architecture] -a[Automatic, recommend]/m[Manually in VNC]</pre></code>
-### OS name
+### Parameters Describes
 d: Debian
 <br />
 u: Ubuntu
