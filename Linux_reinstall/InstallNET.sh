@@ -605,7 +605,6 @@ d-i keyboard-configuration/xkb-keymap string us
 
 # Network configuration
 d-i netcfg/choose_interface select $IFETH
-
 d-i netcfg/disable_autoconfig boolean true
 d-i netcfg/dhcp_failed note
 d-i netcfg/dhcp_options select Configure network manually
@@ -679,8 +678,8 @@ d-i grub-installer/bootdev string default
 d-i finish-install/reboot_in_progress note
 d-i debian-installer/exit/reboot boolean true
 d-i preseed/late_command string	\
-sed -ri 's/^#?PasswordAuthentication.*/PasswordAuthentication yes/g' /target/etc/ssh/sshd_config;
 sed -ri 's/^#?PermitRootLogin.*/PermitRootLogin yes/g' /target/etc/ssh/sshd_config; \
+sed -ri 's/^#?PasswordAuthentication.*/PasswordAuthentication yes/g' /target/etc/ssh/sshd_config;
 EOF
 
 [[ "$setNet" == '0' ]] && [[ "$AutoNet" == '1' ]] && {
