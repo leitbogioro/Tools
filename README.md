@@ -18,3 +18,11 @@ If your VPS is base by Bandwagon and reinstalled OS which constructed by Bandwag
 <pre><code>bash InstallNET.sh -c 6.9 -v 64 -a</code></pre>
 ### Cent OS 7
 <pre><code>bash InstallNET.sh -c 7.5 -v 64 -a</code></pre>
+## Default Configurations
+### Time zone
+Shanghai Asia
+### User name
+root
+### Password
+Vicer
+<b>After installed system, you must change passwords immediately.</b>
