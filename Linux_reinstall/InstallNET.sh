@@ -6,7 +6,6 @@
 ## Blog: https://zhuanlan.zhihu.com/originaltechnic
 ## Written By Vicer, modified by MollyLau
 
-
 export name_server='1.1.1.1'
 export tm_zone='Asia/Shanghai'
 export tmpVER=''
