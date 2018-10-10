@@ -10,9 +10,13 @@ If your VPS is base by Bandwagon and reinstalled OS which constructed by Bandwag
 <pre><code>bash InstallNET.sh -[OS name] [OS version] -v [Architecture] -a[Automatic, recommend]/m[Manually in VNC]</pre></code>
 ### OS name
 d: Debian
+<br />
 u: Ubuntu
+<br />
 c: CentOS
+<br />
 Architecture: 32/i386 64/amd64
+<br />
 for example:
 ### Debian 8
 <pre><code>bash InstallNET.sh -d 8 -v 64 -a</code></pre>
