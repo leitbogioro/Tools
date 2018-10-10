@@ -4,10 +4,8 @@
 ## Suitable for using by GRUB.
 ## Default root password: Vicer
 ## Blog: https://zhuanlan.zhihu.com/originaltechnic
-## Written By Vicer, modified by MollyLau
+## Written By Vicer, modifiedby Molly
 
-export name_server='1.1.1.1'
-export tm_zone='Asia/Shanghai'
 export tmpVER=''
 export tmpDIST=''
 export tmpURL=''
@@ -597,44 +595,39 @@ $UNCOMP < /tmp/$NewIMG | cpio --extract --verbose --make-directories --no-absolu
 
 if [[ "$linuxdists" == 'debian' ]] || [[ "$linuxdists" == 'ubuntu' ]]; then
 cat >/tmp/boot/preseed.cfg<<EOF
-# Localization
 d-i debian-installer/locale string en_US
 d-i console-setup/layoutcode string us
 
 d-i keyboard-configuration/xkb-keymap string us
 
-# Network configuration
 d-i netcfg/choose_interface select $IFETH
+
 d-i netcfg/disable_autoconfig boolean true
 d-i netcfg/dhcp_failed note
 d-i netcfg/dhcp_options select Configure network manually
 d-i netcfg/get_ipaddress string $IPv4
 d-i netcfg/get_netmask string $MASK
 d-i netcfg/get_gateway string $GATE
-d-i netcfg/get_nameservers string $name_server
+d-i netcfg/get_nameservers string 8.8.8.8
 d-i netcfg/no_default_route boolean true
 d-i netcfg/confirm_static boolean true
 
 d-i hw-detect/load_firmware boolean true
 
-# Mirror settings
 d-i mirror/country string manual
 d-i mirror/http/hostname string $MirrorHost
 d-i mirror/http/directory string $MirrorFolder
 d-i mirror/http/proxy string
 
-# Account setup
 d-i passwd/root-login boolean ture
 d-i passwd/make-user boolean false
 d-i passwd/root-password-crypted password $myPASSWORD
 d-i user-setup/allow-password-weak boolean true
 d-i user-setup/encrypt-home boolean false
 
-# Clock and time zone setup
 d-i clock-setup/utc boolean true
-d-i time/zone string $tm_zone
+d-i time/zone string US/Eastern
 d-i clock-setup/ntp boolean true
-d-i clock-setup/ntp-server string 0.pool.ntp.org
 
 d-i preseed/early_command string anna-install libfuse2-udeb fuse-udeb ntfs-3g-udeb fuse-modules-${vKernel_udeb}-amd64-di
 d-i partman/early_command string \
@@ -648,7 +641,6 @@ cp -f '/net.bat' './net.bat'; \
 debconf-set grub-installer/bootdev string "\$(list-devices disk |head -n1)"; \
 umount /media || true; \
 
-# Partitioning
 d-i partman/mount_style select uuid
 d-i partman-auto/init_automatically_partition select Guided - use entire disk
 d-i partman-auto/method string regular
@@ -664,7 +656,6 @@ d-i partman/confirm_nooverwrite boolean true
 
 d-i debian-installer/allow_unauthenticated boolean true
 
-# Package selection
 tasksel tasksel/first multiselect minimal
 d-i pkgsel/update-policy select none
 d-i pkgsel/include string openssh-server
@@ -672,7 +663,6 @@ d-i pkgsel/upgrade select none
 
 popularity-contest popularity-contest/participate boolean false
 
-# Boot loader installation
 d-i grub-installer/only_debian boolean true
 d-i grub-installer/bootdev string default
 d-i finish-install/reboot_in_progress note
@@ -765,9 +755,9 @@ text
 unsupported_hardware
 vnc
 skipx
-timedatectl  set-timezone $tm_zone
+timezone --isUtc Asia/Hong_Kong
 #ONDHCP network --bootproto=dhcp --onboot=on
-#NODHCP network --bootproto=static --ip=$IPv4 --netmask=$MASK --gateway=$GATE --nameserver=$name_server --onboot=on
+#NODHCP network --bootproto=static --ip=$IPv4 --netmask=$MASK --gateway=$GATE --nameserver=8.8.8.8 --onboot=on
 bootloader --location=mbr --append="rhgb quiet crashkernel=auto"
 zerombr
 clearpart --all --initlabel 
