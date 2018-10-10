@@ -6,6 +6,14 @@ If your VPS is base by Bandwagon and reinstalled OS which constructed by Bandwag
 ## Download:
 <pre><code>wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/WedTools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh</code></pre>
 ## Install
+### Useage
+<pre><code>bash InstallNET.sh -[OS name] [OS version] -v [Architecture] -a[Automatic, recommend]/m[Manually in VNC]</pre></code>
+### OS name
+d: Debian
+u: Ubuntu
+c: CentOS
+Architecture: 32/i386 64/amd64
+for example:
 ### Debian 8
 <pre><code>bash InstallNET.sh -d 8 -v 64 -a</code></pre>
 ### Debian 9
