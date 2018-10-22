@@ -1,5 +1,5 @@
-# WedTools
-Something about website
+# Tools
+Something about scripts
 # Linux reinstall useage
 ## Notes:
 If your VPS is base by Bandwagon and reinstalled OS which constructed by Bandwagon just now, you must reboot and then execute it.
@@ -40,3 +40,9 @@ Vicer
 <br />
 <br />
 <b>After installed system, you must change passwords immediately.</b>
+<br />
+
+# GroupPolicy import and export
+This .bat script can only run in Windows. Although only one group-policy rule in Windows can be exported at a time and not support a global one and also have no GUI entrance to import another backuped group policy which exported from another computer. It can help you import or export GroupPolicy conveniently.
+## Attentions
+·
