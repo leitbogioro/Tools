@@ -1,34 +1,34 @@
 @echo off
 
-::ÉèÖÃÑÕÉ«
+::è®¾ç½®é¢œè‰²
 color DE
 
-echo ¼ì²é¹ÜÀíÔ±Éí·Ý...
+echo æ£€æŸ¥ç®¡ç†å‘˜èº«ä»½...
 net session >nul 2>&1
 if %errorLevel% == 0 (
         goto continue
 ) else (
         echo,
-        echo ÇëÒÔ¹ÜÀíÔ±Éí·ÝÔËÐÐ¸Ã½Å±¾£¡
-        echo °´ÈÎÒâ¼üÍË³ö...
+        echo è¯·ä»¥ç®¡ç†å‘˜èº«ä»½è¿è¡Œè¯¥è„šæœ¬ï¼
+        echo æŒ‰ä»»æ„é”®é€€å‡º...
         pause > nul
         exit
 )
 
 :continue
 
-::ÉèÖÃÑÓ³Ù±äÁ¿
+::è®¾ç½®å»¶è¿Ÿå˜é‡
 SetLocal EnableDelayedExpansion
 
-::»ñÈ¡ÏµÍ³°æ±¾
+::èŽ·å–ç³»ç»Ÿç‰ˆæœ¬
 for /f "tokens=1* delims=[" %%a in ('ver') do (
     set b=%%b
 )
 
-::½«°æ±¾ÐÅÏ¢¸³Öµ¸ø±äÁ¿b
+::å°†ç‰ˆæœ¬ä¿¡æ¯èµ‹å€¼ç»™å˜é‡b
 set b=%b:* =%
 
-:ÉèÖÃÏµÍ³°æ±¾ºÅÃüÃûµÄÎÄ¼þ¼Ð
+:è®¾ç½®ç³»ç»Ÿç‰ˆæœ¬å·å‘½åçš„æ–‡ä»¶å¤¹
 for /f "tokens=1,3 delims=*." %%a in ("%b%") do (
     set ver1=!ver1!_%%a
     set ver3=!ver3!_%%b
@@ -40,7 +40,7 @@ for /f "tokens=2 delims=*." %%a in ("%b%") do (
 
 set version=!ver1!!ver2!!ver3!
 
-:: ±äÁ¿
+:: å˜é‡
 set db_name=%set
 set gp_name="%UserProfile%\Desktop\gp_config%version%\%db_name%.inf"
 set gp_folder="%UserProfile%\Desktop\gp_config%version%\"
@@ -49,30 +49,30 @@ set gp_export_file="%UserProfile%\Desktop\GroupPolicy"
 set logs="%WinDir%\security\logs\scesetup.log"
 
 echo,
-echo   ¡Ä____¡Ä
-echo   (¡¤¦Ø¡¤)¤Ä©¥ ¡î..*¡§
-echo  ¡Ê     ¥Î
-echo * * * »¶Ó­½øÈë×é²ßÂÔ¹ÜÀí¹¤¾ß copyright by Molly Lau * * *
-echo * ¤·©`©`£Ê                                              *     
+echo   âˆ§____âˆ§
+echo   (Â·Ï‰Â·)ã¤â” â˜†..*Â¨
+echo  âˆˆ     ãƒŽ
+echo * * * æ¬¢è¿Žè¿›å…¥ç»„ç­–ç•¥ç®¡ç†å·¥å…· copyright by Molly Lau * * *
+echo * ã—ãƒ¼ãƒ¼ï¼ª                                              *     
 echo *                                                       *
-echo *   Ê¹ÓÃÐëÖª£º                                          *
+echo *   ä½¿ç”¨é¡»çŸ¥ï¼š                                          *
 echo *                                                       *
-echo *   ¡¤ Ö»Ö§³Öµ¼ÈëÓÉ±¾½Å±¾Ô¤ÏÈµ¼³öµÄ×é²ßÂÔÎÄ¼þ           *
-echo *   ¡¤ ×é²ßÂÔÅäÖÃÎÄ¼þºÍÏµÍ³ÄÚ²¿°æ±¾ºÅÑÏ¸ñ¶ÔÓ¦           *
-echo *   ¡¤ ²»Ö§³Öµ¼ÈëÓëµ±Ç°°æ±¾ÏµÍ³²»Í¬µÄ×é²ßÂÔÅäÖÃÎÄ¼þ     *
-echo *   ¡¤ µ¼Èë×¢²á±íÅäÖÃÎÄ¼þ¹ý³Ì²»¿ÉÄæ£¬ÍûÈýË¼½÷É÷²Ù×÷     *
-echo *   ¡¤ ±¾¹¤¾ßÖ§³ÖÒÔÏÂ¹¦ÄÜ£º                             *
+echo *   Â· åªæ”¯æŒå¯¼å…¥ç”±æœ¬è„šæœ¬é¢„å…ˆå¯¼å‡ºçš„ç»„ç­–ç•¥æ–‡ä»¶           *
+echo *   Â· ç»„ç­–ç•¥é…ç½®æ–‡ä»¶å’Œç³»ç»Ÿå†…éƒ¨ç‰ˆæœ¬å·ä¸¥æ ¼å¯¹åº”           *
+echo *   Â· ä¸æ”¯æŒå¯¼å…¥ä¸Žå½“å‰ç‰ˆæœ¬ç³»ç»Ÿä¸åŒçš„ç»„ç­–ç•¥é…ç½®æ–‡ä»¶     *
+echo *   Â· å¯¼å…¥æ³¨å†Œè¡¨é…ç½®æ–‡ä»¶è¿‡ç¨‹ä¸å¯é€†ï¼Œæœ›ä¸‰æ€è°¨æ…Žæ“ä½œ     *
+echo *   Â· æœ¬å·¥å…·æ”¯æŒä»¥ä¸‹åŠŸèƒ½ï¼š                             *
 echo *                                                       *
-echo *                    1. µ¼³ö×é²ßÂÔ                      *
+echo *                    1. å¯¼å‡ºç»„ç­–ç•¥                      *
 echo *                                                       *
-echo *                    2. µ¼Èë×é²ßÂÔ                      *
+echo *                    2. å¯¼å…¥ç»„ç­–ç•¥                      *
 echo *                                                       *
-echo *                      »Ø³µ¼üÍË³ö                       *
+echo *                      å›žè½¦é”®é€€å‡º                       *
 echo *                                                       *
 echo *                                                       *
 echo * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 echo,
-set /p ask1=ÇëÑ¡ÔñÄãÐèÒªµÄ²Ù×÷(1/2/»Ø³µ¼ü)£º
+set /p ask1=è¯·é€‰æ‹©ä½ éœ€è¦çš„æ“ä½œ(1/2/å›žè½¦é”®)ï¼š
 if "%ask1%"=="1" (
     goto export_gp
 ) else (
@@ -83,66 +83,66 @@ if "%ask1%"=="1" (
     )
 )
 
-::µ¼³ö×é²ßÂÔ
+::å¯¼å‡ºç»„ç­–ç•¥
 :export_gp
 if exist %gp_folder% (
     rd /s /Q %gp_folder%
 )
 mkdir %gp_folder%
 echo,
-echo ÕýÔÚµ¼³öµÚÒ»²¿·ÖµÄ°²È«ÉèÖÃ...
+echo æ­£åœ¨å¯¼å‡ºç¬¬ä¸€éƒ¨åˆ†çš„å®‰å…¨è®¾ç½®...
 secedit /export /cfg %gp_name%
 echo,
-echo ÕýÔÚµ¼³öËùÓÐ°²È«×é¹æÔòÅäÖÃ...
+echo æ­£åœ¨å¯¼å‡ºæ‰€æœ‰å®‰å…¨ç»„è§„åˆ™é…ç½®...
 xcopy /e /h /r /y %gp_file% %gp_export_file%\
 echo,
-echo ÕýÔÚ¹éµµÎÄ¼þ...
+echo æ­£åœ¨å½’æ¡£æ–‡ä»¶...
 attrib -h %gp_export_file%
 move %gp_export_file% %gp_folder%
 echo,
-echo ×é²ßÂÔÉèÖÃÒÑµ¼³öµ½%gp_folder%ÎÄ¼þ¼Ð£¡
+echo ç»„ç­–ç•¥è®¾ç½®å·²å¯¼å‡ºåˆ°%gp_folder%æ–‡ä»¶å¤¹ï¼
 echo,
-echo ÕýÔÚÇåÀíÈÕÖ¾...
+echo æ­£åœ¨æ¸…ç†æ—¥å¿—...
 if exist logs del %logs%
 echo,
-set /p ask2=ÊÇ·ñÐèÒª´ò¿ª²é¿´£¨y ²é¿´/n ÍË³ö£©£¿
+set /p ask2=æ˜¯å¦éœ€è¦æ‰“å¼€æŸ¥çœ‹ï¼ˆy æŸ¥çœ‹/n é€€å‡ºï¼‰ï¼Ÿ
 if /i "%ask2%"=="n" exit
 if /i "%ask2%"=="y" explorer %gp_folder%
 exit
 
-::µ¼Èë×é²ßÂÔ
+::å¯¼å…¥ç»„ç­–ç•¥
 :import_gp
 echo,
 if exist %gp_folder% (
     if exist %gp_name% (
         if exist %gp_folder%GroupPolicy (
-            echo ÕýÔÚµ¼ÈëµÚÒ»²¿·ÖµÄ°²È«ÉèÖÃ...
+            echo æ­£åœ¨å¯¼å…¥ç¬¬ä¸€éƒ¨åˆ†çš„å®‰å…¨è®¾ç½®...
             secedit /configure /db %db_name%.sdb /CFG %gp_name%
             echo,
-            echo ÕýÔÚµ¼ÈëËùÓÐ°²È«×é¹æÔòÅäÖÃ...
+            echo æ­£åœ¨å¯¼å…¥æ‰€æœ‰å®‰å…¨ç»„è§„åˆ™é…ç½®...
             xcopy /e /h /r /y %gp_folder%GroupPolicy %gp_file%
             echo,
-            echo Ë¢ÐÂ×é²ßÂÔ...
+            echo åˆ·æ–°ç»„ç­–ç•¥...
             gpupdate /force
-            echo ×é²ßÂÔÉèÖÃÒÑµ¼³ö³É¹¦£¡
+            echo ç»„ç­–ç•¥è®¾ç½®å·²å¯¼å‡ºæˆåŠŸï¼
             echo,
-            echo ÕýÔÚÇåÀíÁÙÊ±ÎÄ¼þºÍÈÕÖ¾...
+            echo æ­£åœ¨æ¸…ç†ä¸´æ—¶æ–‡ä»¶å’Œæ—¥å¿—...
             del %db_name%.jfm
             del %db_name%.sdb
             if exist logs del %logs%
             echo,
-            echo °´»Ø³µ¼üÍË³ö...           
+            echo æŒ‰å›žè½¦é”®é€€å‡º...           
             pause > nul
             exit     
         ) else (
-              echo ¡°GroupPolicy¡±ÎÄ¼þ¼Ð²»´æÔÚ£¡
+              echo â€œGroupPolicyâ€æ–‡ä»¶å¤¹ä¸å­˜åœ¨ï¼
               pause 
         )
     ) else (
-          echo ¡°%db_name%.inf¡±ÎÄ¼þ²»´æÔÚ£¡
+          echo â€œ%db_name%.infâ€æ–‡ä»¶ä¸å­˜åœ¨ï¼
           pause    
     )
 ) else (
-    echo ¼ÇÂ¼×é²ßÂÔ¹æÔòµÄÎÄ¼þ¼Ð²»´æÔÚ»ò²»ÊÊÓÃÓÚÄúµÄÏµÍ³£¡
+    echo è®°å½•ç»„ç­–ç•¥è§„åˆ™çš„æ–‡ä»¶å¤¹ä¸å­˜åœ¨æˆ–ä¸é€‚ç”¨äºŽæ‚¨çš„ç³»ç»Ÿï¼
     pause
 )
