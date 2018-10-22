@@ -51,6 +51,6 @@ This .bat script can only run in Windows. Although only one group-policy rule in
 <li>Only support the group-policy rules which exported by this script.</li>
 <li>If you want to export group-policy rules. Folder which included group-policy files corresponds to current OS version strictly. Not support export rules which is different from current OS version.</li>
 <li>Export operation is irreversible, be cautious to run it！</li>
-<li>I provided a suggested rules file about Windows Server 2016</li>
-<li>You should run it on desktop</li>
+<li>I provided a suggested rules file about Windows Server 2016.</li>
+<li>You should run it on desktop.</li>
 </ul>
