@@ -28,22 +28,25 @@ body {
 	color: #333
 }
 .code {
-    font-family: Bitter, sans-serif;
     font-weight: 700
+}
+.code,
+#Seconds {
+    font-family: Bitter, sans-serif;
 }
 a,a:active,
 a:visited {
     margin: 24px;
-	font-size: 20px;
+	font-size: 20px ;
 	color: #bc360a;
 	text-decoration: none;
-	outline: 0
+	outline: 0;
+	font-family: Bitter, "微软雅黑", "宋体", "华文细黑", "Microsoft Yahei", sans-serif, Tahoma, Helvetica, Arial, STXihei;
 }
 a:hover {
     color: #ea9629
 }
-.message,
-homePage {
+.message {
     font-family: "微软雅黑", "华文细黑", "宋体", "Microsoft Yahei", Tahoma, Helvetica, Arial, STXihei;	
 }
 .message {
@@ -55,5 +58,20 @@ homePage {
 </head>
 <body>
 <div><span class="code">404 · </span><span class="message">未知领域！！</span></div>
-<div><a class="homePage" href="https://yourwebsite">传送回城</a></div></body>
+<a id="home_Page" href="yourServerURL"><span id="Seconds">3</span>秒后传送回城</a>
+</body>
+<script type="text/javascript">
+    var homePage = document.getElementById('home_Page');
+    var num = parseInt(document.getElementById('Seconds').innerHTML) - 1;
+    var URL = homePage.href;
+    var ID = window.setInterval('doJump()', 1000);
+    function doJump() { 
+        homePage.innerHTML = num+'秒后传送回城';
+        if(num == 0) {
+            window.clearInterval(ID);
+            window.location = URL;
+        }
+        num --;
+    }	
+</script>
 </html>
