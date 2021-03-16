@@ -1,14 +1,14 @@
 #!/bin/bash
 
+## License: GPL
 ## It can reinstall Debian, Ubuntu, CentOS system with network.
-## Suitable for using by GRUB.
-## Default root password: Vicer
+## Default root password: MoeClub.org
+## Blog: https://moeclub.org
 ## Blog: https://zhuanlan.zhihu.com/originaltechnic
-## Written By Vicer, modified by MollyLau
+## Written By MoeClub.org
+## Modified By Leitbogioro
 
 
-export name_server='1.1.1.1'
-export tm_zone='Asia/Shanghai'
 export tmpVER=''
 export tmpDIST=''
 export tmpURL=''
@@ -16,17 +16,21 @@ export tmpWORD=''
 export tmpMirror=''
 export tmpSSL=''
 export tmpINS=''
-export tmpFW=''
 export ipAddr=''
 export ipMask=''
 export ipGate=''
-export linuxdists=''
+export Relese=''
+export FirmwareImage=''
 export ddMode='0'
 export setNet='0'
 export setRDP='0'
+export setIPv6='0'
 export isMirror='0'
 export FindDists='0'
+export loaderMode='0'
+export IncFirmware='0'
 export SpikCheckDIST='0'
+export setInterfaceName='0'
 export UNKNOWHW='0'
 export UNVER='6.4'
 
@@ -39,19 +43,19 @@ while [[ $# -ge 1 ]]; do
       ;;
     -d|--debian)
       shift
-      linuxdists='debian'
+      Relese='Debian'
       tmpDIST="$1"
       shift
       ;;
     -u|--ubuntu)
       shift
-      linuxdists='ubuntu'
+      Relese='Ubuntu'
       tmpDIST="$1"
       shift
       ;;
     -c|--centos)
       shift
-      linuxdists='centos'
+      Relese='CentOS'
       tmpDIST="$1"
       shift
       ;;
@@ -86,6 +90,19 @@ while [[ $# -ge 1 ]]; do
       ipGate="$1"
       shift
       ;;
+    --dev-net)
+      shift
+      setInterfaceName='1'
+      ;;
+    --loader)
+      shift
+      loaderMode='1'
+      ;;
+    --prefer)
+      shift
+      tmpPrefer="$1"
+      shift
+      ;;
     -a|--auto)
       shift
       tmpINS='auto'
@@ -111,13 +128,20 @@ while [[ $# -ge 1 ]]; do
       tmpSSL="$1"
       shift
       ;;
-    --firmware)
+    -firmware|--cdimage)
       shift
-      tmpFW='1'
+      IncFirmware="1"
+	  shift
+      FirmwareImage="$1"
+	  shift
+      ;;
+    --ipv6)
+      shift
+      setIPv6='1'
       ;;
     *)
       if [[ "$1" != 'error' ]]; then echo -ne "\nInvaild option: '$1'\n\n"; fi
-      echo -ne " Usage:\n\tbash DebianNET.sh\t-d/--debian [\033[33m\033[04mdists-name\033[0m]\n\t\t\t\t-u/--ubuntu [\033[04mdists-name\033[0m]\n\t\t\t\t-c/--centos [\033[33m\033[04mdists-verison\033[0m]\n\t\t\t\t-v/--ver [32/\033[33m\033[04mi386\033[0m|64/amd64]\n\t\t\t\t--ip-addr/--ip-gate/--ip-mask\n\t\t\t\t-apt/-yum/--mirror\n\t\t\t\t-dd/--image\n\t\t\t\t-a/--auto\n\t\t\t\t-m/--manual\n"
+      echo -ne " Usage:\n\tbash $(basename $0)\t-d/--debian [\033[33m\033[04mdists-name\033[0m]\n\t\t\t\t-u/--ubuntu [\033[04mdists-name\033[0m]\n\t\t\t\t-c/--centos [\033[33m\033[04mdists-verison\033[0m]\n\t\t\t\t-v/--ver [32/\033[33m\033[04mi386\033[0m|64/amd64]\n\t\t\t\t--ip-addr/--ip-gate/--ip-mask\n\t\t\t\t-apt/-yum/--mirror\n\t\t\t\t-dd/--image\n\t\t\t\t-a/--auto\n\t\t\t\t-m/--manual\n"
       exit 1;
       ;;
     esac
@@ -154,64 +178,64 @@ if [ "$FullDependence" == '1' ]; then
 fi
 }
 
-if [[ -z "$linuxdists" ]]; then
-  linuxdists='debian';
-fi
+function SelectMirror(){
+  [ $# -ge 3 ] || exit 1
+  Relese="$1"
+  DIST=$(echo "$2" |sed 's/\ //g' |sed -r 's/(.*)/\L\1/')
+  VER=$(echo "$3" |sed 's/\ //g' |sed -r 's/(.*)/\L\1/')
+  New=$(echo "$4" |sed 's/\ //g')
+  [ -n "$Relese" ] || exit 1
+  [ -n "$DIST" ] || exit 1
+  [ -n "$VER" ] || exit 1
+  relese=$(echo $Relese |sed -r 's/(.*)/\L\1/')
+  if [ "$Relese" == "Debian" ] || [ "$Relese" == "Ubuntu" ]; then
+    inUpdate=''; [ "$Relese" == "Ubuntu" ] && inUpdate='-updates'
+    MirrorTEMP="SUB_MIRROR/dists/${DIST}${inUpdate}/main/installer-${VER}/current/images/netboot/${relese}-installer/${VER}/initrd.gz"
+  elif [ "$Relese" == "CentOS" ]; then
+    MirrorTEMP="SUB_MIRROR/${DIST}/os/${VER}/isolinux/initrd.img"
+  fi
+  [ -n "$MirrorTEMP" ] || exit 1
+  MirrorStatus=0
+  declare -A MirrorBackup
+  MirrorBackup=(["Debian0"]="" ["Debian1"]="http://deb.debian.org/debian" ["Debian2"]="http://archive.debian.org/debian" ["Ubuntu0"]="" ["Ubuntu1"]="http://archive.ubuntu.com/ubuntu" ["CentOS0"]="" ["CentOS1"]="http://mirror.centos.org/centos" ["CentOS2"]="http://vault.centos.org")
+  echo "$New" |grep -q '^http://\|^https://\|^ftp://' && MirrorBackup[${Relese}0]="$New"
+  for mirror in $(echo "${!MirrorBackup[@]}" |sed 's/\ /\n/g' |sort -n |grep "^$Relese")
+    do
+      CurMirror="${MirrorBackup[$mirror]}"
+      [ -n "$CurMirror" ] || continue
+      MirrorURL=`echo "$MirrorTEMP" |sed "s#SUB_MIRROR#${CurMirror}#g"`
+      wget --no-check-certificate --spider --timeout=3 -o /dev/null "$MirrorURL"
+      [ $? -eq 0 ] && MirrorStatus=1 && break
+    done
+  [ $MirrorStatus -eq 1 ] && echo "$CurMirror" || exit 1
+}
 
+[ -n "$Relese" ] || Relese='Debian'
+linux_relese=$(echo "$Relese" |sed 's/\ //g' |sed -r 's/(.*)/\L\1/')
 clear && echo -e "\n\033[36m# Check Dependence\033[0m\n"
 
 if [[ "$ddMode" == '1' ]]; then
   CheckDependence iconv;
-  linuxdists='debian';
+  linux_relese='debian';
   tmpDIST='jessie';
   tmpVER='amd64';
   tmpINS='auto';
 fi
 
-if [[ "$linuxdists" == 'debian' ]] || [[ "$linuxdists" == 'ubuntu' ]]; then
+if [[ "$Relese" == 'Debian' ]] || [[ "$Relese" == 'Ubuntu' ]]; then
   CheckDependence wget,awk,grep,sed,cut,cat,cpio,gzip,find,dirname,basename;
-elif [[ "$linuxdists" == 'centos' ]]; then
+elif [[ "$Relese" == 'CentOS' ]]; then
   CheckDependence wget,awk,grep,sed,cut,cat,cpio,gzip,find,dirname,basename,file,xz;
 fi
+[ -n "$tmpWORD" ] && CheckDependence openssl
 
-if [[ -n "$tmpWORD" ]]; then
-  CheckDependence openssl;
-fi
-
-[[ -f '/boot/grub/grub.cfg' ]] && GRUBOLD='0' && GRUBDIR='/boot/grub' && GRUBFILE='grub.cfg';
-[[ -z "$GRUBDIR" ]] && [[ -f '/boot/grub2/grub.cfg' ]] && GRUBOLD='0' && GRUBDIR='/boot/grub2' && GRUBFILE='grub.cfg';
-[[ -z "$GRUBDIR" ]] && [[ -f '/boot/grub/grub.conf' ]] && GRUBOLD='1' && GRUBDIR='/boot/grub' && GRUBFILE='grub.conf';
-[ -z "$GRUBDIR" -o -z "$GRUBFILE" ] && echo -ne "Error! \nNot Found grub path.\n" && exit 1;
-
-if [[ "$isMirror" == '1' ]]; then
-  if [[ -n "$tmpMirror" ]]; then
-    TMPMirrorHost="$(echo -n "$tmpMirror" |grep -Eo '.*\.(\w+)')";
-    echo "$TMPMirrorHost" |grep -q '://';
-    if [[ $? == '0' ]]; then
-      MirrorHost="$(echo "$TMPMirrorHost" |awk -F'://' '{print $2}')";
-    else
-      echo -en "\n\033[31mInvaild Mirror! \033[0m\n";
-      [[ "$linuxdists" == 'debian' ]] && echo -en "\033[33mexample:\033[0m http://deb.debian.org/debian\n\n";
-      [[ "$linuxdists" == 'ubuntu' ]] && echo -en "\033[33mexample:\033[0m http://archive.ubuntu.com/ubuntu\n\n";
-      [[ "$linuxdists" == 'centos' ]] && echo -en "\033[33mexample:\033[0m http://mirror.centos.org/centos\n\n";
-      exit 1
-    fi
-    if [[ -n "$MirrorHost" ]]; then
-      MirrorFolder="$(echo -n "$tmpMirror" |awk -F''${MirrorHost}'' '{print $2}' |sed 's/\/$//g')";
-      if [[ -z "$MirrorFolder" ]]; then
-        [[ "$linuxdists" == 'debian' ]] && MirrorFolder='/debian';
-        [[ "$linuxdists" == 'ubuntu' ]] && MirrorFolder='/ubuntu';
-        [[ "$linuxdists" == 'centos' ]] && MirrorFolder='/centos';
-      fi
-      DISTMirror="${MirrorHost}${MirrorFolder}";
-    fi
-  fi
-fi
-
-if [[ -z "$DISTMirror" ]]; then
-  [[ "$linuxdists" == 'debian' ]] && MirrorHost='deb.debian.org' && MirrorFolder='/debian' && DISTMirror="${MirrorHost}${MirrorFolder}";
-  [[ "$linuxdists" == 'ubuntu' ]] && MirrorHost='archive.ubuntu.com' && MirrorFolder='/ubuntu' && DISTMirror="${MirrorHost}${MirrorFolder}";
-  [[ "$linuxdists" == 'centos' ]] && DISTMirror='vault.centos.org';
+if [[ "$loaderMode" == "0" ]]; then
+  [[ -f '/boot/grub/grub.cfg' ]] && GRUBVER='0' && GRUBDIR='/boot/grub' && GRUBFILE='grub.cfg';
+  [[ -z "$GRUBDIR" ]] && [[ -f '/boot/grub2/grub.cfg' ]] && GRUBVER='0' && GRUBDIR='/boot/grub2' && GRUBFILE='grub.cfg';
+  [[ -z "$GRUBDIR" ]] && [[ -f '/boot/grub/grub.conf' ]] && GRUBVER='1' && GRUBDIR='/boot/grub' && GRUBFILE='grub.conf';
+  [ -z "$GRUBDIR" -o -z "$GRUBFILE" ] && echo -ne "Error! \nNot Found grub.\n" && exit 1;
+else
+  tmpINS='auto'
 fi
 
 if [[ -n "$tmpVER" ]]; then
@@ -220,26 +244,23 @@ if [[ -n "$tmpVER" ]]; then
     VER='i386';
   fi
   if  [[ "$tmpVER" == '64' ]] || [[ "$tmpVER" == 'amd64' ]] || [[ "$tmpVER" == 'x86_64' ]] || [[ "$tmpVER" == 'x64' ]]; then
-    if [[ "$linuxdists" == 'debian' ]] || [[ "$linuxdists" == 'ubuntu' ]]; then
+    if [[ "$Relese" == 'Debian' ]] || [[ "$Relese" == 'Ubuntu' ]]; then
       VER='amd64';
-    elif [[ "$linuxdists" == 'centos' ]]; then
+    elif [[ "$Relese" == 'CentOS' ]]; then
       VER='x86_64';
     fi
   fi
 fi
-
-if [[ -z "$VER" ]]; then
-  VER='i386';
-fi
+[ -z "$VER" ] && VER='amd64'
 
 if [[ -z "$tmpDIST" ]]; then
-  [[ "$linuxdists" == 'debian' ]] && DIST='jessie';
-  [[ "$linuxdists" == 'ubuntu' ]] && DIST='xenial';
-  [[ "$linuxdists" == 'centos' ]] && DIST='6.8';
+  [ "$Relese" == 'Debian' ] && tmpDIST='jessie' && DIST='jessie';
+  [ "$Relese" == 'Ubuntu' ] && tmpDIST='bionic' && DIST='bionic';
+  [ "$Relese" == 'CentOS' ] && tmpDIST='6.10' && DIST='6.10';
 fi
 
 if [[ -z "$DIST" ]]; then
-  if [[ "$linuxdists" == 'debian' ]]; then
+  if [[ "$Relese" == 'Debian' ]]; then
     SpikCheckDIST='0'
     DIST="$(echo "$tmpDIST" |sed -r 's/(.*)/\L\1/')";
     echo "$DIST" |grep -q '[0-9]';
@@ -252,8 +273,9 @@ if [[ -z "$DIST" ]]; then
         [[ "$isDigital" == '10' ]] && DIST='buster';
       }
     }
+    LinuxMirror=$(SelectMirror "$Relese" "$DIST" "$VER" "$tmpMirror")
   fi
-  if [[ "$linuxdists" == 'ubuntu' ]]; then
+  if [[ "$Relese" == 'Ubuntu' ]]; then
     SpikCheckDIST='0'
     DIST="$(echo "$tmpDIST" |sed -r 's/(.*)/\L\1/')";
     echo "$DIST" |grep -q '[0-9]';
@@ -266,37 +288,41 @@ if [[ -z "$DIST" ]]; then
         [[ "$isDigital" == '18.04' ]] && DIST='bionic';
       }
     }
+    LinuxMirror=$(SelectMirror "$Relese" "$DIST" "$VER" "$tmpMirror")
   fi
-  if [[ "$linuxdists" == 'centos' ]]; then
+  if [[ "$Relese" == 'CentOS' ]]; then
     SpikCheckDIST='1'
     DISTCheck="$(echo "$tmpDIST" |grep -o '[\.0-9]\{1,\}')";
-    ListDIST="$(wget --no-check-certificate -qO- "http://$DISTMirror/dir_sizes" |cut -f2 |grep '^[0-9]')"
+    LinuxMirror=$(SelectMirror "$Relese" "$DISTCheck" "$VER" "$tmpMirror")
+    ListDIST="$(wget --no-check-certificate -qO- "$LinuxMirror/dir_sizes" |cut -f2 |grep '^[0-9]')"
     DIST="$(echo "$ListDIST" |grep "^$DISTCheck" |head -n1)"
     [[ -z "$DIST" ]] && {
       echo -ne '\nThe dists version not found in this mirror, Please check it! \n\n'
       bash $0 error;
       exit 1;
     }
-    wget --no-check-certificate -qO- "http://$DISTMirror/$DIST/os/$VER/.treeinfo" |grep -q 'general';
+    wget --no-check-certificate -qO- "$LinuxMirror/$DIST/os/$VER/.treeinfo" |grep -q 'general';
     [[ $? != '0' ]] && {
-      wget --no-check-certificate -qO- "http://$DISTMirror/centos/$DIST/os/$VER/.treeinfo" |grep -q 'general';
-      [[ $? == '0' ]] && {
-        DISTMirror="${DISTMirror}/${linuxdists}"
-      } || {
         echo -ne "\nThe version not found in this mirror, Please change mirror try again! \n\n";
         exit 1;
-      }
     }
-
   fi
 fi
 
+if [[ -z "$LinuxMirror" ]]; then
+  echo -ne "\033[31mError! \033[0mInvaild mirror! \n"
+  [ "$Relese" == 'Debian' ] && echo -en "\033[33mexample:\033[0m http://deb.debian.org/debian\n\n";
+  [ "$Relese" == 'Ubuntu' ] && echo -en "\033[33mexample:\033[0m http://archive.ubuntu.com/ubuntu\n\n";
+  [ "$Relese" == 'CentOS' ] && echo -en "\033[33mexample:\033[0m http://mirror.centos.org/centos\n\n";
+  bash $0 error;
+  exit 1;
+fi
+
 if [[ "$SpikCheckDIST" == '0' ]]; then
-  DistsList="$(wget --no-check-certificate -qO- "http://$DISTMirror/dists/" |grep -o 'href=.*/"' |cut -d'"' -f2 |sed '/-\|old\|Debian\|experimental\|stable\|test\|sid\|devel/d' |grep '^[^/]' |sed -n '1h;1!H;$g;s/\n//g;s/\//\;/g;$p')";
+  DistsList="$(wget --no-check-certificate -qO- "$LinuxMirror/dists/" |grep -o 'href=.*/"' |cut -d'"' -f2 |sed '/-\|old\|Debian\|experimental\|stable\|test\|sid\|devel/d' |grep '^[^/]' |sed -n '1h;1!H;$g;s/\n//g;s/\//\;/g;$p')";
   for CheckDEB in `echo "$DistsList" |sed 's/;/\n/g'`
     do
-      [[ "$CheckDEB" == "$DIST" ]] && FindDists='1';
-      [[ "$FindDists" == '1' ]] && break;
+      [[ "$CheckDEB" == "$DIST" ]] && FindDists='1' && break;
     done
   [[ "$FindDists" == '0' ]] && {
     echo -ne '\nThe dists version not found, Please check it! \n\n'
@@ -306,7 +332,7 @@ if [[ "$SpikCheckDIST" == '0' ]]; then
 fi
 
 [[ "$ddMode" == '1' ]] && {
-  export SSL_SUPPORT='https://git.io/fxCTx';
+  export SSL_SUPPORT='https://github.com/MoeClub/MoeClub.github.io/raw/master/lib/wget_udeb_amd64.tar.gz';
   if [[ -n "$tmpURL" ]]; then
     DDURL="$tmpURL"
     echo "$DDURL" |grep -q '^http://\|^ftp://\|^https://';
@@ -325,14 +351,12 @@ fi
 
 [ -n "$ipAddr" ] && [ -n "$ipMask" ] && [ -n "$ipGate" ] && setNet='1';
 [[ -n "$tmpWORD" ]] && myPASSWORD="$(openssl passwd -1 "$tmpWORD")";
-[[ -z "$myPASSWORD" ]] && myPASSWORD='$1$0shYGfBd$8v189JOozDO1jPqPO645e1';
-[[ -n "$tmpFW" ]] && INCFW="$tmpFW";
-[[ -z "$INCFW" ]] && INCFW='0';
+[[ -z "$myPASSWORD" ]] && myPASSWORD='$1$4BJZaD0A$y1QykUnJ6mXprENfwpseH0';
 
 if [[ -n "$interface" ]]; then
   IFETH="$interface"
 else
-  if [[ "$linuxdists" == 'centos' ]]; then
+  if [[ "$linux_relese" == 'centos' ]]; then
     IFETH="link"
   else
     IFETH="auto"
@@ -344,7 +368,7 @@ clear && echo -e "\n\033[36m# Install\033[0m\n"
 ASKVNC(){
   inVNC='y';
   [[ "$ddMode" == '0' ]] && {
-    echo -ne "\033[34mCan you login VNC?\033[0m\e[33m[\e[32my\e[33m/n]\e[0m "
+    echo -ne "\033[34mDo you want to install os manually?\033[0m\e[33m[\e[32my\e[33m/n]\e[0m "
     read tmpinVNC
     [[ -n "$inVNCtmp" ]] && inVNC="$tmpinVNC"
   }
@@ -353,18 +377,15 @@ ASKVNC(){
 }
 
 [ "$inVNC" == 'y' -o "$inVNC" == 'n' ] || ASKVNC;
-[[ "$linuxdists" == 'debian' ]] && LinuxName='Debian';
-[[ "$linuxdists" == 'ubuntu' ]] && LinuxName='Ubuntu';
-[[ "$linuxdists" == 'centos' ]] && LinuxName='CentOS';
 [[ "$ddMode" == '0' ]] && { 
-  [[ "$inVNC" == 'y' ]] && echo -e "\033[34mManual Mode\033[0m insatll \033[33m$LinuxName\033[0m [\033[33m$DIST\033[0m] [\033[33m$VER\033[0m] in VNC. "
-  [[ "$inVNC" == 'n' ]] && echo -e "\033[34mAuto Mode\033[0m insatll \033[33m$LinuxName\033[0m [\033[33m$DIST\033[0m] [\033[33m$VER\033[0m]. "
+  [[ "$inVNC" == 'y' ]] && echo -e "\033[34mManual Mode\033[0m insatll [\033[33m$Relese\033[0m] [\033[33m$DIST\033[0m] [\033[33m$VER\033[0m] in VNC. "
+  [[ "$inVNC" == 'n' ]] && echo -e "\033[34mAuto Mode\033[0m insatll [\033[33m$Relese\033[0m] [\033[33m$DIST\033[0m] [\033[33m$VER\033[0m]. "
 }
 [[ "$ddMode" == '1' ]] && {
   echo -ne "\033[34mAuto Mode\033[0m insatll \033[33mWindows\033[0m\n[\033[33m$DDURL\033[0m]\n"
 }
 
-if [[ "$linuxdists" == 'centos' ]]; then
+if [[ "$linux_relese" == 'centos' ]]; then
   if [[ "$DIST" != "$UNVER" ]]; then
     awk 'BEGIN{print '${UNVER}'-'${DIST}'}' |grep -q '^-'
     if [ $? != '0' ]; then
@@ -378,35 +399,44 @@ if [[ "$linuxdists" == 'centos' ]]; then
     fi
     awk 'BEGIN{print '${UNVER}'-'${DIST}'+0.59}' |grep -q '^-'
     if [ $? == '0' ]; then
-      echo -en "\n\033[31mThe version higher then \033[33m6.9 \033[31mis not support in current! \033[0m\n\n"
+      echo -en "\n\033[31mThe version higher then \033[33m6.10 \033[31mis not support in current! \033[0m\n\n"
       exit 1;
     fi
   fi
 fi
 
-echo -e "\n[\033[33m$LinuxName\033[0m] [\033[33m$DIST\033[0m] [\033[33m$VER\033[0m] Downloading..."
+echo -e "\n[\033[33m$Relese\033[0m] [\033[33m$DIST\033[0m] [\033[33m$VER\033[0m] Downloading..."
 
-[[ -z "$DISTMirror" ]] && echo -ne "\033[31mError! \033[0mInvaild mirror! \n" && exit 1
-
-if [[ "$linuxdists" == 'debian' ]] || [[ "$linuxdists" == 'ubuntu' ]]; then
-wget --no-check-certificate -qO '/boot/initrd.img' "http://$DISTMirror/dists/$DIST/main/installer-$VER/current/images/netboot/$linuxdists-installer/$VER/initrd.gz"
-[[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'initrd.img' for \033[33m$linuxdists\033[0m failed! \n" && exit 1
-wget --no-check-certificate -qO '/boot/vmlinuz' "http://$DISTMirror/dists/$DIST/main/installer-$VER/current/images/netboot/$linuxdists-installer/$VER/linux"
-[[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'vmlinuz' for \033[33m$linuxdists\033[0m failed! \n" && exit 1
-elif [[ "$linuxdists" == 'centos' ]]; then
-wget --no-check-certificate -qO '/boot/initrd.img' "http://$DISTMirror/$DIST/os/$VER/isolinux/initrd.img"
-[[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'initrd.img' for \033[33m$linuxdists\033[0m failed! \n" && exit 1
-wget --no-check-certificate -qO '/boot/vmlinuz' "http://$DISTMirror/$DIST/os/$VER/isolinux/vmlinuz"
-[[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'vmlinuz' for \033[33m$linuxdists\033[0m failed! \n" && exit 1
+if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
+  inUpdate=''; [ "$linux_relese" == 'ubuntu' ] && inUpdate='-updates'
+  wget --no-check-certificate -qO '/boot/initrd.img' "${LinuxMirror}/dists/${DIST}${inUpdate}/main/installer-${VER}/current/images/netboot/${linux_relese}-installer/${VER}/initrd.gz"
+  [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'initrd.img' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
+  wget --no-check-certificate -qO '/boot/vmlinuz' "${LinuxMirror}/dists/${DIST}${inUpdate}/main/installer-${VER}/current/images/netboot/${linux_relese}-installer/${VER}/linux"
+  [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'vmlinuz' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
+  MirrorHost="$(echo "$LinuxMirror" |awk -F'://|/' '{print $2}')";
+  MirrorFolder="$(echo "$LinuxMirror" |awk -F''${MirrorHost}'' '{print $2}')";
+elif [[ "$linux_relese" == 'centos' ]]; then
+  wget --no-check-certificate -qO '/boot/initrd.img' "${LinuxMirror}/${DIST}/os/${VER}/isolinux/initrd.img"
+  [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'initrd.img' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
+  wget --no-check-certificate -qO '/boot/vmlinuz' "${LinuxMirror}/${DIST}/os/${VER}/isolinux/vmlinuz"
+  [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'vmlinuz' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
+else
+  bash $0 error;
+  exit 1;
 fi
-if [[ "$linuxdists" == 'debian' ]]; then
-  if [[ "$INCFW" == '1' ]]; then
-    wget --no-check-certificate -qO '/boot/firmware.cpio.gz' "http://cdimage.debian.org/cdimage/unofficial/non-free/firmware/$DIST/current/firmware.cpio.gz"
-    [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'firmware' for \033[33m$linuxdists\033[0m failed! \n" && exit 1
+if [[ "$linux_relese" == 'debian' ]]; then
+  if [[ "$IncFirmware" == '1' ]]; then
+    if [[ "$FirmwareImage" == 'ustc' ]]; then
+      wget --no-check-certificate -qO '/boot/firmware.cpio.gz' "https://mirrors.ustc.edu.cn/debian-cdimage/unofficial/non-free/firmware/${DIST}/current/firmware.cpio.gz"
+      [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'firmware' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
+    elif [[ "$FirmwareImage" == '' ]]; then
+      wget --no-check-certificate -qO '/boot/firmware.cpio.gz' "http://cdimage.debian.org/cdimage/unofficial/non-free/firmware/${DIST}/current/firmware.cpio.gz"
+      [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'firmware' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
+    fi
   fi
   if [[ "$ddMode" == '1' ]]; then
     vKernel_udeb=$(wget --no-check-certificate -qO- "http://$DISTMirror/dists/$DIST/main/installer-$VER/current/images/udeb.list" |grep '^acpi-modules' |head -n1 |grep -o '[0-9]\{1,2\}.[0-9]\{1,2\}.[0-9]\{1,2\}-[0-9]\{1,2\}' |head -n1)
-    [[ -z "vKernel_udeb" ]] && vKernel_udeb="3.16.0-4"
+    [[ -z "vKernel_udeb" ]] && vKernel_udeb="3.16.0-6"
   fi
 fi
 
@@ -481,13 +511,17 @@ echo ${arrayNum[@]} |sed 's/\s/\n/g' |sort -n -k 1 -t ',' |tail -n1 |cut -d',' -
   }
 }
 
-[[ ! -f $GRUBDIR/$GRUBFILE ]] && echo "Error! Not Found $GRUBFILE. " && exit 1;
+if [[ "$loaderMode" == "0" ]]; then
+  [[ ! -f $GRUBDIR/$GRUBFILE ]] && echo "Error! Not Found $GRUBFILE. " && exit 1;
 
-[[ ! -f $GRUBDIR/$GRUBFILE.old ]] && [[ -f $GRUBDIR/$GRUBFILE.bak ]] && mv -f $GRUBDIR/$GRUBFILE.bak $GRUBDIR/$GRUBFILE.old;
-mv -f $GRUBDIR/$GRUBFILE $GRUBDIR/$GRUBFILE.bak;
-[[ -f $GRUBDIR/$GRUBFILE.old ]] && cat $GRUBDIR/$GRUBFILE.old >$GRUBDIR/$GRUBFILE || cat $GRUBDIR/$GRUBFILE.bak >$GRUBDIR/$GRUBFILE;
+  [[ ! -f $GRUBDIR/$GRUBFILE.old ]] && [[ -f $GRUBDIR/$GRUBFILE.bak ]] && mv -f $GRUBDIR/$GRUBFILE.bak $GRUBDIR/$GRUBFILE.old;
+  mv -f $GRUBDIR/$GRUBFILE $GRUBDIR/$GRUBFILE.bak;
+  [[ -f $GRUBDIR/$GRUBFILE.old ]] && cat $GRUBDIR/$GRUBFILE.old >$GRUBDIR/$GRUBFILE || cat $GRUBDIR/$GRUBFILE.bak >$GRUBDIR/$GRUBFILE;
+else
+  GRUBVER='2'
+fi
 
-[[ "$GRUBOLD" == '0' ]] && {
+[[ "$GRUBVER" == '0' ]] && {
   READGRUB='/tmp/grub.read'
   cat $GRUBDIR/$GRUBFILE |sed -n '1h;1!H;$g;s/\n/%%%%%%%/g;$p' |grep -om 1 'menuentry\ [^{]*{[^}]*}%%%%%%%' |sed 's/%%%%%%%/\n/g' >$READGRUB
   LoadNum="$(cat $READGRUB |grep -c 'menuentry ')"
@@ -518,7 +552,7 @@ mv -f $GRUBDIR/$GRUBFILE $GRUBDIR/$GRUBFILE.bak;
   INSERTGRUB="$(awk '/menuentry /{print NR}' $GRUBDIR/$GRUBFILE|head -n 1)"
 }
 
-[[ "$GRUBOLD" == '1' ]] && {
+[[ "$GRUBVER" == '1' ]] && {
   CFG0="$(awk '/title[\ ]|title[\t]/{print NR}' $GRUBDIR/$GRUBFILE|head -n 1)";
   CFG1="$(awk '/title[\ ]|title[\t]/{print NR}' $GRUBDIR/$GRUBFILE|head -n 2 |tail -n 1)";
   [[ -n $CFG0 ]] && [ -z $CFG1 -o $CFG1 == $CFG0 ] && sed -n "$CFG0,$"p $GRUBDIR/$GRUBFILE >/tmp/grub.new;
@@ -529,6 +563,7 @@ mv -f $GRUBDIR/$GRUBFILE $GRUBDIR/$GRUBFILE.bak;
   INSERTGRUB="$(awk '/title[\ ]|title[\t]/{print NR}' $GRUBDIR/$GRUBFILE|head -n 1)"
 }
 
+if [[ "$loaderMode" == "0" ]]; then
 [[ -n "$(grep 'linux.*/\|kernel.*/' /tmp/grub.new |awk '{print $2}' |tail -n 1 |grep '^/boot/')" ]] && Type='InBoot' || Type='NoBoot';
 
 LinuxKernel="$(grep 'linux.*/\|kernel.*/' /tmp/grub.new |awk '{print $1}' |head -n 1)";
@@ -536,10 +571,20 @@ LinuxKernel="$(grep 'linux.*/\|kernel.*/' /tmp/grub.new |awk '{print $1}' |head 
 LinuxIMG="$(grep 'initrd.*/' /tmp/grub.new |awk '{print $1}' |tail -n 1)";
 [ -z "$LinuxIMG" ] && sed -i "/$LinuxKernel.*\//a\\\tinitrd\ \/" /tmp/grub.new && LinuxIMG='initrd';
 
-if [[ "$linuxdists" == 'debian' ]] || [[ "$linuxdists" == 'ubuntu' ]]; then
-  BOOT_OPTION="auto=true hostname=$linuxdists domain= -- quiet"
-elif [[ "$linuxdists" == 'centos' ]]; then
-  BOOT_OPTION="ks=file://ks.cfg ksdevice=$IFETH"
+if [[ "$setInterfaceName" == "1" ]]; then
+  Add_OPTION="net.ifnames=0 biosdevname=0";
+else
+  Add_OPTION="";
+fi
+
+if [[ "$setIPv6" == "1" ]]; then
+  Add_OPTION="$Add_OPTION ipv6.disable=1";
+fi
+
+if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
+  BOOT_OPTION="auto=true $Add_OPTION hostname=$linux_relese domain= -- quiet"
+elif [[ "$linux_relese" == 'centos' ]]; then
+  BOOT_OPTION="ks=file://ks.cfg $Add_OPTION ksdevice=$IFETH"
 fi
 
 [[ "$Type" == 'InBoot' ]] && {
@@ -553,10 +598,12 @@ fi
 }
 
 sed -i '$a\\n' /tmp/grub.new;
+fi
 
 [[ "$inVNC" == 'n' ]] && {
 GRUBPATCH='0';
 
+if [[ "$loaderMode" == "0" ]]; then
 [ -f '/etc/network/interfaces' -o -d '/etc/sysconfig/network-scripts' ] || {
   echo "Error, Not found interfaces config.";
   exit 1;
@@ -565,13 +612,14 @@ GRUBPATCH='0';
 sed -i ''${INSERTGRUB}'i\\n' $GRUBDIR/$GRUBFILE;
 sed -i ''${INSERTGRUB}'r /tmp/grub.new' $GRUBDIR/$GRUBFILE;
 [[ -f  $GRUBDIR/grubenv ]] && sed -i 's/saved_entry/#saved_entry/g' $GRUBDIR/grubenv;
+fi
 
 [[ -d /tmp/boot ]] && rm -rf /tmp/boot;
 mkdir -p /tmp/boot;
 cd /tmp/boot;
-if [[ "$linuxdists" == 'debian' ]] || [[ "$linuxdists" == 'ubuntu' ]]; then
+if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
   COMPTYPE="gzip";
-elif [[ "$linuxdists" == 'centos' ]]; then
+elif [[ "$linux_relese" == 'centos' ]]; then
   COMPTYPE="$(file /boot/initrd.img |grep -o ':.*compressed data' |cut -d' ' -f2 |sed -r 's/(.*)/\L\1/' |head -n1)"
   [[ -z "$COMPTYPE" ]] && echo "Detect compressed type fail." && exit 1;
 fi
@@ -596,15 +644,13 @@ for ListCOMP in `echo -en 'gzip\nlzma\nxz'`
 
 $UNCOMP < /tmp/$NewIMG | cpio --extract --verbose --make-directories --no-absolute-filenames >>/dev/null 2>&1
 
-if [[ "$linuxdists" == 'debian' ]] || [[ "$linuxdists" == 'ubuntu' ]]; then
+if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
 cat >/tmp/boot/preseed.cfg<<EOF
-# Localization
 d-i debian-installer/locale string en_US
 d-i console-setup/layoutcode string us
 
 d-i keyboard-configuration/xkb-keymap string us
 
-# Network configuration
 d-i netcfg/choose_interface select $IFETH
 
 d-i netcfg/disable_autoconfig boolean true
@@ -613,33 +659,30 @@ d-i netcfg/dhcp_options select Configure network manually
 d-i netcfg/get_ipaddress string $IPv4
 d-i netcfg/get_netmask string $MASK
 d-i netcfg/get_gateway string $GATE
-d-i netcfg/get_nameservers string $name_server
+d-i netcfg/get_nameservers string 8.8.8.8
 d-i netcfg/no_default_route boolean true
 d-i netcfg/confirm_static boolean true
 
 d-i hw-detect/load_firmware boolean true
 
-# Mirror settings
 d-i mirror/country string manual
 d-i mirror/http/hostname string $MirrorHost
 d-i mirror/http/directory string $MirrorFolder
 d-i mirror/http/proxy string
+d-i apt-setup/services-select multiselect
 
-# Account setup
 d-i passwd/root-login boolean ture
 d-i passwd/make-user boolean false
 d-i passwd/root-password-crypted password $myPASSWORD
 d-i user-setup/allow-password-weak boolean true
 d-i user-setup/encrypt-home boolean false
 
-# Clock and time zone setup
 d-i clock-setup/utc boolean true
-d-i time/zone string $tm_zone
+d-i time/zone string US/Eastern
 d-i clock-setup/ntp boolean true
-d-i clock-setup/ntp-server string 0.pool.ntp.org
 
 d-i preseed/early_command string anna-install libfuse2-udeb fuse-udeb ntfs-3g-udeb fuse-modules-${vKernel_udeb}-amd64-di
-d-i partman/early_command string \
+d-i partman/early_command string [[ -n "\$(blkid -t TYPE='vfat' -o device)" ]] && umount "\$(blkid -t TYPE='vfat' -o device)"; \
 debconf-set partman-auto/disk "\$(list-devices disk |head -n1)"; \
 wget -qO- '$DDURL' |gunzip -dc |/bin/dd of=\$(list-devices disk |head -n1); \
 mount.ntfs-3g \$(list-devices partition |head -n1) /mnt; \
@@ -650,9 +693,9 @@ cp -f '/net.bat' './net.bat'; \
 debconf-set grub-installer/bootdev string "\$(list-devices disk |head -n1)"; \
 umount /media || true; \
 
-# Partitioning
 d-i partman/mount_style select uuid
 d-i partman-auto/init_automatically_partition select Guided - use entire disk
+d-i partman-auto/choose_recipe select All files in one partition (recommended for new users)
 d-i partman-auto/method string regular
 d-i partman-lvm/device_remove_lvm boolean true
 d-i partman-md/device_remove_md boolean true
@@ -666,7 +709,6 @@ d-i partman/confirm_nooverwrite boolean true
 
 d-i debian-installer/allow_unauthenticated boolean true
 
-# Package selection
 tasksel tasksel/first multiselect minimal
 d-i pkgsel/update-policy select none
 d-i pkgsel/include string openssh-server
@@ -674,15 +716,17 @@ d-i pkgsel/upgrade select none
 
 popularity-contest popularity-contest/participate boolean false
 
-# Boot loader installation
 d-i grub-installer/only_debian boolean true
 d-i grub-installer/bootdev string default
+d-i grub-installer/force-efi-extra-removable boolean true
 d-i finish-install/reboot_in_progress note
 d-i debian-installer/exit/reboot boolean true
 d-i preseed/late_command string	\
 sed -ri 's/^#?PermitRootLogin.*/PermitRootLogin yes/g' /target/etc/ssh/sshd_config; \
 sed -ri 's/^#?PasswordAuthentication.*/PasswordAuthentication yes/g' /target/etc/ssh/sshd_config;
 EOF
+
+[[ "$loaderMode" != "0" ]] && AutoNet='1'
 
 [[ "$setNet" == '0' ]] && [[ "$AutoNet" == '1' ]] && {
   sed -i '/netcfg\/disable_autoconfig/d' /tmp/boot/preseed.cfg
@@ -693,6 +737,9 @@ EOF
 
 [[ "$DIST" == 'trusty' ]] && GRUBPATCH='1'
 [[ "$DIST" == 'wily' ]] && GRUBPATCH='1'
+[[ "$DIST" == 'xenial' ]] && {
+  sed -i 's/^d-i\ clock-setup\/ntp\ boolean\ true/d-i\ clock-setup\/ntp\ boolean\ false/g' /tmp/boot/preseed.cfg
+}
 
 [[ "$GRUBPATCH" == '1' ]] && {
   sed -i 's/^d-i\ grub-installer\/bootdev\ string\ default//g' /tmp/boot/preseed.cfg
@@ -700,17 +747,14 @@ EOF
 [[ "$GRUBPATCH" == '0' ]] && {
   sed -i 's/debconf-set\ grub-installer\/bootdev.*\"\;//g' /tmp/boot/preseed.cfg
 }
-[[ "$DIST" == 'xenial' ]] && {
-  sed -i 's/^d-i\ clock-setup\/ntp\ boolean\ true/d-i\ clock-setup\/ntp\ boolean\ false/g' /tmp/boot/preseed.cfg
-}
 
-[[ "$linuxdists" == 'debian' ]] && {
+[[ "$linux_relese" == 'debian' ]] && {
   sed -i '/user-setup\/allow-password-weak/d' /tmp/boot/preseed.cfg
   sed -i '/user-setup\/encrypt-home/d' /tmp/boot/preseed.cfg
   sed -i '/pkgsel\/update-policy/d' /tmp/boot/preseed.cfg
   sed -i 's/umount\ \/media.*true\;\ //g' /tmp/boot/preseed.cfg
 }
-[[ "$INCFW" == '1' ]] && [[ "$linuxdists" == 'debian' ]] && [[ -f '/boot/firmware.cpio.gz' ]] && {
+[[ "$linux_relese" == 'debian' ]] && [[ -f '/boot/firmware.cpio.gz' ]] && {
   gzip -d < /boot/firmware.cpio.gz | cpio --extract --verbose --make-directories --no-absolute-filenames >>/dev/null 2>&1
 }
 
@@ -749,12 +793,12 @@ WinRDP(){
   sed -i 's/wget.*\/sbin\/reboot\;\ //g' /tmp/boot/preseed.cfg
 }
 
-elif [[ "$linuxdists" == 'centos' ]]; then
+elif [[ "$linux_relese" == 'centos' ]]; then
 cat >/tmp/boot/ks.cfg<<EOF
 #platform=x86, AMD64, or Intel EM64T
 firewall --enabled --ssh
 install
-url --url="http://$DISTMirror/$DIST/os/$VER/"
+url --url="$LinuxMirror/$DIST/os/$VER/"
 rootpw --iscrypted $myPASSWORD
 auth --useshadow --passalgo=sha512
 firstboot --disable
@@ -767,9 +811,9 @@ text
 unsupported_hardware
 vnc
 skipx
-timedatectl  set-timezone $tm_zone
+timezone --isUtc Asia/Hong_Kong
 #ONDHCP network --bootproto=dhcp --onboot=on
-#NODHCP network --bootproto=static --ip=$IPv4 --netmask=$MASK --gateway=$GATE --nameserver=$name_server --onboot=on
+#NODHCP network --bootproto=static --ip=$IPv4 --netmask=$MASK --gateway=$GATE --nameserver=8.8.8.8 --onboot=on
 bootloader --location=mbr --append="rhgb quiet crashkernel=auto"
 zerombr
 clearpart --all --initlabel 
@@ -802,7 +846,7 @@ rm -rf /tmp/boot;
 [[ "$inVNC" == 'y' ]] && {
   sed -i '$i\\n' $GRUBDIR/$GRUBFILE
   sed -i '$r /tmp/grub.new' $GRUBDIR/$GRUBFILE
-  echo -e "\n\033[33m\033[04mIt will reboot! \nPlease look at VNC! \nSelect\033[0m\033[32m Install OS [$DIST $VER] \033[33m\033[4mto install system.\033[04m\n\n\033[31m\033[04mThere is some information for you.\nDO NOT CLOSE THE WINDOW! \033[0m\n"
+  echo -e "\n\033[33m\033[04mIt will reboot! \nPlease connect VNC! \nSelect\033[0m\033[32m Install OS [$DIST $VER] \033[33m\033[4mto install system.\033[04m\n\n\033[31m\033[04mThere is some information for you.\nDO NOT CLOSE THE WINDOW! \033[0m\n"
   echo -e "\033[35mIPv4\t\tNETMASK\t\tGATEWAY\033[0m"
   echo -e "\033[36m\033[04m$IPv4\033[0m\t\033[36m\033[04m$MASK\033[0m\t\033[36m\033[04m$GATE\033[0m\n\n"
 
@@ -813,4 +857,14 @@ rm -rf /tmp/boot;
 chown root:root $GRUBDIR/$GRUBFILE
 chmod 444 $GRUBDIR/$GRUBFILE
 
-sleep 3 && reboot >/dev/null 2>&1
+if [[ "$loaderMode" == "0" ]]; then
+  sleep 3 && reboot >/dev/null 2>&1
+else
+  rm -rf "$HOME/loader"
+  mkdir -p "$HOME/loader"
+  cp -rf "/boot/initrd.img" "$HOME/loader/initrd.img"
+  cp -rf "/boot/vmlinuz" "$HOME/loader/vmlinuz"
+  [[ -f "/boot/initrd.img" ]] && rm -rf "/boot/initrd.img"
+  [[ -f "/boot/vmlinuz" ]] && rm -rf "/boot/vmlinuz"
+  echo && ls -AR1 "$HOME/loader"
+fi
