@@ -11,31 +11,37 @@ Support Debian 8+, Ubuntu 14.04+, CentOS 6+, you can modify architecture, mirror
 ### Useage
 <pre><code>bash InstallNET.sh -[OS name] [OS version] -v [Architecture x86 or x64] -a[Automatic, recommend]/m[Manually in VNC] --mirror '[a Debian/Ubuntu/Debian resource]' -firmware/-firmware --cdimage 'ustc' [these only for Debian, if you're living in China, you can prefer it to University of Science and Technology of China mirror for downloading quickly, default mirror is debian.org] -ssh [ssh port] -p [password]</pre></code>
 ### Parameters Describes
--d: Debian
+**-d** : Debian
 <br />
 <br />
--u: Ubuntu
+**-u**: Ubuntu
 <br />
 <br />
--c: CentOS
+**-c**: CentOS
 <br />
 <br />
-Architecture: 32/i386 64/amd64
+**32/i386 64/amd64**: architecture
 <br />
 <br />
---mirror: Install files resource, you can select one which nearest for actual location of your server to upspeed the installation.
+**--mirror**: Install files resource, you can select one which nearest for actual location of your server to upspeed the installation.
 <br />
 <br />
 for Debian, mirror lists are here: 
 <pre><code>https://www.debian.org/mirror/list.zh-cn.html</code></pre>
 <br />
 for Ubuntu, mirror lists are here: 
-https://wiki.ubuntu.org.cn/%E6%BA%90%E5%88%97%E8%A1%A8
+<pre><code>https://wiki.ubuntu.org.cn/%E6%BA%90%E5%88%97%E8%A1%A8</code></pre>
 <br />
 for CentOS, mirror lists are here: 
-https://www.centos.org/download/mirrors/
+<pre><code>https://www.centos.org/download/mirrors/</code></pre>
 <br />
--firmware/-firmware --cdimage 'ustc': specify hardware drivers for Debian.
+**-firmware/-firmware --cdimage 'ustc'**: specify hardware drivers for Debian.
+<br />
+<br />
+**-ssh**: you can pre-specify ssh port of system, range is 1~65535.
+<br />
+<br />
+**-p**: you can pre-specify ssh password of system, default is 'MoeClub.org'.
 <br />
 
 for example:
