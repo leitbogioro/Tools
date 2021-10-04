@@ -14,18 +14,23 @@ Support Debian 8+, Ubuntu 14.04+, CentOS 6+, you can modify architecture, mirror
 **-d** : Debian
 <br />
 <br />
+
 **-u**: Ubuntu
 <br />
 <br />
+
 **-c**: CentOS
 <br />
 <br />
+
 **32/i386 64/amd64**: architecture
 <br />
 <br />
+
 **--mirror**: Install files resource, you can select one which nearest for actual location of your server to upspeed the installation.
 <br />
 <br />
+
 for Debian, mirror lists are here: 
 <pre><code>https://www.debian.org/mirror/list.zh-cn.html</code></pre>
 <br />
