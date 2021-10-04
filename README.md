@@ -35,10 +35,12 @@ for Debian, mirror lists are here:
 <br />
 <pre><code>https://www.debian.org/mirror/list.zh-cn.html</code></pre>
 <br />
+
 for Ubuntu, mirror lists are here:
 <br />
 <pre><code>https://wiki.ubuntu.org.cn/%E6%BA%90%E5%88%97%E8%A1%A8</code></pre>
 <br />
+
 for CentOS, mirror lists are here:
 <br />
 <pre><code>https://www.centos.org/download/mirrors/</code></pre>
