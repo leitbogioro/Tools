@@ -50,11 +50,11 @@ for CentOS, mirror lists are here:
 <br />
 <br />
 
-**-ssh**: you can pre-specify ssh port of system, range is 1~65535.
+**-ssh**: you can pre-specify ssh port of system, range is 1~65535, **default is '22'**.
 <br />
 <br />
 
-**-p**: you can pre-specify ssh password of system, default is 'LeitboGi0ro'.
+**-p**: you can pre-specify ssh password of system, **default is 'LeitboGi0ro'**.
 <br />
 <br />
 
