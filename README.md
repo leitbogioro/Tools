@@ -3,29 +3,49 @@ Something about scripts
 # Linux reinstall useage
 ## Notes:
 If your VPS is base by Bandwagon and reinstalled OS which constructed by Bandwagon just now, you must reboot and then execute it.
+## Features:
+Support Debian 8+, Ubuntu 14.04+, CentOS 6+, you can modify architecture, mirror, firmware, ssh port, password etc for easily to reinstall a cleanly Linux system.
 ## Download:
 <pre><code>wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/WedTools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh</code></pre>
 ## Install
 ### Useage
-<pre><code>bash InstallNET.sh -[OS name] [OS version] -v [Architecture] -a[Automatic, recommend]/m[Manually in VNC]</pre></code>
+<pre><code>bash InstallNET.sh -[OS name] [OS version] -v [Architecture x86 or x64] -a[Automatic, recommend]/m[Manually in VNC] --mirror '[a Debian/Ubuntu/Debian resource]' -firmware/-firmware --cdimage 'ustc' [these only for Debian, if you're living in China, you can prefer it to University of Science and Technology of China mirror for downloading quickly, default mirror is debian.org] -ssh [ssh port] -p [password]</pre></code>
 ### Parameters Describes
-d: Debian
+-d: Debian
 <br />
-u: Ubuntu
+-u: Ubuntu
 <br />
-c: CentOS
+-c: CentOS
 <br />
 Architecture: 32/i386 64/amd64
 <br />
+--mirror: Install files resource, you can select one which nearest for actual location of your server to upspeed the installation. 
+for Debian, mirror lists are here: https://www.debian.org/mirror/list.zh-cn.html
+for Ubuntu, mirror lists are here: https://wiki.ubuntu.org.cn/%E6%BA%90%E5%88%97%E8%A1%A8
+for CentOS, mirror lists are here: https://www.centos.org/download/mirrors/
+<br />
+-firmware/-firmware --cdimage 'ustc': specify hardware drivers for Debian.
+<br />
+
 for example:
 ### Debian 8
 <pre><code>bash InstallNET.sh -d 8 -v 64 -a</code></pre>
 ### Debian 9
 <pre><code>bash InstallNET.sh -d 9 -v 64 -a</code></pre>
+### Debian 10 (Default)
+<pre><code>bash InstallNET.sh -d 10 -v 64 -a</code></pre>
+### Debian 10 (prefer mirror in China with firmware, recommend for Chinese users)
+<pre><code>bash InstallNET.sh -d 10 -v 64 -a --mirror 'https://mirrors.tuna.tsinghua.edu.cn/debian/' -firmware --cdimage 'ustc'</code></pre>
+<pre><code>bash InstallNET.sh -d 10 -v 64 -a --mirror 'http://mirrors.163.com/debian/' -firmware --cdimage 'ustc'</code></pre>
+<pre><code>bash InstallNET.sh -d 10 -v 64 -a --mirror 'http://mirrors.cloud.tencent.com/debian/' -firmware --cdimage 'ustc'</code></pre>
+### Debian 11
+<pre><code>bash InstallNET.sh -d 11 -v 64 -a</code></pre>
 ### Ubuntu 16.04
 <pre><code>bash InstallNET.sh -u 16.04 -v 64 -a</code></pre>
 ### Ubuntu 18.04
 <pre><code>bash InstallNET.sh -u 18.04 -v 64 -a</code></pre>
+### Ubuntu 20.04
+<pre><code>bash InstallNET.sh -u 20.04 -v 64 -a</code></pre>
 ### Cent OS 6
 <pre><code>bash InstallNET.sh -c 6.9 -v 64 -a</code></pre>
 ### Cent OS 7
@@ -36,7 +56,7 @@ Shanghai Asia
 ### User name
 root
 ### Password
-Vicer
+MoeClub.org
 <br />
 <br />
 <b>After installed system, you must change passwords immediately.</b>
