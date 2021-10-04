@@ -35,12 +35,15 @@ for Ubuntu, mirror lists are here:
 for CentOS, mirror lists are here: 
 <pre><code>https://www.centos.org/download/mirrors/</code></pre>
 <br />
+
 **-firmware/-firmware --cdimage 'ustc'**: specify hardware drivers for Debian.
 <br />
 <br />
+
 **-ssh**: you can pre-specify ssh port of system, range is 1~65535.
 <br />
 <br />
+
 **-p**: you can pre-specify ssh password of system, default is 'MoeClub.org'.
 <br />
 
