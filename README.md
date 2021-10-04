@@ -53,7 +53,7 @@ for CentOS, mirror lists are here:
 <br />
 <br />
 
-### for example:
+## for example:
 ### Debian 8
 <pre><code>bash InstallNET.sh -d 8 -v 64 -a</code></pre>
 ### Debian 9
