@@ -13,11 +13,15 @@ Support Debian 8+, Ubuntu 14.04+, CentOS 6+, you can modify architecture, mirror
 ### Parameters Describes
 -d: Debian
 <br />
+<br />
 -u: Ubuntu
+<br />
 <br />
 -c: CentOS
 <br />
+<br />
 Architecture: 32/i386 64/amd64
+<br />
 <br />
 --mirror: Install files resource, you can select one which nearest for actual location of your server to upspeed the installation.
 <br />
