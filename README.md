@@ -88,6 +88,8 @@ Shanghai Asia
 root
 ### Password
 MoeClub.org
+### Port
+22
 <br />
 <br />
 <b>After installed system, you must change passwords immediately.</b>
