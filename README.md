@@ -65,26 +65,45 @@ for CentOS, mirror lists are here:
 <pre><code>bash InstallNET.sh -d 9 -v 64 -a</code></pre>
 ### Debian 10 (Default)
 <pre><code>bash InstallNET.sh -d 10 -v 64 -a</code></pre>
-### Debian 10 (prefer mirror manually with firmware, recommend for servers which are operating outside of mainland China)
-Japan:
-<br />
-<pre><code>bash InstallNET.sh -d 10 -v 64 -a --mirror 'http://ftp.riken.jp/Linux/debian/debian/' -firmware</code></pre>
-America:
-<br />
-<pre><code>bash InstallNET.sh -d 10 -v 64 -a --mirror 'http://ftp.us.debian.org/debian/' -firmware</code></pre>
-HongKong:
-<br />
-<pre><code>bash InstallNET.sh -d 10 -v 64 -a --mirror 'http://ftp.hk.debian.org/debian/' -firmware</code></pre>
-<br />
-<pre><code></code></pre>
-<br />
-<pre><code></code></pre>
-<br />
-<pre><code></code></pre>
 ### Debian 10 (prefer mirror manually with firmware, recommend for servers which are operating in mainland China)
 <pre><code>bash InstallNET.sh -d 10 -v 64 -a --mirror 'https://mirrors.tuna.tsinghua.edu.cn/debian/' -firmware --cdimage 'ustc'</code></pre>
 <pre><code>bash InstallNET.sh -d 10 -v 64 -a --mirror 'http://mirrors.163.com/debian/' -firmware --cdimage 'ustc'</code></pre>
 <pre><code>bash InstallNET.sh -d 10 -v 64 -a --mirror 'http://mirrors.cloud.tencent.com/debian/' -firmware --cdimage 'ustc'</code></pre>
+### Debian 10 (prefer mirror manually with firmware, recommend for servers which are operating outside of mainland China)
+Japan:
+<br />
+<pre><code>bash InstallNET.sh -d 10 -v 64 -a --mirror 'http://ftp.riken.jp/Linux/debian/debian/' -firmware</code></pre>
+HongKong:
+<br />
+<pre><code>bash InstallNET.sh -d 10 -v 64 -a --mirror 'http://ftp.hk.debian.org/debian/' -firmware</code></pre>
+Singapore:
+<br />
+<pre><code>bash InstallNET.sh -d 10 -v 64 -a --mirror 'http://ftp.sg.debian.org/debian/' -firmware</code></pre>
+South Korea:
+<br />
+<pre><code>bash InstallNET.sh -d 10 -v 64 -a --mirror 'http://ftp.kaist.ac.kr/debian/' -firmware</code></pre>
+America:
+<br />
+<pre><code>bash InstallNET.sh -d 10 -v 64 -a --mirror 'http://ftp.us.debian.org/debian/' -firmware</code></pre>
+Canada:
+<br />
+<pre><code>bash InstallNET.sh -d 10 -v 64 -a --mirror 'http://ftp.ca.debian.org/debian/' -firmware</code></pre>
+British:
+<br />
+<pre><code>bash InstallNET.sh -d 10 -v 64 -a --mirror 'http://ftp.uk.debian.org/debian/' -firmware</code></pre>
+Germany:
+<br />
+<pre><code>bash InstallNET.sh -d 10 -v 64 -a --mirror 'http://ftp.de.debian.org/debian/' -firmware</code></pre>
+France:
+<br />
+<pre><code>bash InstallNET.sh -d 10 -v 64 -a --mirror 'http://ftp.fr.debian.org/debian/' -firmware</code></pre>
+Russia:
+<br />
+<pre><code>bash InstallNET.sh -d 10 -v 64 -a --mirror 'http://ftp.ru.debian.org/debian/' -firmware</code></pre>
+Australia:
+<br />
+<pre><code>bash InstallNET.sh -d 10 -v 64 -a --mirror 'http://ftp.au.debian.org/debian/' -firmware</code></pre>
+
 ### Debian 11
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a</code></pre>
 ### Ubuntu 16.04
