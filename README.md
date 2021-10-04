@@ -46,7 +46,7 @@ for CentOS, mirror lists are here:
 <pre><code>https://www.centos.org/download/mirrors/</code></pre>
 <br />
 
-**-firmware/-firmware --cdimage 'ustc'**: specify hardware drivers for Debian, if your server is operating in mainland China, you can prefer it to mirror of University of Science and Technology of China(https://mirrors.ustc.edu.cn/debian-cdimage/) for downloading more quickly, default mirror is from http://cdimage.debian.org/cdimage/.
+**-firmware/-firmware --cdimage 'ustc'**: specify hardware drivers for Debian, if your server is operating in mainland China, you can prefer it to mirror of 'University of Science and Technology of China(https://mirrors.ustc.edu.cn/debian-cdimage/)' for downloading more quickly, default mirror is from http://cdimage.debian.org/cdimage/.
 <br />
 <br />
 
