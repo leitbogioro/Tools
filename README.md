@@ -9,7 +9,7 @@ Support Debian 8+, Ubuntu 14.04+, CentOS 6+, you can modify architecture, mirror
 <pre><code>wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/WedTools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh</code></pre>
 ## Install
 ### Useage
-<pre><code>bash InstallNET.sh -[OS name] [OS version] -v [Architecture x86 or x64] -a[Automatic, recommend]/m[Manually in VNC] --mirror '[a Debian/Ubuntu/Debian resource]' -firmware/-firmware --cdimage 'ustc' [these only for Debian, if you're living in China, you can prefer it to University of Science and Technology of China mirror for downloading quickly, default mirror is debian.org] -ssh [ssh port] -p [password]</pre></code>
+<pre><code>bash InstallNET.sh -[OS name] [OS version] -v [Architecture x86 or x64] -a[Automatic, recommend]/m[Manually in VNC] --mirror '[a Debian/Ubuntu/Debian resource]' -firmware/-firmware --cdimage 'ustc' [this option is only for Debian] -ssh [ssh port] -p [password]</pre></code>
 ### Parameters Describes
 **-d** : Debian
 <br />
@@ -46,7 +46,7 @@ for CentOS, mirror lists are here:
 <pre><code>https://www.centos.org/download/mirrors/</code></pre>
 <br />
 
-**-firmware/-firmware --cdimage 'ustc'**: specify hardware drivers for Debian.
+**-firmware/-firmware --cdimage 'ustc'**: specify hardware drivers for Debian, if your server is operating in mainland China, you can prefer it to mirror of University of Science and Technology of China(https://mirrors.ustc.edu.cn/debian-cdimage/) for downloading more quickly, default mirror is from http://cdimage.debian.org/cdimage/.
 <br />
 <br />
 
