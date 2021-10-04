@@ -65,7 +65,23 @@ for CentOS, mirror lists are here:
 <pre><code>bash InstallNET.sh -d 9 -v 64 -a</code></pre>
 ### Debian 10 (Default)
 <pre><code>bash InstallNET.sh -d 10 -v 64 -a</code></pre>
-### Debian 10 (prefer mirror in China with firmware, recommend for Chinese users)
+### Debian 10 (prefer mirror manually with firmware, recommend for servers which are operating outside of mainland China)
+Japan:
+<br />
+<pre><code>bash InstallNET.sh -d 10 -v 64 -a --mirror 'http://ftp.riken.jp/Linux/debian/debian/' -firmware</code></pre>
+America:
+<br />
+<pre><code>bash InstallNET.sh -d 10 -v 64 -a --mirror 'http://ftp.us.debian.org/debian/' -firmware</code></pre>
+HongKong:
+<br />
+<pre><code>bash InstallNET.sh -d 10 -v 64 -a --mirror 'http://ftp.hk.debian.org/debian/' -firmware</code></pre>
+<br />
+<pre><code></code></pre>
+<br />
+<pre><code></code></pre>
+<br />
+<pre><code></code></pre>
+### Debian 10 (prefer mirror manually with firmware, recommend for servers which are operating in mainland China)
 <pre><code>bash InstallNET.sh -d 10 -v 64 -a --mirror 'https://mirrors.tuna.tsinghua.edu.cn/debian/' -firmware --cdimage 'ustc'</code></pre>
 <pre><code>bash InstallNET.sh -d 10 -v 64 -a --mirror 'http://mirrors.163.com/debian/' -firmware --cdimage 'ustc'</code></pre>
 <pre><code>bash InstallNET.sh -d 10 -v 64 -a --mirror 'http://mirrors.cloud.tencent.com/debian/' -firmware --cdimage 'ustc'</code></pre>
