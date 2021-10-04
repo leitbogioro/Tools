@@ -31,13 +31,16 @@ Support Debian 8+, Ubuntu 14.04+, CentOS 6+, you can modify architecture, mirror
 <br />
 <br />
 
-for Debian, mirror lists are here: 
+for Debian, mirror lists are here:
+<br />
 <pre><code>https://www.debian.org/mirror/list.zh-cn.html</code></pre>
 <br />
-for Ubuntu, mirror lists are here: 
+for Ubuntu, mirror lists are here:
+<br />
 <pre><code>https://wiki.ubuntu.org.cn/%E6%BA%90%E5%88%97%E8%A1%A8</code></pre>
 <br />
-for CentOS, mirror lists are here: 
+for CentOS, mirror lists are here:
+<br />
 <pre><code>https://www.centos.org/download/mirrors/</code></pre>
 <br />
 
