@@ -51,8 +51,9 @@ for CentOS, mirror lists are here:
 
 **-p**: you can pre-specify ssh password of system, default is 'MoeClub.org'.
 <br />
+<br />
 
-for example:
+### for example:
 ### Debian 8
 <pre><code>bash InstallNET.sh -d 8 -v 64 -a</code></pre>
 ### Debian 9
