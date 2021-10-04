@@ -54,7 +54,7 @@ for CentOS, mirror lists are here:
 <br />
 <br />
 
-**-p**: you can pre-specify ssh password of system, default is 'MoeClub.org'.
+**-p**: you can pre-specify ssh password of system, default is 'LeitboGi0ro'.
 <br />
 <br />
 
@@ -131,7 +131,7 @@ Shanghai Asia
 ### User name
 root
 ### Password
-MoeClub.org
+LeitboGi0ro
 ### Port
 22
 <br />
