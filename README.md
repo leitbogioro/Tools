@@ -25,11 +25,15 @@ Architecture: 32/i386 64/amd64
 <br />
 --mirror: Install files resource, you can select one which nearest for actual location of your server to upspeed the installation.
 <br />
-for Debian, mirror lists are here: https://www.debian.org/mirror/list.zh-cn.html
 <br />
-for Ubuntu, mirror lists are here: https://wiki.ubuntu.org.cn/%E6%BA%90%E5%88%97%E8%A1%A8
+for Debian, mirror lists are here: 
+<pre><code>https://www.debian.org/mirror/list.zh-cn.html</code></pre>
 <br />
-for CentOS, mirror lists are here: https://www.centos.org/download/mirrors/
+for Ubuntu, mirror lists are here: 
+https://wiki.ubuntu.org.cn/%E6%BA%90%E5%88%97%E8%A1%A8
+<br />
+for CentOS, mirror lists are here: 
+https://www.centos.org/download/mirrors/
 <br />
 -firmware/-firmware --cdimage 'ustc': specify hardware drivers for Debian.
 <br />
