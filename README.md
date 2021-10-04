@@ -72,7 +72,7 @@ Tsinghua University:
 Netease, Inc:
 <br />
 <pre><code>bash InstallNET.sh -d 10 -v 64 -a --mirror 'http://mirrors.163.com/debian/' -p yourpassword -firmware --cdimage 'ustc'</code></pre>
-Tencent Holdings Ltd.,:
+Tencent Cloud:
 <br />
 <pre><code>bash InstallNET.sh -d 10 -v 64 -a --mirror 'http://mirrors.cloud.tencent.com/debian/' -p yourpassword -firmware --cdimage 'ustc'</code></pre>
 Alibaba Cloud:
