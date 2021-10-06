@@ -122,7 +122,7 @@ Australia:
 ### Ubuntu 20.04
 <pre><code>bash InstallNET.sh -u 20.04 -v 64 -a</code></pre>
 ### Cent OS 6
-<pre><code>bash InstallNET.sh -c 6.9 -v 64 -a</code></pre>
+<pre><code>bash InstallNET.sh -c 6.10 -v 64 -a</code></pre>
 ## Default Configurations
 ### Time zone
 Shanghai Asia
