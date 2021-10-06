@@ -4,7 +4,7 @@ Something about scripts
 ## Notes:
 If your VPS is base by Bandwagon and reinstalled OS which constructed by Bandwagon just now, you must reboot and then execute it.
 ## Features:
-Support Debian 8+, Ubuntu 14.04+, CentOS 6+, you can modify architecture, mirror, firmware, ssh port, password etc for easily to reinstall a cleanly Linux system.
+Support Debian 8+, Ubuntu 14.04+, CentOS 6, you can modify architecture, mirror, firmware, ssh port, password etc for easily to reinstall a cleanly Linux system.
 ## Download:
 <pre><code>wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/WedTools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh</code></pre>
 ## Install
@@ -123,8 +123,6 @@ Australia:
 <pre><code>bash InstallNET.sh -u 20.04 -v 64 -a</code></pre>
 ### Cent OS 6
 <pre><code>bash InstallNET.sh -c 6.9 -v 64 -a</code></pre>
-### Cent OS 7
-<pre><code>bash InstallNET.sh -c 7.5 -v 64 -a</code></pre>
 ## Default Configurations
 ### Time zone
 Shanghai Asia
