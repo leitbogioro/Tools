@@ -83,7 +83,7 @@ Alibaba Cloud:
 ### Debian 11 (prefer mirror manually with firmware, recommend for servers which are locating outside of mainland China)
 Japan:
 <br />
-<pre><code>bash InstallNET.sh -d 11 -v 64 -a -firmware --mirror 'http://ftp.riken.jp/Linux/debian/debian/' -p yourpassword -firmware</code></pre>
+<pre><code>bash InstallNET.sh -d 11 -v 64 -a -firmware --mirror 'http://ftp.riken.jp/Linux/debian/debian/'</code></pre>
 HongKong:
 <br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -firmware --mirror 'http://ftp.hk.debian.org/debian/'</code></pre>
