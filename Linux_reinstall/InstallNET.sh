@@ -16,12 +16,12 @@ export tmpMirror=''
 export ipAddr=''
 export ipMask=''
 export ipGate=''
-export ipDNS='8.8.8.8'
+export ipDNS='1.0.0.1'
 export IncDisk='default'
 export interface=''
 export interfaceSelect=''
 export Relese=''
-export sshPORT='22'
+export sshPORT=''
 export ddMode='0'
 export setNet='0'
 export setRDP='0'
@@ -40,6 +40,7 @@ export GRUBVER=''
 export VER=''
 export setCMD=''
 export setConsole=''
+export FirmwareImage=''
 
 while [[ $# -ge 1 ]]; do
   case $1 in
@@ -132,9 +133,12 @@ while [[ $# -ge 1 ]]; do
       setConsole="$1"
       shift
       ;;
-    -firmware)
+    -firmware|--cdimage)
       shift
       IncFirmware="1"
+	  shift
+      FirmwareImage="$1"
+	  shift
       ;;
     -port)
       shift
@@ -157,6 +161,10 @@ while [[ $# -ge 1 ]]; do
   done
 
 [[ "$EUID" -ne '0' ]] && echo "Error:This script must be run as root!" && exit 1;
+
+if [[ ! ${sshPORT} -ge "1" ]] || [[ ! ${sshPORT} -le "65535" ]] || [[ `grep '^[[:digit:]]*$' <<< '${sshPORT}'` ]]; then
+  sshPORT='22'
+fi
 
 function dependence(){
   Full='0';
@@ -274,7 +282,7 @@ function getGrub(){
 function lowMem(){
   mem=`grep "^MemTotal:" /proc/meminfo 2>/dev/null |grep -o "[0-9]*"`
   [ -n "$mem" ] || return 0
-  [ "$mem" -le "524288" ] && return 1 || return 0
+  [ "$mem" -le "130166" ] && return 1 || return 0
 }
 
 if [[ "$loaderMode" == "0" ]]; then
@@ -324,7 +332,7 @@ elif [[ "$Relese" == 'CentOS' ]]; then
 fi
 [ -n "$tmpWORD" ] && dependence openssl
 [[ -n "$tmpWORD" ]] && myPASSWORD="$(openssl passwd -1 "$tmpWORD")";
-[[ -z "$myPASSWORD" ]] && myPASSWORD='$1$4BJZaD0A$y1QykUnJ6mXprENfwpseH0';
+[[ -z "$myPASSWORD" ]] && myPASSWORD='$1$OCy2O5bt$m2N6XMgFUwCn/2PPP114J/';
 
 tempDisk=`getDisk`; [ -n "$tempDisk" ] && IncDisk="$tempDisk"
 
@@ -481,9 +489,14 @@ else
   exit 1;
 fi
 if [[ "$linux_relese" == 'debian' ]]; then
-  if [[ "$IncFirmware" == '1' ]]; then
-    wget --no-check-certificate -qO '/tmp/firmware.cpio.gz' "http://cdimage.debian.org/cdimage/unofficial/non-free/firmware/${DIST}/current/firmware.cpio.gz"
-    [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'firmware' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
+  if [[ "$IncFirmware" == '1' ]]; then	
+	if [[ "$FirmwareImage" == 'cn' ]]; then
+      wget --no-check-certificate -qO '/tmp/firmware.cpio.gz' "https://mirrors.ustc.edu.cn/debian-cdimage/unofficial/non-free/firmware/${DIST}/current/firmware.cpio.gz"
+      [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'firmware' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
+    elif [[ "$FirmwareImage" == '' ]]; then
+      wget --no-check-certificate -qO '/tmp/firmware.cpio.gz' "http://cdimage.debian.org/cdimage/unofficial/non-free/firmware/${DIST}/current/firmware.cpio.gz"
+      [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'firmware' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
+    fi
   fi
   if [[ "$ddMode" == '1' ]]; then
     vKernel_udeb=$(wget --no-check-certificate -qO- "http://$DISTMirror/dists/$DIST/main/installer-$VER/current/images/udeb.list" |grep '^acpi-modules' |head -n1 |grep -o '[0-9]\{1,2\}.[0-9]\{1,2\}.[0-9]\{1,2\}-[0-9]\{1,2\}' |head -n1)
@@ -614,7 +627,7 @@ $UNCOMP < /tmp/$NewIMG | cpio --extract --verbose --make-directories --no-absolu
 
 if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
 cat >/tmp/boot/preseed.cfg<<EOF
-d-i debian-installer/locale string en_US
+d-i debian-installer/locale string en_US.UTF-8
 d-i debian-installer/country string US
 d-i debian-installer/language string en
 
@@ -649,7 +662,7 @@ d-i user-setup/allow-password-weak boolean true
 d-i user-setup/encrypt-home boolean false
 
 d-i clock-setup/utc boolean true
-d-i time/zone string US/Eastern
+d-i time/zone string Asia/Tokyo
 d-i clock-setup/ntp boolean false
 
 d-i preseed/early_command string anna-install libfuse2-udeb fuse-udeb ntfs-3g-udeb libcrypto1.1-udeb libpcre2-8-0-udeb libssl1.1-udeb libuuid1-udeb zlib1g-udeb wget-udeb
