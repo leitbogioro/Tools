@@ -22,30 +22,30 @@ Support Debian 8+, Ubuntu 14.04+, CentOS 6, you can modify architecture, mirror,
 <br />
 <br />
 
-**32/i386 64/amd64**: architecture
+**32/i386 or 64/amd64**: OS bit
 <br />
 <br />
 
-**--mirror**: Install files resource, you can select one which nearest for actual location of your server to upspeed the installation.
+**--mirror**: OS install files resource, you can select one which nearest for actual location of your server to upspeed installation.
 <br />
 <br />
 
-for Debian, mirror lists are here:
+for Debian, official recommend mirror lists are here:
 <br />
 <pre><code>https://www.debian.org/mirror/list.zh-cn.html</code></pre>
 <br />
 
-for Ubuntu, mirror lists are here:
+for Ubuntu, official recommend mirror lists are here:
 <br />
 <pre><code>https://wiki.ubuntu.org.cn/%E6%BA%90%E5%88%97%E8%A1%A8</code></pre>
 <br />
 
-for CentOS, mirror lists are here:
+for CentOS, official recommend mirror lists are here:
 <br />
 <pre><code>https://www.centos.org/download/mirrors/</code></pre>
 <br />
 
-**-firmware/-firmware --cdimage 'cn'**: specify hardware drivers for Debian, if your server is operating in mainland China, you can prefer it to mirror of 'University of Science and Technology of China(https://mirrors.ustc.edu.cn/debian-cdimage/)' for downloading more quickly, default mirror is from http://cdimage.debian.org/cdimage/.
+**-firmware or -firmware --cdimage 'cn'**: specify hardware drivers for Debian, if your server location is in mainland China, you can prefer it to mirror of 'University of Science and Technology of China(https://mirrors.ustc.edu.cn/debian-cdimage/)' for downloading more quickly, default mirror is from http://cdimage.debian.org/cdimage/.
 <br />
 <br />
 
