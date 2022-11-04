@@ -5,9 +5,9 @@ Something about scripts
 Support Debian 8+, Ubuntu 14.04+, CentOS 6, you can modify architecture, mirror, firmware, ssh port, password etc for easily to reinstall a cleanly Linux system. Friendly to low memory machine(recommend RAM above 256MB). Support major cloud providers, especially support Oracle Cloud ARM machine.
 ## Download:
 <pre><code>wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh</code></pre>
-### Fully useage sample
+## Fully useage sample
 <pre><code>bash InstallNET.sh -d/u/c(os type) 11(os version) -v 64(os bit) -port "your server port" -p "your server password" -a(auto install)/m(manually in VNC) -firmware(with hardware drivers) --mirror 'a valid url for OS image source' --cdimage 'cn'(this option is only for Debian)</code></pre>
-### Parameters Describes
+## Parameters Descriptions
 **-d** : Debian
 <br />
 <br />
@@ -55,14 +55,14 @@ for CentOS, official recommend mirror lists are here:
 <br />
 <br />
 
-## Quickly re-install
+## Quickly start
 ### Debian 8
 <pre><code>bash InstallNET.sh -d 8 -v 64 -a</code></pre>
 ### Debian 9
 <pre><code>bash InstallNET.sh -d 9 -v 64 -a</code></pre>
 ### Debian 10
 <pre><code>bash InstallNET.sh -d 10 -v 64 -a</code></pre>
-### Debian 11 (prefer mirror manually with firmware, recommend for servers which are operating in mainland China)
+### Debian 11 (prefer mirror manually with firmware, recommend for servers which are locating in mainland China)
 Tsinghua University:
 <br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -firmware --mirror 'https://mirrors.tuna.tsinghua.edu.cn/debian/' --cdimage 'cn'</code></pre>
@@ -75,7 +75,7 @@ Tencent Cloud:
 Alibaba Cloud:
 <br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -firmware --mirror 'http://mirrors.aliyun.com/debian/' --cdimage 'cn'</code></pre>
-### Debian 11 (prefer mirror manually with firmware, recommend for servers which are operating outside of mainland China)
+### Debian 11 (prefer mirror manually with firmware, recommend for servers which are locating outside of mainland China)
 Japan:
 <br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -firmware --mirror 'http://ftp.riken.jp/Linux/debian/debian/' -p yourpassword -firmware</code></pre>
@@ -132,7 +132,7 @@ LeitboGi0ro
 22
 <br />
 <br />
-<b>After installed system, you must change passwords immediately if you assigned default password(LeitboGi0ro)!</b>
+<b>After system installation, you must change passwords immediately if you assigned default password(LeitboGi0ro)!</b>
 <br />
 <br />
 
