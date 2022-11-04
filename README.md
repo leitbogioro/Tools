@@ -4,7 +4,7 @@ Something about scripts
 ## Features:
 Support Debian 8+, Ubuntu 14.04+, CentOS 6, you can modify architecture, mirror, firmware, ssh port, password etc for easily to reinstall a cleanly Linux system. Friendly to low memory machine(recommend RAM above 256MB). Support major cloud providers, especially support Oracle Cloud ARM machine.
 ## Download:
-<pre><code>wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/WedTools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh</code></pre>
+<pre><code>wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh</code></pre>
 ### Fully useage sample
 <pre><code>bash InstallNET.sh -d/u/c(os type) 11(os version) -v 64(os bit) -port "your server port" -p "your server password" -a(auto install)/m(manually in VNC) -firmware(with hardware drivers) --mirror 'a valid url for OS image source' --cdimage 'cn'(this option is only for Debian)</code></pre>
 ### Parameters Describes
