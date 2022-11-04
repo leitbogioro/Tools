@@ -7,9 +7,8 @@ If your VPS is base by Bandwagon and reinstalled OS which constructed by Bandwag
 Support Debian 8+, Ubuntu 14.04+, CentOS 6, you can modify architecture, mirror, firmware, ssh port, password etc for easily to reinstall a cleanly Linux system. Friendly to low memory machine(recommend RAM above 256MB). Support major cloud providers, especially support Oracle Cloud ARM machine.
 ## Download:
 <pre><code>wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/WedTools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh</code></pre>
-## Install
-### Useage
-<pre><code>bash InstallNET.sh -[OS name] [OS version] -v [Architecture x86 or x64] -a[Automatic, recommend]/m[Manually in VNC] --mirror '[a Debian/Ubuntu/Debian resource]' -firmware/-firmware --cdimage 'ustc' [this option is only for Debian] -ssh [ssh port] -p [password]</pre></code>
+### Fully useage sample
+<pre><code>bash InstallNET.sh -d/u/c(os type) 11(os version) -v 64(os bit) -port "your server port" -p "your server password" -a(auto install)/m(manually in VNC) -firmware(with hardware drivers) --mirror 'a valid url for OS image source' --cdimage 'cn'(this option is only for Debian)</code></pre>
 ### Parameters Describes
 **-d** : Debian
 <br />
@@ -58,8 +57,7 @@ for CentOS, mirror lists are here:
 <br />
 <br />
 
-## Fully usage sample:
-<pre><code>bash InstallNET.sh -d/u/c(os type) 11(os version) -v 64(os bit) -port "your server port" -p "your server password" -a(auto install) -firmware(with hardware drivers) --mirror 'a url for valid OS install source'</code></pre>
+## Quickly re-install
 ### Debian 8
 <pre><code>bash InstallNET.sh -d 8 -v 64 -a</code></pre>
 ### Debian 9
