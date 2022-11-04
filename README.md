@@ -1,8 +1,6 @@
 # Tools
 Something about scripts
 # Linux reinstall useage
-## Notes:
-If your VPS is base by Bandwagon and reinstalled OS which constructed by Bandwagon just now, you must reboot and then execute it.
 ## Features:
 Support Debian 8+, Ubuntu 14.04+, CentOS 6, you can modify architecture, mirror, firmware, ssh port, password etc for easily to reinstall a cleanly Linux system. Friendly to low memory machine(recommend RAM above 256MB). Support major cloud providers, especially support Oracle Cloud ARM machine.
 ## Download:
