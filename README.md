@@ -142,6 +142,19 @@ LeitboGi0ro
 <br />
 <br />
 
+# .bashrc
+
+.bashrc is a script file system which contains a series of configurations for the terminal session. when the user logs in. The file itself includes highlight settingup for different files.
+how to use?
+## Delete default .bashrc
+<br />
+<pre><code>rm -rf ~/.bashrc</code></pre>
+## Download .bashrc and reboot your system
+<br />
+<pre><code></code></pre>
+
+## Default Configurations
+
 # GroupPolicy import and export
 This ".bat" script can only run in Windows. Although only one group-policy rule in Windows can be exported at a time and not support a global one and also have no GUI entrance to import another backuped group policy which exported from another computer. It can help you import or export GroupPolicy conveniently.
 ## Attentions
