@@ -8,6 +8,7 @@ Something about scripts
 - Support major cloud providers, especially support Oracle Cloud ARM machine.
 - You can modify architecture, mirror, firmware, ssh port, password etc. 
 - Friendly to low memory machine(recommend RAM above 256MB).
+- Ubuntu 22.04 has cancelled net boot start features, so this program don't support Ubuntu 22.04 and above reinstallation(source: https://www.reddit.com/r/Ubuntu/comments/uroape/is_there_a_netbootiso_equivalent_for_2204_jammy/).
 ## Download:
 <pre><code>wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh</code></pre>
 ## Fully useage sample
