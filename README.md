@@ -152,8 +152,6 @@ how to use?
 <br />
 <br />reboot</code></pre>
 
-## Default Configurations
-
 # GroupPolicy import and export
 This ".bat" script can only run in Windows. Although only one group-policy rule in Windows can be exported at a time and not support a global one and also have no GUI entrance to import another backuped group policy which exported from another computer. It can help you import or export GroupPolicy conveniently.
 ## Attentions
