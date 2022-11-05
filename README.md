@@ -149,7 +149,7 @@ how to use?
 <pre><code>rm -rf ~/.bashrc</code></pre>
 ## Download .bashrc and reboot your system
 <pre><code>wget --no-check-certificate -qO ~/.bashrc 'https://raw.githubusercontent.com/leitbogioro/Tools/master/.bashrc' && chmod a+x .bashrc
-<br />reboot</code></pre>
+<br /><br />reboot</code></pre>
 
 ## Default Configurations
 
