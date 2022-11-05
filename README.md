@@ -93,7 +93,7 @@ Singapore:
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -firmware --mirror 'http://ftp.sg.debian.org/debian/'</code></pre>
 South Korea:
 <br />
-<pre><code>bash InstallNET.sh -d 11 -v 64 -a -firmware --mirror 'http://debian-mirror.sakura.ne.jp/debian/'</code></pre>
+<pre><code>bash InstallNET.sh -d 11 -v 64 -a -firmware --mirror 'http://ftp.yz.yamagata-u.ac.jp/debian/'</code></pre>
 Taiwan:
 <br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -firmware --mirror 'http://ftp.tw.debian.org/debian/'</code></pre>
