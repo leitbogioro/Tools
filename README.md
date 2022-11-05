@@ -11,7 +11,7 @@ Something about scripts
 ## Download:
 <pre><code>wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh</code></pre>
 ## Fully useage sample
-<pre><code>bash InstallNET.sh -d/u/c(os type) 11(os version) -v 64(os bit, 32 or 64 or arm64) -port "your server port" -p "your server password" -a(auto install)/m(manually in VNC) -firmware(with hardware drivers) --mirror 'a valid url for OS image source' --cdimage 'cn'(this option is only for Debian)</code></pre>
+<pre><code>bash InstallNET.sh -d/u/c(os type) 11(os version) -v 64(os bit) -port "your server port" -p "your server password" -a(auto install)/m(manually in VNC) -firmware(with hardware drivers) --mirror 'a valid url for OS image source' --cdimage 'cn'(this option is only for Debian)</code></pre>
 ## Parameters Descriptions
 **-d** : Debian
 <br />
@@ -25,7 +25,7 @@ Something about scripts
 <br />
 <br />
 
-**32/i386 or 64/amd64**: OS bit
+**32/i386 or 64/amd64 or arm64**: OS bit
 <br />
 <br />
 
