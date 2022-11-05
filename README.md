@@ -35,12 +35,12 @@ Something about scripts
 
 for Debian, official recommend mirror lists are here:
 <br />
-<pre><code>https://www.debian.org/mirror/list.zh-cn.html</code></pre>
+<pre><code>https://www.debian.org/mirror/list.html</code></pre>
 <br />
 
 for Ubuntu, official recommend mirror lists are here:
 <br />
-<pre><code>https://wiki.ubuntu.org.cn/%E6%BA%90%E5%88%97%E8%A1%A8</code></pre>
+<pre><code>https://launchpad.net/ubuntu/+cdmirrors</code></pre>
 <br />
 
 for CentOS, official recommend mirror lists are here:
