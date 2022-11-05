@@ -143,14 +143,11 @@ LeitboGi0ro
 <br />
 
 # .bashrc
-
 .bashrc is a script file system which contains a series of configurations for the terminal session. when the user logs in. The file itself includes highlight settingup for different files.
 how to use?
 ## Delete default .bashrc
-<br />
 <pre><code>rm -rf ~/.bashrc</code></pre>
 ## Download .bashrc and reboot your system
-<br />
 <pre><code></code></pre>
 
 ## Default Configurations
