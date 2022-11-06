@@ -13,7 +13,7 @@ Something about scripts
 ## Download:
 <pre><code>wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh</code></pre>
 ## Fully useage sample
-<pre><code>bash InstallNET.sh -d/u/c(os type) 11(os version) -v 64(os bit) -port "your server port" -p "your server password" -a(auto install)/m(manually in VNC) -mirror "a valid url for OS image source" -firmware(with hardware drivers) --cdimage "cn"(this option is only for Debian)</code></pre>
+<pre><code>bash InstallNET.sh -d/u/c(os type) 11(os version) -v 64(os bit) -port "your server port" -pwd "your server password" -a(auto install)/m(manually in VNC) -mirror "a valid url for OS image source" -firmware(with hardware drivers) --cdimage "cn"(this option is only for Debian)</code></pre>
 ## Parameters Descriptions
 **-d** : Debian
 <br />
@@ -31,7 +31,7 @@ Something about scripts
 <br />
 <br />
 
-**--mirror**: OS install files resource, you can select one which nearest for actual location of your server to upspeed installation.
+**-mirror**: OS install files resource, you can select one which nearest for actual location of your server to upspeed installation.
 <br />
 <br />
 
@@ -58,7 +58,7 @@ for CentOS, official recommend mirror lists are here:
 <br />
 <br />
 
-**-p**: you can pre-specify ssh password of system, **default is 'LeitboGi0ro'**.
+**-pwd**: you can pre-specify ssh password of system, **default is 'LeitboGi0ro'**.
 <br />
 <br />
 
