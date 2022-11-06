@@ -140,7 +140,7 @@ while [[ $# -ge 1 ]]; do
       sshPORT="$1"
       shift
       ;;
-	-pwd)
+    -pwd)
       shift
       tmpWORD="$1"
       shift
