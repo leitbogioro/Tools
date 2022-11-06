@@ -7,7 +7,7 @@ Something about scripts
 - Support Debian 8+, Ubuntu 14.04+, CentOS 6.
 - Support major cloud providers, especially support Oracle Cloud ARM machine.
 - You can modify architecture, mirror, firmware, ssh port, password etc. 
-- Friendly to low memory machine(recommend RAM above 256MB), <b>If your machine RAM is less than 768MB, you may should not bash it with "-firmware" or "-firmware --cdimage" parameters because it won't let machine installation go into low memory mode and causes installation failed!</b>
+- Friendly to low memory machine(recommend RAM above 256MB), <b>If your machine RAM is less than 768MB, Before Debian 11 and above version installation, you may should not bash it with "-firmware" or "-firmware --cdimage" parameters because it won't let machine installation go into low memory mode and causes installation failed!</b>
 - Ubuntu 22.04 has cancelled net boot start features, so this program don't support Ubuntu 22.04 and above reinstallation(source: https://www.reddit.com/r/Ubuntu/comments/uroape/is_there_a_netbootiso_equivalent_for_2204_jammy/).
 - South Korea debian official mirror(http://ftp.kr.debian.org/debian/) is usually crashed down, so I change mirror of Kyoto University to replace it. Japan debian mirror is from https://www.riken.jp/, a science research organization in Japan. America debian mirror is from Massachusetts Institute of Technology: https://web.mit.edu/.
 ## Download:
