@@ -73,11 +73,6 @@ while [[ $# -ge 1 ]]; do
       tmpURL="$1"
       shift
       ;;
-    -p|--password)
-      shift
-      tmpWORD="$1"
-      shift
-      ;;
     -i|--interface)
       shift
       interfaceSelect="$1"
@@ -143,6 +138,11 @@ while [[ $# -ge 1 ]]; do
     -port)
       shift
       sshPORT="$1"
+      shift
+      ;;
+	-pwd)
+      shift
+      tmpWORD="$1"
       shift
       ;;
     --noipv6)
@@ -811,5 +811,3 @@ else
   [[ -f "/boot/vmlinuz" ]] && rm -rf "/boot/vmlinuz"
   echo && ls -AR1 "$HOME/loader"
 fi
-
-
