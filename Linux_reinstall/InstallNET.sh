@@ -106,7 +106,7 @@ while [[ $# -ge 1 ]]; do
       shift
       loaderMode='1'
       ;;
-    -apt|-yum|--mirror)
+    -mirror)
       shift
       isMirror='1'
       tmpMirror="$1"
@@ -140,7 +140,7 @@ while [[ $# -ge 1 ]]; do
       sshPORT="$1"
       shift
       ;;
-    -pwd)
+	-pwd)
       shift
       tmpWORD="$1"
       shift
