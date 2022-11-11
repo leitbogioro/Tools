@@ -1,0 +1,16 @@
+#!/bin/sh
+#    Authors:Leitbogioro
+#    https://github.com/leitbogioro/
+#    https://www.zhihu.com/column/originaltechnic
+UpdateLog="/var/log/packagesupdatefile.log"
+if [ -f "$UpdateLog" ]; then
+  rm -rf $UpdateLog
+fi
+apt update | tee -a "$UpdateLog" > /dev/null 2>&1
+UpdateRemind=`cat $UpdateLog | tail -n 1`
+echo $UpdateRemind
+Result=$(echo $UpdateRemind | grep "*packages can be upgraded*")
+if [[ "$Result" != "" ]]; then
+  printf "$UpdateRemind"
+fi
+rm -rf $UpdateLog
