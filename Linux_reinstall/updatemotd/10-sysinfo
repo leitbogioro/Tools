@@ -1,0 +1,77 @@
+#!/bin/bash
+#
+#    10-sysinfo - generate the system information
+#    Copyright (c) 2013 Nick Charlton
+#
+#    Authors: Nick Charlton &amp;amp;amp;lt;hello@nickcharlton.net&amp;amp;amp;gt;
+#    Modified by Oitibs: https://oitibs.com/?s=Debian+Dynamic+MOTD
+#    Modified by Leitbogioro: https://github.com/leitbogioro/
+#                             https://www.zhihu.com/column/originaltechnic
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License along
+#    with this program; if not, write to the Free Software Foundation, Inc.,
+#    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ 
+date=`date`
+load=`cat /proc/loadavg | awk '{print $1}'`
+root_usage=`df -h / | awk '/\// {print $(NF-1)}'`
+memory_usage=`free -m | awk '/Mem:/ { total=$2; used=$3 } END { printf("%3.1f%%", used/total*100)}'`
+ 
+swap_usage=`free -m | awk '/Swap/ { printf("%3.1f%%", $3/$2*100) }'`
+users=`users | wc -w`
+time=`uptime | grep -ohe 'up .*' | sed 's/,/\ hours/g' | awk '{ printf $2" "$3 }'`
+processes=`ps aux | wc -l`
+localip=`hostname -I | awk '{print $1}'`
+
+IPv4=`timeout 1 dig -4 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
+IPv6=`timeout 1 dig -6 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
+# IP_Check=$(echo $IPv4 | awk -F. '$1<255&&$2<255&&$3<255&&$4<255{print "isIPv4"}')
+IP_Check="$IPv4"
+if expr "$IP_Check" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; then
+  for i in 1 2 3 4; do
+    if [ $(echo "$IP_Check" | cut -d. -f$i) -gt 255 ]; then
+      echo "fail ($IP_Check)"
+      exit 1
+    fi
+  done
+  IP_Check="isIPv4"
+else
+  :
+fi
+
+if [[ "${IP_Check}" == "isIPv4" ]] && [[ -z ${IPv6} ]]; then
+  IPv6="N/A"
+elif [[ -z !${IPv4} ]] && [[ -z !${IPv6} ]]; then
+  :
+else
+  IPv4="N/A"
+fi
+
+if [[ "${localip}" == "${IPv4}" ]] || [[ "${localip}" == "${IPv6}" ]]; then
+  # localip=`ip -o a show | grep -w "lo" | grep -w "inet" | cut -d ' ' -f7 | awk '{split($1, a, "/"); print $2 "" a[1]}'`
+  localip=`cat /etc/hosts | grep "localhost" | sed -n 1p | awk '{print $1}'`
+fi
+
+echo " System information as of $date"
+echo
+printf "%-30s%-15s\n" " System Load:" "$load"
+printf "%-30s%-15s\n" " Private IP address:" "$localip"
+printf "%-30s%-15s\n" " Public IPv4 address:" "$IPv4"
+printf "%-30s%-15s\n" " Public IPv6 address:" "$IPv6"
+printf "%-30s%-15s\n" " Memory Usage:" "$memory_usage"
+printf "%-30s%-15s\n" " Usage On /:" "$root_usage"
+printf "%-30s%-15s\n" " Swap Usage:" "$swap_usage"
+printf "%-30s%-15s\n" " Local Users:" "$users"
+printf "%-30s%-15s\n" " Processes:" "$processes"
+printf "%-30s%-15s\n" " System Uptime:" "$time"
+echo
