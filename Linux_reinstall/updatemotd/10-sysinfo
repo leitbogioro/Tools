@@ -51,9 +51,9 @@ fi
 
 if [[ "${IP_Check}" == "isIPv4" ]] && [[ -z ${IPv6} ]]; then
   IPv6="N/A"
-elif [[ -z !${IPv4} ]] && [[ -z !${IPv6} ]]; then
-  :
-else
+fi
+
+if [[ -z ${IPv4} ]] && [[ -z !${IPv6} ]]; then
   IPv4="N/A"
 fi
 
