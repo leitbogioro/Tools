@@ -12,6 +12,9 @@ Something about scripts
 - South Korea debian official mirror(http://ftp.kr.debian.org/debian/) is usually crashed down, so I change mirror of Kyoto University to replace it. Japan debian mirror is from https://www.riken.jp/, a science research organization in Japan. America debian mirror is from Massachusetts Institute of Technology: https://web.mit.edu/.
 - Completely  modified debian, such as add on a cute welcome introduction, pre-install many complements in preseeding progress, now enjoy a newly, comfortable, graceful debian experience!
 ![20221112201139](20221112201139.jpg)
+- Change name server for Debian permanently is provided by "resolvconf", related configuration files has been wittened. you just need to logging in new installed system, and run:
+<pre><code>echo "O" | apt install resolvconf -y</code></pre>
+to make changes validating!
 ## Download:
 <pre><code>wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh</code></pre>
 ## Fully useage sample
@@ -75,34 +78,74 @@ for CentOS, official recommend mirror lists are here:
 Tsinghua University:
 <br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "https://mirrors.tuna.tsinghua.edu.cn/debian/" -firmware --cdimage "cn"</code></pre>
+<br />
+for low memory(less than 768MB) machines, you can bash:
+<br />
+<pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "https://mirrors.tuna.tsinghua.edu.cn/debian/" -dnserv "cn"</code></pre>
+<br />
 Netease, Inc:
 <br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://mirrors.163.com/debian/" -firmware --cdimage "cn"</code></pre>
+<br />
+for low memory(less than 768MB) machines, you can bash:
+<br />
+<pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://mirrors.163.com/debian/" -dnserv "cn"</code></pre>
+<br />
 Tencent Cloud:
 <br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://mirrors.cloud.tencent.com/debian/" -firmware --cdimage "cn"</code></pre>
 Alibaba Cloud:
 <br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://mirrors.aliyun.com/debian/" -firmware --cdimage 'cn'</code></pre>
+<br />
+for low memory(less than 768MB) machines, you can bash:
+<br />
+<pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://mirrors.aliyun.com/debian/" -dnserv "cn"</code></pre>
+<br />
 ### Debian 11 (prefer mirror manually with firmware, recommend for servers which are locating outside of mainland China)
 Japan:
 <br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://ftp.riken.jp/Linux/debian/debian/" -firmware</code></pre>
+<br />
+for low memory(less than 768MB) machines, you can bash:
+<br />
+<pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://ftp.riken.jp/Linux/debian/debian/" -dnserv "cn"</code></pre>
+<br />
 HongKong:
 <br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://ftp.hk.debian.org/debian/" -firmware</code></pre>
+<br />
+for low memory(less than 768MB) machines, you can bash:
+<br />
+<pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://ftp.hk.debian.org/debian/"</code></pre>
+<br />
 Singapore:
 <br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://ftp.sg.debian.org/debian/" -firmware</code></pre>
+<br />
+for low memory(less than 768MB) machines, you can bash:
+<br />
+<pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://ftp.sg.debian.org/debian/"</code></pre>
+<br />
 South Korea:
 <br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://studenno.kugi.kyoto-u.ac.jp/debian/" -firmware</code></pre>
+<br />
+for low memory(less than 768MB) machines, you can bash:
+<br />
+<pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://studenno.kugi.kyoto-u.ac.jp/debian/"</code></pre>
+<br />
 Taiwan:
 <br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://ftp.tw.debian.org/debian/" -firmware</code></pre>
 America:
 <br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://debian.csail.mit.edu/debian/" -firmware</code></pre>
+<br />
+for low memory(less than 768MB) machines, you can bash:
+<br />
+<pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://debian.csail.mit.edu/debian/"</code></pre>
+<br />
 Canada:
 <br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://ftp.ca.debian.org/debian/" -firmware</code></pre>
