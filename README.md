@@ -22,7 +22,6 @@ edit network interfaces:
 <pre><code>vim /etc/network/interfaces</code></pre>
 add ipv6 configurations:
 <br />
-<br />
 <pre><code>iface ens3 inet6 static
         address ::1
         netmask 64
