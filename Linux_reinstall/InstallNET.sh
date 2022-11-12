@@ -10,6 +10,7 @@
 
 export tmpVER=''
 export tmpDIST=''
+export tmpDNSServ=''
 export tmpURL=''
 export tmpWORD=''
 export tmpMirror=''
@@ -38,9 +39,11 @@ export GRUBDIR=''
 export GRUBFILE=''
 export GRUBVER=''
 export VER=''
-export setCMD=''
+export setCMD=""
 export setConsole=''
 export FirmwareImage=''
+export AddNum='1'
+export DebianModifiedProcession='echo "";'
 
 while [[ $# -ge 1 ]]; do
   case $1 in
@@ -143,6 +146,11 @@ while [[ $# -ge 1 ]]; do
     -pwd)
       shift
       tmpWORD="$1"
+      shift
+      ;;
+	-dnserv)
+      shift
+      tmpDNServ="$1"
       shift
       ;;
     --noipv6)
@@ -285,6 +293,123 @@ function lowMem(){
   [ "$mem" -le "130166" ] && return 1 || return 0
 }
 
+function DebianModifiedPreseed(){
+# DNS server validation must setting up in installed system, can't in preseeding!
+if [[ "$tmpDNServ" == 'cn' ]] || [[ "$FirmwareImage" == 'cn' ]]; then
+# Set China DNS server from USTC and Tsinghua University permanently
+  SetDNS="CNResolvHead"
+else
+# Set DNS server from CloudFlare and Google permanently
+  SetDNS="NomalResolvHead"
+fi
+
+# Can't pass parameters correctly in preseed environment
+# DebianVimVer=`ls -a /usr/share/vim | grep vim[0-9]`
+
+# Don't use "&&", "echo -e" etc! multiple commands must use ";" to connect!
+DebianVimVer="vim"`expr ${DebianDistNum} + 71`
+AptUpdating="$1 apt update;"
+InstallComponents="$1 apt install sudo ca-certificates apt-transport-https vim vim-gtk libnet-ifconfig-wrapper-perl socat fail2ban lrzsz python cron curl wget unzip unrar-free dnsutils net-tools telnet iptables iptables-persistent psmisc ncdu sosreport lsof nmap traceroute debian-keyring debian-archive-keyring libnss3 lsb-release figlet -y;"
+DisableCertExpiredCheck="$1 sed -i '/^mozilla\/DST_Root_CA_X3/s/^/!/' /etc/ca-certificates.conf; $1 update-ca-certificates -f;"
+ChangeBashrc="$1 rm -rf /root/.bashrc; $1 wget --no-check-certificate -qO /root/.bashrc 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/.bashrc';"
+VimSupportCopy="$1 sed -i 's/set mouse=a/set mouse-=a/g' /usr/share/vim/${DebianVimVer}/defaults.vim;"
+DnsChangePermanently="$1 mkdir -p /etc/resolvconf/resolv.conf.d/; $1 wget --no-check-certificate -qO /etc/resolvconf/resolv.conf.d/head 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/${SetDNS}';"
+ModifyMOTD="$1 rm -rf /etc/update-motd.d/ /etc/motd /run/motd.dynamic; $1 mkdir -p /etc/update-motd.d/; $1 wget --no-check-certificate -qO /etc/update-motd.d/00-header 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/updatemotd/00-header'; $1 wget --no-check-certificate -qO /etc/update-motd.d/10-sysinfo 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/updatemotd/10-sysinfo'; $1 wget --no-check-certificate -qO /etc/update-motd.d/90-footer 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/updatemotd/90-footer'; $1 chmod +x /etc/update-motd.d/00-header; $1 chmod +x /etc/update-motd.d/10-sysinfo; $1 chmod +x /etc/update-motd.d/90-footer;"
+if [[ "$Relese" == 'Debian' ]]; then
+export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${DnsChangePermanently} ${ModifyMOTD}"
+fi
+}
+
+function AptPreseedProcess(){
+DebianModifiedPreseed "in-target"
+cat >/tmp/boot/preseed.cfg<<EOF
+d-i debian-installer/locale string en_US.UTF-8
+d-i debian-installer/country string US
+d-i debian-installer/language string en
+
+d-i console-setup/layoutcode string us
+
+d-i keyboard-configuration/xkb-keymap string us
+d-i lowmem/low note
+
+d-i netcfg/choose_interface select $interfaceSelect
+
+d-i netcfg/disable_autoconfig boolean true
+d-i netcfg/dhcp_failed note
+d-i netcfg/dhcp_options select Configure network manually
+d-i netcfg/get_ipaddress string $IPv4
+d-i netcfg/get_netmask string $MASK
+d-i netcfg/get_gateway string $GATE
+d-i netcfg/get_nameservers string $ipDNS
+d-i netcfg/no_default_route boolean true
+d-i netcfg/confirm_static boolean true
+
+d-i hw-detect/load_firmware boolean true
+
+d-i mirror/country string manual
+d-i mirror/http/hostname string $MirrorHost
+d-i mirror/http/directory string $MirrorFolder
+d-i mirror/http/proxy string
+
+d-i passwd/root-login boolean ture
+d-i passwd/make-user boolean false
+d-i passwd/root-password-crypted password $myPASSWORD
+d-i user-setup/allow-password-weak boolean true
+d-i user-setup/encrypt-home boolean false
+
+d-i clock-setup/utc boolean true
+d-i time/zone string Asia/Tokyo
+d-i clock-setup/ntp boolean false
+
+d-i preseed/early_command string anna-install libfuse2-udeb fuse-udeb ntfs-3g-udeb libcrypto1.1-udeb libpcre2-8-0-udeb libssl1.1-udeb libuuid1-udeb zlib1g-udeb wget-udeb
+d-i partman/early_command string [[ -n "\$(blkid -t TYPE='vfat' -o device)" ]] && umount "\$(blkid -t TYPE='vfat' -o device)"; \
+debconf-set partman-auto/disk "\$(list-devices disk |head -n1)"; \
+wget -qO- '$DDURL' |gunzip -dc |/bin/dd of=\$(list-devices disk |head -n1); \
+mount.ntfs-3g \$(list-devices partition |head -n1) /mnt; \
+cd '/mnt/ProgramData/Microsoft/Windows/Start Menu/Programs'; \
+cd Start* || cd start*; \
+cp -f '/net.bat' './net.bat'; \
+/sbin/reboot; \
+umount /media || true; \
+
+d-i partman-partitioning/confirm_write_new_label boolean true
+d-i partman/mount_style select uuid
+d-i partman/choose_partition select finish
+d-i partman-auto/method string regular
+d-i partman-auto/init_automatically_partition select Guided - use entire disk
+d-i partman-auto/choose_recipe select All files in one partition (recommended for new users)
+d-i partman-md/device_remove_md boolean true
+d-i partman-lvm/device_remove_lvm boolean true
+d-i partman-lvm/confirm boolean true
+d-i partman-lvm/confirm_nooverwrite boolean true
+d-i partman/confirm boolean true
+d-i partman/confirm_nooverwrite boolean true
+
+d-i debian-installer/allow_unauthenticated boolean true
+
+tasksel tasksel/first multiselect minimal
+d-i pkgsel/update-policy select none
+d-i pkgsel/include string openssh-server
+d-i pkgsel/upgrade select none
+
+popularity-contest popularity-contest/participate boolean false
+
+d-i grub-installer/only_debian boolean true
+d-i grub-installer/bootdev string $IncDisk
+d-i grub-installer/force-efi-extra-removable boolean true
+d-i finish-install/reboot_in_progress note
+d-i debian-installer/exit/reboot boolean true
+d-i preseed/late_command string	\
+sed -ri 's/^#?Port.*/Port ${sshPORT}/g' /target/etc/ssh/sshd_config; \
+sed -ri 's/^#?PermitRootLogin.*/PermitRootLogin yes/g' /target/etc/ssh/sshd_config; \
+sed -ri 's/^#?PasswordAuthentication.*/PasswordAuthentication yes/g' /target/etc/ssh/sshd_config; \
+echo '@reboot root cat /etc/run.sh 2>/dev/null |base64 -d >/tmp/run.sh; rm -rf /etc/run.sh; sed -i /^@reboot/d /etc/crontab; bash /tmp/run.sh' >>/target/etc/crontab; \
+echo '' >>/target/etc/crontab; \
+echo '${setCMD}' >/target/etc/run.sh; \
+${DebianModifiedProcession}
+EOF
+}
+
 if [[ "$loaderMode" == "0" ]]; then
   Grub=`getGrub "/boot"`
   [ -z "$Grub" ] && echo -ne "Error! Not Found grub.\n" && exit 1;
@@ -311,7 +436,7 @@ if [ "$setNet" == "0" ]; then
   iAddr=`ip addr show dev $interface |grep "inet.*" |head -n1 |grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\/[0-9]\{1,2\}'`
   ipAddr=`echo ${iAddr} |cut -d'/' -f1`
   ipMask=`netmask $(echo ${iAddr} |cut -d'/' -f2)`
-  ipGate=`ip route show default |grep "^default" |grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' |head -n1`
+  ipGate=`ip route show |grep "via" |grep "$interface" |grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' |head -n1`
 fi
 if [ -z "$interface" ]; then
     dependence ip
@@ -359,6 +484,7 @@ if [[ -n "$tmpDIST" ]]; then
     SpikCheckDIST='0'
     DIST="$(echo "$tmpDIST" |sed -r 's/(.*)/\L\1/')";
     echo "$DIST" |grep -q '[0-9]';
+	DebianDistNum="${DIST}"
     [[ $? -eq '0' ]] && {
       isDigital="$(echo "$DIST" |grep -o '[\.0-9]\{1,\}' |sed -n '1h;1!H;$g;s/\n//g;$p' |cut -d'.' -f1)";
       [[ -n $isDigital ]] && {
@@ -626,92 +752,7 @@ for COMP in `echo -en 'gzip\nlzma\nxz'`
 $UNCOMP < /tmp/$NewIMG | cpio --extract --verbose --make-directories --no-absolute-filenames >>/dev/null 2>&1
 
 if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
-cat >/tmp/boot/preseed.cfg<<EOF
-d-i debian-installer/locale string en_US.UTF-8
-d-i debian-installer/country string US
-d-i debian-installer/language string en
-
-d-i console-setup/layoutcode string us
-
-d-i keyboard-configuration/xkb-keymap string us
-d-i lowmem/low note
-
-d-i netcfg/choose_interface select $interfaceSelect
-
-d-i netcfg/disable_autoconfig boolean true
-d-i netcfg/dhcp_failed note
-d-i netcfg/dhcp_options select Configure network manually
-d-i netcfg/get_ipaddress string $IPv4
-d-i netcfg/get_netmask string $MASK
-d-i netcfg/get_gateway string $GATE
-d-i netcfg/get_nameservers string $ipDNS
-d-i netcfg/no_default_route boolean true
-d-i netcfg/confirm_static boolean true
-
-d-i hw-detect/load_firmware boolean true
-
-d-i mirror/country string manual
-d-i mirror/http/hostname string $MirrorHost
-d-i mirror/http/directory string $MirrorFolder
-d-i mirror/http/proxy string
-
-d-i passwd/root-login boolean ture
-d-i passwd/make-user boolean false
-d-i passwd/root-password-crypted password $myPASSWORD
-d-i user-setup/allow-password-weak boolean true
-d-i user-setup/encrypt-home boolean false
-
-d-i clock-setup/utc boolean true
-d-i time/zone string Asia/Tokyo
-d-i clock-setup/ntp boolean false
-
-d-i preseed/early_command string anna-install libfuse2-udeb fuse-udeb ntfs-3g-udeb libcrypto1.1-udeb libpcre2-8-0-udeb libssl1.1-udeb libuuid1-udeb zlib1g-udeb wget-udeb
-d-i partman/early_command string [[ -n "\$(blkid -t TYPE='vfat' -o device)" ]] && umount "\$(blkid -t TYPE='vfat' -o device)"; \
-debconf-set partman-auto/disk "\$(list-devices disk |head -n1)"; \
-wget -qO- '$DDURL' |gunzip -dc |/bin/dd of=\$(list-devices disk |head -n1); \
-mount.ntfs-3g \$(list-devices partition |head -n1) /mnt; \
-cd '/mnt/ProgramData/Microsoft/Windows/Start Menu/Programs'; \
-cd Start* || cd start*; \
-cp -f '/net.bat' './net.bat'; \
-/sbin/reboot; \
-umount /media || true; \
-
-d-i partman-partitioning/confirm_write_new_label boolean true
-d-i partman/mount_style select uuid
-d-i partman/choose_partition select finish
-d-i partman-auto/method string regular
-d-i partman-auto/init_automatically_partition select Guided - use entire disk
-d-i partman-auto/choose_recipe select All files in one partition (recommended for new users)
-d-i partman-md/device_remove_md boolean true
-d-i partman-lvm/device_remove_lvm boolean true
-d-i partman-lvm/confirm boolean true
-d-i partman-lvm/confirm_nooverwrite boolean true
-d-i partman/confirm boolean true
-d-i partman/confirm_nooverwrite boolean true
-
-d-i debian-installer/allow_unauthenticated boolean true
-
-tasksel tasksel/first multiselect minimal
-d-i pkgsel/update-policy select none
-d-i pkgsel/include string openssh-server
-d-i pkgsel/upgrade select none
-
-popularity-contest popularity-contest/participate boolean false
-
-d-i grub-installer/only_debian boolean true
-d-i grub-installer/bootdev string $IncDisk
-d-i grub-installer/force-efi-extra-removable boolean true
-d-i finish-install/reboot_in_progress note
-d-i debian-installer/exit/reboot boolean true
-d-i preseed/late_command string	\
-sed -ri 's/^#?Port.*/Port ${sshPORT}/g' /target/etc/ssh/sshd_config; \
-sed -ri 's/^#?PermitRootLogin.*/PermitRootLogin yes/g' /target/etc/ssh/sshd_config; \
-sed -ri 's/^#?PasswordAuthentication.*/PasswordAuthentication yes/g' /target/etc/ssh/sshd_config; \
-echo '@reboot root cat /etc/run.sh 2>/dev/null |base64 -d >/tmp/run.sh; rm -rf /etc/run.sh; sed -i /^@reboot/d /etc/crontab; bash /tmp/run.sh' >>/target/etc/crontab; \
-echo '' >>/target/etc/crontab; \
-echo '${setCMD}' >/target/etc/run.sh;
-EOF
-
+  AptPreseedProcess
 if [[ "$loaderMode" != "0" ]] && [[ "$setNet" == '0' ]]; then
   sed -i '/netcfg\/disable_autoconfig/d' /tmp/boot/preseed.cfg
   sed -i '/netcfg\/dhcp_options/d' /tmp/boot/preseed.cfg
