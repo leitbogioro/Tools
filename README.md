@@ -15,6 +15,7 @@ Something about scripts
 - Change name server for Debian permanently is provided by "resolvconf", related configuration files has been wittened. you just need to logging in new installed system, and run:
 <pre><code>echo "O" | apt install resolvconf -y</code></pre>
 to make changes validating!
+
 ## Defects:
 - Debian preseeding process can only config one IP address, so to bio-stack machine(both have IPv4 and IPv6 address), after loggin to new system, you can only see IPv4 address are configurated, you have to config IPv6 address manually:
 <br />
