@@ -15,6 +15,10 @@ Something about scripts
 - Change name server for Debian permanently is provided by "resolvconf", related configuration files has been wittened. you just need to logging in new installed system, and run:
 <pre><code>echo "O" | apt install resolvconf -y</code></pre>
 to make changes validating!
+- Defects: 1. Debian preseeding process can only config one IP address, so to bio-stack machine(both have IPv4 and IPv6 address), after loggin to new system, you can only see IPv4 address are configurated, you have to config IPv6 address manually:
+edit network interfaces
+<pre><code>vim /etc/network/interfaces</code></pre>
+- Defects: 2. "InstallNET.sh" doesn't support pure IPv6 stack machine(have no IPv4 address, such as Vultr.com 2.5$/month plan).
 ## Download:
 <pre><code>wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh</code></pre>
 ## Fully useage sample
