@@ -23,7 +23,6 @@ edit network interfaces:
 <br />
 <br />
 <pre><code>vim /etc/network/interfaces</code></pre>
-<br />
 add ipv6 configurations:
 <br />
 <br />
