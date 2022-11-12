@@ -11,6 +11,7 @@ Something about scripts
 - Ubuntu 22.04 has cancelled net boot start features, so this program don't support Ubuntu 22.04 and above reinstallation(source: https://www.reddit.com/r/Ubuntu/comments/uroape/is_there_a_netbootiso_equivalent_for_2204_jammy/).
 - South Korea debian official mirror(http://ftp.kr.debian.org/debian/) is usually crashed down, so I change mirror of Kyoto University to replace it. Japan debian mirror is from https://www.riken.jp/, a science research organization in Japan. America debian mirror is from Massachusetts Institute of Technology: https://web.mit.edu/.
 - Completely  modified debian, such as add on a cute welcome introduction, pre-install many complements in preseeding progress, now enjoy a newly, comfortable, graceful debian experience!
+<br />
 ![20221112201139](20221112201139.jpg)
 - Change name server for Debian permanently is provided by "resolvconf", related configuration files has been wittened. you just need to logging in new installed system, and run:
 <pre><code>echo "O" | apt install resolvconf -y</code></pre>
@@ -101,6 +102,7 @@ Tencent Cloud:
 <br />
 for low memory(less than 768MB) machines, you can bash:
 <br />
+<br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://mirrors.cloud.tencent.com/debian/" -dnserv "cn"</code></pre>
 <br />
 Alibaba Cloud:
@@ -110,6 +112,7 @@ Alibaba Cloud:
 <br />
 for low memory(less than 768MB) machines, you can bash:
 <br />
+<br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://mirrors.aliyun.com/debian/" -dnserv "cn"</code></pre>
 <br />
 
@@ -118,61 +121,77 @@ Japan:
 <br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://ftp.riken.jp/Linux/debian/debian/" -firmware</code></pre>
 <br />
+<br />
 for low memory(less than 768MB) machines, you can bash:
 <br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://ftp.riken.jp/Linux/debian/debian/" -dnserv "cn"</code></pre>
 <br />
 HongKong:
 <br />
+<br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://ftp.hk.debian.org/debian/" -firmware</code></pre>
 <br />
 for low memory(less than 768MB) machines, you can bash:
+<br />
 <br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://ftp.hk.debian.org/debian/"</code></pre>
 <br />
 Singapore:
 <br />
+<br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://ftp.sg.debian.org/debian/" -firmware</code></pre>
 <br />
 for low memory(less than 768MB) machines, you can bash:
+<br />
 <br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://ftp.sg.debian.org/debian/"</code></pre>
 <br />
 South Korea:
 <br />
+<br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://studenno.kugi.kyoto-u.ac.jp/debian/" -firmware</code></pre>
 <br />
 for low memory(less than 768MB) machines, you can bash:
+<br />
 <br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://studenno.kugi.kyoto-u.ac.jp/debian/"</code></pre>
 <br />
 Taiwan:
 <br />
+<br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://ftp.tw.debian.org/debian/" -firmware</code></pre>
 America:
+<br />
 <br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://debian.csail.mit.edu/debian/" -firmware</code></pre>
 <br />
 for low memory(less than 768MB) machines, you can bash:
 <br />
+<br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://debian.csail.mit.edu/debian/"</code></pre>
 <br />
 Canada:
 <br />
+<br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://ftp.ca.debian.org/debian/" -firmware</code></pre>
 British:
+<br />
 <br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://ftp.uk.debian.org/debian/" -firmware</code></pre>
 Germany:
 <br />
+<br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://ftp.de.debian.org/debian/" -firmware</code></pre>
 France:
+<br />
 <br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://ftp.fr.debian.org/debian/" -firmware</code></pre>
 Russia:
 <br />
+<br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://ftp.ru.debian.org/debian/" -firmware</code></pre>
 Australia:
+<br />
 <br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://ftp.au.debian.org/debian/" -firmware</code></pre>
 
