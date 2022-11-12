@@ -32,10 +32,13 @@ In above sample, you just need to change "::1" to your own IPv6 address which as
 <br />
 Save files and restart system.
 - "InstallNET.sh" doesn't support pure IPv6 stack machine(have no IPv4 address, such as Vultr.com 2.5$/month plan).
+
 ## Download:
 <pre><code>wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh</code></pre>
+
 ## Fully useage sample
 <pre><code>bash InstallNET.sh -d/u/c(os type) 11(os version) -v 64(os bit) -port "your server port" -pwd "your server password" -a(auto install)/m(manually in VNC) -mirror "a valid url for OS image source" -firmware(with hardware drivers) --cdimage "cn"(this option is only for Debian)</code></pre>
+
 ## Parameters Descriptions
 **-d** : Debian
 <br />
