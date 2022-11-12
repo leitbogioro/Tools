@@ -2,7 +2,7 @@
 Something about scripts
 # Linux reinstall useage
 ## Features:
-- "InstallNET.sh" will give you a clean, safe, official Linux system, and help you escape of your server providers' monitoring.<br />
+- "InstallNET.sh" will give you a clean, safe, official Linux system, and help you escape of your server providers' monitoring.
 - The operation is easy, several minutes installation will be complated.
 - Support Debian 8+, Ubuntu 14.04+, CentOS 6.
 - Support major cloud providers, especially support Oracle Cloud ARM machine.
