@@ -123,7 +123,7 @@ Japan:
 for low memory(less than 768MB) machines, you can bash:
 <br />
 <br />
-<pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://ftp.riken.jp/Linux/debian/debian/" -dnserv "cn"</code></pre>
+<pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://ftp.riken.jp/Linux/debian/debian/"</code></pre>
 <br />
 HongKong:
 <br />
