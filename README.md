@@ -80,6 +80,8 @@ Tsinghua University:
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "https://mirrors.tuna.tsinghua.edu.cn/debian/" -firmware --cdimage "cn"</code></pre>
 <br />
 for low memory(less than 768MB) machines, you can bash:
+<br />
+<br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "https://mirrors.tuna.tsinghua.edu.cn/debian/" -dnserv "cn"</code></pre>
 <br />
 Netease, Inc:
