@@ -25,6 +25,7 @@ add ipv6 configurations:
         netmask 64
         dns-nameservers 2606:4700:4700:0:0:0:0:6400</code></pre>
 In above sample, you just need to change "::1" to your own IPv6 address which assigned by your cloud provider. "netmask" 64 is a typical value, "dns-nameservers" is from Cloudflare.com.
+<br />
 Save files and restart system.
 - "InstallNET.sh" doesn't support pure IPv6 stack machine(have no IPv4 address, such as Vultr.com 2.5$/month plan).
 ## Download:
