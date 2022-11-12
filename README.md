@@ -21,8 +21,10 @@ to make changes validating!
 <br />
 edit network interfaces:
 <br />
+<br />
 <pre><code>vim /etc/network/interfaces</code></pre>
 add ipv6 configurations:
+<br />
 <br />
 <pre><code>iface ens3 inet6 static
         address ::1
@@ -30,7 +32,10 @@ add ipv6 configurations:
         dns-nameservers 2606:4700:4700:0:0:0:0:6400</code></pre>
 In above sample, you just need to change "::1" to your own IPv6 address which assigned by your cloud provider. "netmask" 64 is a typical value, "dns-nameservers" is from Cloudflare.com.
 <br />
+<br />
 Save files and restart system.
+<br />
+<br />
 <pre><code>:wq
 reboot</code></pre>
 <br />
