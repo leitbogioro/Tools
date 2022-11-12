@@ -86,16 +86,25 @@ for low memory(less than 768MB) machines, you can bash:
 <br />
 Netease, Inc:
 <br />
+<br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://mirrors.163.com/debian/" -firmware --cdimage "cn"</code></pre>
 <br />
 for low memory(less than 768MB) machines, you can bash:
+<br />
 <br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://mirrors.163.com/debian/" -dnserv "cn"</code></pre>
 <br />
 Tencent Cloud:
 <br />
+<br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://mirrors.cloud.tencent.com/debian/" -firmware --cdimage "cn"</code></pre>
+<br />
+for low memory(less than 768MB) machines, you can bash:
+<br />
+<pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://mirrors.cloud.tencent.com/debian/" -dnserv "cn"</code></pre>
+<br />
 Alibaba Cloud:
+<br />
 <br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://mirrors.aliyun.com/debian/" -firmware --cdimage 'cn'</code></pre>
 <br />
@@ -103,6 +112,7 @@ for low memory(less than 768MB) machines, you can bash:
 <br />
 <pre><code>bash InstallNET.sh -d 11 -v 64 -a -mirror "http://mirrors.aliyun.com/debian/" -dnserv "cn"</code></pre>
 <br />
+
 ### Debian 11 (prefer mirror manually with firmware, recommend for servers which are locating outside of mainland China)
 Japan:
 <br />
