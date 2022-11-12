@@ -19,8 +19,6 @@ to make changes validating!
 ## Defects:
 - Debian preseeding process can only config one IP address, so to bio-stack machine(both have IPv4 and IPv6 address), after loggin to new system, you can only see IPv4 address are configurated, you have to config IPv6 address manually.
 edit network interfaces:
-<br />
-<br />
 <pre><code>vim /etc/network/interfaces</code></pre>
 add ipv6 configurations:
 <br />
@@ -33,6 +31,7 @@ In above sample, you just need to change "::1" to your own IPv6 address which as
 <br />
 Save files and restart system.
 <br />
+
 - "InstallNET.sh" doesn't support pure IPv6 stack machine(have no IPv4 address, such as Vultr.com 2.5$/month plan).
 
 ## Download:
