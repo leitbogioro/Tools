@@ -10,7 +10,7 @@
 
 export tmpVER=''
 export tmpDIST=''
-export tmpDNSServ=''
+export tmpDNServ=''
 export tmpURL=''
 export tmpWORD=''
 export tmpMirror=''
@@ -148,7 +148,7 @@ while [[ $# -ge 1 ]]; do
       tmpWORD="$1"
       shift
       ;;
-	-dnserv)
+    -dnserv)
       shift
       tmpDNServ="$1"
       shift
