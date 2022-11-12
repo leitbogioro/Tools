@@ -18,8 +18,10 @@ to make changes validating!
 ## Defects:
 - Debian preseeding process can only config one IP address, so to bio-stack machine(both have IPv4 and IPv6 address), after loggin to new system, you can only see IPv4 address are configurated, you have to config IPv6 address manually:
 <br />
-edit network interfaces
+edit network interfaces:
+<br />
 <pre><code>vim /etc/network/interfaces</code></pre>
+<br />
 add ipv6 configurations:
 <pre><code>iface ens3 inet6 static
         address ::1
