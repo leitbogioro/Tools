@@ -330,7 +330,7 @@ d-i debian-installer/language string en
 d-i console-setup/layoutcode string us
 
 d-i keyboard-configuration/xkb-keymap string us
-d-i lowmem/low note
+d-i lowmem/low true
 
 d-i netcfg/choose_interface select $interfaceSelect
 
