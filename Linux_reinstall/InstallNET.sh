@@ -326,6 +326,7 @@ cat >/tmp/boot/preseed.cfg<<EOF
 d-i debian-installer/locale string en_US.UTF-8
 d-i debian-installer/country string US
 d-i debian-installer/language string en
+d-i lowmem/low note
 
 d-i console-setup/layoutcode string us
 
@@ -692,7 +693,7 @@ if [[ "$loaderMode" == "0" ]]; then
   [[ "$setInterfaceName" == "1" ]] && Add_OPTION="net.ifnames=0 biosdevname=0" || Add_OPTION=""
   [[ "$setIPv6" == "1" ]] && Add_OPTION="$Add_OPTION ipv6.disable=1"
   
-  # lowMem || Add_OPTION="$Add_OPTION lowmem=+0"
+  lowMem || Add_OPTION="$Add_OPTION lowmem=+2"
 
   if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
     BOOT_OPTION="auto=true $Add_OPTION hostname=$linux_relese domain=$linux_relese quiet"
