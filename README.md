@@ -17,7 +17,7 @@ Something about scripts
 to make changes validating!
 
 ## Defects:
-- Debian preseeding process can only config one IP address, for bio-stack machine(both have IPv4 and IPv6 address), after loggin to new system, you can realize that only IPv4 address has been configurated,  need to config IPv6 address manually.
+- Debian preseeding process can only config one IP address, for bio-stack machine(both have IPv4 and IPv6 address), after loggin to new system, you can realize that only IPv4 address has been configurated, we need to config IPv6 address manually.
 <br />
 edit network interfaces:
 <br />
