@@ -290,7 +290,7 @@ function getGrub(){
 function lowMem(){
   mem=`grep "^MemTotal:" /proc/meminfo 2>/dev/null |grep -o "[0-9]*"`
   [ -n "$mem" ] || return 0
-  [ "$mem" -le "130166" ] && return 1 || return 0
+  [ "$mem" -le "65083" ] && return 1 || return 0
 }
 
 function DebianModifiedPreseed(){
