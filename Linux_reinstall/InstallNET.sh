@@ -309,7 +309,7 @@ fi
 # Don't use "&&", "echo -e" etc! multiple commands must use ";" to connect!
 DebianVimVer="vim"`expr ${DebianDistNum} + 71`
 AptUpdating="$1 apt update;"
-InstallComponents="$1 apt install sudo ca-certificates apt-transport-https vim vim-gtk libnet-ifconfig-wrapper-perl socat fail2ban lrzsz python cron curl wget unzip unrar-free dnsutils net-tools telnet iptables iptables-persistent psmisc ncdu sosreport lsof nmap traceroute debian-keyring debian-archive-keyring libnss3 lsb-release figlet -y;"
+InstallComponents="$1 apt install sudo ca-certificates apt-transport-https vim vim-gtk libnet-ifconfig-wrapper-perl socat fail2ban lrzsz python cron curl wget unzip unrar-free dnsutils net-tools telnet iptables iptables-persistent psmisc ncdu sosreport lsof nmap traceroute debian-keyring debian-archive-keyring libnss3 lsb-release figlet ethtool -y;"
 DisableCertExpiredCheck="$1 sed -i '/^mozilla\/DST_Root_CA_X3/s/^/!/' /etc/ca-certificates.conf; $1 update-ca-certificates -f;"
 ChangeBashrc="$1 rm -rf /root/.bashrc; $1 wget --no-check-certificate -qO /root/.bashrc 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/.bashrc';"
 VimSupportCopy="$1 sed -i 's/set mouse=a/set mouse-=a/g' /usr/share/vim/${DebianVimVer}/defaults.vim;"
