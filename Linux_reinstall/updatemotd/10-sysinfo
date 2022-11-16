@@ -45,15 +45,13 @@ if expr "$IP_Check" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/de
     fi
   done
   IP_Check="isIPv4"
-else
-  :
 fi
 
 if [[ "${IP_Check}" == "isIPv4" ]] && [[ -z ${IPv6} ]]; then
   IPv6="N/A"
 fi
 
-if [[ -z ${IPv4} ]] && [[ -z !${IPv6} ]]; then
+if [[ "${IP_Check}" != "isIPv4" ]] && [[ -z ${IPv4} ]]; then
   IPv4="N/A"
 fi
 
