@@ -6,6 +6,7 @@
 ## Blog: https://moeclub.org
 ## Blog: https://zhuanlan.zhihu.com/originaltechnic
 ## Written By MoeClub.org
+## Modify By Teddysun <i@teddysun.com>
 ## Modified By Leitbogioro
 
 export tmpVER=''
