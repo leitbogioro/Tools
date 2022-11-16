@@ -272,7 +272,7 @@ function diskType(){
 
 function getGrub(){
   Boot="${1:-/boot}"
-  folder=`find "$Boot" -type d -name "grub*" 2>/dev/null |head -n1`
+  folder=`find "$Boot" -type d -name "grub*" 2>/dev/null | sort | tail -n1`
   [ -n "$folder" ] || return
   fileName=`ls -1 "$folder" 2>/dev/null |grep '^grub.conf$\|^grub.cfg$'`
   if [ -z "$fileName" ]; then
@@ -364,7 +364,7 @@ d-i clock-setup/ntp boolean false
 d-i preseed/early_command string anna-install libfuse2-udeb fuse-udeb ntfs-3g-udeb libcrypto1.1-udeb libpcre2-8-0-udeb libssl1.1-udeb libuuid1-udeb zlib1g-udeb wget-udeb
 d-i partman/early_command string [[ -n "\$(blkid -t TYPE='vfat' -o device)" ]] && umount "\$(blkid -t TYPE='vfat' -o device)"; \
 debconf-set partman-auto/disk "\$(list-devices disk |head -n1)"; \
-wget -qO- '$DDURL' |gunzip -dc |/bin/dd of=\$(list-devices disk |head -n1); \
+wget -qO- '$DDURL' | $DEC_CMD | /bin/dd of=\$(list-devices disk |head -n1); \
 mount.ntfs-3g \$(list-devices partition |head -n1) /mnt; \
 cd '/mnt/ProgramData/Microsoft/Windows/Start Menu/Programs'; \
 cd Start* || cd start*; \
@@ -559,8 +559,16 @@ fi
 if [[ "$ddMode" == '1' ]]; then
   if [[ -n "$tmpURL" ]]; then
     DDURL="$tmpURL"
-    echo "$DDURL" |grep -q '^http://\|^ftp://\|^https://';
-    [[ $? -ne '0' ]] && echo 'Please input vaild URL,Only support http://, ftp:// and https:// !' && exit 1;
+    echo "$DDURL" | grep -q '^http://\|^ftp://\|^https://';
+    [[ $? -ne '0' ]] && echo 'Please input vaild URL, Only support http://, ftp:// and https:// !' && exit 1;
+    # Decompress command selection
+    if echo "$DDURL" | grep -q '.gz'; then
+        DEC_CMD="gunzip -dc"
+    elif echo "$DDURL" | grep -q '.xz'; then
+        DEC_CMD="xzcat"
+    else
+        echo 'Please input vaild URL, Only support gz or xz file!' && exit 1
+    fi
   else
     echo 'Please input vaild image URL! ';
     exit 1;
