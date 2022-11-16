@@ -278,7 +278,7 @@ Username: Administrator
 Password: Teddysun.com
 <br />
 - Windows Server 2022 Datacenter
-<br />
+
 Chinese: https://dl.lamp.sh/vhd/zh-cn_win2022.xz
 <br />
 English: https://dl.lamp.sh/vhd/en-us_win2022.xz
