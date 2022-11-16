@@ -264,7 +264,6 @@ LeitboGi0ro
 ## How to install Windows?
 ### execute the following command:
 <pre><code>bash InstallNET.sh -dd "DD image download URL"</code></pre>
-<br />
 ### Available Windows DD images:
 Windows Server 2022 Datacenter, from TeddySun(https://teddysun.com/):
 <br />
