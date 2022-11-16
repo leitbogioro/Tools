@@ -260,6 +260,11 @@ LeitboGi0ro
 <br />
 <br />
 
+## How to install Windows?
+### 
+
+___
+
 # .bashrc
 .bashrc is a script file system which contains a series of configurations for the terminal session. when the user logs in. The file itself includes highlight settingup for different files.
 how to use?
