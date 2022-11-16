@@ -272,19 +272,24 @@ Notice: Microsoft products and services—including images, text, and software d
 Change netboot to rescue mode, receive mail, get temporary username and password, log into linux, execute:
 <pre><code>wget -O- "DD download URL" | xzcat | dd of=/dev/sda</code></pre>
 ### Available Windows DD images:
-#### Windows Server 2022 Datacenter, from TeddySun(https://teddysun.com/):
+#### Windows Server series from TeddySun(https://teddysun.com/):
+Username: Administrator
+<br />
+Password: Teddysun.com
+<br />
+- Windows Server 2022 Datacenter
 Chinese: https://dl.lamp.sh/vhd/zh-cn_win2022.xz
 <br />
 English: https://dl.lamp.sh/vhd/en-us_win2022.xz
 <br />
 Japanese: https://dl.lamp.sh/vhd/ja-jp_win2022.xz
-#### Windows Server 2019 Datacenter, from TeddySun(https://teddysun.com/):
+- Windows Server 2019 Datacenter
 Chinese: https://dl.lamp.sh/vhd/cn_win2019.xz
 <br />
 English: https://dl.lamp.sh/vhd/en_win2019.xz
 <br />
 Japanese: https://dl.lamp.sh/vhd/ja_win2019.xz
-#### Windows Server 2012 R2 Datacenter, from TeddySun(https://teddysun.com/):
+- Windows Server 2012 R2 Datacenter
 Chinese: https://dl.lamp.sh/vhd/cn_win2012r2.xz
 <br />
 English: https://dl.lamp.sh/vhd/en_win2012r2.xz
