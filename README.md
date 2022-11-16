@@ -6,6 +6,7 @@ Something about scripts
 - The operation is easy, several minutes installation will be complated.
 - Support Debian 8+, Ubuntu 14.04+, CentOS 6.
 - Support major cloud providers, especially support Oracle Cloud ARM machine.
+- Support install from Linux to Windows. details refer to "How to install Windows?" section.
 - You can modify architecture, mirror, firmware, ssh port, password etc. 
 - Friendly to low memory machine(recommend RAM above 256MB), <b>If your machine RAM is less than 768MB, before Debian 11 and above version installation, you may should not bash it with "-firmware" or "-firmware --cdimage" parameters because it won't let machine installation go into low memory mode and causes installation failed!</b>
 - Ubuntu 22.04 has cancelled net boot start features, so this program don't support Ubuntu 22.04 and above reinstallation(source: https://www.reddit.com/r/Ubuntu/comments/uroape/is_there_a_netbootiso_equivalent_for_2204_jammy/).
@@ -261,7 +262,15 @@ LeitboGi0ro
 <br />
 
 ## How to install Windows?
-### 
+### execute the following command:
+<pre><code>bash InstallNET.sh -dd "DD image download URL"</code></pre>
+<br />
+### Available Windows DD images:
+
+Windows Server 2022 Datacenter:
+https://dl.lamp.sh/vhd/zh-cn_win2022.xz
+https://dl.lamp.sh/vhd/en-us_win2022.xz
+https://dl.lamp.sh/vhd/ja-jp_win2022.xz
 
 ___
 
