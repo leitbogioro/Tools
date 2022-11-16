@@ -437,7 +437,8 @@ if [ "$setNet" == "0" ]; then
   iAddr=`ip addr show dev $interface |grep "inet.*" |head -n1 |grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\/[0-9]\{1,2\}'`
   ipAddr=`echo ${iAddr} |cut -d'/' -f1`
   ipMask=`netmask $(echo ${iAddr} |cut -d'/' -f2)`
-  ipGate=`ip route show |grep "via" |grep "$interface" |grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' |head -n1`
+  # ipGate=`ip route show |grep "via" |grep "$interface" |grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' |head -n1`
+  ipGate=`ip route show | grep "via" | grep "$interface" | grep "dev" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$2}'`
 fi
 if [ -z "$interface" ]; then
     dependence ip
