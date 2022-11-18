@@ -670,7 +670,7 @@ if [[ -n "$tmpDIST" ]]; then
 # For example, the official of Ubuntu 22.04(jammy) mirror site doesn't provide any related files to download, the following is here:
 # http://archive.ubuntu.com/ubuntu/dists/jammy/main/installer-amd64/current/legacy-images/
 # So we have no possibility to accomplish Ubuntu network installation in future.
-# Canonical.inc is son of a bitch, they change change back and forth, pood and pee everywhere.
+# Canonical.inc is son of a bitch, they change back and forth, pood and pee everywhere.
 		# [[ "$isDigital" == '22.04' ]] && DIST='jammy';
       }
     }
