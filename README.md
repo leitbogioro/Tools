@@ -7,6 +7,8 @@ Something about scripts
 - Support Debian 8+, Ubuntu 14.04+, CentOS 6.
 - Support major cloud providers, especially support Oracle Cloud ARM machine.
 - Support install from Linux to Windows. details refer to "How to install Windows?" section.
+- Support single-stack(only have IPv6 public address) server like Vultr 2.5$/mo model, only for DHCP.
+- Support network auto configurations in bio-stack(have both IPv4 and IPv6 public address), after log into system, you don't have to config IPv6 address manually, only for Debian, DHCP.
 - You can modify architecture, mirror, firmware, ssh port, password etc. 
 - Friendly to low memory machine(recommend RAM above 256MB), <b>If your machine RAM is less than 768MB, before Debian 11 and above version installation, you may should not bash it with "-firmware" or "-firmware --cdimage" parameters because it won't let machine installation go into low memory mode and causes installation failed!</b>
 - Ubuntu 22.04 has cancelled net boot start features, so this program don't support Ubuntu 22.04 and above reinstallation(source: https://www.reddit.com/r/Ubuntu/comments/uroape/is_there_a_netbootiso_equivalent_for_2204_jammy/).
