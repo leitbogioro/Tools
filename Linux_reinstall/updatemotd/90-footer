@@ -8,8 +8,7 @@ if [ -f "$UpdateLog" ]; then
 fi
 apt update | tee -a "$UpdateLog" > /dev/null 2>&1
 UpdateRemind=`cat $UpdateLog | tail -n 1`
-Result=$(echo $UpdateRemind | grep "*packages can be upgraded*")
-if [ "$Result" != "" ]; then
-  printf "$UpdateRemind"
+if [[ "$UpdateRemind" =~ "packages can be upgraded" ]]; then
+  printf "$UpdateRemind\n"
 fi
 rm -rf $UpdateLog
