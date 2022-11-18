@@ -6,7 +6,7 @@ UpdateLog="/var/log/packagesupdatefile.log"
 if [ -f "$UpdateLog" ]; then
   rm -rf $UpdateLog
 fi
-apt update
+apt-get update
 apt list --upgradable | awk 'END{print NR}' | tee -a "$UpdateLog" > /dev/null 2>&1
 UpdateRemind=`cat $UpdateLog | tail -n 1`
 Result=$(echo $UpdateRemind)
