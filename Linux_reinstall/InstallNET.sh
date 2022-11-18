@@ -294,34 +294,188 @@ function lowMem(){
   [ "$mem" -le "65083" ] && return 1 || return 0
 }
 
+function checkSys(){
+  yum install redhat-lsb -y 2>/dev/null
+  apt install lsb-release -y 2>/dev/null
+  OsLsb=`lsb_release -d | awk '{print$2}'`
+  
+  RedHatRelease=""
+  for Count in `cat /etc/redhat-release | awk '{print$1}'` `cat /etc/system-release | awk '{print$1}'` `cat /etc/os-release | grep -w "ID=*" | awk -F '=' '{print $2}' | sed 's/\"//g'` "$OsLsb"; do
+    if [[ -n "$Count" ]]; then
+       RedHatRelease=`echo -e "$Count"`"$RedHatRelease"
+    fi
+  done
+  
+  DebianRelease=""
+  IsUbuntu=`uname -a | grep -i "ubuntu"`
+  IsDebian=`uname -a | grep -i "debian"`
+  for Count in `cat /etc/os-release | grep -w "ID=*" | awk -F '=' '{print $2}'` `cat /etc/issue | awk '{print $1}'` "$OsLsb"; do
+    if [[ -n "$Count" ]]; then
+       DebianRelease=`echo -e "$Count"`"$DebianRelease"
+    fi
+  done
+  
+  if [[ `echo "$RedHatRelease" | grep -i "centos"` != "" ]]; then
+    CurrentOS="CentOS"
+	checkDHCP "$CurrentOS" ""
+  elif [[ `echo "$RedHatRelease" | grep -i "almalinux"` != "" ]]; then
+    CurrentOS="AlmaLinux"
+	checkDHCP "$CurrentOS" ""
+  elif [[ `echo "$RedHatRelease" | grep -i "rocky"` != "" ]]; then
+    CurrentOS="Rocky"
+	checkDHCP "$CurrentOS" ""
+  elif [[ `echo "$RedHatRelease" | grep -i "fedora"` != "" ]]; then
+    CurrentOS="Fedora"
+	checkDHCP "$CurrentOS" ""
+  elif [[ `echo "$RedHatRelease" | grep -i "virtuozzo"` != "" ]]; then
+    CurrentOS="Vzlinux"
+	checkDHCP "$CurrentOS" ""
+  elif [[ "$IsUbuntu" ]] || [[ `echo "$DebianRelease" | grep -i "ubuntu"` != "" ]]; then
+    CurrentOS="Ubuntu"
+	CurrentUbuntuDistNum=`lsb_release -r | awk '{print$2}' | cut -d'.' -f1`
+	checkDHCP "$CurrentOS" "$CurrentUbuntuDistNum"
+  elif [[ "$IsDebian" ]] || [[ `echo "$DebianRelease" | grep -i "debian"` != "" ]]; then
+    CurrentOS="Debian"
+	checkDHCP "$CurrentOS" ""
+  else
+    echo "Does't support your system!"
+	exit 1
+  fi
+}
+
+function checkIPv4OrIpv6(){
+  IPv4DNSLookup=`timeout 1 dig -4 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
+  IPv6DNSLookup=`timeout 1 dig -6 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
+  IP_Check="$IPv4DNSLookup"
+  if expr "$IP_Check" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; then
+    for i in 1 2 3 4; do
+      if [ $(echo "$IP_Check" | cut -d. -f$i) -gt 255 ]; then
+        echo "fail ($IP_Check)"
+        exit 1
+      fi
+    done
+    IP_Check="isIPv4"
+  fi
+
+  if [[ "${IP_Check}" == "isIPv4" ]] && [[ -n ${IPv4DNSLookup} ]] && [[ -n ${IPv6DNSLookup} ]]; then
+    IPStackType="BioStack"
+  fi
+  if [[ "${IP_Check}" == "isIPv4" ]] && [[ -n ${IPv4DNSLookup} ]] && [[ ! -n ${IPv6DNSLookup} ]]; then
+    IPStackType="IPv4Stack"
+  fi
+  if [[ ! -n ${IPv4DNSLookup} ]] && [[ -n ${IPv6DNSLookup} ]]; then
+    IPStackType="IPv6Stack"
+  fi
+}
+
+# If original system using DHCP, skip IP address, subnet mask, gateway, DNS server settings manually.
+# In many DHCP server, manual settings may cause problems.
+function checkDHCP(){
+# Network config file for Ubuntu 16.04 and former version, 
+# Debian all version included the latest Debian 11 is deposited in /etc/network/interfaces, they managed by "ifupdown".
+# Ubuntu 18.04 and later version, using netplan to replace legacy ifupdown, the network config file is in /etc/netplan
+  UbuntuYamlNetCfgFile="/etc/netplan/"`ls -Sl /etc/netplan/ | grep ".yaml" | head -n 1 | awk -F' ' '{print $NF}'`
+# Some cloud provider like bandwagonhosts, may modify parameters in " GRUB_CMDLINE_LINUX="" " of /etc/default/grub
+# to redirect network adapter from real name like ens18, ens3 to eth0, eth1, eth2...
+# This setting may confuse program to get real adapter name from reading /proc/cat/dev
+# So we need to reading .yaml file to get it.
+  if [[ "$1" == 'Ubuntu' ]] && [[ "CurrentUbuntuDistNum" -ge "18" ]] && [[ `grep -c "net.ifnames=0 biosdevname=0" "/etc/default/grub"` -ne "0" ]]; then
+    AdapterName=`awk '/ethernets:/{getline a;print $1""a}' $UbuntuYamlNetCfgFile | awk '{print $2}' | sed 's/.$//'`
+  else
+    AdapterName=`cat /proc/net/dev |grep ':' |cut -d':' -f1 |sed 's/\s//g' |grep -iv '^lo\|^sit\|^stf\|^gif\|^dummy\|^vmnet\|^vir\|^gre\|^ipip\|^ppp\|^bond\|^tun\|^tap\|^ip6gre\|^ip6tnl\|^teql\|^ocserv\|^vpn' | head -n 1` 
+  fi
+  
+  if [[ "$1" == 'CentOS' ]] || [[ "$1" == 'AlmaLinux' ]] || [[ "$1" == 'Rocky' ]] || [[ "$1" == 'Fedora' ]] || [[ "$1" == 'Vzlinux' ]]; then
+# RedHat like linux system network config name is "ifcfg-AdapterName", deposited in /etc/sysconfig/network-scripts/
+	NetCfgFile="/etc/sysconfig/network-scripts/"`ls -a "/etc/sysconfig/network-scripts/" | grep "$AdapterName"`
+	if [[ `grep -c "BOOTPROTO=dhcp" $NetCfgFile` -ne "0" ]]; then
+	  NetworkConfig="isDHCP"
+    fi
+  fi
+  
+# $1 is system name, $2 is version number
+  if [[ "$1" == 'Debian' ]]; then
+    NetCfgFile=""
+# Debian network configs may be deposited in the following directions.
+# /etc/network/interfaces or /etc/network/interfaces.d/AdapterName or /etc/network/interfaces.d/AdapterName
+	for NetCfgFile in "/etc/network/interfaces" "/etc/network/interfaces.d/$AdapterName" "/etc/network/interfaces.d/$AdapterName"; do
+	  if [[ `grep -c "inet" $NetCfgFile | grep -c "$AdapterName" $NetCfgFile | grep -c "dhcp" $NetCfgFile` -ne "0" ]] || [[ `grep -c "inet6" $NetCfgFile | grep -c "$AdapterName" $NetCfgFile | grep -c "dhcp" $NetCfgFile` -ne "0" ]]; then
+	    NetworkConfig="isDHCP"
+	  fi
+	done
+  fi
+  
+  if [[ "$1" == 'Ubuntu' ]] && [[ "$2" -le "16" ]]; then
+    NetCfgFile="/etc/network/interfaces"
+	if [[ `grep -c "inet" $NetCfgFile | grep -c "$AdapterName" $NetCfgFile | grep -c "dhcp" $NetCfgFile` -ne "0" ]] || [[ `grep -c "inet6" $NetCfgFile | grep -c "$AdapterName" $NetCfgFile | grep -c "dhcp" $NetCfgFile` -ne "0" ]]; then
+	  NetworkConfig="isDHCP"
+	fi
+  elif [[ "$2" -ge "18" ]]; then
+    NetCfgFile="$UbuntuYamlNetCfgFile"
+	if [[ `grep -c "$AdapterName" $NetCfgFile | grep -c "dhcp4: true" $NetCfgFile` -ne "0" ]] || [[ `grep -c "$AdapterName" $NetCfgFile | grep -c "dhcp4: yes" $NetCfgFile` -ne "0" ]] || [[ `grep -c "$AdapterName" $NetCfgFile | grep -c "dhcp6: true" $NetCfgFile` -ne "0" ]] || [[ `grep -c "$AdapterName" $NetCfgFile | grep -c "dhcp6: yes" $NetCfgFile` -ne "0" ]]; then
+	  NetworkConfig="isDHCP"
+	fi   
+  fi
+}
+
 function DebianModifiedPreseed(){
 # DNS server validation must setting up in installed system, can't in preseeding!
-if [[ "$tmpDNServ" == 'cn' ]] || [[ "$FirmwareImage" == 'cn' ]]; then
+  if [[ "$tmpDNServ" == 'cn' ]] || [[ "$FirmwareImage" == 'cn' ]]; then
 # Set China DNS server from USTC and Tsinghua University permanently
-  SetDNS="CNResolvHead"
-else
+    SetDNS="CNResolvHead"
+  else
 # Set DNS server from CloudFlare and Google permanently
-  SetDNS="NomalResolvHead"
-fi
+    SetDNS="NomalResolvHead"
+  fi
 
+# Must use ";" instead of using "&&", "echo -e" etc to combine multiple commands, or write text in files, recommend sed.
 # Can't pass parameters correctly in preseed environment
 # DebianVimVer=`ls -a /usr/share/vim | grep vim[0-9]`
-
-# Don't use "&&", "echo -e" etc! multiple commands must use ";" to connect!
-DebianVimVer="vim"`expr ${DebianDistNum} + 71`
-AptUpdating="$1 apt update;"
-InstallComponents="$1 apt install sudo ca-certificates apt-transport-https vim vim-gtk libnet-ifconfig-wrapper-perl socat fail2ban lrzsz python cron curl wget unzip unrar-free dnsutils net-tools telnet iptables iptables-persistent psmisc ncdu sosreport lsof nmap traceroute debian-keyring debian-archive-keyring libnss3 lsb-release figlet ethtool -y;"
-DisableCertExpiredCheck="$1 sed -i '/^mozilla\/DST_Root_CA_X3/s/^/!/' /etc/ca-certificates.conf; $1 update-ca-certificates -f;"
-ChangeBashrc="$1 rm -rf /root/.bashrc; $1 wget --no-check-certificate -qO /root/.bashrc 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/.bashrc';"
-VimSupportCopy="$1 sed -i 's/set mouse=a/set mouse-=a/g' /usr/share/vim/${DebianVimVer}/defaults.vim;"
-DnsChangePermanently="$1 mkdir -p /etc/resolvconf/resolv.conf.d/; $1 wget --no-check-certificate -qO /etc/resolvconf/resolv.conf.d/head 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/${SetDNS}';"
-ModifyMOTD="$1 rm -rf /etc/update-motd.d/ /etc/motd /run/motd.dynamic; $1 mkdir -p /etc/update-motd.d/; $1 wget --no-check-certificate -qO /etc/update-motd.d/00-header 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/updatemotd/00-header'; $1 wget --no-check-certificate -qO /etc/update-motd.d/10-sysinfo 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/updatemotd/10-sysinfo'; $1 wget --no-check-certificate -qO /etc/update-motd.d/90-footer 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/updatemotd/90-footer'; $1 chmod +x /etc/update-motd.d/00-header; $1 chmod +x /etc/update-motd.d/10-sysinfo; $1 chmod +x /etc/update-motd.d/90-footer;"
-if [[ "$Relese" == 'Debian' ]]; then
-export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${DnsChangePermanently} ${ModifyMOTD}"
-fi
+  DebianVimVer="vim"`expr ${DebianDistNum} + 71`
+# $1 is "in-target"
+  AptUpdating="$1 apt update;"
+# pre-install some commonly used software.
+  InstallComponents="$1 apt install sudo apt-transport-https binutils ca-certificates cron curl debian-keyring debian-archive-keyring dnsutils dosfstools ethtool fail2ban figlet iptables iptables-persistent iputils-tracepath lrzsz libnet-ifconfig-wrapper-perl lsof libnss3 lsb-release mtr-tiny mlocate netcat-openbsd net-tools ncdu nmap ntfs-3g parted psmisc python socat sosreport subnetcalc tcpdump telnet traceroute unzip unrar-free uuid-runtime vim vim-gtk wget -y;"
+# In debian 9 and former, some certificates are expired.
+  DisableCertExpiredCheck="$1 sed -i '/^mozilla\/DST_Root_CA_X3/s/^/!/' /etc/ca-certificates.conf; $1 update-ca-certificates -f;"
+# Modify /root/.bashrc to support colorful filename.
+  ChangeBashrc="$1 rm -rf /root/.bashrc; $1 wget --no-check-certificate -qO /root/.bashrc 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/.bashrc';"
+# Set parameter "mouse-=a" in /usr/share/vim/vim-version/defaults.vim to support copy text from terminal to client.
+  VimSupportCopy="$1 sed -i 's/set mouse=a/set mouse-=a/g' /usr/share/vim/${DebianVimVer}/defaults.vim;"
+# Need to install "resolvconf" manually after all installation ended, logged into new system.
+  DnsChangePermanently="$1 mkdir -p /etc/resolvconf/resolv.conf.d/; $1 wget --no-check-certificate -qO /etc/resolvconf/resolv.conf.d/head 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/${SetDNS}';"
+# Modify logging in welcome information(Message Of The Day) of Debian and make it more pretty.
+  ModifyMOTD="$1 rm -rf /etc/update-motd.d/ /etc/motd /run/motd.dynamic; $1 mkdir -p /etc/update-motd.d/; $1 wget --no-check-certificate -qO /etc/update-motd.d/00-header 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/updatemotd/00-header'; $1 wget --no-check-certificate -qO /etc/update-motd.d/10-sysinfo 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/updatemotd/10-sysinfo'; $1 wget --no-check-certificate -qO /etc/update-motd.d/90-footer 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/updatemotd/90-footer'; $1 chmod +x /etc/update-motd.d/00-header; $1 chmod +x /etc/update-motd.d/10-sysinfo; $1 chmod +x /etc/update-motd.d/90-footer;"
+  SupportIPv6=""
+# If the network config type of server is DHCP and it have both public IPv4 and IPv6 address,
+# Debian install program even get nerwork config with DHCP, but after log into new system,
+# only the IPv4 of the server has been configurated.
+# so need to write "iface AdapterName inet6 dhcp" to /etc/network/interfaces in preseeding process,
+# to avoid config IPv6 manually after log into new system.
+  if [[ "$IPStackType" == "BioStack" ]] && [[ "$NetworkConfig" == "isDHCP" ]]; then
+    SupportIPv6="$1 sed -i '\$aiface ${AdapterName} inet6 dhcp' /etc/network/interfaces"
+  fi
+  if [[ "$Relese" == 'Debian' ]]; then
+    export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${DnsChangePermanently} ${ModifyMOTD} ${SupportIPv6}"
+  fi
 }
 
 function AptPreseedProcess(){
+if [[ "$NetworkConfig" == "isDHCP" ]]; then
+  NetConfigManually=""
+else
+# Manually network setting configurations, including:
+# d-i netcfg/disable_autoconfig boolean true
+# d-i netcfg/dhcp_failed note
+# d-i netcfg/dhcp_options select Configure network manually
+# d-i netcfg/get_ipaddress string $IPv4
+# d-i netcfg/get_netmask string $MASK
+# d-i netcfg/get_gateway string $GATE
+# d-i netcfg/get_nameservers string $ipDNS
+# d-i netcfg/no_default_route boolean true
+# d-i netcfg/confirm_static boolean true
+  NetConfigManually=`echo -e "d-i netcfg/disable_autoconfig boolean true\nd-i netcfg/dhcp_failed note\nd-i netcfg/dhcp_options select Configure network manually\nd-i netcfg/get_ipaddress string $IPv4\nd-i netcfg/get_netmask string $MASK\nd-i netcfg/get_gateway string $GATE\nd-i netcfg/get_nameservers string $ipDNS\nd-i netcfg/no_default_route boolean true\nd-i netcfg/confirm_static boolean true"`
+fi
 DebianModifiedPreseed "in-target"
 cat >/tmp/boot/preseed.cfg<<EOF
 d-i debian-installer/locale string en_US.UTF-8
@@ -334,16 +488,7 @@ d-i console-setup/layoutcode string us
 d-i keyboard-configuration/xkb-keymap string us
 
 d-i netcfg/choose_interface select $interfaceSelect
-
-d-i netcfg/disable_autoconfig boolean true
-d-i netcfg/dhcp_failed note
-d-i netcfg/dhcp_options select Configure network manually
-d-i netcfg/get_ipaddress string $IPv4
-d-i netcfg/get_netmask string $MASK
-d-i netcfg/get_gateway string $GATE
-d-i netcfg/get_nameservers string $ipDNS
-d-i netcfg/no_default_route boolean true
-d-i netcfg/confirm_static boolean true
+${NetConfigManually}
 
 d-i hw-detect/load_firmware boolean true
 
@@ -410,6 +555,10 @@ echo '${setCMD}' >/target/etc/run.sh; \
 ${DebianModifiedProcession}
 EOF
 }
+
+checkSys
+
+checkIPv4OrIpv6
 
 if [[ "$loaderMode" == "0" ]]; then
   Grub=`getGrub "/boot"`
@@ -504,6 +653,7 @@ if [[ -n "$tmpDIST" ]]; then
   if [[ "$Relese" == 'Ubuntu' ]]; then
     SpikCheckDIST='0'
     DIST="$(echo "$tmpDIST" |sed -r 's/(.*)/\L\1/')";
+	UbuntuDistNum=`echo "$DIST" | cut -d'.' -f1`
     echo "$DIST" |grep -q '[0-9]';
     [[ $? -eq '0' ]] && {
       isDigital="$(echo "$DIST" |grep -o '[\.0-9]\{1,\}' |sed -n '1h;1!H;$g;s/\n//g;$p')";
@@ -513,7 +663,15 @@ if [[ -n "$tmpDIST" ]]; then
         [[ "$isDigital" == '16.04' ]] && DIST='xenial';
         [[ "$isDigital" == '18.04' ]] && DIST='bionic';
         [[ "$isDigital" == '20.04' ]] && DIST='focal';
-        # [[ "$isDigital" == '22.04' ]] && DIST='jammy';
+# Ubuntu 22.04 and future versions started to using "Cloud-init" to replace legacy "d-i(Debian installer)" which is designed to support network installation of Debian like system.
+# "Cloud-init" make a high hardware requirements of the server, one requirement must be demanded is CPU virtualization support.
+# Many vps which are virtualizated by a physical machine, despite parent machine support virtualization, but sub-servers don't support.
+# Because Ubuntu 22.04 and future version removed critical file of "initrd.gz" and "linux" which are critical files to implement "d-i".
+# For example, the official of Ubuntu 22.04(jammy) mirror site doesn't provide any related files to download, the following is here:
+# http://archive.ubuntu.com/ubuntu/dists/jammy/main/installer-amd64/current/legacy-images/
+# So we have no possibility to accomplish Ubuntu network installation in future.
+# Canonical.inc is son of a bitch, they change change back and forth, pood and pee everywhere.
+		# [[ "$isDigital" == '22.04' ]] && DIST='jammy';
       }
     }
     LinuxMirror=$(selectMirror "$Relese" "$DIST" "$VER" "$tmpMirror")
