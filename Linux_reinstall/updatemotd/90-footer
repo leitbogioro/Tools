@@ -6,11 +6,10 @@ UpdateLog="/var/log/packagesupdatefile.log"
 if [ -f "$UpdateLog" ]; then
   rm -rf $UpdateLog
 fi
-apt-get update
-apt list --upgradable | awk 'END{print NR}' | tee -a "$UpdateLog" > /dev/null 2>&1
+apt update | tee -a "$UpdateLog" > /dev/null 2>&1
 UpdateRemind=`cat $UpdateLog | tail -n 1`
-Result=$(echo $UpdateRemind)
-if [ "$Result" -ge "1" ]; then
-  printf "$UpdateRemind packages can be upgraded. Run 'apt list --upgradable' to see them.\n"
+Result=$(echo $UpdateRemind | grep "*packages can be upgraded*")
+if [ "$Result" != "" ]; then
+  printf "$UpdateRemind"
 fi
 rm -rf $UpdateLog
