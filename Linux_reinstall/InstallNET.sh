@@ -295,7 +295,9 @@ function lowMem(){
 }
 
 function checkSys(){
+  yum update
   yum install redhat-lsb -y 2>/dev/null
+  apt update
   apt install lsb-release -y 2>/dev/null
   OsLsb=`lsb_release -d | awk '{print$2}'`
   
