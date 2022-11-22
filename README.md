@@ -50,6 +50,12 @@ reboot</code></pre>
 ## Download:
 <pre><code>wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh</code></pre>
 
+## Dependences:
+Debian series(Debian/Ubuntu):
+<pre><code>apt install xz-utils dnsutils wget file -y</code></pre>
+Redhat series(CentOS/Almalinux/Rockylinux/Oraclelinux/Fedora):
+<pre><code>yum install xz dnsutils wget file -y</code></pre>
+
 ## Fully useage sample
 <pre><code>bash InstallNET.sh -d/u/c(os type) 11(os version) -v 64(os bit) -port "your server port" -pwd "your server password" -a(auto install)/m(manually in VNC) -mirror "a valid url for OS image source" --ip-addr 'x.x.x.x'(ip address) --ip-mask 'x.x.x.x'(subnet mask) --ip-gate 'x.x.x.x'(gateway) -firmware(with hardware drivers) --cdimage "cn"(this option is only for Debian)</code></pre>
 
