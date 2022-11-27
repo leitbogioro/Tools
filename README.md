@@ -92,6 +92,14 @@ If you need to add other parameters, version number must be assigned!
 <br />
 <br />
 
+**-filetype "gz/xz"**: To determine DD file type, if the link of the DD file doesn't include ".gz" or ".xz"
+<br />
+<br />
+
+**--dhcp-static**: Default to use DHCP to finish network configuration, if the network of your machine is static, you need to add it.
+<br />
+<br />
+
 For Debian, official recommend mirror lists are here:
 <br />
 <pre><code>https://www.debian.org/mirror/list.html</code></pre>
