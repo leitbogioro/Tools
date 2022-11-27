@@ -465,15 +465,15 @@ function checkSys(){
     checkDHCP "$CurrentOS" "$CurrentOSVer"
   elif [[ "$IsDebian" ]] || [[ `echo "$DebianRelease" | grep -i "debian"` != "" ]]; then
     CurrentOS="Debian"
-	CurrentOSVer=`lsb_release -r | awk '{print$2}' | cut -d'.' -f1`
+    CurrentOSVer=`lsb_release -r | awk '{print$2}' | cut -d'.' -f1`
     checkDHCP "$CurrentOS" ""
   else
     echo -e "Does't support your system!\n"
-	exit 1
+    exit 1
   fi
   if [[ "$CurrentOS" == "CentOS" || "$CurrentOS" == "OracleLinux" ]] && [[ "$CurrentOSVer" == "6" ]]; then
     echo -e "Does't support your system!\n"
-	exit 1
+    exit 1
   fi
 }
 
@@ -538,12 +538,12 @@ function getInterface(){
   else
     AdapterName="$interface"
     for Count in "/etc/network/interfaces" "/run/network/interfaces" "/etc/network/interfaces.d/$AdapterName" "/run/network/interfaces.d/$AdapterName"; do
-	  if [[ `grep -c "network interface" $Count` -ne "0" ]]; then
-		NetCfgFile=`echo $Count | awk -F/ '{print $NF}'`
-		NetCfgDir=`echo $Count | sed "s/$NetCfgFile//g"`
-		break
-	  fi  
-	done
+      if [[ `grep -c "network interface" $Count` -ne "0" ]]; then
+        NetCfgFile=`echo $Count | awk -F/ '{print $NF}'`
+        NetCfgDir=`echo $Count | sed "s/$NetCfgFile//g"`
+        break
+      fi  
+    done
   fi
   [[ ! -n "$AdapterName" ]] && AdapterName="$interface"
 }
@@ -559,19 +559,19 @@ function checkDHCP(){
     if [[ "$1" == 'CentOS' || "$1" == 'AlmaLinux' || "$1" == 'RockyLinux' || "$1" == 'Fedora' || "$1" == 'Vzlinux' || "$1" == 'OracleLinux' ]]; then
 # RedHat like linux system 8 and before network config name is "ifcfg-AdapterName", deposited in /etc/sysconfig/network-scripts/
 # RedHat like linux system 9 and later network config name is "AdapterName.nmconnection", deposited in /etc/NetworkManager/system-connections
-	  if [[ -n `grep -Ern "BOOTPROTO=dhcp|BOOTPROTO=\"dhcp\"|BOOTPROTO=\'dhcp\'|BOOTPROTO=DHCP|BOOTPROTO=\"DHCP\"|BOOTPROTO=\'DHCP\'" $NetCfgDir` ]] || [[ -n `grep -Ern "method=auto" $NetCfgDir` ]]; then
-	    NetworkConfig="isDHCP"
+      if [[ -n `grep -Ern "BOOTPROTO=dhcp|BOOTPROTO=\"dhcp\"|BOOTPROTO=\'dhcp\'|BOOTPROTO=DHCP|BOOTPROTO=\"DHCP\"|BOOTPROTO=\'DHCP\'" $NetCfgDir` ]] || [[ -n `grep -Ern "method=auto" $NetCfgDir` ]]; then
+        NetworkConfig="isDHCP"
       fi
     elif [[ "$1" == 'Debian' ]] || [[ "$1" == 'Ubuntu' && "$2" -le "16" ]]; then
 # Debian network configs may be deposited in the following directions.
 # /etc/network/interfaces or /etc/network/interfaces.d/AdapterName or /run/network/interfaces.d/AdapterName
-	  if [[ `grep -c "inet" $NetCfgDir$NetCfgFile | grep -c "dhcp" $NetCfgDir$NetCfgFile` -ne "0" ]] || [[ `grep -c "inet6" $NetCfgDir$NetCfgFile | grep -c "dhcp" $NetCfgDir$NetCfgFile` -ne "0" ]]; then
-	    NetworkConfig="isDHCP"
-	  fi
-	elif [[ "$1" == 'Ubuntu' ]] && [[ "$2" -ge "18" ]]; then
+      if [[ `grep -c "inet" $NetCfgDir$NetCfgFile | grep -c "dhcp" $NetCfgDir$NetCfgFile` -ne "0" ]] || [[ `grep -c "inet6" $NetCfgDir$NetCfgFile | grep -c "dhcp" $NetCfgDir$NetCfgFile` -ne "0" ]]; then
+        NetworkConfig="isDHCP"
+      fi
+    elif [[ "$1" == 'Ubuntu' ]] && [[ "$2" -ge "18" ]]; then
       if [[ `grep -c "dhcp4: true" $NetCfgDir$NetCfgFile` -ne "0" ]] || [[ `grep -c "dhcp4: yes" $NetCfgDir$NetCfgFile` -ne "0" ]] || [[ `grep -c "dhcp6: true" $NetCfgDir$NetCfgFile` -ne "0" ]] || [[ `grep -c "dhcp6: yes" $NetCfgDir$NetCfgFile` -ne "0" ]]; then
-	    NetworkConfig="isDHCP"
-	  fi
+        NetworkConfig="isDHCP"
+      fi
     fi
   fi
 }
@@ -608,7 +608,7 @@ function DebianModifiedPreseed(){
     SupportIPv6=""
     if [[ "$NetworkConfig" == "isDHCP" ]]; then
       SupportIPv6="$1 sed -i '\$aiface ${AdapterName} inet6 dhcp' /etc/network/interfaces"
-	  if [[ "$IPStackType" == "BioStack" ]] || [[ "$IPStackType" == "IPv6Stack" ]]; then
+      if [[ "$IPStackType" == "BioStack" ]] || [[ "$IPStackType" == "IPv6Stack" ]]; then
 # Enable IPv6 dhcp and set prefer IPv6 access
         SupportIPv6="$1 sed -i '\$aiface ${AdapterName} inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16   2' /etc/gai.conf"
       fi
