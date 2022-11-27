@@ -92,14 +92,6 @@ If you need to add other parameters, version number must be assigned!
 <br />
 <br />
 
-**-filetype "gz/xz"**: To determine DD file type, if the link of the DD file doesn't include ".gz" or ".xz"
-<br />
-<br />
-
-**--dhcp-static**: Default to use DHCP to finish network configuration, if the network of your machine is static, you need to add it.
-<br />
-<br />
-
 For Debian, official recommend mirror lists are here:
 <br />
 <pre><code>https://www.debian.org/mirror/list.html</code></pre>
@@ -138,6 +130,14 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
+**-filetype "gz/xz"**: To determine DD file type if the link of the DD file doesn't include ".gz" or ".xz"
+<br />
+<br />
+
+**--dhcp-static**: Default to use DHCP to finish network configuration, if the network of your machine is static, you need to add it.
+<br />
+<br />
+
 **--ip-addr**: if your cloud provider is from GCP etc, you should input it manually.
 <br />
 <br />
@@ -150,7 +150,7 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**-firmware: specify drivers for Debian to support old hardwares, if your server location is in mainland China, you can prefer it to mirror of 'University of Science and Technology of China(https://mirrors.ustc.edu.cn/debian-cdimage/)' for downloading more quickly, default mirror is from http://cdimage.debian.org/cdimage/.
+**-firmware**: specify drivers for Debian to support old hardwares, if your server location is in mainland China, you can prefer it to mirror of 'University of Science and Technology of China(https://mirrors.ustc.edu.cn/debian-cdimage/)' for downloading more quickly, default mirror is from http://cdimage.debian.org/cdimage/.
 <br />
 <br />
 
