@@ -80,7 +80,7 @@ If you need to add other parameters, version number must be assigned!
 <br />
 <br />
 
-**-centos**: CentOS 7 and later
+**-fedora**: Fedora 34 and later
 <br />
 <br />
 
