@@ -77,22 +77,22 @@ while [[ $# -ge 1 ]]; do
       tmpDIST="$1"
       shift
       ;;
-	-rocky|-rockylinux|-RockyLinux)
-	  shift
-	  Relese='RockyLinux'
-	  tmpDIST="$1"
+    -rocky|-rockylinux|-RockyLinux)
+      shift
+      Relese='RockyLinux'
+      tmpDIST="$1"
       shift
       ;;
-	-alma|-almalinux|-AlmaLinux)
-	  shift
-	  Relese='AlmaLinux'
-	  tmpDIST="$1"
+    -alma|-almalinux|-AlmaLinux)
+      shift
+      Relese='AlmaLinux'
+      tmpDIST="$1"
       shift
       ;;
-	-fedora|-Fedora)
-	  shift
-	  Relese='Fedora'
-	  tmpDIST="$1"
+    -fedora|-Fedora)
+      shift
+      Relese='Fedora'
+      tmpDIST="$1"
       shift
       ;;
     -dd|--image)
@@ -126,7 +126,7 @@ while [[ $# -ge 1 ]]; do
       ipDNS="$1"
       shift
       ;;
-	--dhcp-static)
+    --dhcp-static)
       shift
       tmpDHCP='0'
       shift
@@ -164,12 +164,12 @@ while [[ $# -ge 1 ]]; do
     -firmware)
       shift
       IncFirmware="1"
-	  shift
+      shift
       ;;
     -filetype)
       shift
       setFileType="$1"
-	  shift
+      shift
       ;;
     -port)
       shift
