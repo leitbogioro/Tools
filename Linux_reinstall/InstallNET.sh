@@ -35,6 +35,7 @@ export setRDP='0'
 export setIPv6='0'
 export isMirror='0'
 export FindDists='0'
+export setFileType=''
 export loaderMode='0'
 export IncFirmware='0'
 export SpikCheckDIST='0'
@@ -163,6 +164,11 @@ while [[ $# -ge 1 ]]; do
     -firmware)
       shift
       IncFirmware="1"
+	  shift
+      ;;
+    -filetype)
+      shift
+      setFileType="$1"
 	  shift
       ;;
     -port)
@@ -988,9 +994,9 @@ if [[ "$ddMode" == '1' ]]; then
     echo "$DDURL" | grep -q '^http://\|^ftp://\|^https://';
     [[ $? -ne '0' ]] && echo 'Please input vaild URL, Only support http://, ftp:// and https:// !' && exit 1;
     # Decompress command selection
-    if echo "$DDURL" | grep -q '.gz'; then
+    if [[ -n `echo "$DDURL" | grep -q '.gz'` ]] || [[ "$setFileType" == "gz" ]]; then
         DEC_CMD="gunzip -dc"
-    elif echo "$DDURL" | grep -q '.xz'; then
+    elif [[ -n `echo "$DDURL" | grep -q '.xz'` ]] || [[ "$setFileType" == "xz" ]]; then
         DEC_CMD="xzcat"
     else
         echo 'Please input vaild URL, Only support gz or xz file!' && exit 1
