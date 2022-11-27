@@ -80,7 +80,7 @@ If you need to add other parameters, version number must be assigned!
 <br />
 <br />
 
-**-fedora**: Fedora 34 and later
+**-fedora 34/35/36/37**: Fedora 34 and later
 <br />
 <br />
 
