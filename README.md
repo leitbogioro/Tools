@@ -160,8 +160,8 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**32/i386 or 64/amd64 or arm/arm64**: OS bit
-If you don't know, don't assign it!
+**-version 32/i386 or 64/amd64 or arm/arm64**: OS bit
+Program will detect and redirect the CPU architecture of your machine automatically, if you don't know, don't assign it!
 <br />
 <br />
 
