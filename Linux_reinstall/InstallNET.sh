@@ -1053,8 +1053,6 @@ clear && echo -e "\n\033[36m# Install\033[0m\n"
 if [ -z "$interfaceSelect" ]; then
   if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
     interfaceSelect="auto"
-  elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
-    interfaceSelect="link"
   fi
 fi
 
@@ -1397,7 +1395,7 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
   if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
     BOOT_OPTION="auto=true $Add_OPTION hostname=$linux_relese domain=$linux_relese quiet"
   elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
-    BOOT_OPTION="inst.ks=file://ks.cfg $Add_OPTION ksdevice=$interfaceSelect quiet"
+    BOOT_OPTION="inst.ks=file://ks.cfg $Add_OPTION quiet"
   fi
   
   [ -n "$setConsole" ] && BOOT_OPTION="$BOOT_OPTION --- console=$setConsole"
