@@ -428,8 +428,10 @@ function lowMem(){
 }
 
 function checkSys(){
-  yum install redhat-lsb -y 2>/dev/null
-  apt install lsb-release -y 2>/dev/null
+  apt update -y
+  apt install dnsutils efibootmgr file lsb-release wget xz-utils -y
+  yum update --allowerasing -y
+  yum install dnsutils efibootmgr file redhat-lsb wget xz -y
   OsLsb=`lsb_release -d | awk '{print$2}'`
   CurrentOSVer=`cat /etc/os-release | grep -w "VERSION_ID=*" | awk -F '=' '{print $2}' | sed 's/\"//g' | cut -d'.' -f 1`
   
