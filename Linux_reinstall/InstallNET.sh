@@ -817,7 +817,6 @@ if [ -z "$interface" ]; then
   [ -n "$interface" ] || interface=`getInterface "$CurrentOS" "$CurrentOSVer"`
 fi
 IPv4="$ipAddr"; MASK="$ipMask"; GATE="$ipGate";
-
 [ -n "$IPv4" ] && [ -n "$MASK" ] && [ -n "$GATE" ] && [ -n "$ipDNS" ] || {
   echo -ne '\n\033[31mError: \033[0mInvalid network config!\n'
   bash $0 error;
@@ -1028,7 +1027,7 @@ if [[ "$ddMode" == '1' ]]; then
   if [[ -n "$tmpURL" ]]; then
     DDURL="$tmpURL"
     echo "$DDURL" | grep -q '^http://\|^ftp://\|^https://';
-    [[ $? -ne '0' ]] && echo 'Please input vaild URL,Only support http://, ftp:// and https:// !' && exit 1;
+    [[ $? -ne '0' ]] && echo 'Please input vaild URL, Only support http://, ftp:// and https:// !' && exit 1;
     # Decompress command selection
     if [[ "$setFileType" == "gz" ]]; then
       DEC_CMD="gunzip -dc"
@@ -1040,7 +1039,7 @@ if [[ "$ddMode" == '1' ]]; then
       DEC_CMD="gunzip -dc"
     fi
   else
-    echo 'Please input vaild image URL! ';
+    echo 'Please input a vaild image URL!';
     exit 1;
   fi
 fi
@@ -1320,13 +1319,14 @@ wget --no-check-certificate -qO /etc/firewalld/zones/public.xml '$FirewallRule'
 sed -ri 's/port=""/port="${sshPORT}"/g' /etc/firewalld/zones/public.xml
 firewall-cmd --reload
 
-# Fail2ban config
-touch /var/log/fail2ban.log
-sed -i -E 's/^(logtarget =).*/\1 \/var\/log\/fail2ban.log/' /etc/fail2ban/fail2ban.conf
-
 # Write fail2ban config
 touch /etc/fail2ban/jail.d/local.conf
 echo -ne "[DEFAULT]\nbanaction = firewallcmd-ipset\nbackend = systemd\n\n[sshd]\nenabled = true" > /etc/fail2ban/jail.d/local.conf
+
+# Fail2ban config
+touch /var/log/fail2ban.log
+sed -i -E 's/^(logtarget =).*/\1 \/var\/log\/fail2ban.log/' /etc/fail2ban/fail2ban.conf
+systemctl enable fail2ban
 
 # Clean logs
 rm -rf /root/anaconda-ks.cfg
