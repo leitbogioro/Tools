@@ -992,10 +992,14 @@ if [[ "$ddMode" == '1' ]]; then
     echo "$DDURL" | grep -q '^http://\|^ftp://\|^https://';
     [[ $? -ne '0' ]] && echo 'Please input vaild URL, Only support http://, ftp:// and https:// !' && exit 1;
     # Decompress command selection
-    if [[ $(echo "$DDURL" | grep -o ...$) == ".gz" ]] || [[ "$setFileType" == "gz" ]]; then
+    if [[ "$setFileType" == "gz" ]]; then
       DEC_CMD="gunzip -dc"
-    elif [[ $(echo "$DDURL" | grep -o ...$) == ".xz" ]] || [[ "$setFileType" == "xz" ]]; then
+      [[ $(echo "$DDURL" | grep -o ...$) == ".xz" ]] && DEC_CMD="xzcat"
+    elif [[ "$setFileType" == "xz" ]]; then
       DEC_CMD="xzcat"
+      [[ $(echo "$DDURL" | grep -o ...$) == ".gz" ]] && DEC_CMD="gunzip -dc"
+    else
+      DEC_CMD="gunzip -dc"
     fi
   else
     echo 'Please input vaild image URL! ';
@@ -1055,9 +1059,7 @@ else
   exit 1;
 fi
 if [[ "$linux_relese" == 'debian' ]]; then
-  if [[ "$IsCN" == "cn" ]]; then
-    FirmwareImage="cn"
-  fi
+  [[ "$IsCN" == "cn" ]] && FirmwareImage="cn"
   if [[ "$IncFirmware" == '1' ]]; then	
     if [[ "$FirmwareImage" == "cn" ]]; then
       wget --no-check-certificate -qO '/tmp/firmware.cpio.gz' "https://mirrors.ustc.edu.cn/debian-cdimage/unofficial/non-free/firmware/${DIST}/current/firmware.cpio.gz"
