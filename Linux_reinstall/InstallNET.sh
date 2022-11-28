@@ -33,6 +33,7 @@ export ddMode='0'
 export setNet='0'
 export setRDP='0'
 export setIPv6='0'
+export setRaid=''
 export isMirror='0'
 export FindDists='0'
 export setFileType=''
@@ -149,6 +150,11 @@ while [[ $# -ge 1 ]]; do
       shift
       setRDP='1'
       WinRemote="$1"
+      shift
+      ;;
+    -raid)
+      shift
+      setRaid="$1"
       shift
       ;;
     -cmd)
@@ -611,11 +617,44 @@ function DebianModifiedPreseed(){
         SupportIPv6="$1 sed -i '\$aiface ${AdapterName} inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16   2' /etc/gai.conf"
       fi
     fi
-    export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${DnsChangePermanently} ${ModifyMOTD} ${SupportIPv6}"
+    [[ "$setRaid" == "0" ]] && FormatDisk=`echo -e "d-i partman-md/confirm boolean true
+d-i partman-md/confirm_nooverwrite boolean true
+d-i partman-basicfilesystems/no_swap boolean false
+d-i partman/mount_style select label
+d-i partman-auto/method string raid
+d-i partman-auto/disk string /dev/sda /dev/sdb
+d-i partman-auto-raid/recipe string       \\\\
+    1 2 0 xfs /boot /dev/sda1#/dev/sdb1 . \\\\
+    0 2 0 xfs /     /dev/sda2#/dev/sdb2 .
+d-i partman-auto/expert_recipe string multiraid ::               \\\\
+    400 100 400 raid \\\\\\\$bootable{ } \\\\\\\$primary{ } method{ raid } . \\\\
+    100 200  -1 raid               \\\\\\\$primary{ } method{ raid } .
+d-i mdadm/boot_degraded boolean true"`
+# Raid 0 partition recipe:
+# d-i partman-md/confirm boolean true
+# d-i partman-md/confirm_nooverwrite boolean true
+# d-i partman-basicfilesystems/no_swap boolean false
+# d-i partman/mount_style select label
+# d-i partman-auto/method string raid
+# d-i partman-auto/disk string /dev/sda /dev/sdb
+# d-i partman-auto-raid/recipe string       \
+#     1 2 0 xfs /boot /dev/sda1#/dev/sdb1 . \
+#     0 2 0 xfs /     /dev/sda2#/dev/sdb2 .
+# d-i partman-auto/expert_recipe string multiraid ::               \
+#     400 100 400 raid \$bootable{ } \$primary{ } method{ raid } . \
+#     100 200  -1 raid               \$primary{ } method{ raid } .
+# d-i mdadm/boot_degraded boolean true
+	export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${DnsChangePermanently} ${ModifyMOTD} ${SupportIPv6}"
   fi
 }
 
 function DebianPreseedProcess(){
+FormatDisk=`echo -e "d-i partman/mount_style select uuid\nd-i partman-auto/method string regular\nd-i partman-auto/init_automatically_partition select Guided - use entire disk\nd-i partman-auto/choose_recipe select All files in one partition (recommended for new users)"`
+# Default disk format recipe:
+# d-i partman/mount_style select uuid
+# d-i partman-auto/method string regular
+# d-i partman-auto/init_automatically_partition select Guided - use entire disk
+# d-i partman-auto/choose_recipe select All files in one partition (recommended for new users)
 [[ "$NetworkConfig" == "isDHCP" ]] && NetConfigManually="" || NetConfigManually=`echo -e "d-i netcfg/disable_autoconfig boolean true\nd-i netcfg/dhcp_failed note\nd-i netcfg/dhcp_options select Configure network manually\nd-i netcfg/get_ipaddress string $IPv4\nd-i netcfg/get_netmask string $MASK\nd-i netcfg/get_gateway string $GATE\nd-i netcfg/get_nameservers string $ipDNS\nd-i netcfg/no_default_route boolean true\nd-i netcfg/confirm_static boolean true"`
 # Manually network setting configurations, including:
 # d-i netcfg/disable_autoconfig boolean true
@@ -681,19 +720,16 @@ cp -f '/net.bat' './net.bat'; \
 umount /media || true; \
 
 ### Partitioning
-d-i partman-partitioning/confirm_write_new_label boolean true
-d-i partman/mount_style select uuid
-d-i partman/choose_partition select finish
-d-i partman-auto/method string regular
-d-i partman-auto/init_automatically_partition select Guided - use entire disk
-d-i partman-auto/choose_recipe select All files in one partition (recommended for new users)
-d-i partman/default_filesystem string xfs
-d-i partman-md/device_remove_md boolean true
 d-i partman-lvm/device_remove_lvm boolean true
 d-i partman-lvm/confirm boolean true
 d-i partman-lvm/confirm_nooverwrite boolean true
+d-i partman-partitioning/confirm_write_new_label boolean true
+d-i partman/choose_partition select finish
 d-i partman/confirm boolean true
 d-i partman/confirm_nooverwrite boolean true
+d-i partman/default_filesystem string xfs
+d-i partman-md/device_remove_md boolean true
+${FormatDisk}
 
 ### Package selection
 tasksel tasksel/first multiselect minimal
@@ -838,8 +874,8 @@ if [[ ! -n "$VER" ]]; then
 fi
 
 if [[ -z "$tmpDIST" ]]; then
-  [ "$Relese" == 'Debian' ] && tmpDIST='bullseye'
-  [ "$Relese" == 'Ubuntu' ] && tmpDIST='focal'
+  [ "$Relese" == 'Debian' ] && tmpDIST='11'
+  [ "$Relese" == 'Ubuntu' ] && tmpDIST='20.04'
   [ "$Relese" == 'CentOS' ] && tmpDIST='9'
   [ "$Relese" == 'RockyLinux' ] && tmpDIST='9'
   [ "$Relese" == 'AlmaLinux' ] && tmpDIST='9'
