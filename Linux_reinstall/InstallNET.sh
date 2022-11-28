@@ -644,7 +644,7 @@ d-i mdadm/boot_degraded boolean true"`
 #     400 100 400 raid \$bootable{ } \$primary{ } method{ raid } . \
 #     100 200  -1 raid               \$primary{ } method{ raid } .
 # d-i mdadm/boot_degraded boolean true
-	export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${DnsChangePermanently} ${ModifyMOTD} ${SupportIPv6}"
+    export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${DnsChangePermanently} ${ModifyMOTD} ${SupportIPv6}"
   fi
 }
 
