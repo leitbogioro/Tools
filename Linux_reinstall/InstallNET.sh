@@ -994,8 +994,11 @@ if [[ "$ddMode" == '1' ]]; then
     echo "$DDURL" | grep -q '^http://\|^ftp://\|^https://';
     [[ $? -ne '0' ]] && echo 'Please input vaild URL, Only support http://, ftp:// and https:// !' && exit 1;
     # Decompress command selection
-    DEC_CMD="gunzip -dc"
-    [[ "$setFileType" == "xz" ]] && DEC_CMD="xzcat"
+    if [[ $(echo "$DDURL" | grep '.gz') != "" || "$setFileType" == "gz" || "$setFileType" == "" ]]; then
+      DEC_CMD="gunzip -dc"
+    elif [[ $(echo "$DDURL" | grep '.xz') != "" ]] || [[ "$setFileType" == "xz" ]]; then
+      DEC_CMD="xzcat"
+    fi
   else
     echo 'Please input vaild image URL! ';
     exit 1;
