@@ -625,9 +625,9 @@ d-i partman-basicfilesystems/no_swap boolean false
 d-i partman/mount_style select label
 d-i partman-auto/method string raid
 d-i partman-auto/disk string /dev/sda /dev/sdb
-d-i partman-auto-raid/recipe string       \\\\
-    1 2 0 xfs /boot /dev/sda1#/dev/sdb1 . \\\\
-    0 2 0 xfs /     /dev/sda2#/dev/sdb2 .
+d-i partman-auto-raid/recipe string        \\\\
+    1 2 0 ext4 /boot /dev/sda1#/dev/sdb1 . \\\\
+    0 2 0 ext4 /     /dev/sda2#/dev/sdb2 .
 d-i partman-auto/expert_recipe string multiraid ::               \\\\
     400 100 400 raid \\\\\\\$bootable{ } \\\\\\\$primary{ } method{ raid } . \\\\
     100 200  -1 raid               \\\\\\\$primary{ } method{ raid } .
@@ -639,9 +639,9 @@ d-i mdadm/boot_degraded boolean true"`
 # d-i partman/mount_style select label
 # d-i partman-auto/method string raid
 # d-i partman-auto/disk string /dev/sda /dev/sdb
-# d-i partman-auto-raid/recipe string       \
-#     1 2 0 xfs /boot /dev/sda1#/dev/sdb1 . \
-#     0 2 0 xfs /     /dev/sda2#/dev/sdb2 .
+# d-i partman-auto-raid/recipe string        \
+#     1 2 0 ext4 /boot /dev/sda1#/dev/sdb1 . \
+#     0 2 0 ext4 /     /dev/sda2#/dev/sdb2 .
 # d-i partman-auto/expert_recipe string multiraid ::               \
 #     400 100 400 raid \$bootable{ } \$primary{ } method{ raid } . \
 #     100 200  -1 raid               \$primary{ } method{ raid } .
@@ -1157,7 +1157,7 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
     sed -i '/pkgsel\/update-policy/d' /tmp/boot/preseed.cfg
     sed -i 's/umount\ \/media.*true\;\ //g' /tmp/boot/preseed.cfg
     [[ -f '/tmp/firmware.cpio.gz' ]] && gzip -d < /tmp/firmware.cpio.gz | cpio --extract --verbose --make-directories --no-absolute-filenames >>/dev/null 2>&1
-    [[ "$DebianDistNum" -le "8" ]] && sed -i '/d-i\ partman\/default_filesystem string xfs/d' /tmp/boot/preseed.cfg
+    [[ "$DebianDistNum" -le "8" || "$setRaid" == "0" ]] && sed -i '/d-i\ partman\/default_filesystem string xfs/d' /tmp/boot/preseed.cfg
   fi
 # Ubuntu 20.04 and below does't support xfs, force grub-efi installation to the removable media path may cause grub install failed.
   if [[ "$linux_relese" == 'ubuntu' ]]; then
