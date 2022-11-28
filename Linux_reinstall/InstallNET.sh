@@ -199,15 +199,14 @@ while [[ $# -ge 1 ]]; do
 function checkCN(){
   for TestUrl in "$1" "$2"; do
     IPv4PingDelay=`ping -4 -c 2 -w 2 "$TestUrl" | grep rtt | cut -d'/' -f5 | awk -F'.' '{print $NF}' | sed -n '/^[0-9]\+\(\.[0-9]\+\)\?$/p'`
-      IPv6PingDelay=`ping -6 -c 2 -w 2 "$TestUrl" | grep rtt | cut -d'/' -f5 | awk -F'.' '{print $NF}' | sed -n '/^[0-9]\+\(\.[0-9]\+\)\?$/p'`
-	if [[ "$3"="BioStack" ]]; then
-	  if [[ "$IPv4PingDelay" != "" ]] || [[ "$IPv6PingDelay" != "" ]]; then
-	    IsCN=""
-	    IsCN=`echo -e "$IsCN"`"$IsCN"
-	  else
-	    IsCN="cn"
-	    IsCN=`echo -e "$IsCN"`"$IsCN"
-	  fi
+    IPv6PingDelay=`ping -6 -c 2 -w 2 "$TestUrl" | grep rtt | cut -d'/' -f5 | awk -F'.' '{print $NF}' | sed -n '/^[0-9]\+\(\.[0-9]\+\)\?$/p'`
+    if [[ "$3"="BioStack" ]]; then
+      if [[ "$IPv4PingDelay" != "" ]] || [[ "$IPv6PingDelay" != "" ]]; then
+        IsCN=""
+        IsCN=`echo -e "$IsCN"`"$IsCN"
+      else
+        IsCN="cn"
+      fi
     elif [[ "$3"="IPv4Stack" ]]; then
       if [[ "$IPv4PingDelay" != "" ]]; then
         IsCN=""
@@ -378,7 +377,7 @@ function checkGrub(){
       GRUBTYPE="isGrub1"
     elif [[ "$CurrentOS" == "CentOS" || "$CurrentOS" == "OracleLinux" ]] && [[ "$CurrentOSVer" -le "6" ]]; then
       GRUBTYPE="isGrub1"
-	fi
+    fi
   fi
 }
 
@@ -818,17 +817,17 @@ tmpVER="$(echo "$tmpVER" |sed -r 's/(.*)/\L\1/')";
 if [[ -n "$tmpVER" ]]; then
   case "$tmpVER" in
     i386|i686|x86|32)
-    VER="i386"
-    ;;
+      VER="i386"
+      ;;
     amd64|x86_64|x64|64)
-    [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]] && VER='x86_64' || VER='amd64'
-    ;;
+      [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]] && VER='x86_64' || VER='amd64'
+      ;;
     aarch64|arm64|arm)
-    [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]] && VER='aarch64' || VER='arm64'
-    ;;
+      [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]] && VER='aarch64' || VER='arm64'
+      ;;
     *)
-    VER=''
-    ;;
+      VER=''
+      ;;
   esac
 fi
 
@@ -869,7 +868,7 @@ if [[ -n "$tmpDIST" ]]; then
   if [[ "$Relese" == 'Ubuntu' ]]; then
     SpikCheckDIST='0'
     DIST="$(echo "$tmpDIST" |sed -r 's/(.*)/\L\1/')"
-	UbuntuDistNum=`echo "$DIST" | cut -d'.' -f1`
+    UbuntuDistNum=`echo "$DIST" | cut -d'.' -f1`
     echo "$DIST" |grep -q '[0-9]'
     [[ $? -eq '0' ]] && {
       isDigital="$(echo "$DIST" |grep -o '[\.0-9]\{1,\}' |sed -n '1h;1!H;$g;s/\n//g;$p')";
@@ -888,7 +887,7 @@ if [[ -n "$tmpDIST" ]]; then
 # So we have no possibility to accomplish Ubuntu network installation in future.
 # Canonical.inc is son of a bitch, they change back and forth, pood and pee everywhere.
 # More discussions: https://discourse.ubuntu.com/t/netbooting-the-live-server-installer/14510/18
-		# [[ "$isDigital" == '22.04' ]] && DIST='jammy';
+       # [[ "$isDigital" == '22.04' ]] && DIST='jammy';
       }
     }
     LinuxMirror=$(selectMirror "$Relese" "$DIST" "$VER" "$tmpMirror")
@@ -1123,7 +1122,7 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
 # Ubuntu 20.04 and below does't support xfs, force grub-efi installation to the removable media path may cause grub install failed.
   if [[ "$linux_relese" == 'ubuntu' ]]; then
     sed -i '/d-i\ partman\/default_filesystem string xfs/d' /tmp/boot/preseed.cfg
-	sed -i '/d-i\ grub-installer\/force-efi-extra-removable/d' /tmp/boot/preseed.cfg
+    sed -i '/d-i\ grub-installer\/force-efi-extra-removable/d' /tmp/boot/preseed.cfg
   fi
   
   [[ "$ddMode" == '1' ]] && {
