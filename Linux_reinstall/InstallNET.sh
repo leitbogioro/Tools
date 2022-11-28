@@ -199,7 +199,7 @@ while [[ $# -ge 1 ]]; do
 function checkCN(){
   for TestUrl in "$1" "$2"; do
     IPv4PingDelay=`ping -4 -c 2 -w 2 "$TestUrl" | grep rtt | cut -d'/' -f5 | awk -F'.' '{print $NF}' | sed -n '/^[0-9]\+\(\.[0-9]\+\)\?$/p'`
-	IPv6PingDelay=`ping -6 -c 2 -w 2 "$TestUrl" | grep rtt | cut -d'/' -f5 | awk -F'.' '{print $NF}' | sed -n '/^[0-9]\+\(\.[0-9]\+\)\?$/p'`
+      IPv6PingDelay=`ping -6 -c 2 -w 2 "$TestUrl" | grep rtt | cut -d'/' -f5 | awk -F'.' '{print $NF}' | sed -n '/^[0-9]\+\(\.[0-9]\+\)\?$/p'`
 	if [[ "$3"="BioStack" ]]; then
 	  if [[ "$IPv4PingDelay" != "" ]] || [[ "$IPv6PingDelay" != "" ]]; then
 	    IsCN=""
@@ -209,31 +209,31 @@ function checkCN(){
 	    IsCN=`echo -e "$IsCN"`"$IsCN"
 	  fi
     elif [[ "$3"="IPv4Stack" ]]; then
-	  if [[ "$IPv4PingDelay" != "" ]]; then
-	    IsCN=""
-	    IsCN=`echo -e "$IsCN"`"$IsCN"
-	  else
-	    IsCN="cn"
-	    IsCN=`echo -e "$IsCN"`"$IsCN"
-	  fi
+      if [[ "$IPv4PingDelay" != "" ]]; then
+        IsCN=""
+        IsCN=`echo -e "$IsCN"`"$IsCN"
+      else
+        IsCN="cn"
+        IsCN=`echo -e "$IsCN"`"$IsCN"
+      fi
     elif [[ "$3"="IPv6Stack" ]]; then
-	  if [[ "$IPv6PingDelay" != "" ]]; then
-	    IsCN=""
-	    IsCN=`echo -e "$IsCN"`"$IsCN"
-	  else
-	    IsCN="cn"
-	    IsCN=`echo -e "$IsCN"`"$IsCN"
-	  fi  
+      if [[ "$IPv6PingDelay" != "" ]]; then
+        IsCN=""
+        IsCN=`echo -e "$IsCN"`"$IsCN"
+      else
+        IsCN="cn"
+        IsCN=`echo -e "$IsCN"`"$IsCN"
+      fi  
     fi
   done
   [[ `echo "$IsCN" | grep "cn"` != "" ]] && IsCN="cn" || IsCN=""
   if [[ "$IsCN" == "cn" ]]; then
     TimeZone='Asia/Shanghai'
     if [[ "$IPStackType" == "BioStack" ]] || [[ "$IPStackType"="IPv4Stack" ]]; then
-	  ipDNS="101.6.6.6"
-	else
-	  ipDNS="2001:da8::666"
-	fi
+      ipDNS="101.6.6.6"
+    else
+      ipDNS="2001:da8::666"
+    fi
   elif [[ "$IsCN" == "" ]] && [[ "$IPStackType" == "IPv6Stack" ]]; then
     ipDNS="2606:4700:4700::1001"
   fi
@@ -280,10 +280,10 @@ function selectMirror(){
     TEMP="SUB_MIRROR/dists/${DIST}/main/installer-${VER}/current/${legacy}images/netboot/${Relese}-installer/${VER}/initrd.gz"
   elif [ "$Relese" == "centos" ] || [ "$Relese" == "rockylinux" ] || [ "$Relese" == "almalinux" ]; then
     if [ "$Relese" == "centos" ] && [[ "$RedHatSeries" -le "7" ]]; then
-	  TEMP="SUB_MIRROR/${DIST}/os/${VER}/images/pxeboot/initrd.img"
-	else
-	  TEMP="SUB_MIRROR/${DIST}/BaseOS/${VER}/os/images/pxeboot/initrd.img"
-	fi
+      TEMP="SUB_MIRROR/${DIST}/os/${VER}/images/pxeboot/initrd.img"
+    else
+      TEMP="SUB_MIRROR/${DIST}/BaseOS/${VER}/os/images/pxeboot/initrd.img"
+    fi
   elif [ "$Relese" == "fedora" ]; then
     TEMP="SUB_MIRROR/releases/${DIST}/Server/${VER}/os/images/pxeboot/initrd.img"
   fi
@@ -296,14 +296,13 @@ function selectMirror(){
     MirrorBackup=(["debian0"]="" ["debian1"]="http://deb.debian.org/debian/" ["debian2"]="http://ftp.kddilabs.jp/pub/debian/" ["debian3"]="http://archive.debian.org/debian/" ["ubuntu0"]="" ["ubuntu1"]="http://archive.ubuntu.com/ubuntu/" ["ubuntu2"]="http://ports.ubuntu.com/" ["centos0"]="" ["centos1"]="http://mirror.centos.org/centos/" ["centos2"]="http://mirror.stream.centos.org/" ["centos3"]="http://mirror.math.princeton.edu/pub/centos-altarch/" ["centos4"]="http://vault.centos.org/" ["fedora0"]="" ["fedora1"]="https://download-ib01.fedoraproject.org/pub/fedora/linux/" ["fedora2"]="https://download-cc-rdu01.fedoraproject.org/pub/fedora/linux/" ["rockylinux0"]="" ["rockylinux1"]="http://download.rockylinux.org/pub/rocky/" ["rockylinux2"]="http://ftp.riken.jp/Linux/rocky/" ["almalinux0"]="" ["almalinux1"]="http://repo.almalinux.org/almalinux/" ["almalinux2"]="http://ftp.iij.ad.jp/pub/linux/almalinux/")
   fi
   echo "$New" |grep -q '^http://\|^https://\|^ftp://' && MirrorBackup[${Relese}0]="$New"
-  for mirror in $(echo "${!MirrorBackup[@]}" |sed 's/\ /\n/g' |sort -n |grep "^$Relese")
-    do
-      Current="${MirrorBackup[$mirror]}"
-      [ -n "$Current" ] || continue
-      MirrorURL=`echo "$TEMP" |sed "s#SUB_MIRROR#${Current}#g"`
-      wget --no-check-certificate --spider --timeout=3 -o /dev/null "$MirrorURL"
-      [ $? -eq 0 ] && mirrorStatus=1 && break
-    done
+  for mirror in $(echo "${!MirrorBackup[@]}" |sed 's/\ /\n/g' |sort -n |grep "^$Relese"); do
+    Current="${MirrorBackup[$mirror]}"
+    [ -n "$Current" ] || continue
+    MirrorURL=`echo "$TEMP" |sed "s#SUB_MIRROR#${Current}#g"`
+    wget --no-check-certificate --spider --timeout=3 -o /dev/null "$MirrorURL"
+    [ $? -eq 0 ] && mirrorStatus=1 && break
+  done
   [ $mirrorStatus -eq 1 ] && echo "$Current" || exit 1
 }
 
@@ -363,13 +362,13 @@ function checkGrub(){
   done
   if [[ ! -n "$GRUBFILE" ]]; then
     for Count in "$4" "$5"; do
-	  GRUBFILE=`find "$6" -name "$Count"`
-	  if [[ -n "$GRUBFILE" ]]; then
-	    GRUBDIR=`echo "$GRUBFILE" | sed "s/$Count//g"`
-		GRUBFILE="$Count"
-		break
-	  fi
-	done
+      GRUBFILE=`find "$6" -name "$Count"`
+      if [[ -n "$GRUBFILE" ]]; then
+        GRUBDIR=`echo "$GRUBFILE" | sed "s/$Count//g"`
+        GRUBFILE="$Count"
+        break
+      fi
+    done
   fi
   GRUBDIR=`echo ${GRUBDIR%?}` 
   if [[ `awk '/menuentry*/{print NF}' $GRUBDIR/$GRUBFILE | head -n 1` -ge "1" ]] || [[ `awk '/feature*/{print $a}' $GRUBDIR/$GRUBFILE | head -n 1` != "" ]]; then
@@ -401,19 +400,19 @@ function checkMem(){
 # They never optimize or improve it, just tell users they need to pay more to expand their hardware performance and adjust to the endless demand of them. it's not a correct decision. 
   [[ "$1" == 'fedora' || "$1" == 'rockylinux' || "$1" == 'almalinux' || "$1" == 'centos' ]] && {
     if [[ "$1" == 'rockylinux' || "$1" == 'almalinux' || "$1" == 'centos' ]]; then
-	  if [[ "$2" == "8" ]] && [[ "$TotalMem1" -le "2406400" || "$TotalMem2" -le "2406400" ]]; then
-	    echo -ne "\n\033[31mError: \033[0mSystem memory minimum 2.5GB required!\n"
-	    exit 1
-	  elif [[ "$2" -ge "9" ]] && [[ "$TotalMem1" -le "1740800" || "$TotalMem2" -le "1740800" ]]; then
-	    echo -ne "\n\033[31mError: \033[0mSystem memory minimum 2GB required!\n"
-	    exit 1
-	  fi
-	elif [[ "$1" == 'fedora' ]]; then
-	  if [[ "$TotalMem1" -le "1740800" || "$TotalMem2" -le "1740800" ]]; then
-	    echo -ne "\n\033[31mError: \033[0mSystem memory minimum 2GB required!\n"
-	    exit 1
-	  fi
-	fi
+      if [[ "$2" == "8" ]] && [[ "$TotalMem1" -le "2406400" || "$TotalMem2" -le "2406400" ]]; then
+        echo -ne "\n\033[31mError: \033[0mSystem memory minimum 2.5GB required!\n"
+        exit 1
+      elif [[ "$2" -ge "9" ]] && [[ "$TotalMem1" -le "1740800" || "$TotalMem2" -le "1740800" ]]; then
+        echo -ne "\n\033[31mError: \033[0mSystem memory minimum 2GB required!\n"
+        exit 1
+      fi
+    elif [[ "$1" == 'fedora' ]]; then
+      if [[ "$TotalMem1" -le "1740800" || "$TotalMem2" -le "1740800" ]]; then
+        echo -ne "\n\033[31mError: \033[0mSystem memory minimum 2GB required!\n"
+        exit 1
+      fi
+    fi
   }
 }
 
@@ -522,7 +521,7 @@ function getInterface(){
   echo "$interface"
   if [[ "$1" == 'Ubuntu' ]] && [[ "$2" -ge "18" ]]; then
     NetCfgDir="/etc/netplan/"
-	NetCfgFile=`ls -Sl $NetCfgDir | grep ".yaml" | head -n 1 | awk -F' ' '{print $NF}'`
+    NetCfgFile=`ls -Sl $NetCfgDir | grep ".yaml" | head -n 1 | awk -F' ' '{print $NF}'`
     AdapterName=`awk '/ethernets:/{getline a;print $1""a}' $NetCfgDir$NetCfgFile | awk '{print $2}' | sed 's/.$//'`
   elif [[ "$1" == 'CentOS' || "$1" == 'AlmaLinux' || "$1" == 'RockyLinux' || "$1" == 'Fedora' || "$1" == 'Vzlinux' || "$1" == 'OracleLinux' ]]; then
     for Count in "/etc/sysconfig/network-scripts/" "/run/sysconfig/network-scripts/" "/etc/NetworkManager/system-connections/" "/run/NetworkManager/system-connections/"; do
@@ -819,17 +818,17 @@ tmpVER="$(echo "$tmpVER" |sed -r 's/(.*)/\L\1/')";
 if [[ -n "$tmpVER" ]]; then
   case "$tmpVER" in
     i386|i686|x86|32)
-	VER="i386"
-	;;
-	amd64|x86_64|x64|64)
-	[[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]] && VER='x86_64' || VER='amd64'
-	;;
-	aarch64|arm64|arm)
-	[[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]] && VER='aarch64' || VER='arm64'
-	;;
-	*)
-	VER=''
-	;;
+    VER="i386"
+    ;;
+    amd64|x86_64|x64|64)
+    [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]] && VER='x86_64' || VER='amd64'
+    ;;
+    aarch64|arm64|arm)
+    [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]] && VER='aarch64' || VER='arm64'
+    ;;
+    *)
+    VER=''
+    ;;
   esac
 fi
 
@@ -896,66 +895,66 @@ if [[ -n "$tmpDIST" ]]; then
   fi
   if [[ "$Relese" == 'CentOS' ]] || [[ "$Relese" == 'RockyLinux' ]] || [[ "$Relese" == 'AlmaLinux' ]] || [[ "$Relese" == 'Fedora' ]]; then
     SpikCheckDIST='1'
-	DISTCheck="$(echo "$tmpDIST" |grep -o '[\.0-9]\{1,\}' |head -n1)"
-	RedHatSeries=`echo "$tmpDIST" | cut -d"." -f 1 | cut -d"-" -f 1`
-	if [[ "$linux_relese" == 'centos' ]]; then
-	  [[ "$RedHatSeries" =~ [0-9]{${#1}} ]] && {
-	    if [[ "$RedHatSeries" == "6" ]]; then
-	      DISTCheck="6.10"
-		  echo -ne "\n\033[33mWarning: \033[0m$Relese $DISTCheck is not supported!\n"
-		  exit 1
-	    elif [[ "$RedHatSeries" == "7" ]]; then
-	      DISTCheck="7.9.2009"
-	    elif [[ "$RedHatSeries" == "8" ]]; then
-	      DISTCheck="8.5.2111"
-	    elif [[ "$RedHatSeries" -ge "9" ]] && [[ ! "$RedHatSeries" =~ "-stream" ]]; then
-	      DISTCheck="$RedHatSeries""-stream"
-		elif [[ "$RedHatSeries" -le "5" ]]; then
-		  echo -ne "\n\033[33mWarning: \033[0m$Relese $DISTCheck is not supported!\n"
-		else
-	      echo -ne "\n\033[33mError: \033[0mInvaild $DIST! version!\n"
-	    fi
-	  }
+    DISTCheck="$(echo "$tmpDIST" |grep -o '[\.0-9]\{1,\}' |head -n1)"
+    RedHatSeries=`echo "$tmpDIST" | cut -d"." -f 1 | cut -d"-" -f 1`
+    if [[ "$linux_relese" == 'centos' ]]; then
+      [[ "$RedHatSeries" =~ [0-9]{${#1}} ]] && {
+        if [[ "$RedHatSeries" == "6" ]]; then
+          DISTCheck="6.10"
+          echo -ne "\n\033[33mWarning: \033[0m$Relese $DISTCheck is not supported!\n"
+          exit 1
+        elif [[ "$RedHatSeries" == "7" ]]; then
+          DISTCheck="7.9.2009"
+        elif [[ "$RedHatSeries" == "8" ]]; then
+          DISTCheck="8.5.2111"
+        elif [[ "$RedHatSeries" -ge "9" ]] && [[ ! "$RedHatSeries" =~ "-stream" ]]; then
+          DISTCheck="$RedHatSeries""-stream"
+        elif [[ "$RedHatSeries" -le "5" ]]; then
+          echo -ne "\n\033[33mWarning: \033[0m$Relese $DISTCheck is not supported!\n"
+        else
+          echo -ne "\n\033[33mError: \033[0mInvaild $DIST! version!\n"
+        fi
+      }
       LinuxMirror=$(selectMirror "$Relese" "$DISTCheck" "$VER" "$tmpMirror")
-	  DIST="$DISTCheck"
-	fi
-	if [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
-	  [[ "$RedHatSeries" =~ [0-9]{${#1}} ]] && {
-	    if [[ "$linux_relese" == 'rockylinux' || "$linux_relese" == 'almalinux' ]] && [[ "$RedHatSeries" -le "7" ]]; then
-	      echo -ne "\n\033[33mWarning: \033[0m$Relese $DISTCheck is not supported!\n"
-		  exit 1
-	    elif [[ "$linux_relese" == 'fedora' ]] && [[ "$RedHatSeries" -le "33" ]]; then
-	      echo -ne "\n\033[33mWarning: \033[0m$Relese $DISTCheck is not supported!\n"
-		  exit 1
-	    fi
-	  }
+      DIST="$DISTCheck"
+    fi
+    if [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
+      [[ "$RedHatSeries" =~ [0-9]{${#1}} ]] && {
+        if [[ "$linux_relese" == 'rockylinux' || "$linux_relese" == 'almalinux' ]] && [[ "$RedHatSeries" -le "7" ]]; then
+          echo -ne "\n\033[33mWarning: \033[0m$Relese $DISTCheck is not supported!\n"
+          exit 1
+        elif [[ "$linux_relese" == 'fedora' ]] && [[ "$RedHatSeries" -le "33" ]]; then
+          echo -ne "\n\033[33mWarning: \033[0m$Relese $DISTCheck is not supported!\n"
+          exit 1
+        fi
+      }
       LinuxMirror=$(selectMirror "$Relese" "$DISTCheck" "$VER" "$tmpMirror")
-	  DIST="$DISTCheck"
-	fi
-	[[ -z "$DIST" ]] && {
+      DIST="$DISTCheck"
+    fi
+    [[ -z "$DIST" ]] && {
       echo -ne '\nThe dists version not found in this mirror, Please check it! \n\n'
       bash $0 error
       exit 1
     }
     if [[ "$linux_relese" == 'centos' ]] && [[ "$RedHatSeries" -le "7" ]]; then
-	  wget --no-check-certificate -qO- "$LinuxMirror/$DIST/os/$VER/.treeinfo" |grep -q 'general'
+      wget --no-check-certificate -qO- "$LinuxMirror/$DIST/os/$VER/.treeinfo" |grep -q 'general'
       [[ $? != '0' ]] && {
-      echo -ne "\n\033[33mWarning: \033[0m$Relese $DISTCheck was not found in this mirror, Please change mirror try again!\n"
-      exit 1
-	  }
-	elif [[ "$linux_relese" == 'centos' && "$RedHatSeries" -ge "8" ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]]; then
-	  wget --no-check-certificate -qO- "$LinuxMirror/$DIST/BaseOS/$VER/os/.treeinfo" |grep -q 'general'
+        echo -ne "\n\033[33mWarning: \033[0m$Relese $DISTCheck was not found in this mirror, Please change mirror try again!\n"
+        exit 1
+      }
+    elif [[ "$linux_relese" == 'centos' && "$RedHatSeries" -ge "8" ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]]; then
+      wget --no-check-certificate -qO- "$LinuxMirror/$DIST/BaseOS/$VER/os/.treeinfo" |grep -q 'general'
       [[ $? != '0' ]] && {
-      echo -ne "\n\033[33mWarning: \033[0m$Relese $DISTCheck was not found in this mirror, Please change mirror try again!\n"
-      exit 1
-	  }
-	elif [[ "$linux_relese" == 'fedora' ]]; then
-	  wget --no-check-certificate -qO- "$LinuxMirror/releases/$DIST/Server/$VER/os/.treeinfo" |grep -q 'general'
+        echo -ne "\n\033[33mWarning: \033[0m$Relese $DISTCheck was not found in this mirror, Please change mirror try again!\n"
+        exit 1
+    }
+    elif [[ "$linux_relese" == 'fedora' ]]; then
+      wget --no-check-certificate -qO- "$LinuxMirror/releases/$DIST/Server/$VER/os/.treeinfo" |grep -q 'general'
       [[ $? != '0' ]] && {
-      echo -ne "\n\033[33mWarning: \033[0m$Relese $DISTCheck was not found in this mirror, Please change mirror try again!\n"
-      exit 1
-	  }
-	fi    
+        echo -ne "\n\033[33mWarning: \033[0m$Relese $DISTCheck was not found in this mirror, Please change mirror try again!\n"
+        exit 1
+      }
+    fi    
   fi
 fi
 
@@ -1061,7 +1060,7 @@ if [[ "$linux_relese" == 'debian' ]]; then
     FirmwareImage="cn"
   fi
   if [[ "$IncFirmware" == '1' ]]; then	
-	if [[ "$FirmwareImage" == "cn" ]]; then
+    if [[ "$FirmwareImage" == "cn" ]]; then
       wget --no-check-certificate -qO '/tmp/firmware.cpio.gz' "https://mirrors.ustc.edu.cn/debian-cdimage/unofficial/non-free/firmware/${DIST}/current/firmware.cpio.gz"
       [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'firmware' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
     elif [[ "$FirmwareImage" == '' ]]; then
@@ -1158,33 +1157,33 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
   if [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]]; then
     if [[ "$RedHatSeries" -ge "8" ]]; then
       RedHatUrl="${LinuxMirror}/${DIST}/BaseOS/${VER}/os/"	  
-	  RepoBase="repo --name=base --baseurl=${LinuxMirror}/${DIST}/BaseOS/${VER}/os/"
-	  RepoAppStream="repo --name=appstream --baseurl=${LinuxMirror}/${DIST}/AppStream/${VER}/os/"
-	  if [[ "$IsCN" == "cn" ]]; then
-	    RepoEpel="repo --name=epel --baseurl=http://mirrors.cloud.tencent.com/epel/$RedHatSeries/Everything/${VER}/"
-	  else
-	    RepoEpel="repo --name=epel --baseurl=https://archives.fedoraproject.org/pub/epel/$RedHatSeries/Everything/${VER}/"
-	  fi
+      RepoBase="repo --name=base --baseurl=${LinuxMirror}/${DIST}/BaseOS/${VER}/os/"
+      RepoAppStream="repo --name=appstream --baseurl=${LinuxMirror}/${DIST}/AppStream/${VER}/os/"
+      if [[ "$IsCN" == "cn" ]]; then
+        RepoEpel="repo --name=epel --baseurl=http://mirrors.cloud.tencent.com/epel/$RedHatSeries/Everything/${VER}/"
+      else
+        RepoEpel="repo --name=epel --baseurl=https://archives.fedoraproject.org/pub/epel/$RedHatSeries/Everything/${VER}/"
+      fi
     elif [[ "$linux_relese" == 'centos' ]] && [[ "$RedHatSeries" -le "7" ]]; then
       RedHatUrl="${LinuxMirror}/${DIST}/os/${VER}/"
-	  AuthMethod="auth --useshadow --passalgo=sha512"
-	  SetTimeZone="timezone --isUtc ${TimeZone}"
-	  RepoBase="repo --name=base --baseurl=${LinuxMirror}/${DIST}/os/${VER}/"
-	  RepoAppStream="repo --name=updates --baseurl=${LinuxMirror}/${DIST}/updates/${VER}/"
-	  FirewallRule="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/RedHat/RHEL7Public.xml"
-	  if [[ "$IsCN" == "cn" ]]; then
-	    RepoEpel="repo --name=epel --baseurl=http://mirrors.cloud.tencent.com/epel/$RedHatSeries/${VER}/"
-	  else
-	    RepoEpel="repo --name=epel --baseurl=https://archives.fedoraproject.org/pub/archive/epel/$RedHatSeries/${VER}/"
-	  fi
+      AuthMethod="auth --useshadow --passalgo=sha512"
+      SetTimeZone="timezone --isUtc ${TimeZone}"
+      RepoBase="repo --name=base --baseurl=${LinuxMirror}/${DIST}/os/${VER}/"
+      RepoAppStream="repo --name=updates --baseurl=${LinuxMirror}/${DIST}/updates/${VER}/"
+      FirewallRule="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/RedHat/RHEL7Public.xml"
+      if [[ "$IsCN" == "cn" ]]; then
+        RepoEpel="repo --name=epel --baseurl=http://mirrors.cloud.tencent.com/epel/$RedHatSeries/${VER}/"
+      else
+        RepoEpel="repo --name=epel --baseurl=https://archives.fedoraproject.org/pub/archive/epel/$RedHatSeries/${VER}/"
+      fi
     fi
   elif [[ "$linux_relese" == 'fedora' ]]; then
     RedHatUrl="${LinuxMirror}/releases/${DIST}/Server/${VER}/os/"
-	RepoBase="repo --name=base --baseurl=${LinuxMirror}/releases/${DIST}/Server/${VER}/os/"
-	RepoEpel="repo --name=epel --baseurl=${LinuxMirror}/releases/${DIST}/Everything/${VER}/os/"
+    RepoBase="repo --name=base --baseurl=${LinuxMirror}/releases/${DIST}/Server/${VER}/os/"
+    RepoEpel="repo --name=epel --baseurl=${LinuxMirror}/releases/${DIST}/Everything/${VER}/os/"
   fi
   if [[ "$NetworkConfig" == "isDHCP" ]]; then
-	NetConfigManually="network --bootproto=dhcp --hostname=$(hostname) --onboot=on"
+    NetConfigManually="network --bootproto=dhcp --hostname=$(hostname) --onboot=on"
   else
     NetConfigManually="network --bootproto=static --ip=$IPv4 --netmask=$MASK --gateway=$GATE --nameserver=$ipDNS --hostname=$(hostname) --onboot=on"
   fi
@@ -1392,7 +1391,7 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
       BootHex="efi"
     else
       BootHex="16"
-	fi
+    fi
   elif [[ "$VER" == "aarch64" || "$VER" == "arm64" ]]; then
     BootHex=""
   fi
