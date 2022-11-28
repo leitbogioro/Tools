@@ -55,7 +55,7 @@ export DebianModifiedProcession='echo "";'
 
 while [[ $# -ge 1 ]]; do
   case $1 in
-    -v|--ver)
+    -version)
       shift
       tmpVER="$1"
       shift
