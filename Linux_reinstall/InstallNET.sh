@@ -709,8 +709,8 @@ d-i time/zone string ${TimeZone}
 d-i clock-setup/ntp boolean true
 d-i clock-setup/ntp-server string ntp.nict.jp
 
-### Windows RDP installation set up
-d-i preseed/early_command string anna-install libfuse2-udeb fuse-udeb ntfs-3g-udeb libcrypto1.1-udeb libpcre2-8-0-udeb libssl1.1-udeb libuuid1-udeb xz-utils zlib1g-udeb wget-udeb
+### Windows DD installation set up
+d-i preseed/early_command string anna-install libfuse2-udeb fuse-udeb ntfs-3g-udeb libcrypto1.1-udeb libpcre2-8-0-udeb libssl1.1-udeb libuuid1-udeb zlib1g-udeb wget-udeb
 d-i partman/early_command string [[ -n "\$(blkid -t TYPE='vfat' -o device)" ]] && umount "\$(blkid -t TYPE='vfat' -o device)"; \
 debconf-set partman-auto/disk "\$(list-devices disk |head -n1)"; \
 wget -qO- '$DDURL' | $DEC_CMD | /bin/dd of=\$(list-devices disk |head -n1); \
@@ -1028,7 +1028,7 @@ if [[ "$ddMode" == '1' ]]; then
   if [[ -n "$tmpURL" ]]; then
     DDURL="$tmpURL"
     echo "$DDURL" | grep -q '^http://\|^ftp://\|^https://';
-    [[ $? -ne '0' ]] && echo 'Please input vaild URL, Only support http://, ftp:// and https:// !' && exit 1;
+    [[ $? -ne '0' ]] && echo 'Please input vaild URL,Only support http://, ftp:// and https:// !' && exit 1;
     # Decompress command selection
     if [[ "$setFileType" == "gz" ]]; then
       DEC_CMD="gunzip -dc"
@@ -1108,7 +1108,7 @@ if [[ "$linux_relese" == 'debian' ]]; then
     fi
   fi
   if [[ "$ddMode" == '1' ]]; then
-    vKernel_udeb=$(wget --no-check-certificate -qO- "http://$DISTMirror/dists/$DIST/main/installer-$VER/current/images/udeb.list" |grep '^acpi-modules' |head -n1 |grep -o '[0-9]\{1,2\}.[0-9]\{1,2\}.[0-9]\{1,2\}-[0-9]\{1,2\}' |head -n1)
+    vKernel_udeb=$(wget --no-check-certificate -qO- "http://$LinuxMirror/dists/$DIST/main/installer-$VER/current/images/udeb.list" |grep '^acpi-modules' |head -n1 |grep -o '[0-9]\{1,2\}.[0-9]\{1,2\}.[0-9]\{1,2\}-[0-9]\{1,2\}' |head -n1)
     [[ -z "vKernel_udeb" ]] && vKernel_udeb="5.19.0-1"
   fi
 fi
@@ -1164,7 +1164,7 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
     sed -i '/d-i\ partman\/default_filesystem string xfs/d' /tmp/boot/preseed.cfg
     sed -i '/d-i\ grub-installer\/force-efi-extra-removable/d' /tmp/boot/preseed.cfg
   fi
-  
+
   [[ "$ddMode" == '1' ]] && {
     WinNoDHCP(){
       echo -ne "for\0040\0057f\0040\0042tokens\00753\0052\0042\0040\0045\0045i\0040in\0040\0050\0047netsh\0040interface\0040show\0040interface\0040\0136\0174more\0040\00533\0040\0136\0174findstr\0040\0057I\0040\0057R\0040\0042本地\0056\0052\0040以太\0056\0052\0040Local\0056\0052\0040Ethernet\0042\0047\0051\0040do\0040\0050set\0040EthName\0075\0045\0045j\0051\r\nnetsh\0040\0055c\0040interface\0040ip\0040set\0040address\0040name\0075\0042\0045EthName\0045\0042\0040source\0075static\0040address\0075$IPv4\0040mask\0075$MASK\0040gateway\0075$GATE\r\nnetsh\0040\0055c\0040interface\0040ip\0040add\0040dnsservers\0040name\0075\0042\0045EthName\0045\0042\0040address\00758\00568\00568\00568\0040index\00751\0040validate\0075no\r\n\r\n" >>'/tmp/boot/net.tmp';
