@@ -35,7 +35,7 @@ export setRDP='0'
 export setIPv6='0'
 export isMirror='0'
 export FindDists='0'
-export setFileType=''
+export setFileType='gz'
 export loaderMode='0'
 export IncFirmware='0'
 export SpikCheckDIST='0'
@@ -992,9 +992,9 @@ if [[ "$ddMode" == '1' ]]; then
     echo "$DDURL" | grep -q '^http://\|^ftp://\|^https://';
     [[ $? -ne '0' ]] && echo 'Please input vaild URL, Only support http://, ftp:// and https:// !' && exit 1;
     # Decompress command selection
-    if [[ $(echo "$DDURL" | grep '.gz') != "" || "$setFileType" == "gz" || "$setFileType" == "" ]]; then
+    if [[ $(echo "$DDURL" | grep -o ...$) == ".gz" ]] || [[ "$setFileType" == "gz" ]]; then
       DEC_CMD="gunzip -dc"
-    elif [[ $(echo "$DDURL" | grep '.xz') != "" ]] || [[ "$setFileType" == "xz" ]]; then
+    elif [[ $(echo "$DDURL" | grep -o ...$) == ".xz" ]] || [[ "$setFileType" == "xz" ]]; then
       DEC_CMD="xzcat"
     fi
   else
