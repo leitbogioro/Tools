@@ -996,9 +996,6 @@ if [[ "$ddMode" == '1' ]]; then
     # Decompress command selection
     DEC_CMD="gunzip -dc"
     [[ "$setFileType" == "xz" ]] && DEC_CMD="xzcat"
-    else
-        echo 'Please input vaild URL, Only support gz or xz file!' && exit 1
-    fi
   else
     echo 'Please input vaild image URL! ';
     exit 1;
