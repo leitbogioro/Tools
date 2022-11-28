@@ -22,7 +22,7 @@ Something about scripts
 - Detect if the machine is operating in mainland of China or outside and switch mirror automatically.
 - Support the parameter of '-port' to modify ssh port of redhat series.
 - Detect the network of machine is DHCP or static automatically.
-- For windows DD package, default compression method is "gz", if your package is ".xz", you can add parameter -filetype "xz" to decompression it.
+- For windows DD package, default compression method is "gz", if your package is ".xz", you can add parameter -filetype "xz" to decompress it.
 - Support Raid 0, to add parameter -raid "0", the validation need to be certificated.
 
 ![1](1.jpg)
