@@ -563,7 +563,7 @@ function checkDHCP(){
   getInterface "$CurrentOS" "$CurrentOSVer"
   if [[ "$tmpDHCP" == '1' ]]; then
     NetworkConfig="isDHCP"
-  elif [[ "$tmpDHCP" == '0' ]]; then  
+  elif [[ "$tmpDHCP" == '0' ]] || [[ -n "$ipAddr" && -n "$ipMask" && -n "$ipGate" ]]; then
     if [[ "$1" == 'CentOS' || "$1" == 'AlmaLinux' || "$1" == 'RockyLinux' || "$1" == 'Fedora' || "$1" == 'Vzlinux' || "$1" == 'OracleLinux' ]]; then
 # RedHat like linux system 8 and before network config name is "ifcfg-AdapterName", deposited in /etc/sysconfig/network-scripts/
 # RedHat like linux system 9 and later network config name is "AdapterName.nmconnection", deposited in /etc/NetworkManager/system-connections
