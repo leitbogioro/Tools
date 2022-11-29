@@ -24,6 +24,7 @@ Something about scripts
 - Detect the network of machine is DHCP or static automatically.
 - For windows DD package, default compression method is "gz", if your package is ".xz", you can add parameter -filetype "xz" to decompress it.
 - Support Raid 0, to add parameter -raid "0", the validation need to be certificated.
+- Disable ntp clock setup for static network in Debian/Ubuntu installation otherwise it may cause static network failed.
 
 ![1](1.jpg)
 
