@@ -569,16 +569,22 @@ function checkDHCP(){
 # RedHat like linux system 9 and later network config name is "AdapterName.nmconnection", deposited in /etc/NetworkManager/system-connections
       if [[ -n `grep -Ern "BOOTPROTO=dhcp|BOOTPROTO=\"dhcp\"|BOOTPROTO=\'dhcp\'|BOOTPROTO=DHCP|BOOTPROTO=\"DHCP\"|BOOTPROTO=\'DHCP\'" $NetCfgDir` ]] || [[ -n `grep -Ern "method=auto" $NetCfgDir` ]]; then
         NetworkConfig="isDHCP"
+      else
+        NetworkConfig="isStatic"
       fi
     elif [[ "$1" == 'Debian' ]] || [[ "$1" == 'Ubuntu' && "$2" -le "16" ]]; then
 # Debian network configs may be deposited in the following directions.
 # /etc/network/interfaces or /etc/network/interfaces.d/AdapterName or /run/network/interfaces.d/AdapterName
       if [[ `grep -c "inet" $NetCfgDir$NetCfgFile | grep -c "dhcp" $NetCfgDir$NetCfgFile` -ne "0" ]] || [[ `grep -c "inet6" $NetCfgDir$NetCfgFile | grep -c "dhcp" $NetCfgDir$NetCfgFile` -ne "0" ]]; then
         NetworkConfig="isDHCP"
+      else
+        NetworkConfig="isStatic"
       fi
     elif [[ "$1" == 'Ubuntu' ]] && [[ "$2" -ge "18" ]]; then
       if [[ `grep -c "dhcp4: true" $NetCfgDir$NetCfgFile` -ne "0" ]] || [[ `grep -c "dhcp4: yes" $NetCfgDir$NetCfgFile` -ne "0" ]] || [[ `grep -c "dhcp6: true" $NetCfgDir$NetCfgFile` -ne "0" ]] || [[ `grep -c "dhcp6: yes" $NetCfgDir$NetCfgFile` -ne "0" ]]; then
         NetworkConfig="isDHCP"
+      else
+        NetworkConfig="isStatic"
       fi
     fi
   fi
@@ -1162,6 +1168,11 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
   if [[ "$linux_relese" == 'ubuntu' ]]; then
     sed -i '/d-i\ partman\/default_filesystem string xfs/d' /tmp/boot/preseed.cfg
     sed -i '/d-i\ grub-installer\/force-efi-extra-removable/d' /tmp/boot/preseed.cfg
+  fi
+# Static network environment doesn't support ntp clock setup.
+  if [[ "$NetworkConfig" == "isStatic" ]]; then
+    sed -i 's/ntp boolean true/ntp boolean false/g' /tmp/boot/preseed.cfg
+    sed -i '/d-i\ clock-setup\/ntp-server string ntp.nict.jp/d' /tmp/boot/preseed.cfg
   fi
 
   [[ "$ddMode" == '1' ]] && {
