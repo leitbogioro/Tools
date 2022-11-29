@@ -25,6 +25,7 @@ Something about scripts
 - For windows DD package, default compression method is "gz", if your package is ".xz", you can add parameter -filetype "xz" to decompress it.
 - Support Raid 0, to add parameter -raid "0", the validation need to be certificated.
 - Disable ntp clock setup for static network in Debian/Ubuntu installation otherwise it may cause static network failed.
+- Fix if input --ip-addr "" --ip-mask "" --ip-gate "", static network configuration may not valid.
 
 ![1](1.jpg)
 
@@ -125,44 +126,51 @@ For Ubuntu, official recommend mirror lists are here:
 <pre><code>https://launchpad.net/ubuntu/+cdmirrors</code></pre>
 <br />
 
-**-port**: you can pre-specify ssh port of system, range is 1~65535, **default is '22'**.
+**-port ""**: you can pre-specify ssh port of system, range is 1~65535, both Redhat series or Debian series could be supported, **default is '22'**.
 <br />
 <br />
 
-**-pwd**: you can pre-specify ssh password of system, **default is 'LeitboGi0ro'**.
+**-pwd ""**: you can pre-specify ssh password of system, both Redhat series or Debian series could be supported, **default is 'LeitboGi0ro'**.
 <br />
 <br />
 
-**-filetype "gz/xz"**: To determine DD file type if the link of the DD file doesn't include ".gz" or ".xz"
+**-dd/--image "DD image from a valid url"**: This parameter is for DD mode in KVM or XEN virtualization platform, for example, if you want to DD windows, you can refer to chapter "How to install Windows?" to get more in this document.
 <br />
 <br />
 
-**-raid "0"**: If your machine has only one hard drive, don't assign it!
+**-filetype "gz/xz"**: To determine DD file type, not only ".gz"(default) but also ".xz" can be supported.
 <br />
 <br />
 
-**--dhcp-static**: Default to use DHCP to finish network configuration, if the network of your machine is static, you need to add it.
+**-raid "0"**: Only for raid 0 disk partition, if your machine has only one hard drive, don't assign it!
 <br />
 <br />
 
-**--ip-addr**: if your cloud provider is from GCP etc, you should input it manually.
+**--dhcp-static**: Default to use DHCP to finish network configuration, if the network of your machine is static, you need to add it. it is equal with add --ip-addr "" --ip-mask "" --ip-gate "", if you add this, don't distribute the following three items again! It must be added in the last of the command.
 <br />
 <br />
 
-**--ip-gate**: if your cloud provider is from GCP etc, you should input it manually.
+**--ip-addr "IPv4 address"**: If your cloud provider is from GCP etc, you should input it manually. it must be added with --ip-gate and --ip-mask, if you have added --dhcp-static, don't assign it again!
 <br />
 <br />
 
-**--ip-mask**: if your cloud provider is from GCP etc, you should input it manually.
+**--ip-gate "IPv4 gateway"**: If your cloud provider is from GCP etc, you should input it manually. it must be added with --ip-addr and --ip-mask, if you have added --dhcp-static, don't assign it again!
 <br />
 <br />
 
-**-firmware**: specify drivers for Debian to support old hardwares, if your server location is in mainland China, you can prefer it to mirror of 'University of Science and Technology of China(https://mirrors.ustc.edu.cn/debian-cdimage/)' for downloading more quickly, default mirror is from http://cdimage.debian.org/cdimage/.
+**--ip-mask "IPv4 subnet musk"**: If your cloud provider is from GCP etc, you should input it manually. it must be added with --ip-addr and --ip-gate, if you have added --dhcp-static, don't assign it again!
 <br />
 <br />
 
-**-version 32/i386 or 64/amd64 or arm/arm64**: OS bit
-Program will detect and redirect the CPU architecture of your machine automatically, if you don't know, don't assign it!
+**--ip-dns "IPv4 DNS server"**: This one is only for static network configuration and default is 1.0.0.1, you can also change other IPv4 dns server like 8.8.8.8, 9.9.9.9, 4.4.2.2 etc to replace it. If the network of your machine is DHCP, don't assign it!
+<br />
+<br />
+
+**-firmware**: Specify drivers for Debian to support old hardwares, if your server location is in mainland China, you can prefer it to mirror of 'University of Science and Technology of China(https://mirrors.ustc.edu.cn/debian-cdimage/)' for downloading more quickly, default mirror is from http://cdimage.debian.org/cdimage/.
+<br />
+<br />
+
+**-version 32/i386 or 64/amd64 or arm/arm64**: OS bit. Program will detect and redirect the CPU architecture from your machine to new system which would be installed automatically, if you aren't known it well, don't assign it!
 <br />
 <br />
 
