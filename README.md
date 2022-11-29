@@ -170,7 +170,7 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**-version 32/i386 or 64/amd64 or arm/arm64**: OS bit. Program will detect and redirect the CPU architecture from your machine to new system which would be installed automatically, if you aren't known it well, don't assign it!
+**-version 32/i386 or 64/amd64 or arm/arm64**: OS bit. Program will automatically detect and redirect the CPU architecture from your machine to new system which would be installed, if you aren't known it well, don't assign it!
 <br />
 <br />
 
