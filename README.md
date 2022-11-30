@@ -242,7 +242,7 @@ Notice: Microsoft products and services—including images, text, and software d
 <br />
 <br />
 <b>"installNET.sh" doesn't provide any third-part activation service for Windows, this function is only help you to research, evaluate related features of Windows. "installNET.sh" is not responsible or liable if someone cause any illegal circumstance.</b>
-### Servers based on KVM or XEN virtualization:
+### Servers based on KVM or XEN virtualization, Debian series only:
 <pre><code>bash InstallNET.sh -dd "DD image download URL"</code></pre>
 ### Servers based on physical hardware, Intel network adapter, kimsufi etc:
 Change netboot to rescue mode, receive mail, get temporary username and password, log into linux, execute:
