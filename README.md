@@ -36,7 +36,7 @@ Something about scripts
 to make changes validating!
 
 ## Defects:
-- Don't support Ubuntu 22.04(jammy) and later, because Canonical deprecated netboot file and force users to use its fuckin cloud-init, it must virtualization demanded but most of VPS can't support.
+- Don't support Ubuntu 22.04(jammy) and later, because Canonical deprecated netboot file and force users to use its fuckin cloud-init, it must virtualization demanded but most of VPS doen't work it well completely. Canonical is playing a role as a dictator like Apple.Inc and violating the spirit of the open source.
 - For redhat series 8, the minimum memory requirement is 2.5GB, for redhat series 9, the minimum memory requirement is 2GB.
 - Because the syntax of grub1 in CentOS 6 is different from other version of grub1 or grub2 completely, so I removed support to CentOS 6 or Oracle Linux 6.
 
