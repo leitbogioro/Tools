@@ -27,7 +27,7 @@ Something about scripts
 - Disable ntp clock setup for static network in Debian/Ubuntu installation otherwise it may cause static network failed.
 - Fix if input --ip-addr "" --ip-mask "" --ip-gate "", static network configuration may not valid.
 - Support config timezone automatically according to the geo-location of the guest's IP or determine an existed timezone parameter to config it manually is also be supported.
-- Concentrate all needed installation of dependences to inner command excerpt "wget".
+- Concentrate all needed installation of dependences to inner command except "wget" because you need to download "InstallNET.sh" first.
 
 ![1](1.jpg)
 
