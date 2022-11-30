@@ -229,9 +229,7 @@ Australia:
 
 ## Default Configurations
 ### Time zone
-Asia Shanghai
-### Time zone
-Asia Tokyo
+Depends on the geo-location of guest's IP(automode) && Asia/Tokyo(if the format of the input parameter is incorrect in manual mode)
 ### Default User name
 root
 ### Default Password
