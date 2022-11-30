@@ -4,24 +4,24 @@ Something about scripts
 ## Features and updates:
 - "InstallNET.sh" will give you a clean, safe, official Linux system, and help you escape of your server providers' monitoring.
 - The operation is easy, several minutes installation will be complated.
-- Support install to Debian 8+, Ubuntu 14.04 ~ 20.04, Redhat series 7+(including CentOS 7+, AlmaLinux 8+, RockyLinux 8+, Fedora 34+).
+- Support install to Debian series(including Debian 8+, Ubuntu 14.04 ~ 20.04), Redhat series 7+(including CentOS 7+, AlmaLinux 8+, RockyLinux 8+, Fedora 34+).
 - Can also run in mainline version of other Redhat series(Oracle Linux 7+, VzLinux 8+) to install supported system.
 - Support major cloud providers, especially support Oracle Cloud ARM machine.
 - Detect the CPU architecture of current os and exchange correct architecture to new system automatically, you need not to add parameter '-version' at all to comfirm architecture manually.
 - Can handle boot menuentry items automatically of grub2 in different hardware platforms(AMD64 legacy / AMD64 UEFI / ARM64 UEFI) to make sure all supported bootfile can be loaded correctly.
-- Support install from Linux to Windows. details refer to "How to install Windows?" section.
+- Support install from Linux(Debian series only) to Windows. details refer to "How to install Windows?" section.
 - Support IPv6 single-stack(only have IPv6 public address) server like Vultr 2.5$ monthly plan, only for DHCP.
 - Support network auto configurations in bio-stack(have both IPv4 and IPv6 public address), after log into system, you don't have to config IPv6 address manually, only for Debian, DHCP.
 - You can modify architecture, mirror, firmware, ssh port, password etc. 
 - Friendly to low memory device, for Debian series, recommend RAM is above 512MB, for Redhat series, recommend RAM is above 2GB.</b>
 - Ubuntu 22.04 has cancelled net boot start features, so this program don't support Ubuntu 22.04 and above reinstallation, source: http://archive.ubuntu.com/ubuntu/dists/jammy/main/installer-amd64/current/legacy-images/: The Legacy Ubuntu Server Installer is no longer available, initrd.gz and linux netboot file for arm64 architecture as also.
 - The Debian official mirror of South Korea http://ftp.kr.debian.org/debian/ is usually crashed down, so I changed recommend mirror as Jaist University https://www.jaist.ac.jp/index.html, for Japan is from https://www.riken.jp/, a science research organization, for America is from University of California, Berkeley: https://www.berkeley.edu/.
-- Completely modified debian, such as support terminal files colorful displaying, permanently change dns server, disable expired certificates, add on a cute welcome introduction, pre-install many complements in preseeding progress, now enjoy a newly, comfortable, graceful debian experience!
-- Support grub2 boot file modify, it can switch debian to Redhat or switch Redhat to debian smoothly, in old version if you installed from debian to redhat, you will no more switch to debian.
-- Support xfs file system(only for Debian 9 and later), it's better than the old ext2 and it's the default option of redhat series.
+- Completely modified Debian, such as support terminal files colorful displaying, permanently change dns server, disable expired certificates, add on a cute welcome introduction, pre-install many complements in preseeding progress, now enjoy a newly, comfortable, graceful debian experience!
+- Support grub2 boot file modify, it can switch Debian series to Redhat series or switch Redhat series to Debian series smoothly, in old version if you installed from Debian series to Redhat series, you can never switch to Debian series again.
+- Support xfs file system(only for Debian 9 and later), it's better than the old ext2 and it's the default option of Redhat series.
 - Detect if the machine is operating in mainland of China or outside and switch mirror automatically.
-- Support the parameter of '-port' to modify ssh port of redhat series.
-- Detect the network of machine is DHCP or static automatically.
+- Support the parameter of '-port' to modify ssh port of Redhat series.
+- Detect the network of device is DHCP or static automatically.
 - For windows DD package, default compression method is "gz", if your package is ".xz", you can add parameter -filetype "xz" to decompress it.
 - Support Raid 0, to add parameter -raid "0", the validation need to be certificated.
 - Disable ntp clock setup for static network in Debian/Ubuntu installation otherwise it may cause static network failed.
