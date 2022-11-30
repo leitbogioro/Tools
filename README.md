@@ -47,8 +47,10 @@ to make changes validating!
 ## Dependences:
 Debian series(Debian/Ubuntu):
 <pre><code>apt update -y</code></pre>
+<pre><code>apt install wget -y</code></pre>
 Redhat series(CentOS/Almalinux/Rockylinux/Oraclelinux/Fedora/VzLinux):
 <pre><code>yum update --allowerasing -y</code></pre>
+<pre><code>yum install wget -y</code></pre>
 
 ## Quickly start
 If you need to add other parameters, version number must be assigned!
