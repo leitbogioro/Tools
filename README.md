@@ -208,7 +208,7 @@ Canada:
 <br />
 <br />
 <pre><code>bash InstallNET.sh -debian 11 -mirror "http://ftp.ca.debian.org/debian/" -firmware</code></pre>
-British:
+Britain:
 <br />
 <br />
 <pre><code>bash InstallNET.sh -debian 11 -mirror "http://ftp.uk.debian.org/debian/" -firmware</code></pre>
@@ -231,7 +231,7 @@ Australia:
 
 ## Default Configurations
 ### Time zone
-Depends on the geo-location of guest's IP(automode) && Asia/Tokyo(if the format of the input parameter is incorrect in manual mode)
+Depends on the geo-location of guest's IP(automode) or "Asia/Tokyo"(if the format of the input parameter is incorrect or not supported by current operating system in manual mode)
 ### Default User name
 root
 ### Default Password
