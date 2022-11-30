@@ -4,7 +4,7 @@ Something about scripts
 ## Features and updates:
 - "InstallNET.sh" will give you a clean, safe, official Linux system, and help you escape of your server providers' monitoring.
 - The operation is easy, several minutes installation will be complated.
-- Support install to Debian 8+, Ubuntu 14.04 ~ 20.04, Redhat series(including CentOS 7+, Almalinux 8+, Rockylinux 9+, Fedora 34+).
+- Support install to Debian 8+, Ubuntu 14.04 ~ 20.04, Redhat series 7+(including CentOS 7+, AlmaLinux 8+, RockyLinux 8+, Fedora 34+).
 - Can also run in mainline version of other redhat series(Oracle Linux, VzLinux) to install supported system.
 - Support major cloud providers, especially support Oracle Cloud ARM machine.
 - Detect the CPU architecture of current os and exchange correct architecture to new system automatically, you need not to add parameter '-version' to comfirm architecture manually.
