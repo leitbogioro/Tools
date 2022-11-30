@@ -163,7 +163,7 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**--ip-mask "IPv4 subnet musk"**: If your cloud provider is from a ONEMAN merchant etc, you should input it manually. it must be added with --ip-addr and --ip-gate, if you have added --dhcp-static, don't assign it again!
+**--ip-mask "IPv4 subnet musk"**: If your cloud provider is from a oneman merchant etc, you should input it manually. it must be added with --ip-addr and --ip-gate, if you have added --dhcp-static, don't assign it again!
 <br />
 <br />
 
