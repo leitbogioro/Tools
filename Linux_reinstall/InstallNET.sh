@@ -20,7 +20,7 @@ export tmpURL=''
 export tmpWORD=''
 export tmpMirror=''
 export tmpDHCP='1'
-export TimeZone='Asia/Tokyo'
+export TimeZone=''
 export ipAddr=''
 export ipMask=''
 export ipGate=''
@@ -159,6 +159,11 @@ while [[ $# -ge 1 ]]; do
       setRaid="$1"
       shift
       ;;
+    -timezone)
+      shift
+      TimeZone="$1"
+      shift
+      ;;
     -cmd)
       shift
       setCMD="$1"
@@ -203,7 +208,7 @@ while [[ $# -ge 1 ]]; do
 
 [[ "$EUID" -ne '0' ]] && echo -ne "\n\033[31mError: \033[0mThis script must be run as root!\n" && exit 1;
 
-# Ping delay to goole($1) and instagram($2), support both ipv4 and ipv6, $3 is $IPStackType
+# Ping delay to Goole($1) and Twitter($2), support both ipv4 and ipv6, $3 is $IPStackType
 function checkCN(){
   for TestUrl in "$1" "$2"; do
     IPv4PingDelay=`ping -4 -c 2 -w 2 "$TestUrl" | grep rtt | cut -d'/' -f5 | awk -F'.' '{print $NF}' | sed -n '/^[0-9]\+\(\.[0-9]\+\)\?$/p'`
@@ -235,13 +240,13 @@ function checkCN(){
   done
   [[ `echo "$IsCN" | grep "cn"` != "" ]] && IsCN="cn" || IsCN=""
   if [[ "$IsCN" == "cn" ]]; then
-    TimeZone='Asia/Shanghai'
-    if [[ "$IPStackType" == "BioStack" ]] || [[ "$IPStackType"="IPv4Stack" ]]; then
+    TimeZone="Asia/Shanghai"
+    if [[ "$3" == "BioStack" ]] || [[ "$3"="IPv4Stack" ]]; then
       ipDNS="101.6.6.6"
     else
       ipDNS="2001:da8::666"
     fi
-  elif [[ "$IsCN" == "" ]] && [[ "$IPStackType" == "IPv6Stack" ]]; then
+  elif [[ "$IsCN" == "" ]] && [[ "$3" == "IPv6Stack" ]]; then
     ipDNS="2606:4700:4700::1001"
   fi
 }
@@ -332,6 +337,24 @@ function getDisk(){
   [ -n "$disks" ] || echo ""
   echo "$disks" |grep -q "/dev"
   [ $? -eq 0 ] && echo "$disks" || echo "/dev/$disks"
+}
+
+# $1 is timezone checkfile direction, $2 $3 $4 are api keys.
+function getUserTimezone(){
+  if [[ -z "$TimeZone" ]]; then
+    UserIP=`who am i | awk '{print $5}' | sed 's/(//g' | sed 's/)//g'`
+    for Count in "$2" "$3" "$4"; do
+      [[ "$TimeZone" == "Asia/Shanghai" ]] && break
+      tmpApi=`echo -n "$Count" | base64 -d`
+      TimeZone=`curl -s "https://api.ipgeolocation.io/timezone?apiKey=$tmpApi&ip=$UserIP" | jq '.timezone' | tr -d '"'`
+      checkTz=`echo $TimeZone | cut -d'/' -f 1`
+      [[ -n "$checkTz" && "$checkTz" =~ ^[a-zA-Z] ]] && break
+    done
+  else
+    echo `timedatectl list-timezones` >> "$1"
+    [[ `grep -c "$TimeZone" "$1"` == "0" ]] && TimeZone="Asia/Tokyo"
+    rm -rf "$1"
+  fi
 }
 
 function diskType(){
@@ -431,9 +454,9 @@ function lowMem(){
 
 function checkSys(){
   apt update -y
-  apt install dnsutils efibootmgr file lsb-release wget xz-utils -y
+  apt install curl dnsutils efibootmgr file jq lsb-release wget xz-utils -y
   yum update --allowerasing -y
-  yum install dnsutils efibootmgr file redhat-lsb wget xz -y
+  yum install curl dnsutils efibootmgr file jq redhat-lsb wget xz -y
   OsLsb=`lsb_release -d | awk '{print$2}'`
   CurrentOSVer=`cat /etc/os-release | grep -w "VERSION_ID=*" | awk -F '=' '{print $2}' | sed 's/\"//g' | cut -d'.' -f 1`
   
@@ -599,7 +622,7 @@ function DebianModifiedPreseed(){
 # $1 is "in-target"
     AptUpdating="$1 apt update;"
 # pre-install some commonly used software.
-    InstallComponents="$1 apt install sudo apt-transport-https bc binutils ca-certificates cron curl debian-keyring debian-archive-keyring dnsutils dosfstools efibootmgr ethtool fail2ban file figlet iptables iptables-persistent iputils-tracepath lrzsz libnet-ifconfig-wrapper-perl lsof libnss3 lsb-release mtr-tiny mlocate netcat-openbsd net-tools ncdu nmap ntfs-3g parted psmisc python socat sosreport subnetcalc tcpdump telnet traceroute unzip unrar-free uuid-runtime vim vim-gtk wget xz-utils -y;"
+    InstallComponents="$1 apt install sudo apt-transport-https bc binutils ca-certificates cron curl debian-keyring debian-archive-keyring dnsutils dosfstools efibootmgr ethtool fail2ban file figlet ipcalc iptables iptables-persistent iputils-tracepath jq lrzsz libnet-ifconfig-wrapper-perl lsof libnss3 lsb-release mtr-tiny mlocate netcat-openbsd net-tools ncdu nmap ntfs-3g parted psmisc python socat sosreport tcpdump telnet traceroute unzip unrar-free uuid-runtime vim vim-gtk wget xz-utils -y;"
 # In debian 9 and former, some certificates are expired.
     DisableCertExpiredCheck="$1 sed -i '/^mozilla\/DST_Root_CA_X3/s/^/!/' /etc/ca-certificates.conf; $1 update-ca-certificates -f;"
 # Modify /root/.bashrc to support colorful filename.
@@ -776,7 +799,9 @@ checkSys
 
 checkIPv4OrIpv6
 
-checkCN "www.google.com" "www.instagram.com" "$IPStackType"
+checkCN "www.google.com" "www.twitter.com" "$IPStackType"
+
+getUserTimezone "/root/timezonelists" "ZGEyMGNhYjhhMWM2NDJlMGE0YmZhMDVmMDZlNzBmN2E=" "ZTNlMjBiN2JjOTE2NGY2YjllNzUzYWU5ZDFjYjdjOTc=" "MWQ2NGViMGQ4ZmNlNGMzYTkxYjNiMTdmZDMxODQwZDc="
 
 checkEfi "/sys/firmware/efi/efivars/" "/sys/firmware/efi/mok-variables/" "/sys/firmware/efi/runtime-map/" "/sys/firmware/efi/vars/"
 
@@ -831,7 +856,7 @@ IPv4="$ipAddr"; MASK="$ipMask"; GATE="$ipGate";
   exit 1;
 }
 
-dependence wget,awk,grep,sed,cut,cat,lsblk,cpio,gzip,find,dirname,basename,file,xz,dig,efibootmgr;
+dependence awk,basename,cat,cpio,curl,cut,dig,dirname,efibootmgr,file,find,grep,gzip,ipcalc,jq,lsblk,sed,wget,xz;
 [ -n "$tmpWORD" ] && dependence openssl
 [[ -n "$tmpWORD" ]] && myPASSWORD="$(openssl passwd -1 "$tmpWORD")";
 [[ -z "$myPASSWORD" ]] && myPASSWORD='$1$OCy2O5bt$m2N6XMgFUwCn/2PPP114J/';
@@ -1295,10 +1320,13 @@ reboot
 %packages --ignoremissing
 @^minimal-environment
 bind-utils
+curl
 efibootmgr
 epel-release
 fail2ban
 file
+ipcalc
+jq
 lrzsz
 net-tools
 opensslwget
