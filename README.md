@@ -222,18 +222,18 @@ Australia:
 <br />
 <pre><code>bash InstallNET.sh -debian 11 -mirror "http://ftp.au.debian.org/debian/"</code></pre>
 
-## Default Configurations
+## Default configurations
 ### Time zone
 Depends on the geo-location of guest's IP(automode) or "Asia/Tokyo"(if the format of the input parameter is incorrect or it's not supported by current operating system in manual mode)
-### Default User name
+### Default user name
 root
-### Default Password
+### Default password
 LeitboGi0ro
-### Default Port
+### Default port
 22
 <br />
 <br />
-<b>If you didn't assign other ssh password or port, after system installation, you must change password(LeitboGi0ro) and ssh port(22) immediately to prevent unauthorized access!</b>
+<b>If you didn't assign any other ssh password or port, after system installation, you must change password(LeitboGi0ro) and ssh port(22) immediately to prevent unauthorized access!</b>
 <br />
 <br />
 
