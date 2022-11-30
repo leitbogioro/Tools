@@ -13,9 +13,9 @@ Something about scripts
 - Support single-stack(only have IPv6 public address) server like Vultr 2.5$ monthly plan, only for DHCP.
 - Support network auto configurations in bio-stack(have both IPv4 and IPv6 public address), after log into system, you don't have to config IPv6 address manually, only for Debian, DHCP.
 - You can modify architecture, mirror, firmware, ssh port, password etc. 
-- Friendly to low memory machine, for debian series, recommend RAM is above 512MB, for redhat series, recommend RAM is above 2GB.</b>
+- Friendly to low memory device, for debian series, recommend RAM is above 512MB, for redhat series, recommend RAM is above 2GB.</b>
 - Ubuntu 22.04 has cancelled net boot start features, so this program don't support Ubuntu 22.04 and above reinstallation, source: http://archive.ubuntu.com/ubuntu/dists/jammy/main/installer-amd64/current/legacy-images/: The Legacy Ubuntu Server Installer is no longer available, initrd.gz and linux netboot file for arm64 architecture as also.
-- The Debian official mirror of South Korea(http://ftp.kr.debian.org/debian/) is usually crashed down, so I changed recommend mirror as Jaist University https://www.jaist.ac.jp/index.html, for Japan is from https://www.riken.jp/, a science research organization, for America is from University of California, Berkeley: https://www.berkeley.edu/.
+- The Debian official mirror of South Korea http://ftp.kr.debian.org/debian/ is usually crashed down, so I changed recommend mirror as Jaist University https://www.jaist.ac.jp/index.html, for Japan is from https://www.riken.jp/, a science research organization, for America is from University of California, Berkeley: https://www.berkeley.edu/.
 - Completely modified debian, such as support terminal files colorful displaying, permanently change dns server, disable expired certificates, add on a cute welcome introduction, pre-install many complements in preseeding progress, now enjoy a newly, comfortable, graceful debian experience!
 - Support grub2 boot file modify, it can switch debian to Redhat or switch Redhat to debian smoothly, in old version if you installed from debian to redhat, you will no more switch to debian.
 - Support xfs file system(only for Debian 9 and later), it's better than the old ext2 and it's the default option of redhat series.
