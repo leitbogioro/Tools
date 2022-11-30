@@ -58,7 +58,7 @@ If you need to add other parameters, version number must be assigned!
 <pre><code>bash InstallNET.sh -debian</code></pre>
 ### CentOS 9 stream
 <pre><code>bash InstallNET.sh -centos</code></pre>
-### Almalinux 9
+### AlmaLinux 9
 <pre><code>bash InstallNET.sh -almalinux</code></pre>
 ### RockyLinux 9
 <pre><code>bash InstallNET.sh -rockylinux</code></pre>
