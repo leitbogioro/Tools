@@ -231,7 +231,7 @@ Australia:
 
 ## Default Configurations
 ### Time zone
-Depends on the geo-location of guest's IP(automode) or "Asia/Tokyo"(if the format of the input parameter is incorrect or not supported by current operating system in manual mode)
+Depends on the geo-location of guest's IP(automode) or "Asia/Tokyo"(if the format of the input parameter is incorrect or it's not supported by current operating system in manual mode)
 ### Default User name
 root
 ### Default Password
