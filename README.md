@@ -240,7 +240,7 @@ LeitboGi0ro
 22
 <br />
 <br />
-<b>If you didn't assign other ssh password or port, after system installation, you must change passwords immediately if you assigned default password(LeitboGi0ro)!</b>
+<b>If you didn't assign other ssh password or port, after system installation, you must change password(LeitboGi0ro) or ssh port(22) immediately to prevent unauthorized access!</b>
 <br />
 <br />
 
