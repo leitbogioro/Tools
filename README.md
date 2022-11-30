@@ -70,7 +70,7 @@ If you need to add other parameters, version number must be assigned!
 ## Fully useage sample
 <pre><code>bash InstallNET.sh -debian/ubuntu/centos/almalinux/rockylinux/fedora(os type) 11(os version) -version 64(os bit) -port "your server port" -pwd "your server password" -mirror "a valid url for linux image source" -dd/--image "dd image url" -filetype "gz or xz" -timezone "like Asia/Tokyo etc" --dhcp-static/--ip-addr 'x.x.x.x'(ip address) --ip-mask 'x.x.x.x'(subnet mask) --ip-gate 'x.x.x.x'(gateway) -firmware(Debian with hardware drivers)</code></pre>
 
-## Parameters Descriptions
+## Parameters detail descriptions
 **-debian 9/10/11** : Debian 9 and later
 <br />
 <br />
