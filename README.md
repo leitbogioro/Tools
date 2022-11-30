@@ -8,7 +8,7 @@ Something about scripts
 - Can also run in mainline version of other Redhat series(Oracle Linux 7+, VzLinux 8+) to install supported system.
 - Support major cloud providers, especially support Oracle Cloud ARM machine.
 - Detect the CPU architecture of current os and exchange correct architecture to new system automatically, you need not to add parameter '-version' at all to comfirm architecture manually.
-- Can handle boot menuentry items automatically of grub2 in different hardware platforms(AMD64 legacy / AMD64 UEFI / ARM64 UEFI) to make sure all supported bootfile can be loaded correctly.
+- Can handle boot menuentry items automatically of grub2 in different hardware platforms(AMD64 legacy / AMD64 UEFI / ARM64 UEFI) to make sure all supported boot file can be loaded correctly.
 - Support install from Linux(Debian series only) to Windows. details refer to "How to install Windows?" section.
 - Support IPv6 single-stack(only have IPv6 public address) server like Vultr 2.5$ monthly plan, only for DHCP.
 - Support network auto configurations in bio-stack(have both IPv4 and IPv6 public address), after log into system, you don't have to config IPv6 address manually, only for Debian, DHCP.
