@@ -109,7 +109,7 @@ For CentOS, official recommend mirror lists are here:
 <pre><code>https://www.centos.org/download/mirrors/</code></pre>
 <br />
 
-For Almalinux, official recommend mirror lists are here:
+For AlmaLinux, official recommend mirror lists are here:
 <br />
 <pre><code>https://mirrors.almalinux.org/</code></pre>
 <br />
