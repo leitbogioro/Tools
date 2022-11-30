@@ -39,6 +39,7 @@ to make changes validating!
 - Don't support Ubuntu 22.04(jammy) and later, because Canonical deprecated netboot file and force users to use its fuckin cloud-init, it must virtualization demanded but most of VPS doen't work it well completely. Canonical is playing a role as a dictator like Apple.Inc and violating the spirit of the open source.
 - For redhat series 8, the minimum memory requirement is 2.5GB, for redhat series 9, the minimum memory requirement is 2GB.
 - Because the syntax of grub1 in CentOS 6 is different from other version of grub1 or grub2 completely, so I removed support to CentOS 6 or Oracle Linux 6.
+- All system templates of GCP are not supported.
 
 ## Download:
 <pre><code>wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh</code></pre>
@@ -154,15 +155,15 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**--ip-addr "IPv4 address"**: If your cloud provider is from GCP etc, you should input it manually. it must be added with --ip-gate and --ip-mask, if you have added --dhcp-static, don't assign it again!
+**--ip-addr "IPv4 address"**: If your cloud provider is from a oneman merchant etc, you should input it manually. it must be added with --ip-gate and --ip-mask, if you have added --dhcp-static, don't assign it again!
 <br />
 <br />
 
-**--ip-gate "IPv4 gateway"**: If your cloud provider is from GCP etc, you should input it manually. it must be added with --ip-addr and --ip-mask, if you have added --dhcp-static, don't assign it again!
+**--ip-gate "IPv4 gateway"**: If your cloud provider is from a oneman merchant etc, you should input it manually. it must be added with --ip-addr and --ip-mask, if you have added --dhcp-static, don't assign it again!
 <br />
 <br />
 
-**--ip-mask "IPv4 subnet musk"**: If your cloud provider is from GCP etc, you should input it manually. it must be added with --ip-addr and --ip-gate, if you have added --dhcp-static, don't assign it again!
+**--ip-mask "IPv4 subnet musk"**: If your cloud provider is from a ONEMAN merchant etc, you should input it manually. it must be added with --ip-addr and --ip-gate, if you have added --dhcp-static, don't assign it again!
 <br />
 <br />
 
