@@ -26,6 +26,7 @@ Something about scripts
 - Support Raid 0, to add parameter -raid "0", the validation need to be certificated.
 - Disable ntp clock setup for static network in Debian/Ubuntu installation otherwise it may cause static network failed.
 - Fix if input --ip-addr "" --ip-mask "" --ip-gate "", static network configuration may not valid.
+- Support config timezone automatically according to the geo-location of the guest's IP or determine an existed timezone parameter to config it manually is also be supported.
 
 ![1](1.jpg)
 
@@ -92,7 +93,7 @@ If you need to add other parameters, version number must be assigned!
 <br />
 <br />
 
-**-mirror**: OS install files resource, you can select one which nearest for actual location of your server to upspeed installation.
+**-mirror "a valid linux DIST mirror url"**: OS install files resource, you can select one which nearest for actual location of your server to upspeed installation.
 <br />
 <br />
 
@@ -139,6 +140,10 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 
 **-filetype "gz/xz"**: To determine DD file type, not only ".gz"(default) but also ".xz" can be supported.
+<br />
+<br />
+
+**-timezone "like Asia/Tokyo etc"**: It means assign timezone manually, if you are using a proxy to connect to your machine and then execute "InstallNET.sh", automatic timezone configuration may not suitable for you in this situation.
 <br />
 <br />
 
