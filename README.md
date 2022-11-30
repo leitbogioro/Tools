@@ -7,7 +7,7 @@ Something about scripts
 - Support install to Debian 8+, Ubuntu 14.04 ~ 20.04, Redhat series 7+(including CentOS 7+, AlmaLinux 8+, RockyLinux 8+, Fedora 34+).
 - Can also run in mainline version of other Redhat series(Oracle Linux 7+, VzLinux 8+) to install supported system.
 - Support major cloud providers, especially support Oracle Cloud ARM machine.
-- Detect the CPU architecture of current os and exchange correct architecture to new system automatically, you need not to add parameter '-version' to comfirm architecture manually.
+- Detect the CPU architecture of current os and exchange correct architecture to new system automatically, you need not to add parameter '-version' at all to comfirm architecture manually.
 - Can handle boot menuentry items automatically of grub2 in different hardware platforms(AMD64 legacy/AMD64 UEFI/ARM64 UEFI) to make sure all supported bootfile can be loaded correctly.
 - Support install from Linux to Windows. details refer to "How to install Windows?" section.
 - Support single-stack(only have IPv6 public address) server like Vultr 2.5$ monthly plan, only for DHCP.
