@@ -18,7 +18,7 @@ Something about scripts
 - The Debian official mirror of South Korea http://ftp.kr.debian.org/debian/ is usually crashed down, so I changed recommend mirror as Jaist University https://www.jaist.ac.jp/index.html, for Japan is from https://www.riken.jp/, a science research organization, for America is from University of California, Berkeley: https://www.berkeley.edu/.
 - Completely modified Debian, such as support terminal files colorful displaying, permanently change dns server, disable expired certificates, add on a cute welcome introduction, pre-install many complements in preseeding progress, now enjoy a newly, comfortable, graceful debian experience!
 - Support grub2 boot file modify, it can switch Debian series to Redhat series or switch Redhat series to Debian series smoothly, in old version if you installed from Debian series to Redhat series, you can never switch to Debian series again.
-- Support xfs file system(only for Debian 9 and later), it's better than the old ext2 and it's the default option of Redhat series.
+- Support xfs file system(only for Debian 9 and later), it's better than the old ext2 and it's the default option of Redhat series, the file system of raid 0 disk partition mode is ext4.
 - Detect if the machine is operating in mainland of China or outside and switch mirror automatically.
 - Support the parameter of '-port' to modify ssh port of Redhat series.
 - Detect the network of device is DHCP or static automatically.
@@ -45,10 +45,10 @@ to make changes validating!
 <pre><code>wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh</code></pre>
 
 ## Dependences:
-Debian series(Debian/Ubuntu):
+Debian series(Debian / Ubuntu):
 <pre><code>apt update -y</code></pre>
 <pre><code>apt install wget -y</code></pre>
-Redhat series(CentOS/Almalinux/Rockylinux/Oraclelinux/Fedora/VzLinux):
+Redhat series(CentOS / AlmaLinux / RockyLinux / OracleLinux / Fedora / VzLinux):
 <pre><code>yum update --allowerasing -y</code></pre>
 <pre><code>yum install wget -y</code></pre>
 
@@ -95,7 +95,7 @@ If you need to add other parameters, version number must be assigned!
 <br />
 <br />
 
-**-mirror "a valid linux DIST mirror url"**: OS install files resource, you can select one which nearest for actual location of your server to upspeed installation.
+**-mirror "a valid DIST mirror url"**: OS install files resource, you can select one which nearest for actual location of your server to upspeed installation.
 <br />
 <br />
 
@@ -137,7 +137,7 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**-dd/--image "DD image from a valid url"**: This parameter is for DD mode in KVM or XEN virtualization platform, for example, if you want to DD windows, you can refer to chapter "How to install Windows?" to get more in this document.
+**-dd/--image "DD image from a valid url"**: This parameter is for DD mode in KVM or XEN virtualization platform, current os must be Debian series, for example, if you want to DD windows, you can refer to chapter "How to install Windows?" to get more in this document.
 <br />
 <br />
 
