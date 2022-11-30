@@ -153,19 +153,19 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**--dhcp-static**: Default to use DHCP to finish network configuration, if the network of your machine is static, you need to add it. it is equal with add --ip-addr "" --ip-mask "" --ip-gate "", if you add this, don't distribute the following three items again! It must be added in the last of the command.
+**--dhcp-static**: Default to use DHCP to finish network configuration. If your cloud provider is a small or middle merchant, the network of your machine may be static so you need to add it. it is equal with add --ip-addr "" --ip-mask "" --ip-gate "", if you add this, don't distribute the following three items again! It must be added in the last of the command.
 <br />
 <br />
 
-**--ip-addr "IPv4 address"**: If your cloud provider is from a oneman merchant etc, you should input it manually. it must be added with --ip-gate and --ip-mask, if you have added --dhcp-static, don't assign it again!
+**--ip-addr "IPv4 address"**: It must be added with --ip-gate and --ip-mask, if you have added --dhcp-static, don't assign it again!
 <br />
 <br />
 
-**--ip-gate "IPv4 gateway"**: If your cloud provider is from a oneman merchant etc, you should input it manually. it must be added with --ip-addr and --ip-mask, if you have added --dhcp-static, don't assign it again!
+**--ip-gate "IPv4 gateway"**: It must be added with --ip-addr and --ip-mask, if you have added --dhcp-static, don't assign it again!
 <br />
 <br />
 
-**--ip-mask "IPv4 subnet musk"**: If your cloud provider is from a oneman merchant etc, you should input it manually. it must be added with --ip-addr and --ip-gate, if you have added --dhcp-static, don't assign it again!
+**--ip-mask "IPv4 subnet musk"**: It must be added with --ip-addr and --ip-gate, if you have added --dhcp-static, don't assign it again!
 <br />
 <br />
 
