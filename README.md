@@ -27,6 +27,7 @@ Something about scripts
 - Disable ntp clock setup for static network in Debian/Ubuntu installation otherwise it may cause static network failed.
 - Fix if input --ip-addr "" --ip-mask "" --ip-gate "", static network configuration may not valid.
 - Support config timezone automatically according to the geo-location of the guest's IP or determine an existed timezone parameter to config it manually is also be supported.
+- Concentrate all needed installation of dependences to inner command excerpt "wget".
 
 ![1](1.jpg)
 
@@ -37,7 +38,7 @@ to make changes validating!
 ## Defects:
 - Don't support Ubuntu 22.04(jammy) and later, because Canonical deprecated netboot file and force users to use its fuckin cloud-init, it must virtualization demanded but most of VPS can't support.
 - For redhat series 8, the minimum memory requirement is 2.5GB, for redhat series 9, the minimum memory requirement is 2GB.
-- Because the syntax of grub1 in CentOS 6 is different from other version of grub1 or grub2 completely, so I removed support to CentOS6 or Oracle Linux 6.
+- Because the syntax of grub1 in CentOS 6 is different from other version of grub1 or grub2 completely, so I removed support to CentOS 6 or Oracle Linux 6.
 
 ## Download:
 <pre><code>wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh</code></pre>
@@ -45,10 +46,8 @@ to make changes validating!
 ## Dependences:
 Debian series(Debian/Ubuntu):
 <pre><code>apt update -y</code></pre>
-<pre><code>apt install xz-utils dnsutils wget file efibootmgr -y</code></pre>
-Redhat series(CentOS/Almalinux/Rockylinux/Oraclelinux/Fedora):
+Redhat series(CentOS/Almalinux/Rockylinux/Oraclelinux/Fedora/VzLinux):
 <pre><code>yum update --allowerasing -y</code></pre>
-<pre><code>yum install xz dnsutils wget file efibootmgr -y</code></pre>
 
 ## Quickly start
 If you need to add other parameters, version number must be assigned!
@@ -66,7 +65,7 @@ If you need to add other parameters, version number must be assigned!
 <pre><code>bash InstallNET.sh -ubuntu</code></pre>
 
 ## Fully useage sample
-<pre><code>bash InstallNET.sh -debian/ubuntu/centos/almalinux/rockylinux/fedora(os type) 11(os version) -version 64(os bit) -port "your server port" -pwd "your server password" -mirror "a valid url for linux image source" -dd/--image "dd image url" -filetype "gz or xz" --dhcp-static/--ip-addr 'x.x.x.x'(ip address) --ip-mask 'x.x.x.x'(subnet mask) --ip-gate 'x.x.x.x'(gateway) -firmware(Debian with hardware drivers)</code></pre>
+<pre><code>bash InstallNET.sh -debian/ubuntu/centos/almalinux/rockylinux/fedora(os type) 11(os version) -version 64(os bit) -port "your server port" -pwd "your server password" -mirror "a valid url for linux image source" -dd/--image "dd image url" -timezone "like Asia/Tokyo etc" -filetype "gz or xz" --dhcp-static/--ip-addr 'x.x.x.x'(ip address) --ip-mask 'x.x.x.x'(subnet mask) --ip-gate 'x.x.x.x'(gateway) -firmware(Debian with hardware drivers)</code></pre>
 
 ## Parameters Descriptions
 **-debian 9/10/11** : Debian 9 and later
