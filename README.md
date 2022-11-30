@@ -36,7 +36,7 @@ Something about scripts
 to make changes validating!
 
 ## Defects:
-- Don't support Ubuntu 22.04(jammy) and later, because Canonical deprecated netboot file and force users to use its fuckin Cloud-init, it runs in QEMU environment and CPU hardware virtualization must be demanded but most of VPS doen't work it well at all. Canonical is deserting its' low value devoted fans and discarding a large amount of former precious Debian installer preseed inheritance by playing a role as a guilty dictator like Apple.Inc and violating the spirit of the open source.
+- Don't support Ubuntu 22.04(jammy) and later, because Canonical deprecated netboot file and force users to use its fuckin Cloud-init, it runs in QEMU environment and CPU hardware virtualization must be demanded but most of VPS doen't work it well at all. Canonical is deserting its' low value devoted fans and discarding a large amount of former precious Debian installer preseed inheritance by playing a role as a guilty dictator like Apple.Inc and violating the spirit of the free software.
 - For Redhat series 8, the minimum memory requirement is 2.5GB, for Redhat series 9, the minimum memory requirement is 2GB.
 - Because the syntax of grub1 in Redhat series 6 is different from other Linux version of grub1 or grub2 completely, so I removed support to CentOS 6 and Oracle Linux 6.
 - All system templates of GCP are not supported.
