@@ -187,10 +187,8 @@ Japan:
 <pre><code>bash InstallNET.sh -debian 11 -mirror "http://ftp.riken.jp/Linux/debian/debian/"</code></pre>
 HongKong:
 <br />
-<br />
 <pre><code>bash InstallNET.sh -debian 11 -mirror "http://ftp.hk.debian.org/debian/"</code></pre>
 Singapore:
-<br />
 <br />
 <pre><code>bash InstallNET.sh -debian 11 -mirror "http://ftp.sg.debian.org/debian/"</code></pre>
 South Korea:
@@ -198,36 +196,31 @@ South Korea:
 <pre><code>bash InstallNET.sh -debian 11 -mirror "https://ftp.jaist.ac.jp/pub/Linux/debian/"</code></pre>
 Taiwan:
 <br />
-<br />
 <pre><code>bash InstallNET.sh -debian 11 -mirror "http://ftp.tw.debian.org/debian/"</code></pre>
 America:
-<br />
 <br />
 <pre><code>bash InstallNET.sh -debian 11 -mirror "https://mirrors.ocf.berkeley.edu/debian/"</code></pre>
 Canada:
 <br />
-<br />
-<pre><code>bash InstallNET.sh -debian 11 -mirror "http://ftp.ca.debian.org/debian/" -firmware</code></pre>
+<pre><code>bash InstallNET.sh -debian 11 -mirror "http://ftp.ca.debian.org/debian/"</code></pre>
 Britain:
 <br />
-<br />
-<pre><code>bash InstallNET.sh -debian 11 -mirror "http://ftp.uk.debian.org/debian/" -firmware</code></pre>
+<pre><code>bash InstallNET.sh -debian 11 -mirror "http://ftp.uk.debian.org/debian/"</code></pre>
 Germany:
 <br />
-<br />
-<pre><code>bash InstallNET.sh -debian 11 -mirror "http://ftp.de.debian.org/debian/" -firmware</code></pre>
+<pre><code>bash InstallNET.sh -debian 11 -mirror "http://ftp.de.debian.org/debian/"</code></pre>
 France:
 <br />
+<pre><code>bash InstallNET.sh -debian 11 -mirror "http://ftp.fr.debian.org/debian/"</code></pre>
+Netherlands:
 <br />
-<pre><code>bash InstallNET.sh -debian 11 -mirror "http://ftp.fr.debian.org/debian/" -firmware</code></pre>
+<pre><code>bash InstallNET.sh -debian 11 -mirror "http://ftp.nl.debian.org/debian/"</code></pre>
 Russia:
 <br />
-<br />
-<pre><code>bash InstallNET.sh -debian 11 -mirror "http://ftp.ru.debian.org/debian/" -firmware</code></pre>
+<pre><code>bash InstallNET.sh -debian 11 -mirror "http://ftp.ru.debian.org/debian/"</code></pre>
 Australia:
 <br />
-<br />
-<pre><code>bash InstallNET.sh -debian 11 -mirror "http://ftp.au.debian.org/debian/" -firmware</code></pre>
+<pre><code>bash InstallNET.sh -debian 11 -mirror "http://ftp.au.debian.org/debian/"</code></pre>
 
 ## Default Configurations
 ### Time zone
