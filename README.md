@@ -4,13 +4,13 @@ Something about scripts
 ## Features and updates:
 - "InstallNET.sh" will give you a clean, safe, official Linux system, and help you escape of your server providers' monitoring.
 - The operation is easy, several minutes installation will be complated.
-- Support install to Debian 8+, Ubuntu 14.04~20.04, Redhat series(including CentOS 7+, Almalinux 8+, Rockylinux 9+, Fedora 34+).
+- Support install to Debian 8+, Ubuntu 14.04 ~ 20.04, Redhat series(including CentOS 7+, Almalinux 8+, Rockylinux 9+, Fedora 34+).
 - Can also run in mainline version of other redhat series(Oracle Linux, VzLinux) to install supported system.
 - Support major cloud providers, especially support Oracle Cloud ARM machine.
 - Detect the CPU architecture of current os automatically, you need not to add parameter '-version' to comfirm architecture manually.
 - Can handle boot item automatically of grub2 in different hardware platforms(AMD64 legacy/AMD64 UEFI/ARM64 UEFI) to make sure all supported bootfile can be loaded correctly.
 - Support install from Linux to Windows. details refer to "How to install Windows?" section.
-- Support single-stack(only have IPv6 public address) server like Vultr 2.5$/mo model, only for DHCP.
+- Support single-stack(only have IPv6 public address) server like Vultr 2.5$ monthly plan, only for DHCP.
 - Support network auto configurations in bio-stack(have both IPv4 and IPv6 public address), after log into system, you don't have to config IPv6 address manually, only for Debian, DHCP.
 - You can modify architecture, mirror, firmware, ssh port, password etc. 
 - Friendly to low memory machine, for debian series, recommend RAM is above 512MB, for redhat series, recommend RAM is above 2GB.</b>
