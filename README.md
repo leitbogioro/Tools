@@ -75,7 +75,7 @@ If you need to add other parameters, version number must be assigned!
 <br />
 <br />
 
-**-centos 7/8/9**: CentOS 7 and later
+**-centos 7/8/9-stream**: CentOS 7 and later
 <br />
 <br />
 
