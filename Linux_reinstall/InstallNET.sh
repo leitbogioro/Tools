@@ -341,7 +341,7 @@ function getDisk(){
 
 # $1 is timezone checkfile direction, $2 $3 $4 are api keys.
 function getUserTimezone(){
-  if [[ -z "$TimeZone" ]]; then
+  if [[ "$TimeZone" == "0" ]]; then
     UserIP=`who am i | awk '{print $5}' | sed 's/(//g' | sed 's/)//g'`
     for Count in "$2" "$3" "$4"; do
       [[ "$TimeZone" == "Asia/Shanghai" ]] && break
