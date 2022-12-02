@@ -564,10 +564,11 @@ function getInterface(){
       [[ -n `grep "BOOTPROTO\|interface-name" "$NetCfgDir$NetCfgFile"` ]] && break
     done
   else
-    for Count in "/etc/network/interfaces" "/run/network/interfaces" "/etc/network/interfaces.d/$interface" "/run/network/interfaces.d/$interface"; do
-      if [[ `grep -c "network interface" $Count` -ne "0" ]]; then
-        NetCfgFile=`echo $Count | awk -F/ '{print $NF}'`
-        NetCfgDir=`echo $Count | sed "s/$NetCfgFile//g"`
+    for Count in "/run/network/*" "/etc/network/*"; do
+      NetCfgWhole=`grep -wrl "network" | grep -wrl "iface" | grep -wrl "lo" | grep -rl "inet\|inte6" $Count | grep -v "if-*" | grep -v "state"`
+      if [[ "$NetCfgWhole" != "" ]]; then
+        NetCfgFile=`echo $NetCfgWhole | awk -F/ '{print $NF}'`
+        NetCfgDir=`echo $NetCfgWhole | sed "s/$NetCfgFile//g"`
         break
       fi  
     done
@@ -585,24 +586,24 @@ function checkDHCP(){
     if [[ "$1" == 'CentOS' || "$1" == 'AlmaLinux' || "$1" == 'RockyLinux' || "$1" == 'Fedora' || "$1" == 'Vzlinux' || "$1" == 'OracleLinux' ]]; then
 # RedHat like linux system 8 and before network config name is "ifcfg-interface", deposited in /etc/sysconfig/network-scripts/
 # RedHat like linux system 9 and later network config name is "interface.nmconnection", deposited in /etc/NetworkManager/system-connections
-      if [[ -n `grep -Ern "BOOTPROTO=dhcp|BOOTPROTO=\"dhcp\"|BOOTPROTO=\'dhcp\'|BOOTPROTO=DHCP|BOOTPROTO=\"DHCP\"|BOOTPROTO=\'DHCP\'" $NetCfgDir` ]] || [[ -n `grep -Ern "method=auto" $NetCfgDir` ]]; then
-        NetworkConfig="isDHCP"
-      else
+      if [[ -n `grep -Ern "BOOTPROTO=none|BOOTPROTO=\"none\"|BOOTPROTO=\'none\'|BOOTPROTO=NONE|BOOTPROTO=\"NONE\"|BOOTPROTO=\'NONE\'|BOOTPROTO=static|BOOTPROTO=\"static\"|BOOTPROTO=\'static\'|BOOTPROTO=STATIC|BOOTPROTO=\"STATIC\"|BOOTPROTO=\'STATIC\'" $NetCfgDir` ]] || [[ -n `grep -Ern "method=manual" $NetCfgDir` ]]; then
         NetworkConfig="isStatic"
+      else
+        NetworkConfig="isDHCP"
       fi
     elif [[ "$1" == 'Debian' ]] || [[ "$1" == 'Ubuntu' && "$2" -le "16" ]]; then
 # Debian network configs may be deposited in the following directions.
 # /etc/network/interfaces or /etc/network/interfaces.d/interface or /run/network/interfaces.d/interface
-      if [[ `grep -c "inet" $NetCfgDir$NetCfgFile | grep -c "dhcp" $NetCfgDir$NetCfgFile` -ne "0" ]] || [[ `grep -c "inet6" $NetCfgDir$NetCfgFile | grep -c "dhcp" $NetCfgDir$NetCfgFile` -ne "0" ]]; then
-        NetworkConfig="isDHCP"
-      else
+      if [[ `grep -c "inet" $NetCfgDir$NetCfgFile | grep -c "static" $NetCfgDir$NetCfgFile` -ne "0" ]] || [[ `grep -c "inet6" $NetCfgDir$NetCfgFile | grep -c "static" $NetCfgDir$NetCfgFile` -ne "0" ]]; then
         NetworkConfig="isStatic"
+      else
+        NetworkConfig="isDHCP"
       fi
     elif [[ "$1" == 'Ubuntu' ]] && [[ "$2" -ge "18" ]]; then
-      if [[ `grep -c "dhcp4: true" $NetCfgDir$NetCfgFile` -ne "0" ]] || [[ `grep -c "dhcp4: yes" $NetCfgDir$NetCfgFile` -ne "0" ]] || [[ `grep -c "dhcp6: true" $NetCfgDir$NetCfgFile` -ne "0" ]] || [[ `grep -c "dhcp6: yes" $NetCfgDir$NetCfgFile` -ne "0" ]]; then
-        NetworkConfig="isDHCP"
-      else
+      if [[ `grep -c "dhcp4: false" $NetCfgDir$NetCfgFile` -ne "0" ]] || [[ `grep -c "dhcp4: no" $NetCfgDir$NetCfgFile` -ne "0" ]] || [[ `grep -c "dhcp6: false" $NetCfgDir$NetCfgFile` -ne "0" ]] || [[ `grep -c "dhcp6: no" $NetCfgDir$NetCfgFile` -ne "0" ]]; then
         NetworkConfig="isStatic"
+      else
+        NetworkConfig="isDHCP"
       fi
     fi
   fi
@@ -657,13 +658,13 @@ d-i partman-md/confirm_nooverwrite boolean true
 d-i partman-basicfilesystems/no_swap boolean false
 d-i partman/mount_style select label
 d-i partman-auto/method string raid
-d-i partman-auto/disk string /dev/sda /dev/sdb
-d-i partman-auto-raid/recipe string        \\\\
-    1 2 0 ext4 /boot /dev/sda1#/dev/sdb1 . \\\\
-    0 2 0 ext4 /     /dev/sda2#/dev/sdb2 .
-d-i partman-auto/expert_recipe string multiraid ::               \\\\
-    400 100 400 raid \\\\\\\$bootable{ } \\\\\\\$primary{ } method{ raid } . \\\\
-    100 200  -1 raid               \\\\\\\$primary{ } method{ raid } .
+d-i partman-auto/disk string "$IncDisk" /dev/sdb
+d-i partman-auto-raid/recipe string          \
+    1 2 0 ext4 /boot "$IncDisk"1#/dev/sdb1 . \
+    0 2 0 ext4 /     "$IncDisk"2#/dev/sdb2 .
+d-i partman-auto/expert_recipe string multiraid ::                 \
+    400 100 400 raid \\$bootable{ } \\$primary{ } method{ raid } . \
+    100 200  -1 raid                \\$primary{ } method{ raid } .
 d-i mdadm/boot_degraded boolean true"`
 # Raid 0 partition recipe:
 # d-i partman-md/confirm boolean true
@@ -870,7 +871,9 @@ dependence awk,basename,cat,cpio,curl,cut,dig,dirname,efibootmgr,file,find,grep,
 [[ -n "$tmpWORD" ]] && myPASSWORD="$(openssl passwd -1 "$tmpWORD")";
 [[ -z "$myPASSWORD" ]] && myPASSWORD='$1$OCy2O5bt$m2N6XMgFUwCn/2PPP114J/';
 
-tempDisk=`getDisk`; [ -n "$tempDisk" ] && IncDisk="$tempDisk"
+tempDisk=`getDisk`
+[ -n "$tempDisk" ] && IncDisk="$tempDisk"
+[[ "$setRaid" == "0" ]] && IncDisk="/dev/sda"
 
 # Get architecture of current os automatically
 ArchName=`uname -m`
@@ -1206,6 +1209,7 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
     sed -i '/pkgsel\/update-policy/d' /tmp/boot/preseed.cfg
     sed -i 's/umount\ \/media.*true\;\ //g' /tmp/boot/preseed.cfg
     [[ -f '/tmp/firmware.cpio.gz' ]] && gzip -d < /tmp/firmware.cpio.gz | cpio --extract --verbose --make-directories --no-absolute-filenames >>/dev/null 2>&1
+# Debian 8 and former or Raid 0 mode don't support xfs.
     [[ "$DebianDistNum" -le "8" || "$setRaid" == "0" ]] && sed -i '/d-i\ partman\/default_filesystem string xfs/d' /tmp/boot/preseed.cfg
   fi
 # Ubuntu 20.04 and below does't support xfs, force grub-efi installation to the removable media path may cause grub install failed.
