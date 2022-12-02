@@ -28,6 +28,7 @@ export ipDNS='1.0.0.1'
 export IncDisk='default'
 export interface=''
 export interfaceSelect=''
+export setInterfaceName='0'
 export IsCN=''
 export Relese=''
 export sshPORT=''
@@ -42,7 +43,6 @@ export setFileType=''
 export loaderMode='0'
 export IncFirmware='0'
 export SpikCheckDIST='0'
-export setInterfaceName='0'
 export UNKNOWHW='0'
 export UNVER='6.4'
 export GRUBDIR=''
@@ -104,11 +104,6 @@ while [[ $# -ge 1 ]]; do
       tmpURL="$1"
       shift
       ;;
-    -i|--interface)
-      shift
-      interfaceSelect="$1"
-      shift
-      ;;
     --ip-addr)
       shift
       ipAddr="$1"
@@ -134,7 +129,12 @@ while [[ $# -ge 1 ]]; do
       tmpDHCP='0'
       shift
       ;;
-    --dev-net)
+    --adapter)
+      shift
+      interfaceSelect="$1"
+      shift
+      ;;
+    --netdevice-unite)
       shift
       setInterfaceName='1'
       ;;
@@ -241,13 +241,14 @@ function checkCN(){
   [[ `echo "$IsCN" | grep "cn"` != "" ]] && IsCN="cn" || IsCN=""
   if [[ "$IsCN" == "cn" ]]; then
     TimeZone="Asia/Shanghai"
-    if [[ "$3" == "BioStack" ]] || [[ "$3"="IPv4Stack" ]]; then
+    if [[ "$3" == "BioStack" || "$3" == "IPv6Stack" ]]; then
       ipDNS="101.6.6.6"
+      ip6DNS="2001:da8::666"
     else
-      ipDNS="2001:da8::666"
+      ipDNS="101.6.6.6"
     fi
-  elif [[ "$IsCN" == "" ]] && [[ "$3" == "IPv6Stack" ]]; then
-    ipDNS="2606:4700:4700::1001"
+  elif [[ "$IsCN" != "cn" ]] && [[ "$3" == "BioStack" || "$3" == "IPv6Stack" ]]; then
+    ip6DNS="2606:4700:4700::1001"
   fi
 }
 
@@ -538,37 +539,32 @@ function getInterface(){
 # Network config file for Ubuntu 16.04 and former version, 
 # Debian all version included the latest Debian 11 is deposited in /etc/network/interfaces, they managed by "ifupdown".
 # Ubuntu 18.04 and later version, using netplan to replace legacy ifupdown, the network config file is in /etc/netplan
-# Some cloud provider like bandwagonhosts, may modify parameters in " GRUB_CMDLINE_LINUX="" " of /etc/default/grub
-# to redirect network adapter from real name like ens18, ens3 to eth0, eth1, eth2...
+# Some templates of cloud provider like Bandwagonhosts, Ubuntu 22.04, may modify parameters in " GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0" " in /etc/default/grub
+# to make Linux kernel redirect names of network adapters from real name like ens18, ens3, enp0s4 to eth0, eth1, eth2...
 # This setting may confuse program to get real adapter name from reading /proc/cat/dev
-# So we need to reading .yaml file to get it.
+  GrubCmdLine=`grep "GRUB_CMDLINE_LINUX" /etc/default/grub | grep -v "#" | grep "net.ifnames=0\|biosdevname=0"`
+# So we need to comfirm whether adapter name is renamed and whether we should inherit it into new system.
+  [[ -n "$GrubCmdLine" && -z "$interfaceSelect" ]] && setInterfaceName='1'
   interface=""
   Interfaces=`cat /proc/net/dev |grep ':' |cut -d':' -f1 |sed 's/\s//g' |grep -iv '^lo\|^sit\|^stf\|^gif\|^dummy\|^vmnet\|^vir\|^gre\|^ipip\|^ppp\|^bond\|^tun\|^tap\|^ip6gre\|^ip6tnl\|^teql\|^ocserv\|^vpn'`
-  defaultRoute=`ip route show default |grep "^default"`
+  defaultRoute=`ip route show default | grep "^default"`
   for item in `echo "$Interfaces"`; do
     [ -n "$item" ] || continue
-    echo "$defaultRoute" |grep -q "$item"
+    echo "$defaultRoute" | grep -q "$item"
     [ $? -eq 0 ] && interface="$item" && break
   done
   echo "$interface"
   if [[ "$1" == 'Ubuntu' ]] && [[ "$2" -ge "18" ]]; then
     NetCfgDir="/etc/netplan/"
     NetCfgFile=`ls -Sl $NetCfgDir | grep ".yaml" | head -n 1 | awk -F' ' '{print $NF}'`
-    AdapterName=`awk '/ethernets:/{getline a;print $1""a}' $NetCfgDir$NetCfgFile | awk '{print $2}' | sed 's/.$//'`
   elif [[ "$1" == 'CentOS' || "$1" == 'AlmaLinux' || "$1" == 'RockyLinux' || "$1" == 'Fedora' || "$1" == 'Vzlinux' || "$1" == 'OracleLinux' ]]; then
     for Count in "/etc/sysconfig/network-scripts/" "/run/sysconfig/network-scripts/" "/etc/NetworkManager/system-connections/" "/run/NetworkManager/system-connections/"; do
       NetCfgDir="$Count"
       NetCfgFile=`ls -Sl $NetCfgDir | grep "nmconnection\|ifcfg-*" | grep -iv 'lo\|sit\|stf\|gif\|dummy\|vmnet\|vir\|gre\|ipip\|ppp\|bond\|tun\|tap\|ip6gre\|ip6tnl\|teql\|ocserv\|vpn' | head -n 1 | awk -F' ' '{print $NF}'`
       [[ -n `grep "BOOTPROTO\|interface-name" "$NetCfgDir$NetCfgFile"` ]] && break
     done
-    if [[ "$NetCfgDir" == *network-scripts* ]]; then
-      AdapterName=`echo $NetCfgFile | cut -d'-' -f 2`
-    elif [[ "$NetCfgDir" == *system-connections* ]]; then
-      AdapterName=`echo $NetCfgFile | cut -d'.' -f 1`
-    fi
   else
-    AdapterName="$interface"
-    for Count in "/etc/network/interfaces" "/run/network/interfaces" "/etc/network/interfaces.d/$AdapterName" "/run/network/interfaces.d/$AdapterName"; do
+    for Count in "/etc/network/interfaces" "/run/network/interfaces" "/etc/network/interfaces.d/$interface" "/run/network/interfaces.d/$interface"; do
       if [[ `grep -c "network interface" $Count` -ne "0" ]]; then
         NetCfgFile=`echo $Count | awk -F/ '{print $NF}'`
         NetCfgDir=`echo $Count | sed "s/$NetCfgFile//g"`
@@ -576,7 +572,6 @@ function getInterface(){
       fi  
     done
   fi
-  [[ ! -n "$AdapterName" ]] && AdapterName="$interface"
 }
 
 # If original system using DHCP, skip IP address, subnet mask, gateway, DNS server settings manually.
@@ -588,8 +583,8 @@ function checkDHCP(){
     NetworkConfig="isDHCP"
   elif [[ "$tmpDHCP" == '0' ]] || [[ -n "$ipAddr" && -n "$ipMask" && -n "$ipGate" ]]; then
     if [[ "$1" == 'CentOS' || "$1" == 'AlmaLinux' || "$1" == 'RockyLinux' || "$1" == 'Fedora' || "$1" == 'Vzlinux' || "$1" == 'OracleLinux' ]]; then
-# RedHat like linux system 8 and before network config name is "ifcfg-AdapterName", deposited in /etc/sysconfig/network-scripts/
-# RedHat like linux system 9 and later network config name is "AdapterName.nmconnection", deposited in /etc/NetworkManager/system-connections
+# RedHat like linux system 8 and before network config name is "ifcfg-interface", deposited in /etc/sysconfig/network-scripts/
+# RedHat like linux system 9 and later network config name is "interface.nmconnection", deposited in /etc/NetworkManager/system-connections
       if [[ -n `grep -Ern "BOOTPROTO=dhcp|BOOTPROTO=\"dhcp\"|BOOTPROTO=\'dhcp\'|BOOTPROTO=DHCP|BOOTPROTO=\"DHCP\"|BOOTPROTO=\'DHCP\'" $NetCfgDir` ]] || [[ -n `grep -Ern "method=auto" $NetCfgDir` ]]; then
         NetworkConfig="isDHCP"
       else
@@ -597,7 +592,7 @@ function checkDHCP(){
       fi
     elif [[ "$1" == 'Debian' ]] || [[ "$1" == 'Ubuntu' && "$2" -le "16" ]]; then
 # Debian network configs may be deposited in the following directions.
-# /etc/network/interfaces or /etc/network/interfaces.d/AdapterName or /run/network/interfaces.d/AdapterName
+# /etc/network/interfaces or /etc/network/interfaces.d/interface or /run/network/interfaces.d/interface
       if [[ `grep -c "inet" $NetCfgDir$NetCfgFile | grep -c "dhcp" $NetCfgDir$NetCfgFile` -ne "0" ]] || [[ `grep -c "inet6" $NetCfgDir$NetCfgFile | grep -c "dhcp" $NetCfgDir$NetCfgFile` -ne "0" ]]; then
         NetworkConfig="isDHCP"
       else
@@ -640,15 +635,22 @@ function DebianModifiedPreseed(){
 # If the network config type of server is DHCP and it have both public IPv4 and IPv6 address,
 # Debian install program even get nerwork config with DHCP, but after log into new system,
 # only the IPv4 of the server has been configurated.
-# so need to write "iface AdapterName inet6 dhcp" to /etc/network/interfaces in preseeding process,
+# so need to write "iface interface inet6 dhcp" to /etc/network/interfaces in preseeding process,
 # to avoid config IPv6 manually after log into new system.
     SupportIPv6=""
     if [[ "$NetworkConfig" == "isDHCP" ]]; then
-      SupportIPv6="$1 sed -i '\$aiface ${AdapterName} inet6 dhcp' /etc/network/interfaces"
-      if [[ "$IPStackType" == "BioStack" ]] || [[ "$IPStackType" == "IPv6Stack" ]]; then
-# Enable IPv6 dhcp and set prefer IPv6 access
-        SupportIPv6="$1 sed -i '\$aiface ${AdapterName} inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16   2' /etc/gai.conf"
-      fi
+# This IPv4Stack DHCP machine can access IPv6 network in the future, maybe.
+      SupportIPv6="$1 sed -i '\$aiface $interface inet6 dhcp' /etc/network/interfaces"
+# Enable IPv6 dhcp and set prefer IPv6 access for BioStack or IPv6Stack machine: add "label 2002::/16" in last line of the "/etc/gai.conf"
+      [[ "$IPStackType" == "BioStack" || "$IPStackType" == "IPv6Stack" ]] && SupportIPv6="$1 sed -i '\$aiface $interface inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16   2' /etc/gai.conf"
+    elif [[ "$NetworkConfig" == "isStatic" ]]; then
+      [[ "$IPStackType" == "BioStack" || "$IPStackType" == "IPv6Stack" ]] && SupportIPv6="$1 sed -i '\$aiface $interface inet6 static' /etc/network/interfaces; $1 sed -i '\$a\\\taddress $ip6Addr' /etc/network/interfaces; $1 sed -i '\$a\\\tgateway $ip6Gate' /etc/network/interfaces; $1 sed -i '\$a\\\tnetmask $ip6Mask' /etc/network/interfaces; $1 sed -i '\$a\\\tdns-nameservers $ip6DNS' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16   2' /etc/gai.conf"
+# a typical network configuration sample of IPv6 static for Debian:
+# iface eth0 inet6 static
+#         address 2702:b43c:492a:9d1e:8270:fd59:6de4:20f1
+#         gateway fe80::200:17ff:fe9e:f9d0
+#         netmask 128
+#         dns-nameservers 2606:4700:4700::1001
     fi
     [[ "$setRaid" == "0" ]] && FormatDisk=`echo -e "d-i partman-md/confirm boolean true
 d-i partman-md/confirm_nooverwrite boolean true
@@ -778,6 +780,7 @@ popularity-contest popularity-contest/participate boolean false
 d-i grub-installer/only_debian boolean true
 d-i grub-installer/bootdev string $IncDisk
 d-i grub-installer/force-efi-extra-removable boolean true
+d-i debian-installer/add-kernel-opts string net.ifnames=0 biosdevname=0
 
 ### Shutdown machine
 d-i finish-install/reboot_in_progress note
@@ -840,10 +843,16 @@ fi
 if [ "$setNet" == "0" ]; then
   dependence ip
   [ -n "$interface" ] || interface=`getInterface "$CurrentOS" "$CurrentOSVer"` 
-  iAddr=`ip addr show | grep -w "inet" | grep "$interface" | grep "scope" | grep "global" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
-  ipAddr=`echo ${iAddr} |cut -d'/' -f1`
-  ipMask=`netmask $(echo ${iAddr} |cut -d'/' -f2)`
-  ipGate=`ip route show | grep "via" | grep "$interface" | grep "dev" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$2}'`
+  iAddr=`ip addr show | grep -v "host" | grep -v "link" | grep -w "inet" | grep "$interface" | grep "scope" | grep "global" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+  ipAddr=`echo ${iAddr} | cut -d'/' -f1`
+  ipMask=`netmask $(echo ${iAddr} | cut -d'/' -f2)`
+  ipGate=`ip route show default | grep "via" | grep "$interface" | grep "dev" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$2}'`
+  [[ ! "$IPStackType" == "IPv4Stack" ]] && {
+    i6Addr=`ip -6 addr show | grep -v "host" | grep -v "link" | grep -w "inet6" | grep "scope" | grep "global" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+    ip6Addr=`echo ${i6Addr} |cut -d'/' -f1`
+	ip6Mask=`echo ${i6Addr} |cut -d'/' -f2`
+    ip6Gate=`ip -6 route show default | grep "via" | grep "$interface" | grep "dev" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$2}'`
+  }
 fi
 if [ -z "$interface" ]; then
   dependence ip
@@ -1027,8 +1036,6 @@ if [[ -n "$tmpDIST" ]]; then
   fi
 fi
 
-checkMem "$linux_relese" "$RedHatSeries"
-
 if [[ -z "$LinuxMirror" ]]; then
   echo -ne "\033[31mError! \033[0mInvaild mirror! \n"
   [ "$Relese" == 'Debian' ] && echo -en "\033[33mPlease check mirror lists:\033[0m https://www.debian.org/mirror/list\n\n"
@@ -1084,8 +1091,17 @@ clear && echo -e "\n\033[36m# Install\033[0m\n"
 if [ -z "$interfaceSelect" ]; then
   if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
     interfaceSelect="auto"
+  elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
+    interfaceSelect="link"
   fi
+else
+# If the kernel of original system is loaded with parameter "net.ifnames=0 biosdevname=0" and users don't want to set this
+# one in new system, they have to assign a valid, real name of their network adapter and the parameter "$interface"
+# will be written to new network configuration in preseed file for new system.
+  interface="$interfaceSelect"
 fi
+# The first network adapter name is must be "eth0" if kernel is loaded with parameter "net.ifnames=0 biosdevname=0". 
+[[ "$setInterfaceName" == "1" ]] && interface="eth0"
 
 if [[ "$linux_relese" == 'centos' ]]; then
   if [[ "$DIST" != "$UNVER" ]]; then
@@ -1097,6 +1113,9 @@ if [[ "$linux_relese" == 'centos' ]]; then
   fi
 fi
 echo -e "\n[\033[33m$Relese\033[0m] [\033[33m$DIST\033[0m] [\033[33m$VER\033[0m] Downloading..."
+
+# RAM of RedHat series is 2GB required at least.
+checkMem "$linux_relese" "$RedHatSeries"
 
 if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
   [ "$DIST" == "focal" ] && legacy="legacy-" || legacy=""
@@ -1199,6 +1218,8 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
     sed -i 's/ntp boolean true/ntp boolean false/g' /tmp/boot/preseed.cfg
     sed -i '/d-i\ clock-setup\/ntp-server string ntp.nict.jp/d' /tmp/boot/preseed.cfg
   fi
+# If network adapter is not redirected, delete this setting to new system.
+  [[ "$setInterfaceName" == "0" ]] && sed -i '/d-i\ debian-installer\/add-kernel-opts string net.ifnames=0 biosdevname=0/d' /tmp/boot/preseed.cfg
 
   [[ "$ddMode" == '1' ]] && {
     WinNoDHCP(){
@@ -1256,10 +1277,11 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
     RepoBase="repo --name=base --baseurl=${LinuxMirror}/releases/${DIST}/Server/${VER}/os/"
     RepoEpel="repo --name=epel --baseurl=${LinuxMirror}/releases/${DIST}/Everything/${VER}/os/"
   fi
-  if [[ "$NetworkConfig" == "isDHCP" ]]; then
-    NetConfigManually="network --bootproto=dhcp --hostname=$(hostname) --onboot=on"
+# If network adapter is redirected, add "eth0" as default.
+  if [[ "$setInterfaceName" == "1" ]]; then
+    [[ "$NetworkConfig" == "isDHCP" ]] && NetConfigManually="network --bootproto=dhcp --hostname=$(hostname) --onboot=on" || NetConfigManually="network --device=$interface --bootproto=static --ip=$IPv4 --netmask=$MASK --gateway=$GATE --nameserver=$ipDNS --hostname=$(hostname) --onboot=on"
   else
-    NetConfigManually="network --bootproto=static --ip=$IPv4 --netmask=$MASK --gateway=$GATE --nameserver=$ipDNS --hostname=$(hostname) --onboot=on"
+    [[ "$NetworkConfig" == "isDHCP" ]] && NetConfigManually="network --bootproto=dhcp --hostname=$(hostname) --onboot=on" || NetConfigManually="network --bootproto=static --ip=$IPv4 --netmask=$MASK --gateway=$GATE --nameserver=$ipDNS --hostname=$(hostname) --onboot=on"
   fi
 cat >/tmp/boot/ks.cfg<<EOF
 # platform x86, AMD64, or Intel EM64T, or ARM aarch64
@@ -1305,7 +1327,7 @@ ${SetTimeZone}
 ${NetConfigManually}
 
 # System bootloader configuration
-bootloader --location=mbr --append="rhgb quiet crashkernel=auto"
+bootloader --location=mbr --append="rhgb quiet crashkernel=auto net.ifnames=0 biosdevname=0"
 
 # Clear the Master Boot Record
 zerombr
@@ -1374,9 +1396,11 @@ rm -rf /root/install.*log
 %end
 
 EOF
-
-[[ "$UNKNOWHW" == '1' ]] && sed -i 's/^unsupported_hardware/#unsupported_hardware/g' /tmp/boot/ks.cfg
-[[ "$(echo "$DIST" |grep -o '^[0-9]\{1\}')" == '5' ]] && sed -i '0,/^%end/s//#%end/' /tmp/boot/ks.cfg
+# If network adapter is not redirected, delete this setting to new system.
+  [[ "$setInterfaceName" == "0" ]] && sed -i 's/ net.ifnames=0 biosdevname=0//g' /tmp/boot/ks.cfg
+  
+  [[ "$UNKNOWHW" == '1' ]] && sed -i 's/^unsupported_hardware/#unsupported_hardware/g' /tmp/boot/ks.cfg
+  [[ "$(echo "$DIST" |grep -o '^[0-9]\{1\}')" == '5' ]] && sed -i '0,/^%end/s//#%end/' /tmp/boot/ks.cfg
 fi
 
 find . | cpio -H newc --create --verbose | gzip -9 > /tmp/initrd.img;
@@ -1423,18 +1447,21 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
   [[ -z "$LinuxKernel" ]] && echo -ne "\n\033[31mError: \033[0mread grub config!\n" && exit 1;
   LinuxIMG="$(grep 'initrd.*/' /tmp/grub.new |awk '{print $1}' |tail -n 1)";
   [ -z "$LinuxIMG" ] && sed -i "/$LinuxKernel.*\//a\\\tinitrd\ \/" /tmp/grub.new && LinuxIMG='initrd';
-
+# If network adapter need to redirect eth0, eth1... in new system, add this setting in grub file of the current system for netboot install file which need to be loaded after restart.
+# The same behavior for grub2.
   [[ "$setInterfaceName" == "1" ]] && Add_OPTION="net.ifnames=0 biosdevname=0" || Add_OPTION=""
-  if [[ "$setIPv6" == "1" ]] || [[ "$IPStackType" == "IPv4Stack" ]]; then
-    Add_OPTION="$Add_OPTION ipv6.disable=1"
-  fi
+  [[ "$setIPv6" == "1" || "$IPStackType" == "IPv4Stack" ]] && Add_OPTION="$Add_OPTION ipv6.disable=1"
   
   lowMem || Add_OPTION="$Add_OPTION lowmem=+2"
 
   if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
-    BOOT_OPTION="auto=true $Add_OPTION hostname=$linux_relese domain=$linux_relese quiet"
+# The method for Debian series installer to search network adapter automatically is to set "d-i netcfg/choose_interface select auto" in preseed file.
+# The same behavior for grub2.
+    BOOT_OPTION="auto=true $Add_OPTION hostname=$(hostname) domain=$linux_relese quiet"
   elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
-    BOOT_OPTION="inst.ks=file://ks.cfg $Add_OPTION quiet"
+# The method for Redhat series installer to search network adapter automatically is to set "ksdevice=link" in grub file of the current system for netboot install file which need to be loaded after restart.
+# The same behavior for grub2.
+    BOOT_OPTION="inst.ks=file://ks.cfg $Add_OPTION ksdevice=$interfaceSelect quiet"
   fi
   
   [ -n "$setConsole" ] && BOOT_OPTION="$BOOT_OPTION --- console=$setConsole"
@@ -1494,14 +1521,12 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
   [ ! -f /tmp/grub.new ] && echo -e "\n\033[31mError: \033[0m$GRUBFILE.\n" && exit 1
 # Set IPv6 or distribute unite network adapter interface
   [[ "$setInterfaceName" == "1" ]] && Add_OPTION="net.ifnames=0 biosdevname=0" || Add_OPTION=""
-  if [[ "$setIPv6" == "1" ]] || [[ "$IPStackType" == "IPv4Stack" ]]; then
-    Add_OPTION="$Add_OPTION ipv6.disable=1"
-  fi
+  [[ "$setIPv6" == "1" || "$IPStackType" == "IPv4Stack" ]] && Add_OPTION="$Add_OPTION ipv6.disable=1"
 # Write menuentry to grub
   if [[ "$linux_relese" == 'ubuntu'  || "$linux_relese" == 'debian' ]]; then
     BOOT_OPTION="auto=true $Add_OPTION hostname=$(hostname) domain=$linux_relese quiet"
   else
-    BOOT_OPTION="inst.ks=file://ks.cfg $Add_OPTION quiet"
+    BOOT_OPTION="inst.ks=file://ks.cfg $Add_OPTION ksdevice=$interfaceSelect quiet"
   fi
   cat >> /etc/grub.d/40_custom <<EOF
 menuentry 'Install $Relese $DIST $VER' --class $linux_relese --class gnu-linux --class gnu --class os {
@@ -1513,7 +1538,7 @@ $(cat /tmp/grub.new)
   initrd$BootHex $BootDIR/initrd.img
 }
 EOF
-# Make installation to frist grub2 boot preference
+# Make grub2 to prefer installation item to boot first.
   sed -ri 's/GRUB_DEFAULT=0/GRUB_DEFAULT=saved/g' /etc/default/grub
 # Refreshing current system grub2 service
   grub2-mkconfig -o $GRUBDIR/$GRUBFILE >>/dev/null 2>&1
