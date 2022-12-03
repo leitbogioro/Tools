@@ -866,10 +866,10 @@ if [ -z "$interface" ]; then
   [ -n "$interface" ] || interface=`getInterface "$CurrentOS" "$CurrentOSVer"`
 fi
 IPv4="$ipAddr"; MASK="$ipMask"; GATE="$ipGate";
-if [[ -z "$IPv4" && -z "$MASK" && -z "$GATE" ]] || [[ -z "$ip6Addr" && -z "$ip6Mask" && -z "$ip6Gate" ]]; then
+if [[ -z "$IPv4" && -z "$MASK" && -z "$GATE" ]]; then
   echo -ne "\n\033[31mError: \033[0mThe network of your machine may not be available!\n"
-  bash $0 error;
-  exit 1;
+  bash $0 error
+  exit 1
 fi
 checkDHCP "$CurrentOS" "$CurrentOSVer"
 getUserTimezone "/root/timezonelists" "ZGEyMGNhYjhhMWM2NDJlMGE0YmZhMDVmMDZlNzBmN2E=" "ZTNlMjBiN2JjOTE2NGY2YjllNzUzYWU5ZDFjYjdjOTc=" "MWQ2NGViMGQ4ZmNlNGMzYTkxYjNiMTdmZDMxODQwZDc="
