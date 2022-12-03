@@ -454,18 +454,18 @@ function checkMem(){
   [[ "$1" == 'fedora' || "$1" == 'rockylinux' || "$1" == 'almalinux' || "$1" == 'centos' ]] && {
     if [[ "$1" == 'rockylinux' || "$1" == 'almalinux' || "$1" == 'centos' ]]; then
       if [[ "$2" == "8" ]] && [[ "$TotalMem1" -le "2406400" || "$TotalMem2" -le "2406400" ]]; then
-        echo -ne "\n\033[31mError: \033[0mSystem memory minimum 2.5GB required!\n"
+        echo -ne "\n\033[31mError: \033[0mMinimum system memory requirement is 2.5GB!\n"
         exit 1
       elif [[ "$2" -ge "9" ]] && [[ "$TotalMem1" -le "1740800" || "$TotalMem2" -le "1740800" ]]; then
-        echo -ne "\n\033[31mError: \033[0mSystem memory minimum 2GB required!\n"
+        echo -ne "\n\033[31mError: \033[0mMinimum system memory requirement is 2GB!\n"
         exit 1
-      elif [[ "$2" == "7" ]] && [[ "$TotalMem1" -le "1400000" || "$TotalMem2" -le "1400000" ]]; then
-        echo -ne "\n\033[31mError: \033[0mSystem memory minimum 1.5GB required!\n"
+      elif [[ "$2" == "7" ]] && [[ "$TotalMem1" -le "1384200" || "$TotalMem2" -le "1384200" ]]; then
+        echo -ne "\n\033[31mError: \033[0mMinimum system memory requirement is 1.5GB!\n"
         exit 1
       fi
     elif [[ "$1" == 'fedora' ]]; then
       if [[ "$TotalMem1" -le "1740800" || "$TotalMem2" -le "1740800" ]]; then
-        echo -ne "\n\033[31mError: \033[0mSystem memory minimum 2GB required!\n"
+        echo -ne "\n\033[31mError: \033[0mMinimum system memory requirement is 2GB!\n"
         exit 1
       fi
     fi
