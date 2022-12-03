@@ -413,7 +413,7 @@ function checkGrub(){
       GRUBFILE="$5"
     fi
   done
-  if [[ ! -n "$GRUBFILE" ]]; then
+  if [[ -z "$GRUBFILE" ]] || [[ -z `grep "insmod" $GRUBDIR/$GRUBFILE` ]]; then
     for Count in "$4" "$5"; do
       GRUBFILE=`find "$6" -name "$Count"`
       if [[ -n "$GRUBFILE" ]]; then
@@ -458,6 +458,9 @@ function checkMem(){
         exit 1
       elif [[ "$2" -ge "9" ]] && [[ "$TotalMem1" -le "1740800" || "$TotalMem2" -le "1740800" ]]; then
         echo -ne "\n\033[31mError: \033[0mSystem memory minimum 2GB required!\n"
+        exit 1
+      elif [[ "$2" == "7" ]] && [[ "$TotalMem1" -le "1400000" || "$TotalMem2" -le "1400000" ]]; then
+        echo -ne "\n\033[31mError: \033[0mSystem memory minimum 1.5GB required!\n"
         exit 1
       fi
     elif [[ "$1" == 'fedora' ]]; then
