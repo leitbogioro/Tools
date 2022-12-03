@@ -19,12 +19,16 @@ export tmpDIST=''
 export tmpURL=''
 export tmpWORD=''
 export tmpMirror=''
-export tmpDHCP='1'
+export tmpDHCP=''
 export TimeZone=''
 export ipAddr=''
 export ipMask=''
 export ipGate=''
 export ipDNS='1.0.0.1'
+export ip6Addr=''
+export ip6Mask=''
+export ip6Gate=''
+export ip6DNS='2606:4700:4700::1001'
 export IncDisk='default'
 export interface=''
 export interfaceSelect=''
@@ -122,6 +126,26 @@ while [[ $# -ge 1 ]]; do
     --ip-dns)
       shift
       ipDNS="$1"
+      shift
+      ;;
+    --ip6-addr)
+      shift
+      ip6Addr="$1"
+      shift
+      ;;
+    --ip6-mask)
+      shift
+      ip6Mask="$1"
+      shift
+      ;;
+    --ip6-gate)
+      shift
+      ip6Gate="$1"
+      shift
+      ;;
+    --ip6-dns)
+      shift
+      ip6DNS="$1"
       shift
       ;;
     --dhcp-static)
@@ -247,8 +271,6 @@ function checkCN(){
     else
       ipDNS="101.6.6.6"
     fi
-  elif [[ "$IsCN" != "cn" ]] && [[ "$3" == "BioStack" || "$3" == "IPv6Stack" ]]; then
-    ip6DNS="2606:4700:4700::1001"
   fi
 }
 
@@ -475,30 +497,22 @@ function checkSys(){
   
   if [[ `echo "$RedHatRelease" | grep -i "centos"` != "" ]]; then
     CurrentOS="CentOS"
-    checkDHCP "$CurrentOS" ""
   elif [[ `echo "$RedHatRelease" | grep -i "almalinux"` != "" ]]; then
     CurrentOS="AlmaLinux"
-    checkDHCP "$CurrentOS" ""
   elif [[ `echo "$RedHatRelease" | grep -i "rocky"` != "" ]]; then
     CurrentOS="RockyLinux"
-    checkDHCP "$CurrentOS" ""
   elif [[ `echo "$RedHatRelease" | grep -i "fedora"` != "" ]]; then
     CurrentOS="Fedora"
-    checkDHCP "$CurrentOS" ""
   elif [[ `echo "$RedHatRelease" | grep -i "virtuozzo"` != "" ]]; then
     CurrentOS="Vzlinux"
-    checkDHCP "$CurrentOS" ""
   elif [[ `echo "$RedHatRelease" | grep -i 'ol\|oracle'` != "" ]]; then
     CurrentOS="OracleLinux"
-    checkDHCP "$CurrentOS" ""
   elif [[ "$IsUbuntu" ]] || [[ `echo "$DebianRelease" | grep -i "ubuntu"` != "" ]]; then
     CurrentOS="Ubuntu"
     CurrentOSVer=`lsb_release -r | awk '{print$2}' | cut -d'.' -f1`
-    checkDHCP "$CurrentOS" "$CurrentOSVer"
   elif [[ "$IsDebian" ]] || [[ `echo "$DebianRelease" | grep -i "debian"` != "" ]]; then
     CurrentOS="Debian"
     CurrentOSVer=`lsb_release -r | awk '{print$2}' | cut -d'.' -f1`
-    checkDHCP "$CurrentOS" ""
   else
     echo -e "Does't support your system!\n"
     exit 1
@@ -510,8 +524,8 @@ function checkSys(){
 }
 
 function checkIPv4OrIpv6(){
-  IPv4DNSLookup=`timeout 1 dig -4 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
-  IPv6DNSLookup=`timeout 1 dig -6 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
+  IPv4DNSLookup=`timeout 2 dig -4 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
+  IPv6DNSLookup=`timeout 2 dig -6 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
   IP_Check="$IPv4DNSLookup"
   if expr "$IP_Check" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; then
     for i in 1 2 3 4; do
@@ -523,15 +537,9 @@ function checkIPv4OrIpv6(){
     IP_Check="isIPv4"
   fi
 
-  if [[ "${IP_Check}" == "isIPv4" ]] && [[ -n ${IPv4DNSLookup} ]] && [[ -n ${IPv6DNSLookup} ]]; then
-    IPStackType="BioStack"
-  fi
-  if [[ "${IP_Check}" == "isIPv4" ]] && [[ -n ${IPv4DNSLookup} ]] && [[ ! -n ${IPv6DNSLookup} ]]; then
-    IPStackType="IPv4Stack"
-  fi
-  if [[ ! -n ${IPv4DNSLookup} ]] && [[ -n ${IPv6DNSLookup} ]]; then
-    IPStackType="IPv6Stack"
-  fi
+  [[ "$IP_Check" == "isIPv4" && -n "$IPv4DNSLookup" && -n "$IPv6DNSLookup" ]] && IPStackType="BioStack"
+  [[ "$IP_Check" == "isIPv4" && -n "$IPv4DNSLookup" && -z "$IPv6DNSLookup" ]] && IPStackType="IPv4Stack"
+  [[ -z "$IPv4DNSLookup" && -n "$IPv6DNSLookup" ]] && IPStackType="IPv6Stack"
 }
 
 # $1 is $CurrentOS $2 is $CurrentOSVer
@@ -580,31 +588,27 @@ function getInterface(){
 # $1 is $CurrentOS $2 is $CurrentOSVer
 function checkDHCP(){
   getInterface "$CurrentOS" "$CurrentOSVer"
-  if [[ "$tmpDHCP" == '1' ]]; then
-    NetworkConfig="isDHCP"
-  elif [[ "$tmpDHCP" == '0' ]] || [[ -n "$ipAddr" && -n "$ipMask" && -n "$ipGate" ]]; then
-    if [[ "$1" == 'CentOS' || "$1" == 'AlmaLinux' || "$1" == 'RockyLinux' || "$1" == 'Fedora' || "$1" == 'Vzlinux' || "$1" == 'OracleLinux' ]]; then
+  if [[ "$1" == 'CentOS' || "$1" == 'AlmaLinux' || "$1" == 'RockyLinux' || "$1" == 'Fedora' || "$1" == 'Vzlinux' || "$1" == 'OracleLinux' ]]; then
 # RedHat like linux system 8 and before network config name is "ifcfg-interface", deposited in /etc/sysconfig/network-scripts/
 # RedHat like linux system 9 and later network config name is "interface.nmconnection", deposited in /etc/NetworkManager/system-connections
-      if [[ -n `grep -Ern "BOOTPROTO=none|BOOTPROTO=\"none\"|BOOTPROTO=\'none\'|BOOTPROTO=NONE|BOOTPROTO=\"NONE\"|BOOTPROTO=\'NONE\'|BOOTPROTO=static|BOOTPROTO=\"static\"|BOOTPROTO=\'static\'|BOOTPROTO=STATIC|BOOTPROTO=\"STATIC\"|BOOTPROTO=\'STATIC\'" $NetCfgDir` ]] || [[ -n `grep -Ern "method=manual" $NetCfgDir` ]]; then
-        NetworkConfig="isStatic"
-      else
-        NetworkConfig="isDHCP"
-      fi
-    elif [[ "$1" == 'Debian' ]] || [[ "$1" == 'Ubuntu' && "$2" -le "16" ]]; then
+    if [[ -n `grep -Ern "BOOTPROTO=none|BOOTPROTO=\"none\"|BOOTPROTO=\'none\'|BOOTPROTO=NONE|BOOTPROTO=\"NONE\"|BOOTPROTO=\'NONE\'|BOOTPROTO=static|BOOTPROTO=\"static\"|BOOTPROTO=\'static\'|BOOTPROTO=STATIC|BOOTPROTO=\"STATIC\"|BOOTPROTO=\'STATIC\'" $NetCfgDir` ]] || [[ -n `grep -Ern "method=manual" $NetCfgDir` ]] || [[ "$tmpDHCP" == "0" ]]; then
+      NetworkConfig="isStatic"
+    else
+      NetworkConfig="isDHCP"
+    fi
+  elif [[ "$1" == 'Debian' ]] || [[ "$1" == 'Ubuntu' && "$2" -le "16" ]]; then
 # Debian network configs may be deposited in the following directions.
 # /etc/network/interfaces or /etc/network/interfaces.d/interface or /run/network/interfaces.d/interface
-      if [[ `grep -c "inet" $NetCfgDir$NetCfgFile | grep -c "static" $NetCfgDir$NetCfgFile` -ne "0" ]] || [[ `grep -c "inet6" $NetCfgDir$NetCfgFile | grep -c "static" $NetCfgDir$NetCfgFile` -ne "0" ]]; then
-        NetworkConfig="isStatic"
-      else
-        NetworkConfig="isDHCP"
-      fi
-    elif [[ "$1" == 'Ubuntu' ]] && [[ "$2" -ge "18" ]]; then
-      if [[ `grep -c "dhcp4: false" $NetCfgDir$NetCfgFile` -ne "0" ]] || [[ `grep -c "dhcp4: no" $NetCfgDir$NetCfgFile` -ne "0" ]] || [[ `grep -c "dhcp6: false" $NetCfgDir$NetCfgFile` -ne "0" ]] || [[ `grep -c "dhcp6: no" $NetCfgDir$NetCfgFile` -ne "0" ]]; then
-        NetworkConfig="isStatic"
-      else
-        NetworkConfig="isDHCP"
-      fi
+    if [[ `grep -c "inet" $NetCfgDir$NetCfgFile | grep -c "static" $NetCfgDir$NetCfgFile` -ne "0" ]] || [[ `grep -c "inet6" $NetCfgDir$NetCfgFile | grep -c "static" $NetCfgDir$NetCfgFile` -ne "0" ]] || [[ "$tmpDHCP" == "0" ]]; then
+      NetworkConfig="isStatic"
+    else
+      NetworkConfig="isDHCP"
+    fi
+  elif [[ "$1" == 'Ubuntu' ]] && [[ "$2" -ge "18" ]]; then
+    if [[ `grep -c "dhcp4: false" $NetCfgDir$NetCfgFile` -ne "0" || `grep -c "dhcp4: no" $NetCfgDir$NetCfgFile` -ne "0" || `grep -c "dhcp6: false" $NetCfgDir$NetCfgFile` -ne "0" || `grep -c "dhcp6: no" $NetCfgDir$NetCfgFile` -ne "0" ]] || [[ "$tmpDHCP" == "0" ]]; then
+      NetworkConfig="isStatic"
+    else
+      NetworkConfig="isDHCP"
     fi
   fi
 }
@@ -805,8 +809,6 @@ checkIPv4OrIpv6
 
 checkCN "www.google.com" "www.twitter.com" "$IPStackType"
 
-getUserTimezone "/root/timezonelists" "ZGEyMGNhYjhhMWM2NDJlMGE0YmZhMDVmMDZlNzBmN2E=" "ZTNlMjBiN2JjOTE2NGY2YjllNzUzYWU5ZDFjYjdjOTc=" "MWQ2NGViMGQ4ZmNlNGMzYTkxYjNiMTdmZDMxODQwZDc="
-
 checkEfi "/sys/firmware/efi/efivars/" "/sys/firmware/efi/mok-variables/" "/sys/firmware/efi/runtime-map/" "/sys/firmware/efi/vars/"
 
 if [[ ! ${sshPORT} -ge "1" ]] || [[ ! ${sshPORT} -le "65535" ]] || [[ `grep '^[[:digit:]]*$' <<< '${sshPORT}'` ]]; then
@@ -840,19 +842,23 @@ if [[ "$ddMode" == '1' ]]; then
   tmpVER='amd64';
 fi
 
-[ -n "$ipAddr" ] && [ -n "$ipMask" ] && [ -n "$ipGate" ] && setNet='1';
-if [ "$setNet" == "0" ]; then
+if [[ "$IPStackType" == "IPv4Stack" ]]; then
+  [[ -n "$ipAddr" && -n "$ipMask" && -n "$ipGate" ]] && setNet='1'
+else
+  [[ -n "$ipAddr" && -n "$ipMask" && -n "$ipGate" && -n "$ip6Addr" && -n "$ip6Mask" && -n "$ip6Gate" ]] && setNet='1'
+fi
+if [[ "$setNet" == "0" ]]; then
   dependence ip
-  [ -n "$interface" ] || interface=`getInterface "$CurrentOS" "$CurrentOSVer"` 
+  [[ -n "$interface" ]] || interface=`getInterface "$CurrentOS" "$CurrentOSVer"`
   iAddr=`ip addr show | grep -v "host" | grep -v "link" | grep -w "inet" | grep "$interface" | grep "scope" | grep "global" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
   ipAddr=`echo ${iAddr} | cut -d'/' -f1`
   ipMask=`netmask $(echo ${iAddr} | cut -d'/' -f2)`
-  ipGate=`ip route show default | grep "via" | grep "$interface" | grep "dev" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$2}'`
+  ipGate=`ip route show default | grep "via" | grep "$interface" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
   [[ ! "$IPStackType" == "IPv4Stack" ]] && {
-    i6Addr=`ip -6 addr show | grep -v "host" | grep -v "link" | grep -w "inet6" | grep "scope" | grep "global" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+    i6Addr=`ip -6 addr show | grep -wv "lo\|host" | grep -wv "link" | grep -w "inet6" | grep "scope" | grep "global" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
     ip6Addr=`echo ${i6Addr} |cut -d'/' -f1`
 	ip6Mask=`echo ${i6Addr} |cut -d'/' -f2`
-    ip6Gate=`ip -6 route show default | grep "via" | grep "$interface" | grep "dev" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$2}'`
+    ip6Gate=`ip -6 route show default | grep -w "via" | grep -w "$interface" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
   }
 fi
 if [ -z "$interface" ]; then
@@ -860,11 +866,13 @@ if [ -z "$interface" ]; then
   [ -n "$interface" ] || interface=`getInterface "$CurrentOS" "$CurrentOSVer"`
 fi
 IPv4="$ipAddr"; MASK="$ipMask"; GATE="$ipGate";
-[ -n "$IPv4" ] && [ -n "$MASK" ] && [ -n "$GATE" ] && [ -n "$ipDNS" ] || {
-  echo -ne '\n\033[31mError: \033[0mInvalid network config!\n'
+if [[ -z "$IPv4" && -z "$MASK" && -z "$GATE" ]] || [[ -z "$ip6Addr" && -z "$ip6Mask" && -z "$ip6Gate" ]]; then
+  echo -ne "\n\033[31mError: \033[0mThe network of your machine may not be available!\n"
   bash $0 error;
   exit 1;
-}
+fi
+checkDHCP "$CurrentOS" "$CurrentOSVer"
+getUserTimezone "/root/timezonelists" "ZGEyMGNhYjhhMWM2NDJlMGE0YmZhMDVmMDZlNzBmN2E=" "ZTNlMjBiN2JjOTE2NGY2YjllNzUzYWU5ZDFjYjdjOTc=" "MWQ2NGViMGQ4ZmNlNGMzYTkxYjNiMTdmZDMxODQwZDc="
 
 dependence awk,basename,cat,cpio,curl,cut,dig,dirname,efibootmgr,file,find,grep,gzip,ipcalc,jq,lsblk,sed,wget,xz;
 [ -n "$tmpWORD" ] && dependence openssl
