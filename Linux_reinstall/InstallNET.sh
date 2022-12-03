@@ -425,9 +425,9 @@ function checkGrub(){
   fi
   GRUBDIR=`echo ${GRUBDIR%?}` 
   if [[ `awk '/menuentry*/{print NF}' $GRUBDIR/$GRUBFILE | head -n 1` -ge "1" ]] || [[ `awk '/feature*/{print $a}' $GRUBDIR/$GRUBFILE | head -n 1` != "" ]]; then
-    if [[ -n `grep -w "grub2-mkconfig" $GRUBDIR/$GRUBFILE` ]]; then
+    if [[ -n `grep -w "grub2-mkconfig" $GRUBDIR/$GRUBFILE` ]] || [[ `type grub2-mkconfig` != "" ]]; then
       GRUBTYPE="isGrub2"
-    elif [[ -n `grep -w "grub-mkconfig" $GRUBDIR/$GRUBFILE` ]]; then
+    elif [[ -n `grep -w "grub-mkconfig" $GRUBDIR/$GRUBFILE` ]] || [[ `type grub-mkconfig` != "" ]]; then
       GRUBTYPE="isGrub1"
     elif [[ "$CurrentOS" == "CentOS" || "$CurrentOS" == "OracleLinux" ]] && [[ "$CurrentOSVer" -le "6" ]]; then
       GRUBTYPE="isGrub1"
