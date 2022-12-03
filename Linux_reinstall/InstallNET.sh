@@ -365,11 +365,11 @@ function getDisk(){
 # $1 is timezone checkfile direction, $2 $3 $4 are api keys.
 function getUserTimezone(){
   if [[ "$TimeZone" == "" ]]; then
-    UserIP=`who am i | awk '{print $5}' | sed 's/(//g' | sed 's/)//g'`
+    GuestIP=`who am i | awk '{print $5}' | sed 's/(//g' | sed 's/)//g'`
     for Count in "$2" "$3" "$4"; do
       [[ "$TimeZone" == "Asia/Shanghai" ]] && break
       tmpApi=`echo -n "$Count" | base64 -d`
-      TimeZone=`curl -s "https://api.ipgeolocation.io/timezone?apiKey=$tmpApi&ip=$UserIP" | jq '.timezone' | tr -d '"'`
+      TimeZone=`curl -s "https://api.ipgeolocation.io/timezone?apiKey=$tmpApi&ip=$GuestIP" | jq '.timezone' | tr -d '"'`
       checkTz=`echo $TimeZone | cut -d'/' -f 1`
       [[ -n "$checkTz" && "$checkTz" =~ ^[a-zA-Z] ]] && break
     done
