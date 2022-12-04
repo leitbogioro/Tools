@@ -148,9 +148,9 @@ while [[ $# -ge 1 ]]; do
       ip6DNS="$1"
       shift
       ;;
-    --network-static)
+    --network)
       shift
-      tmpDHCP='0'
+      tmpDHCP="$1"
       shift
       ;;
     --adapter)
@@ -563,14 +563,14 @@ function getInterface(){
     NetCfgDir="/etc/netplan/"
     NetCfgFile=`ls -Sl $NetCfgDir | grep ".yaml" | head -n 1 | awk -F' ' '{print $NF}'`
   elif [[ "$1" == 'CentOS' || "$1" == 'AlmaLinux' || "$1" == 'RockyLinux' || "$1" == 'Fedora' || "$1" == 'Vzlinux' || "$1" == 'OracleLinux' ]]; then
-    for Count in "/etc/sysconfig/network-scripts/" "/run/sysconfig/network-scripts/" "/etc/NetworkManager/system-connections/" "/run/NetworkManager/system-connections/"; do
+    for Count in "/etc/sysconfig/network-scripts/" "/etc/NetworkManager/system-connections/" "/run/NetworkManager/system-connections/" "/usr/lib/NetworkManager/system-connections/" "/run/sysconfig/network-scripts/" "/run/network-scripts/" "/usr/lib/sysconfig/network-scripts/" "/usr/lib/network-scripts/"; do
       NetCfgDir="$Count"
       NetCfgFile=`ls -Sl $NetCfgDir | grep "nmconnection\|ifcfg-*" | grep -iv 'lo\|sit\|stf\|gif\|dummy\|vmnet\|vir\|gre\|ipip\|ppp\|bond\|tun\|tap\|ip6gre\|ip6tnl\|teql\|ocserv\|vpn' | head -n 1 | awk -F' ' '{print $NF}'`
-      [[ -n `grep "BOOTPROTO\|interface-name" "$NetCfgDir$NetCfgFile"` ]] && break
+      [[ -n `grep -wlr "BOOTPROTO=*\|DEVICE=*\|ONBOOT=*\|DEFROUTE=*\|id=*\|\[connection\]\|interface-name=*\|method=*" $NetCfgDir*` ]] && break
     done
   else
-    for Count in "/run/network/*" "/etc/network/*"; do
-      NetCfgWhole=`grep -wrl "network" | grep -wrl "iface" | grep -wrl "lo" | grep -rl "inet\|inte6" $Count | grep -v "if-*" | grep -v "state"`
+    for Count in "/run/network/" "/etc/network/"; do
+      NetCfgWhole=`grep -wrl "network" | grep -wrl "iface" | grep -wrl "lo" | grep -wrl "inet\|inte6" $Count* | grep -v "if-*" | grep -v "state"`
       if [[ "$NetCfgWhole" != "" ]]; then
         NetCfgFile=`echo $NetCfgWhole | awk -F/ '{print $NF}'`
         NetCfgDir=`echo $NetCfgWhole | sed "s/$NetCfgFile//g"`
@@ -588,7 +588,7 @@ function checkDHCP(){
   if [[ "$1" == 'CentOS' || "$1" == 'AlmaLinux' || "$1" == 'RockyLinux' || "$1" == 'Fedora' || "$1" == 'Vzlinux' || "$1" == 'OracleLinux' ]]; then
 # RedHat like linux system 8 and before network config name is "ifcfg-interface", deposited in /etc/sysconfig/network-scripts/
 # RedHat like linux system 9 and later network config name is "interface.nmconnection", deposited in /etc/NetworkManager/system-connections
-    if [[ -n `grep -Ern "BOOTPROTO=none|BOOTPROTO=\"none\"|BOOTPROTO=\'none\'|BOOTPROTO=NONE|BOOTPROTO=\"NONE\"|BOOTPROTO=\'NONE\'|BOOTPROTO=static|BOOTPROTO=\"static\"|BOOTPROTO=\'static\'|BOOTPROTO=STATIC|BOOTPROTO=\"STATIC\"|BOOTPROTO=\'STATIC\'" $NetCfgDir` ]] || [[ -n `grep -Ern "method=manual" $NetCfgDir` ]] || [[ "$tmpDHCP" == "0" ]]; then
+    if [[ -n `grep -Ewrn "BOOTPROTO=none|BOOTPROTO=\"none\"|BOOTPROTO=\'none\'|BOOTPROTO=NONE|BOOTPROTO=\"NONE\"|BOOTPROTO=\'NONE\'|BOOTPROTO=static|BOOTPROTO=\"static\"|BOOTPROTO=\'static\'|BOOTPROTO=STATIC|BOOTPROTO=\"STATIC\"|BOOTPROTO=\'STATIC\'" $NetCfgDir*` ]] || [[ -n `grep -Ewrn "method=manual" $NetCfgDir*` ]] || [[ "$tmpDHCP" == "static" || "$tmpDHCP" == "manual" || "$tmpDHCP" == "none" || "$tmpDHCP" == "false" || "$tmpDHCP" == "no" || "$tmpDHCP" == "0" ]]; then
       NetworkConfig="isStatic"
     else
       NetworkConfig="isDHCP"
@@ -596,17 +596,19 @@ function checkDHCP(){
   elif [[ "$1" == 'Debian' ]] || [[ "$1" == 'Ubuntu' && "$2" -le "16" ]]; then
 # Debian network configs may be deposited in the following directions.
 # /etc/network/interfaces or /etc/network/interfaces.d/interface or /run/network/interfaces.d/interface
-    if [[ `grep -c "inet" $NetCfgDir$NetCfgFile | grep -c "static" $NetCfgDir$NetCfgFile` -ne "0" ]] || [[ `grep -c "inet6" $NetCfgDir$NetCfgFile | grep -c "static" $NetCfgDir$NetCfgFile` -ne "0" ]] || [[ "$tmpDHCP" == "0" ]]; then
+    if [[ `grep -c "inet" $NetCfgDir$NetCfgFile | grep -c "static" $NetCfgDir$NetCfgFile` -ne "0" ]] || [[ `grep -c "inet6" $NetCfgDir$NetCfgFile | grep -c "static" $NetCfgDir$NetCfgFile` -ne "0" ]] || [[ "$tmpDHCP" == "static" || "$tmpDHCP" == "manual" || "$tmpDHCP" == "none" || "$tmpDHCP" == "false" || "$tmpDHCP" == "no" || "$tmpDHCP" == "0" ]]; then
       NetworkConfig="isStatic"
     else
       NetworkConfig="isDHCP"
     fi
   elif [[ "$1" == 'Ubuntu' ]] && [[ "$2" -ge "18" ]]; then
-    if [[ `grep -c "dhcp4: false" $NetCfgDir$NetCfgFile` -ne "0" || `grep -c "dhcp4: no" $NetCfgDir$NetCfgFile` -ne "0" || `grep -c "dhcp6: false" $NetCfgDir$NetCfgFile` -ne "0" || `grep -c "dhcp6: no" $NetCfgDir$NetCfgFile` -ne "0" ]] || [[ "$tmpDHCP" == "0" ]]; then
+    if [[ `grep -c "dhcp4: false" $NetCfgDir$NetCfgFile` -ne "0" || `grep -c "dhcp4: no" $NetCfgDir$NetCfgFile` -ne "0" || `grep -c "dhcp6: false" $NetCfgDir$NetCfgFile` -ne "0" || `grep -c "dhcp6: no" $NetCfgDir$NetCfgFile` -ne "0" ]] || [[ "$tmpDHCP" == "static" || "$tmpDHCP" == "manual" || "$tmpDHCP" == "none" || "$tmpDHCP" == "false" || "$tmpDHCP" == "no" || "$tmpDHCP" == "0" ]]; then
       NetworkConfig="isStatic"
     else
       NetworkConfig="isDHCP"
     fi
+  elif [[ "$tmpDHCP" == "dhcp" || "$tmpDHCP" == "auto" || "$tmpDHCP" == "automatic" || "$tmpDHCP" == "true" || "$tmpDHCP" == "yes" || "$tmpDHCP" == "1" ]]; then
+    NetworkConfig="isDHCP"
   fi
 }
 
