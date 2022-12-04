@@ -148,7 +148,7 @@ while [[ $# -ge 1 ]]; do
       ip6DNS="$1"
       shift
       ;;
-    --dhcp-static)
+    --network-static)
       shift
       tmpDHCP='0'
       shift
@@ -1302,11 +1302,11 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
     RepoBase="repo --name=base --baseurl=${LinuxMirror}/releases/${DIST}/Server/${VER}/os/"
     RepoEpel="repo --name=epel --baseurl=${LinuxMirror}/releases/${DIST}/Everything/${VER}/os/"
   fi
-# If network adapter is redirected, add "eth0" as default.
-  if [[ "$setInterfaceName" == "1" ]]; then
-    [[ "$NetworkConfig" == "isDHCP" ]] && NetConfigManually="network --bootproto=dhcp --hostname=$(hostname) --onboot=on" || NetConfigManually="network --device=$interface --bootproto=static --ip=$IPv4 --netmask=$MASK --gateway=$GATE --nameserver=$ipDNS --hostname=$(hostname) --onboot=on"
-  else
-    [[ "$NetworkConfig" == "isDHCP" ]] && NetConfigManually="network --bootproto=dhcp --hostname=$(hostname) --onboot=on" || NetConfigManually="network --bootproto=static --ip=$IPv4 --netmask=$MASK --gateway=$GATE --nameserver=$ipDNS --hostname=$(hostname) --onboot=on"
+# If network adapter is redirected, the "eth0" is default.
+  if [[ "$NetworkConfig" == "isDHCP" ]]; then
+    NetConfigManually="network --bootproto=dhcp --hostname=$(hostname) --onboot=on"
+  elif [[ "$NetworkConfig" == "isStatic" ]]; then
+    [[ "$IPStackType" == "isIPv4" ]] && NetConfigManually="network --device=$interface --bootproto=static --ip=$IPv4 --netmask=$MASK --gateway=$GATE --nameserver=$ipDNS --hostname=$(hostname) --onboot=on" || NetConfigManually="network --device=$interface --bootproto=static --ip=$IPv4 --netmask=$MASK --gateway=$GATE --ipv6=$i6Addr --ipv6gateway=$ip6Gate --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
   fi
 cat >/tmp/boot/ks.cfg<<EOF
 # platform x86, AMD64, or Intel EM64T, or ARM aarch64
