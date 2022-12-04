@@ -437,7 +437,7 @@ function checkGrub(){
 
 # $1 is $linux_relese, $2 is $RedHatSeries
 function checkMem(){
-  TotalMem1=$(cat /proc/meminfo | grep "MemTotal:" | sed 's/kb//i' | awk -F' ' '{print $NF}')
+  TotalMem1=$(cat /proc/meminfo | grep "^MemTotal:" | sed 's/kb//i' | grep -o "[0-9]*" | awk -F' ' '{print $NF}')
   TotalMem2=$(free -k | grep -i "mem" | awk '{printf $2}')
 # Without the function of OS re-installation templates in control panel which provided by cloud companies(many companies even have not).
 # A independent VPS with only one hard drive is lack of the secondary hard drive to format and copy new OS file to main hard drive.
@@ -470,12 +470,6 @@ function checkMem(){
       fi
     fi
   }
-}
-
-function lowMem(){
-  mem=`grep "^MemTotal:" /proc/meminfo 2>/dev/null |grep -o "[0-9]*"`
-  [ -n "$mem" ] || return 0
-  [ "$mem" -le "393216" ] && return 1 || return 0
 }
 
 function checkSys(){
@@ -692,12 +686,19 @@ d-i mdadm/boot_degraded boolean true"`
 }
 
 function DebianPreseedProcess(){
-FormatDisk=`echo -e "d-i partman/mount_style select uuid\nd-i partman-auto/method string regular\nd-i partman-auto/init_automatically_partition select Guided - use entire disk\nd-i partman-auto/choose_recipe select All files in one partition (recommended for new users)"`
+# Default to make a GPT partition to support 3TB hard drive or larger.
+FormatDisk=`echo -e "d-i partman/mount_style select uuid\nd-i partman-auto/method string regular\nd-i partman-auto/init_automatically_partition select Guided - use entire disk\nd-i partman-auto/choose_recipe select All files in one partition (recommended for new users)\nd-i partman-basicfilesystems/choose_label string gpt\nd-i partman-basicfilesystems/default_label string gpt\nd-i partman-partitioning/choose_label string gpt\nd-i partman-partitioning/default_label string gpt\nd-i partman/choose_label string gpt\nd-i partman/default_label string gpt"`
 # Default disk format recipe:
 # d-i partman/mount_style select uuid
 # d-i partman-auto/method string regular
 # d-i partman-auto/init_automatically_partition select Guided - use entire disk
 # d-i partman-auto/choose_recipe select All files in one partition (recommended for new users)
+# d-i partman-basicfilesystems/choose_label string gpt
+# d-i partman-basicfilesystems/default_label string gpt
+# d-i partman-partitioning/choose_label string gpt
+# d-i partman-partitioning/default_label string gpt
+# d-i partman/choose_label string gpt
+# d-i partman/default_label string gpt
 [[ "$NetworkConfig" == "isDHCP" ]] && NetConfigManually="" || NetConfigManually=`echo -e "d-i netcfg/disable_autoconfig boolean true\nd-i netcfg/dhcp_failed note\nd-i netcfg/dhcp_options select Configure network manually\nd-i netcfg/get_ipaddress string $IPv4\nd-i netcfg/get_netmask string $MASK\nd-i netcfg/get_gateway string $GATE\nd-i netcfg/get_nameservers string $ipDNS\nd-i netcfg/no_default_route boolean true\nd-i netcfg/confirm_static boolean true"`
 # Manually network setting configurations, including:
 # d-i netcfg/disable_autoconfig boolean true
@@ -724,7 +725,7 @@ d-i console-setup/layoutcode string us
 d-i keyboard-configuration/xkb-keymap string us
 
 ### Low memory mode
-d-i lowmem/low note
+d-i lowmem/low boolean true
 
 ### Network configuration
 d-i netcfg/choose_interface select $interfaceSelect
@@ -1223,10 +1224,19 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
 # Debian 8 and former or Raid 0 mode don't support xfs.
     [[ "$DebianDistNum" -le "8" || "$setRaid" == "0" ]] && sed -i '/d-i\ partman\/default_filesystem string xfs/d' /tmp/boot/preseed.cfg
   fi
-# Ubuntu 20.04 and below does't support xfs, force grub-efi installation to the removable media path may cause grub install failed.
+# To avoid to entry into low memory mode, Debian 10 needs at least 512M memory and more, Debian 11 needs at least 768MB memory and more. 
+  if [[ "$DebianDistNum" == "11" ]]; then
+    [[ "$TotalMem1" -ge "768000" || "$TotalMem2" -ge "768000" ]] && sed -i '/d-i\ lowmem\/low boolean true/d' /tmp/boot/preseed.cfg
+  elif [[ "$DebianDistNum" == "10" ]]; then
+    [[ "$TotalMem1" -ge "512000" || "$TotalMem2" -ge "512000" ]] && sed -i '/d-i\ lowmem\/low boolean true/d' /tmp/boot/preseed.cfg
+  elif [[ "$DebianDistNum" -le "9" ]]; then
+    sed -i '/d-i\ lowmem\/low boolean true/d' /tmp/boot/preseed.cfg
+  fi
+# Ubuntu 20.04 and below does't support xfs, force grub-efi installation to the removable media path may cause grub install failed, low memory mode.
   if [[ "$linux_relese" == 'ubuntu' ]]; then
     sed -i '/d-i\ partman\/default_filesystem string xfs/d' /tmp/boot/preseed.cfg
     sed -i '/d-i\ grub-installer\/force-efi-extra-removable/d' /tmp/boot/preseed.cfg
+    sed -i '/d-i\ lowmem\/low boolean true/d' /tmp/boot/preseed.cfg
   fi
 # Static network environment doesn't support ntp clock setup.
   if [[ "$NetworkConfig" == "isStatic" ]]; then
@@ -1466,8 +1476,6 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
 # The same behavior for grub2.
   [[ "$setInterfaceName" == "1" ]] && Add_OPTION="net.ifnames=0 biosdevname=0" || Add_OPTION=""
   [[ "$setIPv6" == "1" || "$IPStackType" == "IPv4Stack" ]] && Add_OPTION="$Add_OPTION ipv6.disable=1"
-  
-  lowMem || Add_OPTION="$Add_OPTION lowmem=+2"
 
   if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
 # The method for Debian series installer to search network adapter automatically is to set "d-i netcfg/choose_interface select auto" in preseed file.
