@@ -413,7 +413,7 @@ function checkGrub(){
       GRUBFILE="$5"
     fi
   done
-  if [[ -z "$GRUBFILE" ]] || [[ -z `grep "insmod" $GRUBDIR/$GRUBFILE` ]]; then
+  if [[ -z "$GRUBFILE" ]] || [[ `grep -c "insmod*" $GRUBDIR$GRUBFILE` == "0" ]]; then
     for Count in "$4" "$5"; do
       GRUBFILE=`find "$6" -name "$Count"`
       if [[ -n "$GRUBFILE" ]]; then
