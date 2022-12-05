@@ -476,7 +476,8 @@ function checkSys(){
   apt update -y
   apt install curl dnsutils efibootmgr file ipcalc jq lsb-release wget xz-utils -y
   yum update --allowerasing -y
-  yum install curl dnsutils efibootmgr file ipcalc jq redhat-lsb wget xz -y
+  yum install epel-release -y
+  yum install curl bind-utils dnsutils efibootmgr file ipcalc jq redhat-lsb wget xz -y
   OsLsb=`lsb_release -d | awk '{print$2}'`
   CurrentOSVer=`cat /etc/os-release | grep -w "VERSION_ID=*" | awk -F '=' '{print $2}' | sed 's/\"//g' | cut -d'.' -f 1`
   
