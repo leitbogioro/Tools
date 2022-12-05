@@ -78,7 +78,7 @@ while [[ $# -ge 1 ]]; do
       tmpDIST="$1"
       shift
       ;;
-    -centos|-CentOS)
+    -centos|-CentOS|-cent|-Cent)
       shift
       Relese='CentOS'
       tmpDIST="$1"
