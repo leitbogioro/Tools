@@ -1438,11 +1438,12 @@ cp -f /tmp/vmlinuz /boot/vmlinuz || sudo cp -f /tmp/vmlinuz /boot/vmlinuz
 # Debian/Ubuntu Grub1 set start
 if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
   READGRUB='/tmp/grub.read'
+  [[ -f $READGRUB ]] && rm -rf $READGRUB
   touch $READGRUB
 # Backup original grub config file
   cp $GRUBDIR/$GRUBFILE "$GRUBDIR/$GRUBFILE_$(date "+%Y%m%d%H%M").bak"
 # Read grub file, search boot item
-  cat $GRUBDIR/$GRUBFILE |sed -n '1h;1!H;$g;s/\n/%%%%%%%/g;$p' |grep -om 1 'menuentry\ [^{]*{[^}]*}%%%%%%%' |sed 's/%%%%%%%/\n/g' >$READGRUB
+  cat $GRUBDIR/$GRUBFILE |sed -n '1h;1!H;$g;s/\n/%%%%%%%/g;$p' |grep -aom 1 'menuentry\ [^{]*{[^}]*}%%%%%%%' |sed 's/%%%%%%%/\n/g' >$READGRUB
   LoadNum="$(cat $READGRUB |grep -c 'menuentry ')"
   if [[ "$LoadNum" -eq '1' ]]; then
     cat $READGRUB |sed '/^$/d' >/tmp/grub.new;
@@ -1454,12 +1455,12 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
       [ "$tmpCFG" -gt "$CFG0" -a "$tmpCFG" -lt "$CFG2" ] && CFG1="$tmpCFG";
     done
     [[ -z "$CFG1" ]] && {
-      echo "Error! read $GRUBFILE. ";
+      echo "Error! read $GRUBFILE.\n";
       exit 1;
     }
     sed -n "$CFG0,$CFG1"p $READGRUB >/tmp/grub.new;
     [[ -f /tmp/grub.new ]] && [[ "$(grep -c '{' /tmp/grub.new)" -eq "$(grep -c '}' /tmp/grub.new)" ]] || {
-      echo -ne "\033[31mError! \033[0mNot configure $GRUBFILE. \n";
+      echo -ne "\033[31mError! \033[0mNot configure $GRUBFILE.\n";
       exit 1;
     }
   fi  
