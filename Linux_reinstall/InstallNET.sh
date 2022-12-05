@@ -326,7 +326,7 @@ function selectMirror(){
   mirrorStatus=0
   declare -A MirrorBackup
   if [[ "$IsCN" == "cn" ]]; then
-    MirrorBackup=(["debian0"]="" ["debian1"]="https://mirrors.tencent.com/debian" ["debian2"]="https://mirrors.aliyun.com/debian" ["debian3"]="https://mirrors.aliyun.com/debian-archive/debian" ["ubuntu0"]="" ["ubuntu1"]="http://mirrors.tencent.com/ubuntu" ["ubuntu2"]="http://mirrors.aliyun.com/ubuntu" ["centos0"]="" ["centos1"]="https://mirrors.cloud.tencent.com/centos" ["centos2"]="https://mirrors.aliyun.com/centos-stream" ["centos3"]="http://mirror.nju.edu.cn/centos-altarch" ["centos4"]="http://mirrors.aliyun.com/centos-vault" ["fedora0"]="" ["fedora1"]="https://mirrors.aliyun.com/fedora" ["fedora2"]="https://mirrors.bfsu.edu.cn/fedora" ["rockylinux0"]="" ["rockylinux1"]="http://mirrors.163.com/rocky" ["rockylinux2"]="https://mirrors.aliyun.com/rockylinux" ["almalinux0"]="" ["almalinux1"]="https://mirrors.aliyun.com/almalinux" ["almalinux2"]="https://mirror.sjtu.edu.cn/almalinux")
+    MirrorBackup=(["debian0"]="" ["debian1"]="http://mirror.nju.edu.cn/debian" ["debian2"]="http://mirrors.hit.edu.cn/debian" ["debian3"]="https://mirrors.aliyun.com/debian-archive/debian" ["ubuntu0"]="" ["ubuntu1"]="https://mirrors.ustc.edu.cn/ubuntu" ["ubuntu2"]="http://mirrors.xjtu.edu.cn/ubuntu" ["centos0"]="" ["centos1"]="https://mirrors.ustc.edu.cn/centos-stream" ["centos2"]="https://mirrors.tuna.tsinghua.edu.cn/centos" ["centos3"]="http://mirror.nju.edu.cn/centos-altarch" ["centos4"]="https://mirrors.tuna.tsinghua.edu.cn/centos-vault" ["fedora0"]="" ["fedora1"]="https://mirrors.bfsu.edu.cn/fedora" ["fedora2"]="https://mirrors.tuna.tsinghua.edu.cn/fedora" ["rockylinux0"]="" ["rockylinux1"]="http://mirror.nju.edu.cn/rocky" ["rockylinux2"]="http://mirrors.sdu.edu.cn/rocky" ["almalinux0"]="" ["almalinux1"]="https://mirror.sjtu.edu.cn/almalinux" ["almalinux2"]="http://mirrors.neusoft.edu.cn/almalinux")
   else
     MirrorBackup=(["debian0"]="" ["debian1"]="http://deb.debian.org/debian" ["debian2"]="http://ftp.kddilabs.jp/pub/debian" ["debian3"]="http://archive.debian.org/debian" ["ubuntu0"]="" ["ubuntu1"]="http://archive.ubuntu.com/ubuntu" ["ubuntu2"]="http://ports.ubuntu.com" ["centos0"]="" ["centos1"]="http://mirror.centos.org/centos" ["centos2"]="http://mirror.stream.centos.org" ["centos3"]="http://mirror.math.princeton.edu/pub/centos-altarch" ["centos4"]="http://vault.centos.org" ["fedora0"]="" ["fedora1"]="https://download-ib01.fedoraproject.org/pub/fedora/linux" ["fedora2"]="https://download-cc-rdu01.fedoraproject.org/pub/fedora/linux" ["rockylinux0"]="" ["rockylinux1"]="http://download.rockylinux.org/pub/rocky" ["rockylinux2"]="http://ftp.riken.jp/Linux/rocky" ["almalinux0"]="" ["almalinux1"]="http://repo.almalinux.org/almalinux" ["almalinux2"]="http://ftp.iij.ad.jp/pub/linux/almalinux")
   fi
@@ -1001,9 +1001,7 @@ if [[ -n "$tmpDIST" ]]; then
           exit 1
         elif [[ "$RedHatSeries" == "7" ]]; then
           DISTCheck="7.9.2009"
-        elif [[ "$RedHatSeries" == "8" ]]; then
-          DISTCheck="8.5.2111"
-        elif [[ "$RedHatSeries" -ge "9" ]] && [[ ! "$RedHatSeries" =~ "-stream" ]]; then
+        elif [[ "$RedHatSeries" -ge "8" ]] && [[ ! "$RedHatSeries" =~ "-stream" ]]; then
           DISTCheck="$RedHatSeries""-stream"
         elif [[ "$RedHatSeries" -le "5" ]]; then
           echo -ne "\n\033[33mWarning: \033[0m$Relese $DISTCheck is not supported!\n"
@@ -1283,7 +1281,7 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
       RepoBase="repo --name=base --baseurl=${LinuxMirror}/${DIST}/BaseOS/${VER}/os/"
       RepoAppStream="repo --name=appstream --baseurl=${LinuxMirror}/${DIST}/AppStream/${VER}/os/"
       if [[ "$IsCN" == "cn" ]]; then
-        RepoEpel="repo --name=epel --baseurl=http://mirrors.cloud.tencent.com/epel/$RedHatSeries/Everything/${VER}/"
+        RepoEpel="repo --name=epel --baseurl=http://mirror.nju.edu.cn/epel/$RedHatSeries/Everything/${VER}/"
       else
         RepoEpel="repo --name=epel --baseurl=https://archives.fedoraproject.org/pub/epel/$RedHatSeries/Everything/${VER}/"
       fi
@@ -1295,7 +1293,7 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
       RepoAppStream="repo --name=updates --baseurl=${LinuxMirror}/${DIST}/updates/${VER}/"
       FirewallRule="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/RedHat/RHEL7Public.xml"
       if [[ "$IsCN" == "cn" ]]; then
-        RepoEpel="repo --name=epel --baseurl=http://mirrors.cloud.tencent.com/epel/$RedHatSeries/${VER}/"
+        RepoEpel="repo --name=epel --baseurl=http://mirror.nju.edu.cn/epel/$RedHatSeries/${VER}/"
       else
         RepoEpel="repo --name=epel --baseurl=https://archives.fedoraproject.org/pub/archive/epel/$RedHatSeries/${VER}/"
       fi
