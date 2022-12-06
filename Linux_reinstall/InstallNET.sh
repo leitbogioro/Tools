@@ -355,6 +355,19 @@ function netmask() {
   echo "$m"
 }
 
+function ip4Calc() {
+  tmpIp4="$1"
+  tmpIp4Mask=`netmask "$2"`
+
+  IFS=. read -r i1 i2 i3 i4 <<< "$tmpIp4"
+  IFS=. read -r m1 m2 m3 m4 <<< "$tmpIp4Mask"
+
+  echo "Network:   $((i1 & m1)).$((i2 & m2)).$((i3 & m3)).$((i4 & m4))"
+  echo "Broadcast: $((i1 & m1 | 255-m1)).$((i2 & m2 | 255-m2)).$((i3 & m3 | 255-m3)).$((i4 & m4 | 255-m4))"
+  echo "FirstIP:   $((i1 & m1)).$((i2 & m2)).$((i3 & m3)).$(((i4 & m4)+1))"
+  echo "LastIP:    $((i1 & m1 | 255-m1)).$((i2 & m2 | 255-m2)).$((i3 & m3 | 255-m3)).$(((i4 & m4 | 255-m4)-1))"
+}
+
 function getDisk(){
   disks=`lsblk | sed 's/[[:space:]]*$//g' |grep "disk$" |cut -d' ' -f1 |grep -v "fd[0-9]*\|sr[0-9]*" |head -n1`
   [ -n "$disks" ] || echo ""
@@ -438,7 +451,7 @@ function checkGrub(){
 # $1 is $linux_relese, $2 is $RedHatSeries
 function checkMem(){
   TotalMem1=$(cat /proc/meminfo | grep "^MemTotal:" | sed 's/kb//i' | grep -o "[0-9]*" | awk -F' ' '{print $NF}')
-  TotalMem2=$(free -k | grep -i "mem" | awk '{printf $2}')
+  TotalMem2=$(free -k | grep -wi "mem*" | awk '{printf $2}')
 # Without the function of OS re-installation templates in control panel which provided by cloud companies(many companies even have not).
 # A independent VPS with only one hard drive is lack of the secondary hard drive to format and copy new OS file to main hard drive.
 # So PXE installation need to use memory as a 'hard drive' temporary.
@@ -474,10 +487,11 @@ function checkMem(){
 
 function checkSys(){
   apt update -y
-  apt install curl dnsutils efibootmgr file ipcalc jq lsb-release wget xz-utils -y
+  apt install curl dnsutils efibootmgr file subnetcalc jq lsb-release wget xz-utils -y
   yum update --allowerasing -y
+  yum update -y
   yum install epel-release -y
-  yum install curl bind-utils dnsutils efibootmgr file ipcalc jq redhat-lsb wget xz --skip-broken -y
+  yum install bind-utils curl dnsutils efibootmgr file ipcalc jq redhat-lsb wget xz --skip-broken -y
   OsLsb=`lsb_release -d | awk '{print$2}'`
   CurrentOSVer=`cat /etc/os-release | grep -w "VERSION_ID=*" | awk -F '=' '{print $2}' | sed 's/\"//g' | cut -d'.' -f 1`
   
@@ -521,7 +535,7 @@ function checkSys(){
   fi
 }
 
-function checkIPv4OrIpv6(){
+function checkIpv4OrIpv6(){
   IPv4DNSLookup=`timeout 2 dig -4 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
   IPv6DNSLookup=`timeout 2 dig -6 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
   IP_Check="$IPv4DNSLookup"
@@ -622,7 +636,7 @@ function DebianModifiedPreseed(){
 # $1 is "in-target"
     AptUpdating="$1 apt update;"
 # pre-install some commonly used software.
-    InstallComponents="$1 apt install sudo apt-transport-https bc binutils ca-certificates cron curl debian-keyring debian-archive-keyring dnsutils dosfstools efibootmgr ethtool fail2ban file figlet ipcalc iptables iptables-persistent iputils-tracepath jq lrzsz libnet-ifconfig-wrapper-perl lsof libnss3 lsb-release mtr-tiny mlocate netcat-openbsd net-tools ncdu nmap ntfs-3g parted psmisc python socat sosreport tcpdump telnet traceroute unzip unrar-free uuid-runtime vim vim-gtk wget xz-utils -y;"
+    InstallComponents="$1 apt install sudo apt-transport-https bc binutils ca-certificates cron curl debian-keyring debian-archive-keyring dnsutils dosfstools efibootmgr ethtool fail2ban file figlet iptables iptables-persistent iputils-tracepath jq lrzsz libnet-ifconfig-wrapper-perl lsof libnss3 lsb-release mtr-tiny mlocate netcat-openbsd net-tools ncdu nmap ntfs-3g parted psmisc python socat sosreport subnetcalc tcpdump telnet traceroute unzip unrar-free uuid-runtime vim vim-gtk wget xz-utils -y;"
 # In debian 9 and former, some certificates are expired.
     DisableCertExpiredCheck="$1 sed -i '/^mozilla\/DST_Root_CA_X3/s/^/!/' /etc/ca-certificates.conf; $1 update-ca-certificates -f;"
 # Modify /root/.bashrc to support colorful filename.
@@ -812,9 +826,9 @@ EOF
 
 checkSys
 
-checkIPv4OrIpv6
+checkIpv4OrIpv6
 
-checkCN "www.google.com" "www.twitter.com" "$IPStackType"
+checkCN "www.youtube.com" "www.instagram.com" "$IPStackType"
 
 checkEfi "/sys/firmware/efi/efivars/" "/sys/firmware/efi/mok-variables/" "/sys/firmware/efi/runtime-map/" "/sys/firmware/efi/vars/"
 
@@ -842,6 +856,8 @@ fi
 linux_relese=$(echo "$Relese" |sed 's/\ //g' |sed -r 's/(.*)/\L\1/')
 clear && echo -e "\n\033[36m# Check Dependence\033[0m\n"
 
+dependence awk,basename,cat,cpio,curl,cut,dig,dirname,efibootmgr,file,find,grep,gzip,jq,lsblk,sed,wget,xz;
+
 if [[ "$ddMode" == '1' ]]; then
   dependence iconv;
   linux_relese='debian';
@@ -857,10 +873,42 @@ fi
 if [[ "$setNet" == "0" ]]; then
   dependence ip
   [[ -n "$interface" ]] || interface=`getInterface "$CurrentOS" "$CurrentOSVer"`
-  iAddr=`ip addr show | grep -v "host" | grep -v "link" | grep -w "inet" | grep "$interface" | grep "scope" | grep "global" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+  iAddr=`ip addr show | grep -wv "lo\|host" | grep -w "inet" | grep "$interface" | grep -w "scope global\|link" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
   ipAddr=`echo ${iAddr} | cut -d'/' -f1`
   ipMask=`netmask $(echo ${iAddr} | cut -d'/' -f2)`
-  ipGate=`ip route show default | grep "via" | grep "$interface" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+  ipAddrFirst=`echo "$ipAddr" | cut -d'.' -f 1,2`
+# In most situation, at least 99.9% probability, the first hop of the network should be the same as the available gateway. 
+# But in 0.1%, they are actually different. 
+# Because one of the first hop of a tested machine is 5.45.72.1, I told Debian installer this router as a gateway 
+# But installer said the correct gateway should be 5.45.76.1, in a typical network, for example, your home, 
+# the default gateway is the same as the first route hop of the machine, it may be 192.168.0.1.
+# If possible, we should configure out the real available gateway of the network.
+  FirstRoute=`ip route show default | grep "via" | grep -w "dev $interface*" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+# Print all matched available gateway.
+  ipGates=`ip route show | grep -v "via" | grep -w "dev" | grep "$interface" | grep -w "proto*" | grep "scope global\|link src $ipAddr" | awk '{print$1}'`
+# Figure out the line of this list.
+  ipGateLine=`echo "$ipGates" | wc -l`
+# The line determines the cycling times.
+  for ((i=1; i<="$ipGateLine"; i++)) do
+# Current one gateway of the ip gateways. the formart is as of 10.0.0.0/22
+    tmpIpGate=`echo "$ipGates" | sed -n ''$i'p'`
+# Intercept a standard IPv4 address.
+    tmpIgAddr=`echo $tmpIpGate | cut -d'/' -f1`
+# Intercept the prefix of the gateway.
+    tmpIgPrefix=`echo $tmoIpGate | cut -d'/' -f2`
+# Calculate the first ip in all network segment, it should be the gateway of this network.
+    minIpGate=`ip4Calc "$tmpIgAddr" "$tmpIgPrefix" | grep "FirstIP:" | awk '{print$2}'`
+# Intercept the class A and B number of the current ip address of gateway.
+    tmpIpGateFirst=`echo "$minIpGate" | cut -d'.' -f 1,2`
+# If the class A and B number of the current local ip address is as same as current gateway, this gateway may a valid one.
+    if [[ "$ipAddrFirst" == "$tmpIpGateFirst" ]]; then
+      ipGate="$minIpGate"
+      break
+    fi
+  done
+# If there is no one of other gateway in this current network, use if access the public internet, the first hop route of this machine as the gateway.
+  [[ "$ipGates" == "" ]] && ipGate="$FirstRoute"
+
   [[ ! "$IPStackType" == "IPv4Stack" ]] && {
     i6Addr=`ip -6 addr show | grep -wv "lo\|host" | grep -wv "link" | grep -w "inet6" | grep "scope" | grep "global" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
     ip6Addr=`echo ${i6Addr} |cut -d'/' -f1`
@@ -881,7 +929,6 @@ fi
 checkDHCP "$CurrentOS" "$CurrentOSVer"
 getUserTimezone "/root/timezonelists" "ZGEyMGNhYjhhMWM2NDJlMGE0YmZhMDVmMDZlNzBmN2E=" "ZTNlMjBiN2JjOTE2NGY2YjllNzUzYWU5ZDFjYjdjOTc=" "MWQ2NGViMGQ4ZmNlNGMzYTkxYjNiMTdmZDMxODQwZDc="
 
-dependence awk,basename,cat,cpio,curl,cut,dig,dirname,efibootmgr,file,find,grep,gzip,ipcalc,jq,lsblk,sed,wget,xz;
 [ -n "$tmpWORD" ] && dependence openssl
 [[ -n "$tmpWORD" ]] && myPASSWORD="$(openssl passwd -1 "$tmpWORD")";
 [[ -z "$myPASSWORD" ]] && myPASSWORD='$1$OCy2O5bt$m2N6XMgFUwCn/2PPP114J/';
@@ -1128,34 +1175,46 @@ if [[ "$linux_relese" == 'centos' ]]; then
     fi
   fi
 fi
-echo -e "\n[\033[33m$Relese\033[0m] [\033[33m$DIST\033[0m] [\033[33m$VER\033[0m] Downloading..."
+echo -e "\n[\033[33m$Relese\033[0m] [\033[33m$DIST\033[0m] [\033[33m$VER\033[0m] Downloading...\n"
 
 # RAM of RedHat series is 2GB required at least.
 checkMem "$linux_relese" "$RedHatSeries"
 
 if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
   [ "$DIST" == "focal" ] && legacy="legacy-" || legacy=""
-  wget --no-check-certificate -qO '/tmp/initrd.img' "${LinuxMirror}/dists/${DIST}/main/installer-${VER}/current/${legacy}images/netboot/${linux_relese}-installer/${VER}/initrd.gz"
+  InitrdUrl="${LinuxMirror}/dists/${DIST}/main/installer-${VER}/current/${legacy}images/netboot/${linux_relese}-installer/${VER}/initrd.gz"
+  VmLinuzUrl="${LinuxMirror}/dists/${DIST}${inUpdate}/main/installer-${VER}/current/${legacy}images/netboot/${linux_relese}-installer/${VER}/linux"
+  echo -e "[\033[33mMirror\033[0m] $InitrdUrl\n\t $VmLinuzUrl\n"
+  wget --no-check-certificate -qO '/tmp/initrd.img' "$InitrdUrl"
   [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'initrd.img' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
-  wget --no-check-certificate -qO '/tmp/vmlinuz' "${LinuxMirror}/dists/${DIST}${inUpdate}/main/installer-${VER}/current/${legacy}images/netboot/${linux_relese}-installer/${VER}/linux"
+  wget --no-check-certificate -qO '/tmp/vmlinuz' "$VmLinuzUrl"
   [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'vmlinuz' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
   MirrorHost="$(echo "$LinuxMirror" |awk -F'://|/' '{print $2}')";
   MirrorFolder="$(echo "$LinuxMirror" |awk -F''${MirrorHost}'' '{print $2}')";
   [ -n "$MirrorFolder" ] || MirrorFolder="/"
 elif [[ "$linux_relese" == 'centos' ]] && [[ "$RedHatSeries" -le "7" ]]; then
-  wget --no-check-certificate -qO '/tmp/initrd.img' "${LinuxMirror}/${DIST}/os/${VER}/images/pxeboot/initrd.img"
+  InitrdUrl="${LinuxMirror}/${DIST}/os/${VER}/images/pxeboot/initrd.img"
+  VmLinuzUrl="${LinuxMirror}/${DIST}/os/${VER}/images/pxeboot/vmlinuz"
+  echo -e "[\033[33mMirror\033[0m] $InitrdUrl\n\t $VmLinuzUrl\n"
+  wget --no-check-certificate -qO '/tmp/initrd.img' "$InitrdUrl"
   [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'initrd.img' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
-  wget --no-check-certificate -qO '/tmp/vmlinuz' "${LinuxMirror}/${DIST}/os/${VER}/images/pxeboot/vmlinuz"
+  wget --no-check-certificate -qO '/tmp/vmlinuz' "$VmLinuzUrl"
   [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'vmlinuz' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
 elif [[ "$linux_relese" == 'centos' && "$RedHatSeries" -ge "8" ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]]; then
-  wget --no-check-certificate -qO '/tmp/initrd.img' "${LinuxMirror}/${DIST}/BaseOS/${VER}/os/images/pxeboot/initrd.img"
+  InitrdUrl="${LinuxMirror}/${DIST}/BaseOS/${VER}/os/images/pxeboot/initrd.img"
+  VmLinuzUrl="${LinuxMirror}/${DIST}/BaseOS/${VER}/os/images/pxeboot/vmlinuz"
+  echo -e "[\033[33mMirror\033[0m] $InitrdUrl\n\t $VmLinuzUrl\n"
+  wget --no-check-certificate -qO '/tmp/initrd.img' "$InitrdUrl"
   [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'initrd.img' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
-  wget --no-check-certificate -qO '/tmp/vmlinuz' "${LinuxMirror}/${DIST}/BaseOS/${VER}/os/images/pxeboot/vmlinuz"
+  wget --no-check-certificate -qO '/tmp/vmlinuz' "$VmLinuzUrl"
   [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'vmlinuz' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
 elif [[ "$linux_relese" == 'fedora' ]]; then
-  wget --no-check-certificate -qO '/tmp/initrd.img' "${LinuxMirror}/releases/${DIST}/Server/${VER}/os/images/pxeboot/initrd.img"
+  InitrdUrl="${LinuxMirror}/releases/${DIST}/Server/${VER}/os/images/pxeboot/initrd.img"
+  VmLinuzUrl="${LinuxMirror}/releases/${DIST}/Server/${VER}/os/images/pxeboot/vmlinuz"
+  echo -e "[\033[33mMirror\033[0m] $InitrdUrl\n\t $VmLinuzUrl\n"
+  wget --no-check-certificate -qO '/tmp/initrd.img' "$InitrdUrl"
   [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'initrd.img' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
-  wget --no-check-certificate -qO '/tmp/vmlinuz' "${LinuxMirror}/releases/${DIST}/Server/${VER}/os/images/pxeboot/vmlinuz"
+  wget --no-check-certificate -qO '/tmp/vmlinuz' "$VmLinuzUrl"
   [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'vmlinuz' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
 else
   bash $0 error;
