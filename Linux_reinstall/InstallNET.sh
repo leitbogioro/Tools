@@ -1587,7 +1587,7 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
       [[ "$(cat /boot/loader/entries/$LoaderPath | grep '^linux /boot/')" ]] && BootDIR='/boot' || BootDIR=''
     else
       [[ "$(cat /boot/loader/entries/$LoaderPath.conf | grep '^linux /boot/')" ]] && BootDIR='/boot' || BootDIR=''
-	fi
+    fi
   else
     [[ -n "$(grep 'linux.*/\|kernel.*/' $GRUBDIR/$GRUBFILE |awk '{print $2}' |tail -n 1 |grep '^/boot/')" ]] && BootDIR='/boot' || BootDIR='';
   fi
