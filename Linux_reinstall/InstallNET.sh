@@ -1575,7 +1575,19 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
 # Confirm linux and initrd kernel direction
   if [[ -f /boot/grub2/grubenv ]] && [[ -d /boot/loader/entries ]] && [[ "$(ls /boot/loader/entries|wc -w)" != "" ]]; then
     LoaderPath=$(cat /boot/grub2/grubenv | grep 'saved_entry=' | awk -F '=' '{print $2}')
-    [[ "$(cat /boot/loader/entries/$LoaderPath.conf | grep '^linux /boot/')" ]] && BootDIR='/boot' || BootDIR='';
+    LpLength=`echo ${#LoaderPath}`
+# The saved_entry of OpenCloudOS is equal "0"
+# [root@VM-4-11-opencloudos ~]# cat /boot/grub2/grubenv
+# GRUB Environment Block
+# saved_entry=0
+# kernelopts=root=UUID=c21f153f-c0a8-42db-9ba5-8299e3c3d5b9 ro quiet elevator=noop console=ttyS0,115200 console=tty0 vconsole.keymap=us crashkernel=1800M-64G:256M,64G-128G:512M,128G-:768M vconsole.font=latarcyrheb-sun16 net.ifnames=0 biosdevname=0 intel_idle.max_cstate=1 intel_pstate=disable iommu=pt amd_iommu=on 
+# boot_success=0
+    if [[ "$LpLength" -le "1" ]]; then
+      LoaderPath=`ls -Sl /boot/loader/entries/ | grep -wv "rescue*" | awk -F' ' '{print $NF}' | sed -n '2p'`
+      [[ "$(cat /boot/loader/entries/$LoaderPath | grep '^linux /boot/')" ]] && BootDIR='/boot' || BootDIR=''
+    else
+      [[ "$(cat /boot/loader/entries/$LoaderPath.conf | grep '^linux /boot/')" ]] && BootDIR='/boot' || BootDIR=''
+	fi
   else
     [[ -n "$(grep 'linux.*/\|kernel.*/' $GRUBDIR/$GRUBFILE |awk '{print $2}' |tail -n 1 |grep '^/boot/')" ]] && BootDIR='/boot' || BootDIR='';
   fi
