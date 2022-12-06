@@ -1078,19 +1078,19 @@ if [[ -n "$tmpDIST" ]]; then
       exit 1
     }
     if [[ "$linux_relese" == 'centos' ]] && [[ "$RedHatSeries" -le "7" ]]; then
-      wget --no-check-certificate -qO- "$LinuxMirror/$DIST/os/$VER/.treeinfo" |grep -q 'general'
+      wget --no-check-certificate -qO- "$LinuxMirror/$DIST/os/$VER/.treeinfo" | grep -q 'general'
       [[ $? != '0' ]] && {
         echo -ne "\n\033[33mWarning: \033[0m$Relese $DISTCheck was not found in this mirror, Please change mirror try again!\n"
         exit 1
       }
     elif [[ "$linux_relese" == 'centos' && "$RedHatSeries" -ge "8" ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]]; then
-      wget --no-check-certificate -qO- "$LinuxMirror/$DIST/BaseOS/$VER/os/.treeinfo" |grep -q 'general'
+      wget --no-check-certificate -qO- "$LinuxMirror/$DIST/BaseOS/$VER/os/media.repo" | grep -q 'mediaid'
       [[ $? != '0' ]] && {
         echo -ne "\n\033[33mWarning: \033[0m$Relese $DISTCheck was not found in this mirror, Please change mirror try again!\n"
         exit 1
-    }
+      }
     elif [[ "$linux_relese" == 'fedora' ]]; then
-      wget --no-check-certificate -qO- "$LinuxMirror/releases/$DIST/Server/$VER/os/.treeinfo" |grep -q 'general'
+      wget --no-check-certificate -qO- "$LinuxMirror/releases/$DIST/Server/$VER/os/media.repo" | grep -q 'mediaid'
       [[ $? != '0' ]] && {
         echo -ne "\n\033[33mWarning: \033[0m$Relese $DISTCheck was not found in this mirror, Please change mirror try again!\n"
         exit 1
