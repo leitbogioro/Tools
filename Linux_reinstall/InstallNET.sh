@@ -330,7 +330,7 @@ function selectMirror(){
   else
     MirrorBackup=(["debian0"]="" ["debian1"]="http://deb.debian.org/debian" ["debian2"]="http://ftp.kddilabs.jp/pub/debian" ["debian3"]="http://archive.debian.org/debian" ["ubuntu0"]="" ["ubuntu1"]="http://archive.ubuntu.com/ubuntu" ["ubuntu2"]="http://ports.ubuntu.com" ["centos0"]="" ["centos1"]="http://mirror.centos.org/centos" ["centos2"]="http://mirror.stream.centos.org" ["centos3"]="http://mirror.math.princeton.edu/pub/centos-altarch" ["centos4"]="http://vault.centos.org" ["fedora0"]="" ["fedora1"]="https://download-ib01.fedoraproject.org/pub/fedora/linux" ["fedora2"]="https://download-cc-rdu01.fedoraproject.org/pub/fedora/linux" ["rockylinux0"]="" ["rockylinux1"]="http://download.rockylinux.org/pub/rocky" ["rockylinux2"]="http://ftp.riken.jp/Linux/rocky" ["almalinux0"]="" ["almalinux1"]="http://repo.almalinux.org/almalinux" ["almalinux2"]="http://ftp.iij.ad.jp/pub/linux/almalinux")
   fi
-  echo "${New%*/}" | grep -q '^http://\|^https://\|^ftp://' && MirrorBackup[${Relese}0]="$New"
+  echo "$New" | grep -q '^http://\|^https://\|^ftp://' && MirrorBackup[${Relese}0]="${New%*/}"
   for mirror in $(echo "${!MirrorBackup[@]}" |sed 's/\ /\n/g' |sort -n |grep "^$Relese"); do
     Current="${MirrorBackup[$mirror]}"
     [ -n "$Current" ] || continue
@@ -523,6 +523,8 @@ function checkSys(){
     CurrentOS="OpenCloudOS"
   elif [[ `echo "$RedHatRelease" | grep -i 'alibaba\|aliyun'` != "" ]]; then
     CurrentOS="AlibabaCloudLinux"
+  elif [[ `echo "$RedHatRelease" | grep -i 'scientific'` != "" ]]; then
+    CurrentOS="ScientificLinux"
   elif [[ "$IsUbuntu" ]] || [[ `echo "$DebianRelease" | grep -i "ubuntu"` != "" ]]; then
     CurrentOS="Ubuntu"
     CurrentOSVer=`lsb_release -r | awk '{print$2}' | cut -d'.' -f1`
@@ -581,7 +583,7 @@ function getInterface(){
   if [[ "$1" == 'Ubuntu' ]] && [[ "$2" -ge "18" ]]; then
     NetCfgDir="/etc/netplan/"
     NetCfgFile=`ls -Sl $NetCfgDir | grep ".yaml" | head -n 1 | awk -F' ' '{print $NF}'`
-  elif [[ "$1" == 'CentOS' || "$1" == 'AlmaLinux' || "$1" == 'RockyLinux' || "$1" == 'Fedora' || "$1" == 'Vzlinux' || "$1" == 'OracleLinux' || "$1" == 'OpenCloudOS' || "$1" == 'AlibabaCloudLinux' ]]; then
+  elif [[ "$1" == 'CentOS' || "$1" == 'AlmaLinux' || "$1" == 'RockyLinux' || "$1" == 'Fedora' || "$1" == 'Vzlinux' || "$1" == 'OracleLinux' || "$1" == 'OpenCloudOS' || "$1" == 'AlibabaCloudLinux' || "$1" == 'ScientificLinux' ]]; then
     for Count in "/etc/sysconfig/network-scripts/" "/etc/NetworkManager/system-connections/" "/run/NetworkManager/system-connections/" "/usr/lib/NetworkManager/system-connections/" "/run/sysconfig/network-scripts/" "/run/network-scripts/" "/usr/lib/sysconfig/network-scripts/" "/usr/lib/network-scripts/"; do
       NetCfgDir="$Count"
       NetCfgFile=`ls -Sl $NetCfgDir | grep "nmconnection\|ifcfg-*" | grep -iv 'lo\|sit\|stf\|gif\|dummy\|vmnet\|vir\|gre\|ipip\|ppp\|bond\|tun\|tap\|ip6gre\|ip6tnl\|teql\|ocserv\|vpn' | head -n 1 | awk -F' ' '{print $NF}'`
@@ -604,7 +606,7 @@ function getInterface(){
 # $1 is $CurrentOS $2 is $CurrentOSVer
 function checkDHCP(){
   getInterface "$CurrentOS" "$CurrentOSVer"
-  if [[ "$1" == 'CentOS' || "$1" == 'AlmaLinux' || "$1" == 'RockyLinux' || "$1" == 'Fedora' || "$1" == 'Vzlinux' || "$1" == 'OracleLinux' || "$1" == 'OpenCloudOS' || "$1" == 'AlibabaCloudLinux' ]]; then
+  if [[ "$1" == 'CentOS' || "$1" == 'AlmaLinux' || "$1" == 'RockyLinux' || "$1" == 'Fedora' || "$1" == 'Vzlinux' || "$1" == 'OracleLinux' || "$1" == 'OpenCloudOS' || "$1" == 'AlibabaCloudLinux' || "$1" == 'ScientificLinux' ]]; then
 # RedHat like linux system 8 and before network config name is "ifcfg-interface", deposited in /etc/sysconfig/network-scripts/
 # RedHat like linux system 9 and later network config name is "interface.nmconnection", deposited in /etc/NetworkManager/system-connections
     if [[ -n `grep -Ewrn "BOOTPROTO=none|BOOTPROTO=\"none\"|BOOTPROTO=\'none\'|BOOTPROTO=NONE|BOOTPROTO=\"NONE\"|BOOTPROTO=\'NONE\'|BOOTPROTO=static|BOOTPROTO=\"static\"|BOOTPROTO=\'static\'|BOOTPROTO=STATIC|BOOTPROTO=\"STATIC\"|BOOTPROTO=\'STATIC\'" $NetCfgDir*` ]] || [[ -n `grep -Ewrn "method=manual" $NetCfgDir*` ]] || [[ "$tmpDHCP" == "static" || "$tmpDHCP" == "manual" || "$tmpDHCP" == "none" || "$tmpDHCP" == "false" || "$tmpDHCP" == "no" || "$tmpDHCP" == "0" ]]; then
