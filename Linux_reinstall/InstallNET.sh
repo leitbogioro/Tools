@@ -391,6 +391,10 @@ function getDisk(){
   [ $? -eq 0 ] && echo "$disks" || echo "/dev/$disks"
 }
 
+function diskType(){
+  echo `udevadm info --query all "$1" 2>/dev/null |grep 'ID_PART_TABLE_TYPE' |cut -d'=' -f2`
+}
+
 # $1 is timezone checkfile direction, $2 $3 $4 are api keys.
 function getUserTimezone(){
   if [[ "$TimeZone" == "" ]]; then
@@ -407,10 +411,6 @@ function getUserTimezone(){
     [[ `grep -c "$TimeZone" "$1"` == "0" ]] && TimeZone="Asia/Tokyo"
     rm -rf "$1"
   fi
-}
-
-function diskType(){
-  echo `udevadm info --query all "$1" 2>/dev/null |grep 'ID_PART_TABLE_TYPE' |cut -d'=' -f2`
 }
 
 function checkEfi(){
