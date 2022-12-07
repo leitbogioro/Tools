@@ -362,10 +362,26 @@ function ipv4Calc() {
   IFS=. read -r i1 i2 i3 i4 <<< "$tmpIp4"
   IFS=. read -r m1 m2 m3 m4 <<< "$tmpIp4Mask"
 
-  echo "Network:   $((i1 & m1)).$((i2 & m2)).$((i3 & m3)).$((i4 & m4))"
-  echo "Broadcast: $((i1 & m1 | 255-m1)).$((i2 & m2 | 255-m2)).$((i3 & m3 | 255-m3)).$((i4 & m4 | 255-m4))"
-  echo "FirstIP:   $((i1 & m1)).$((i2 & m2)).$((i3 & m3)).$(((i4 & m4)+1))"
-  echo "LastIP:    $((i1 & m1 | 255-m1)).$((i2 & m2 | 255-m2)).$((i3 & m3 | 255-m3)).$(((i4 & m4 | 255-m4)-1))"
+  tmpNetwork="$((i1 & m1)).$((i2 & m2)).$((i3 & m3)).$((i4 & m4))"
+  tmpBroadcast="$((i1 & m1 | 255-m1)).$((i2 & m2 | 255-m2)).$((i3 & m3 | 255-m3)).$((i4 & m4 | 255-m4))"
+  tmpFirstIP="$((i1 & m1)).$((i2 & m2)).$((i3 & m3)).$(((i4 & m4)+1))"
+  tmpFiLast="$(echo "$tmpFirstIP" | cut -d'.' -f 4)"
+  FirstIP="$tmpFirstIP"
+  tmpLastIP="$((i1 & m1 | 255-m1)).$((i2 & m2 | 255-m2)).$((i3 & m3 | 255-m3)).$(((i4 & m4 | 255-m4)-1))"
+  tmpLiLast="$(echo "$tmpLastIP" | cut -d'.' -f 4)"
+  LastIP="$tmpLastIP"
+  [[ "$tmpFiLast" > "$tmpLiLast" ]] && {
+    FirstIP="$tmpLastIP"
+    LastIP="$tmpFirstIP"
+  }
+  [[ "$2" > "31" ]] && {
+    FirstIP="$tmpNetwork"
+    LastIP="$tmpNetwork"
+  }
+  echo "Network:   $tmpNetwork"
+  echo "Broadcast: $tmpBroadcast"
+  echo "FirstIP:   $FirstIP"
+  echo "LastIP:    $LastIP"
 }
 
 function getDisk(){
