@@ -934,7 +934,7 @@ if [[ "$setNet" == "0" ]]; then
   [[ ! "$IPStackType" == "IPv4Stack" ]] && {
     i6Addr=`ip -6 addr show | grep -wv "lo\|host" | grep -wv "link" | grep -w "inet6" | grep "scope" | grep "global" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
     ip6Addr=`echo ${i6Addr} |cut -d'/' -f1`
-	ip6Mask=`echo ${i6Addr} |cut -d'/' -f2`
+    ip6Mask=`echo ${i6Addr} |cut -d'/' -f2`
     ip6Gate=`ip -6 route show default | grep -w "via" | grep -w "$interface" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
   }
 fi
