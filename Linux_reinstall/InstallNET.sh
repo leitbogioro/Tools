@@ -1590,7 +1590,7 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
       [[ "$(cat $LpFile | grep '^linux /boot/')" ]] && BootDIR='/boot' || BootDIR=''
     fi
   else
-    [[ -n "$(grep 'linux.*/\|kernel.*/' $GRUBDIR/$GRUBFILE |awk '{print $2}' |tail -n 1 |grep '^/boot/')" ]] && BootDIR='/boot' || BootDIR='';
+    [[ -n "$(grep 'linux.*/\|kernel.*/' $GRUBDIR/$GRUBFILE | awk '{print $2}' | tail -n 1 | grep '^/boot/')" ]] && BootDIR='/boot' || BootDIR='';
   fi
 # Confirm if BIOS or UEFI firmware
   if [[ "$VER" == "x86_64" || "$VER" == "amd64" ]]; then
