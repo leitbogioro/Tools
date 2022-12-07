@@ -355,7 +355,7 @@ function netmask() {
   echo "$m"
 }
 
-function ip4Calc() {
+function ipv4Calc() {
   tmpIp4="$1"
   tmpIp4Mask=`netmask "$2"`
 
@@ -901,7 +901,7 @@ if [[ "$setNet" == "0" ]]; then
 # Intercept the prefix of the gateway.
     tmpIgPrefix=`echo $tmoIpGate | cut -d'/' -f2`
 # Calculate the first ip in all network segment, it should be the gateway of this network.
-    minIpGate=`ip4Calc "$tmpIgAddr" "$tmpIgPrefix" | grep "FirstIP:" | awk '{print$2}'`
+    minIpGate=`ipv4Calc "$tmpIgAddr" "$tmpIgPrefix" | grep "FirstIP:" | awk '{print$2}'`
 # Intercept the class A and B number of the current ip address of gateway.
     tmpIpGateFirst=`echo "$minIpGate" | cut -d'.' -f 1,2`
 # If the class A and B number of the current local ip address is as same as current gateway, this gateway may a valid one.
@@ -1573,20 +1573,21 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
 elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
 # RedHat grub2 set start
 # Confirm linux and initrd kernel direction
-  if [[ -f /boot/grub2/grubenv ]] && [[ -d /boot/loader/entries ]] && [[ "$(ls /boot/loader/entries|wc -w)" != "" ]]; then
+  if [[ -f /boot/grub2/grubenv ]] && [[ -d /boot/loader/entries ]] && [[ "$(ls /boot/loader/entries | wc -w)" != "" ]]; then
     LoaderPath=$(cat /boot/grub2/grubenv | grep 'saved_entry=' | awk -F '=' '{print $2}')
     LpLength=`echo ${#LoaderPath}`
+    LpFile="/boot/loader/entries/$LoaderPath.conf"
 # The saved_entry of OpenCloudOS is equal "0"
 # [root@VM-4-11-opencloudos ~]# cat /boot/grub2/grubenv
 # GRUB Environment Block
 # saved_entry=0
 # kernelopts=root=UUID=c21f153f-c0a8-42db-9ba5-8299e3c3d5b9 ro quiet elevator=noop console=ttyS0,115200 console=tty0 vconsole.keymap=us crashkernel=1800M-64G:256M,64G-128G:512M,128G-:768M vconsole.font=latarcyrheb-sun16 net.ifnames=0 biosdevname=0 intel_idle.max_cstate=1 intel_pstate=disable iommu=pt amd_iommu=on 
 # boot_success=0
-    if [[ "$LpLength" -le "1" ]]; then
-      LoaderPath=`ls -Sl /boot/loader/entries/ | grep -wv "rescue*" | awk -F' ' '{print $NF}' | sed -n '2p'`
-      [[ "$(cat /boot/loader/entries/$LoaderPath | grep '^linux /boot/')" ]] && BootDIR='/boot' || BootDIR=''
+    if [[ "$LpLength" -le "1" ]] || [[ ! -f "$LpFile" ]]; then
+      LpFile=`ls -Sl /boot/loader/entries/ | grep -wv "rescue*" | awk -F' ' '{print $NF}' | sed -n '2p'`
+      [[ "$(cat /boot/loader/entries/$LpFile | grep '^linux /boot/')" ]] && BootDIR='/boot' || BootDIR=''
     else
-      [[ "$(cat /boot/loader/entries/$LoaderPath.conf | grep '^linux /boot/')" ]] && BootDIR='/boot' || BootDIR=''
+      [[ "$(cat $LpFile | grep '^linux /boot/')" ]] && BootDIR='/boot' || BootDIR=''
     fi
   else
     [[ -n "$(grep 'linux.*/\|kernel.*/' $GRUBDIR/$GRUBFILE |awk '{print $2}' |tail -n 1 |grep '^/boot/')" ]] && BootDIR='/boot' || BootDIR='';
