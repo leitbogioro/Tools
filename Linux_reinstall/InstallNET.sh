@@ -378,10 +378,7 @@ function ipv4Calc() {
     FirstIP="$tmpNetwork"
     LastIP="$tmpNetwork"
   }
-  echo "Network:   $tmpNetwork"
-  echo "Broadcast: $tmpBroadcast"
-  echo "FirstIP:   $FirstIP"
-  echo "LastIP:    $LastIP"
+  echo -e "Network:   $tmpNetwork\nBroadcast: $tmpBroadcast\nFirstIP:   $FirstIP\nLastIP:    $LastIP\n"
 }
 
 function getDisk(){
@@ -895,19 +892,22 @@ fi
 if [[ "$setNet" == "0" ]]; then
   dependence ip
   [[ -n "$interface" ]] || interface=`getInterface "$CurrentOS" "$CurrentOSVer"`
-  iAddr=`ip addr show | grep -wv "lo\|host" | grep -w "inet" | grep "$interface" | grep -w "scope global\|link" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+  iAddr=`ip addr show | grep -wv "lo\|host" | grep -w "inet" | grep "$interface" | grep -w "scope global*\|link*" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
   ipAddr=`echo ${iAddr} | cut -d'/' -f1`
   ipMask=`netmask $(echo ${iAddr} | cut -d'/' -f2)`
-  ipAddrFirst=`echo "$ipAddr" | cut -d'.' -f 1,2`
 # In most situation, at least 99.9% probability, the first hop of the network should be the same as the available gateway. 
 # But in 0.1%, they are actually different. 
 # Because one of the first hop of a tested machine is 5.45.72.1, I told Debian installer this router as a gateway 
 # But installer said the correct gateway should be 5.45.76.1, in a typical network, for example, your home, 
 # the default gateway is the same as the first route hop of the machine, it may be 192.168.0.1.
 # If possible, we should configure out the real available gateway of the network.
-  FirstRoute=`ip route show default | grep "via" | grep -w "dev $interface*" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+  FirstRoute=`ip route show default | grep -w "via" | grep -w "dev $interface*" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+# We should find it in ARP, the first hop IP and gateway IP is managed by the same device, use device mac address to configure it out.
+  RouterMac=`arp -n | grep "$FirstRoute" | awk '{print$3}'`
+  FrFirst=`echo "$FirstRoute" | cut -d'.' -f 1,2`
+  FrThird=`echo "$FirstRoute" | cut -d'.' -f 3`
 # Print all matched available gateway.
-  ipGates=`ip route show | grep -v "via" | grep -w "dev" | grep "$interface" | grep -w "proto*" | grep "scope global\|link src $ipAddr" | awk '{print$1}'`
+  ipGates=`ip route show | grep -v "via" | grep -w "dev $interface*" | grep -w "proto*" | grep -w "scope global\|link src $ipAddr*" | awk '{print$1}'`
 # Figure out the line of this list.
   ipGateLine=`echo "$ipGates" | wc -l`
 # The line determines the cycling times.
@@ -917,19 +917,28 @@ if [[ "$setNet" == "0" ]]; then
 # Intercept a standard IPv4 address.
     tmpIgAddr=`echo $tmpIpGate | cut -d'/' -f1`
 # Intercept the prefix of the gateway.
-    tmpIgPrefix=`echo $tmoIpGate | cut -d'/' -f2`
-# Calculate the first ip in all network segment, it should be the gateway of this network.
+    tmpIgPrefix=`echo $tmpIpGate | cut -d'/' -f2`
+# Calculate the first ip in all network segment, it should be the the same range with gateway in this network.
     minIpGate=`ipv4Calc "$tmpIgAddr" "$tmpIgPrefix" | grep "FirstIP:" | awk '{print$2}'`
-# Intercept the class A and B number of the current ip address of gateway.
+# Intercept the A and B class of the current ip address of gateway.
     tmpIpGateFirst=`echo "$minIpGate" | cut -d'.' -f 1,2`
+    tmpIpGateThird=`echo "$minIpGate" | cut -d'.' -f 3`
 # If the class A and B number of the current local ip address is as same as current gateway, this gateway may a valid one.
-    if [[ "$ipAddrFirst" == "$tmpIpGateFirst" ]]; then
-      ipGate="$minIpGate"
-      break
-    fi
+    [[ "$FrFirst" == "$tmpIpGateFirst" ]] && {
+      if [[ "$FrThird" == "$tmpIpGateThird" ]]; then
+        ipGate="$FirstRoute"
+        break
+      elif [[ "$FrThird" != "$tmpIpGateThird" ]]; then
+# The A, B and C class address of min ip gate. 
+        tmpMigFirst=`echo $minIpGate | cut -d'.' -f 1,2,3`
+# Search it in ARP, it's belonged to the same network device which has been distinguished by mac address of first hop of the IP.
+        ipGate=`arp -n | grep "$tmpMigFirst" | grep "$RouterMac" | awk '{print$1}'`
+        break
+      fi	  
+    }
   done
 # If there is no one of other gateway in this current network, use if access the public internet, the first hop route of this machine as the gateway.
-  [[ "$ipGates" == "" ]] && ipGate="$FirstRoute"
+  [[ "$ipGates" == "" || "$ipGate" == "" ]] && ipGate="$FirstRoute"
 
   [[ ! "$IPStackType" == "IPv4Stack" ]] && {
     i6Addr=`ip -6 addr show | grep -wv "lo\|host" | grep -wv "link" | grep -w "inet6" | grep "scope" | grep "global" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
