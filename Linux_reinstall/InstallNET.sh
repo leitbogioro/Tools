@@ -847,6 +847,7 @@ checkSys
 
 checkIpv4OrIpv6
 
+# Youtube and Instagram both have public IPv4 and IPv6 address and are also banned in mainland China.
 checkCN "www.youtube.com" "www.instagram.com" "$IPStackType"
 
 checkEfi "/sys/firmware/efi/efivars/" "/sys/firmware/efi/mok-variables/" "/sys/firmware/efi/runtime-map/" "/sys/firmware/efi/vars/"
