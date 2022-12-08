@@ -431,10 +431,11 @@ function checkGrub(){
   GRUBDIR=""
   GRUBFILE=""
   for Count in "$1" "$2" "$3"; do
-    if [[ -f "$Count""$4" ]]; then
+# don't support grub1
+    if [[ -f "$Count""$4" ]] && [[ `grep -c "insmod*" $Count$4` -ge "1" ]]; then
       GRUBDIR="$Count"
       GRUBFILE="$4"
-    elif [[ -f "$Count""$5" ]]; then
+    elif [[ -f "$Count""$5" ]] && [[ `grep -c "insmod*" $Count$5` -ge "1" ]]; then
       GRUBDIR="$Count"
       GRUBFILE="$5"
     fi
@@ -449,7 +450,7 @@ function checkGrub(){
       fi
     done
   fi
-  GRUBDIR=`echo ${GRUBDIR%?}` 
+  GRUBDIR=`echo ${GRUBDIR%?}`
   if [[ `awk '/menuentry*/{print NF}' $GRUBDIR/$GRUBFILE | head -n 1` -ge "1" ]] || [[ `awk '/feature*/{print $a}' $GRUBDIR/$GRUBFILE | head -n 1` != "" ]]; then
     if [[ -n `grep -w "grub2-mkconfig" $GRUBDIR/$GRUBFILE` ]] || [[ `type grub2-mkconfig` != "" ]]; then
       GRUBTYPE="isGrub2"
