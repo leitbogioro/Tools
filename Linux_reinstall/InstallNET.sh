@@ -923,7 +923,7 @@ if [[ "$setNet" == "0" ]]; then
 # Intercept the A and B class of the current ip address of gateway.
     tmpIpGateFirst=`echo "$minIpGate" | cut -d'.' -f 1,2`
     tmpIpGateThird=`echo "$minIpGate" | cut -d'.' -f 3`
-# If the class A and B number of the current local ip address is as same as current gateway, this gateway may a valid one.
+# If the class A and B class of the current local ip address is as same as current gateway, this gateway may a valid one.
     [[ "$FrFirst" == "$tmpIpGateFirst" ]] && {
       if [[ "$FrThird" == "$tmpIpGateThird" ]]; then
         ipGate="$FirstRoute"
