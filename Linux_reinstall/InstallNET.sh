@@ -642,9 +642,8 @@ function checkDHCP(){
     else
       NetworkConfig="isDHCP"
     fi
-  elif [[ "$tmpDHCP" == "dhcp" || "$tmpDHCP" == "auto" || "$tmpDHCP" == "automatic" || "$tmpDHCP" == "true" || "$tmpDHCP" == "yes" || "$tmpDHCP" == "1" ]]; then
-    NetworkConfig="isDHCP"
   fi
+  [[ "$tmpDHCP" == "dhcp" || "$tmpDHCP" == "auto" || "$tmpDHCP" == "automatic" || "$tmpDHCP" == "true" || "$tmpDHCP" == "yes" || "$tmpDHCP" == "1" ]] && NetworkConfig="isDHCP"
 }
 
 function DebianModifiedPreseed(){
