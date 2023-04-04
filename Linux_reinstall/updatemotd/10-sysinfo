@@ -49,6 +49,8 @@ fi
 
 if [[ "${IP_Check}" == "isIPv4" ]] && [[ -z ${IPv6} ]]; then
   IPv6="N/A"
+elif [[ "${IPv6}" =~ "unreachable" ]] || [[ "${IPv6}" =~ "failed" ]]; then
+  IPv6="N/A"
 fi
 
 if [[ "${IP_Check}" != "isIPv4" ]] && [[ -z ${IPv4} ]]; then
