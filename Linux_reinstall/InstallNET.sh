@@ -652,6 +652,7 @@ function DebianModifiedPreseed(){
 # Can't pass parameters correctly in preseed environment
 # DebianVimVer=`ls -a /usr/share/vim | grep vim[0-9]`
     DebianVimVer="vim"`expr ${DebianDistNum} + 71`
+    [[ "$DIST" == "bookworm" ]] && DebianVimVer="vim90"
 # $1 is "in-target"
     AptUpdating="$1 apt update;"
 # pre-install some commonly used software.
