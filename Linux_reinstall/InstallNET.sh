@@ -1037,6 +1037,8 @@ if [[ -n "$tmpDIST" ]]; then
         [[ "$isDigital" == '10' ]] && DIST='buster';
         [[ "$isDigital" == '11' ]] && DIST='bullseye';
         [[ "$isDigital" == '12' ]] && DIST='bookworm';
+        # [[ "$isDigital" == '13' ]] && DIST='trixie';
+        # [[ "$isDigital" == '14' ]] && DIST='forky';
       }
     }
     LinuxMirror=$(selectMirror "$Relese" "$DIST" "$VER" "$tmpMirror")
