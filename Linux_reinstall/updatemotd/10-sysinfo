@@ -82,13 +82,9 @@ if [[ `echo "$IPv6" | grep -i '[[:xdigit:]]' | grep ':'` ]] && [[ "$IP6_Hex_Num"
   IP6_Check="isIPv6"
 fi
 
-if [[ "${IP6_Check}" != "isIPv6" ]] && [[ -z ${IPv6} ]]; then
-  IPv6="N/A"
-fi
+[[ "${IP6_Check}" != "isIPv6" ]] && IPv6="N/A"
 
-if [[ "${IP_Check}" != "isIPv4" ]] && [[ -z ${IPv4} ]]; then
-  IPv4="N/A"
-fi
+[[ "${IP_Check}" != "isIPv4" ]] && IPv4="N/A"
 
 if [[ "${localip}" == "${IPv4}" ]] || [[ "${localip}" == "${IPv6}" ]]; then
   # localip=`ip -o a show | grep -w "lo" | grep -w "inet" | cut -d ' ' -f7 | awk '{split($1, a, "/"); print $2 "" a[1]}'`
