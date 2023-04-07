@@ -232,19 +232,19 @@ while [[ $# -ge 1 ]]; do
 
 [[ "$EUID" -ne '0' ]] && echo -ne "\n\033[31mError: \033[0mThis script must be run as root!\n" && exit 1;
 
-# Ping delay to Goole($1) and Twitter($2), support both ipv4 and ipv6, $3 is $IPStackType
+# Ping delay to YouTube($1) and Instagram($2) and Twitter($3), support both ipv4 and ipv6, $4 is $IPStackType
 function checkCN(){
-  for TestUrl in "$1" "$2"; do
+  for TestUrl in "$1" "$2" "$3"; do
     IPv4PingDelay=`ping -4 -c 2 -w 2 "$TestUrl" | grep rtt | cut -d'/' -f5 | awk -F'.' '{print $NF}' | sed -n '/^[0-9]\+\(\.[0-9]\+\)\?$/p'`
     IPv6PingDelay=`ping -6 -c 2 -w 2 "$TestUrl" | grep rtt | cut -d'/' -f5 | awk -F'.' '{print $NF}' | sed -n '/^[0-9]\+\(\.[0-9]\+\)\?$/p'`
-    if [[ "$3"="BioStack" ]]; then
+    if [[ "$4"="BioStack" ]]; then
       if [[ "$IPv4PingDelay" != "" ]] || [[ "$IPv6PingDelay" != "" ]]; then
         IsCN=""
         IsCN=`echo -e "$IsCN"`"$IsCN"
       else
         IsCN="cn"
       fi
-    elif [[ "$3"="IPv4Stack" ]]; then
+    elif [[ "$4"="IPv4Stack" ]]; then
       if [[ "$IPv4PingDelay" != "" ]]; then
         IsCN=""
         IsCN=`echo -e "$IsCN"`"$IsCN"
@@ -252,20 +252,20 @@ function checkCN(){
         IsCN="cn"
         IsCN=`echo -e "$IsCN"`"$IsCN"
       fi
-    elif [[ "$3"="IPv6Stack" ]]; then
+    elif [[ "$4"="IPv6Stack" ]]; then
       if [[ "$IPv6PingDelay" != "" ]]; then
         IsCN=""
         IsCN=`echo -e "$IsCN"`"$IsCN"
       else
         IsCN="cn"
         IsCN=`echo -e "$IsCN"`"$IsCN"
-      fi  
+      fi
     fi
   done
   [[ `echo "$IsCN" | grep "cn"` != "" ]] && IsCN="cn" || IsCN=""
   if [[ "$IsCN" == "cn" ]]; then
     TimeZone="Asia/Shanghai"
-    if [[ "$3" == "BioStack" || "$3" == "IPv6Stack" ]]; then
+    if [[ "$4" == "BioStack" || "$4" == "IPv6Stack" ]]; then
       ipDNS="101.6.6.6"
       ip6DNS="2001:da8::666"
     else
@@ -569,9 +569,45 @@ function checkIpv4OrIpv6(){
     IP_Check="isIPv4"
   fi
 
-  [[ "$IP_Check" == "isIPv4" && -n "$IPv4DNSLookup" && -n "$IPv6DNSLookup" ]] && IPStackType="BioStack"
-  [[ "$IP_Check" == "isIPv4" && -n "$IPv4DNSLookup" && -z "$IPv6DNSLookup" ]] && IPStackType="IPv4Stack"
-  [[ -z "$IPv4DNSLookup" && -n "$IPv6DNSLookup" ]] && IPStackType="IPv6Stack"
+  IPv6_Check="$IPv6DNSLookup"
+# If the last two strings of IPv6 is "::", we should replace ":" to "0" for the last string to make sure it's a valid IPv6(can't end with ":").
+  [[ ${IPv6DNSLookup: -1} == ":" ]] && IPv6_Check=$(echo "$IPv6DNSLookup" | sed 's/.$/0/')
+# If the first two strings of IPv6 is "::", we should replace ":" to "0" for the first string to make sure it's a valid IPv6(can't start with ":").
+  [[ ${IPv6DNSLookup:0:1} == ":" ]] && IPv6_Check=$(echo "$IPv6DNSLookup" | sed 's/^./0/')
+# Add ":" in the last of the IPv6 address for cut all items infront of the ":" by split by symbol ":".
+  IP6_Check_Temp="$IPv6_Check"":"
+# Total numbers of the hex blocks in IPv6 address includes with empty value(abbreviation of "0000").
+  IP6_Hex_Num=`echo "$IP6_Check_Temp" | tr -cd ":" | wc -c`
+# Default number of empty values of the hex block is "0".
+  IP6_Hex_Abbr="0"
+# The first filter plays a role of:
+# 1. check if 0-9 or a-z and ":" in original IPv6;
+# 2. the longest number of ":" in IPv6 is "7", because of variable "IP6_Check_Temp" one more ":" has been add,
+# so the total number of ":" in variable "IP6_Check_Temp" should be less or equal "8".
+  if [[ `echo "$IPv6_Check" | grep -i '[[:xdigit:]]' | grep ':'` ]] && [[ "$IP6_Hex_Num" -le "8" ]]; then
+# Total cycles of the check(sequence of the current hex block).
+    for ((i=1; i<="$IP6_Hex_Num"; i++)){
+# Every IPv6 hex block of current cycle.
+      IP6_Hex=$(echo "$IP6_Check_Temp" | cut -d: -f$i)
+# Count "::" abbreviations for this IPv6.
+      [[ "$IP6_Hex" == "" ]] && IP6_Hex_Abbr=`expr $IP6_Hex_Abbr + 1`
+# String number of letters or numbers in one block should less or equal "4".
+      [[ `echo "$IP6_Hex" | wc -c` -le "4" ]] && {
+# The second filter plays a reversion role of the following to exclude an effective IPv6 hex block:
+# 1. Except 0-9 and a-f;
+# 2. Abbreviation of hex block should be appeared less than or equal one time in principle.
+        if [[ `echo "$IP6_Hex" | grep -iE '[^0-9a-f]'` ]] || [[ "$IP6_Hex_Abbr" -gt "1" ]]; then
+          echo "fail ($IP6_Check_Temp)"
+          exit 1
+        fi
+      }
+    }
+    IP6_Check="isIPv6"
+  fi
+
+  [[ "$IP_Check" == "isIPv4" && "$IP6_Check" == "isIPv6" ]] && IPStackType="BioStack"
+  [[ "$IP_Check" == "isIPv4" && "$IP6_Check" != "isIPv6" ]] && IPStackType="IPv4Stack"
+  [[ "$IP_Check" != "isIPv4" && "$IP6_Check" == "isIPv6" ]] && IPStackType="IPv6Stack"
 }
 
 # $1 is $CurrentOS $2 is $CurrentOSVer
@@ -659,18 +695,25 @@ function DebianModifiedPreseed(){
     InstallComponents="$1 apt install sudo apt-transport-https bc binutils ca-certificates cron curl debian-keyring debian-archive-keyring dnsutils dosfstools efibootmgr ethtool fail2ban file figlet iptables iptables-persistent iputils-tracepath jq lrzsz libnet-ifconfig-wrapper-perl lsof libnss3 lsb-release mtr-tiny mlocate netcat-openbsd net-tools ncdu nmap ntfs-3g parted psmisc python3 socat sosreport subnetcalc tcpdump telnet traceroute unzip unrar-free uuid-runtime vim vim-gtk3 wget xz-utils -y;"
 # In debian 9 and former, some certificates are expired.
     DisableCertExpiredCheck="$1 sed -i '/^mozilla\/DST_Root_CA_X3/s/^/!/' /etc/ca-certificates.conf; $1 update-ca-certificates -f;"
+    if [[ "$IsCN" == "cn" ]]; then
 # Modify /root/.bashrc to support colorful filename.
-    ChangeBashrc="$1 rm -rf /root/.bashrc; $1 wget --no-check-certificate -qO /root/.bashrc 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/.bashrc';"
-# Set parameter "mouse-=a" in /usr/share/vim/vim-version/defaults.vim to support copy text from terminal to client.
-    VimSupportCopy="$1 sed -i 's/set mouse=a/set mouse-=a/g' /usr/share/vim/${DebianVimVer}/defaults.vim;"
+      ChangeBashrc="$1 rm -rf /root/.bashrc; $1 wget --no-check-certificate -qO /root/.bashrc 'https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/.bashrc';"
 # Need to install "resolvconf" manually after all installation ended, logged into new system.
 # DNS server validation must setting up in installed system, can't in preseeding!
-    [[ "$IsCN" == "cn" ]] && SetDNS="CNResolvHead" || SetDNS="NomalResolvHead"
 # Set China DNS server from USTC and Tsinghua University permanently
-# Set DNS server from CloudFlare and Google permanently
-    DnsChangePermanently="$1 mkdir -p /etc/resolvconf/resolv.conf.d/; $1 wget --no-check-certificate -qO /etc/resolvconf/resolv.conf.d/head 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/${SetDNS}';"
+	  SetDNS="CNResolvHead"
+      DnsChangePermanently="$1 mkdir -p /etc/resolvconf/resolv.conf.d/; $1 wget --no-check-certificate -qO /etc/resolvconf/resolv.conf.d/head 'https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/${SetDNS}';"
 # Modify logging in welcome information(Message Of The Day) of Debian and make it more pretty.
-    ModifyMOTD="$1 rm -rf /etc/update-motd.d/ /etc/motd /run/motd.dynamic; $1 mkdir -p /etc/update-motd.d/; $1 wget --no-check-certificate -qO /etc/update-motd.d/00-header 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/updatemotd/00-header'; $1 wget --no-check-certificate -qO /etc/update-motd.d/10-sysinfo 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/updatemotd/10-sysinfo'; $1 wget --no-check-certificate -qO /etc/update-motd.d/90-footer 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/updatemotd/90-footer'; $1 chmod +x /etc/update-motd.d/00-header; $1 chmod +x /etc/update-motd.d/10-sysinfo; $1 chmod +x /etc/update-motd.d/90-footer;"
+      ModifyMOTD="$1 rm -rf /etc/update-motd.d/ /etc/motd /run/motd.dynamic; $1 mkdir -p /etc/update-motd.d/; $1 wget --no-check-certificate -qO /etc/update-motd.d/00-header 'https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/updatemotd/00-header'; $1 wget --no-check-certificate -qO /etc/update-motd.d/10-sysinfo 'https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/updatemotd/10-sysinfo'; $1 wget --no-check-certificate -qO /etc/update-motd.d/90-footer 'https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/updatemotd/90-footer'; $1 chmod +x /etc/update-motd.d/00-header; $1 chmod +x /etc/update-motd.d/10-sysinfo; $1 chmod +x /etc/update-motd.d/90-footer;"
+	else
+      ChangeBashrc="$1 rm -rf /root/.bashrc; $1 wget --no-check-certificate -qO /root/.bashrc 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/.bashrc';"
+# Set DNS server from CloudFlare and Google permanently
+	  SetDNS="NomalResolvHead"
+      DnsChangePermanently="$1 mkdir -p /etc/resolvconf/resolv.conf.d/; $1 wget --no-check-certificate -qO /etc/resolvconf/resolv.conf.d/head 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/${SetDNS}';"
+      ModifyMOTD="$1 rm -rf /etc/update-motd.d/ /etc/motd /run/motd.dynamic; $1 mkdir -p /etc/update-motd.d/; $1 wget --no-check-certificate -qO /etc/update-motd.d/00-header 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/updatemotd/00-header'; $1 wget --no-check-certificate -qO /etc/update-motd.d/10-sysinfo 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/updatemotd/10-sysinfo'; $1 wget --no-check-certificate -qO /etc/update-motd.d/90-footer 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/updatemotd/90-footer'; $1 chmod +x /etc/update-motd.d/00-header; $1 chmod +x /etc/update-motd.d/10-sysinfo; $1 chmod +x /etc/update-motd.d/90-footer;"
+    fi
+# Set parameter "mouse-=a" in /usr/share/vim/vim-version/defaults.vim to support copy text from terminal to client.
+    VimSupportCopy="$1 sed -i 's/set mouse=a/set mouse-=a/g' /usr/share/vim/${DebianVimVer}/defaults.vim;"
 # If the network config type of server is DHCP and it have both public IPv4 and IPv6 address,
 # Debian install program even get nerwork config with DHCP, but after log into new system,
 # only the IPv4 of the server has been configurated.
@@ -849,7 +892,7 @@ checkSys
 checkIpv4OrIpv6
 
 # Youtube and Instagram both have public IPv4 and IPv6 address and are also banned in mainland China.
-checkCN "www.youtube.com" "www.instagram.com" "$IPStackType"
+checkCN "www.youtube.com" "www.instagram.com" "www.twitter.com" "$IPStackType"
 
 checkEfi "/sys/firmware/efi/efivars/" "/sys/firmware/efi/mok-variables/" "/sys/firmware/efi/runtime-map/" "/sys/firmware/efi/vars/"
 
@@ -1368,7 +1411,7 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
   RepoEpel=""
   AuthMethod="authselect --useshadow --passalgo sha512"
   SetTimeZone="timezone --utc ${TimeZone}"
-  FirewallRule="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/RedHat/RHEL9Public.xml"
+  [[ "$IsCN" == "cn" ]] && FirewallRule="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/RedHat/RHEL9Public.xml" || FirewallRule="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/RedHat/RHEL9Public.xml"
   if [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]]; then
     if [[ "$RedHatSeries" -ge "8" ]]; then
       RedHatUrl="${LinuxMirror}/${DIST}/BaseOS/${VER}/os/"	  
@@ -1385,7 +1428,7 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
       SetTimeZone="timezone --isUtc ${TimeZone}"
       RepoBase="repo --name=base --baseurl=${LinuxMirror}/${DIST}/os/${VER}/"
       RepoAppStream="repo --name=updates --baseurl=${LinuxMirror}/${DIST}/updates/${VER}/"
-      FirewallRule="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/RedHat/RHEL7Public.xml"
+      [[ "$IsCN" == "cn" ]] && FirewallRule="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/RedHat/RHEL7Public.xml" || FirewallRule="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/RedHat/RHEL7Public.xml"
       if [[ "$IsCN" == "cn" ]]; then
         RepoEpel="repo --name=epel --baseurl=http://mirror.nju.edu.cn/epel/$RedHatSeries/${VER}/"
       else
