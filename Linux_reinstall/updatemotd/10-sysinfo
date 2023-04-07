@@ -47,32 +47,16 @@ if expr "$IP_Check" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/de
   IP_Check="isIPv4"
 fi
 
-# If the last two strings of IPv6 is "::", we should replace ":" to "0" for the last string to make sure it's a valid IPv6(can't end with ":").
 [[ ${IPv6: -1} == ":" ]] && IPv6=$(echo "$IPv6" | sed 's/.$/0/')
-# If the first two strings of IPv6 is "::", we should replace ":" to "0" for the first string to make sure it's a valid IPv6(can't start with ":").
 [[ ${IPv6:0:1} == ":" ]] && IPv6=$(echo "$IPv6" | sed 's/^./0/')
-# Add ":" in the last of the IPv6 address for cut all items infront of the ":" by split by symbol ":".
 IP6_Check="$IPv6"":"
-# Total numbers of the hex blocks in IPv6 address includes with empty value(abbreviation of "0000").
 IP6_Hex_Num=`echo "$IP6_Check" | tr -cd ":" | wc -c`
-# Default number of empty values of the hex block is "0".
 IP6_Hex_Abbr="0"
-# The first filter plays a role of:
-# 1. check if 0-9 or a-z and ":" in original IPv6;
-# 2. the longest number of ":" in IPv6 is "7", because of variable "IP6_Check" one more ":" has been add,
-# so the total number of ":" in variable "IP6_Check" should be less or equal "8".
 if [[ `echo "$IPv6" | grep -i '[[:xdigit:]]' | grep ':'` ]] && [[ "$IP6_Hex_Num" -le "8" ]]; then
-# Total cycles of the check(sequence of the current hex block).
   for ((i=1; i<="$IP6_Hex_Num"; i++)){
-# Every IPv6 hex block of current cycle.
     IP6_Hex=$(echo "$IP6_Check" | cut -d: -f$i)
-# Count "::" abbreviations for this IPv6.
     [[ "$IP6_Hex" == "" ]] && IP6_Hex_Abbr=`expr $IP6_Hex_Abbr + 1`
-# String number of letters or numbers in one block should less or equal "4".
     [[ `echo "$IP6_Hex" | wc -c` -le "4" ]] && {
-# The second filter plays a reversion role of the following to exclude an effective IPv6 hex block:
-# 1. Except 0-9 and a-f;
-# 2. Abbreviation of hex block should be appeared less than or equal one time in principle.
       if [[ `echo "$IP6_Hex" | grep -iE '[^0-9a-f]'` ]] || [[ "$IP6_Hex_Abbr" -gt "1" ]]; then
         echo "fail ($IP6_Check)"
         exit 1
