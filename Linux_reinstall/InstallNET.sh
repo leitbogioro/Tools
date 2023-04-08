@@ -1684,10 +1684,13 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
   for tmpCFG in `awk '/fi/{print NR}' $GRUBDIR/$GRUBFILE`; do
     [ "$tmpCFG" -ge "$CFG0" -a "$tmpCFG" -le "$CFG2" ] && CFG1="$tmpCFG"
   done
-  [[ -z "$CFG1" ]] && {
-    echo -ne "\n\033[31mError: \033[0mread $GRUBFILE.\n"
-    exit 1
-  }
+  if [[ -z "$CFG1" ]]; then
+    CFG1="$CFG2tmp"
+    [[ -z "$CFG1" ]] && {
+      echo -ne "\n\033[31mError: \033[0mread $GRUBFILE.\n"
+      exit 1
+    }
+  fi
   sed -n "$CFG0,$CFG1"p $GRUBDIR/$GRUBFILE >/tmp/grub.new
   sed -i -e 's/^/  /' /tmp/grub.new
   [[ -f /tmp/grub.new ]] && [[ "$(grep -c '{' /tmp/grub.new)" -eq "$(grep -c '}' /tmp/grub.new)" ]] || {
