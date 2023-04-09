@@ -1685,12 +1685,57 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
     [ "$tmpCFG" -ge "$CFG0" -a "$tmpCFG" -le "$CFG2" ] && CFG1="$tmpCFG"
   done
   if [[ -z "$CFG1" ]]; then
-    CFG1="$CFG2tmp"
-    [[ -z "$CFG1" ]] && {
-      echo -ne "\n\033[31mError: \033[0mread $GRUBFILE.\n"
-      exit 1
-    }
+# In standard redhat like linux os with grub2 above version of 7, the boot configuration in "grub.cfg" is like:
+#
+# insmod part_msdos
+# insmod xfs
+# set root='hd0,msdos1'
+# if [ x$feature_platform_search_hint = xy ]; then
+#   search --no-floppy --fs-uuid --set=root --hint='hd0,msdos1'  d34311d7-62fd-419e-8f19-71494c773ddd
+# else
+#   search --no-floppy --fs-uuid --set=root d34311d7-62fd-419e-8f19-71494c773ddd
+# fi
+#
+# But in Rocky Linux 9.1 of official templates in Oracle Cloud, only the following method will effective:
+# The expect component in grub file should be like "search --no-floppy --fs-uuid --set=root 9340b3c7-e898-44ae-bd1e-4c58dec2b16d".
+    SetRootCfg="$(awk '/--fs-uuid --set=root/{print NR}' $GRUBDIR/$GRUBFILE|head -n 2|tail -n 1)"
+# An array for depositing all rows of "insmod part_".
+    InsmodPartArray=()
+# An array for row number of "search --no-floppy --fs-uuid --set=root..." minus row number of "insmod part_".
+    IpaSpace=()
+# Static how many times does "insmod part_" appeared and storage rows in array of "InsmodPartArray",
+# storage minus rows in arrary of "IpaSpace"
+    for tmpCFG in `awk '/insmod part_/{print NR}' $GRUBDIR/$GRUBFILE`; do
+      InsmodPartArray+=($tmpCFG $InsmodPartArray)
+      IpaSpace+=(`expr $SetRootCfg - $tmpCFG` $IpaSpace)
+    done
+# Definite order "0" in "IpaSpace" as a default value of variable of "minArray".
+    minArray=${IpaSpace[0]}
+# The outer condition of this cycle is to definite how many times does it will execute.
+    for ((i=1;i<=`grep -io "insmod part_*" $GRUBDIR/$GRUBFILE | wc -l`;i++)); do
+# The inner condition of this cycle is the orders in array of "IpaSpace".
+      for j in ${IpaSpace[@]}; do
+# A typical buddle sort for compare whether the current variable "minArray" is greater than the order of number in "IpaSpace" of current cycle.
+# One number of row minus another one shouldn't be less than "0".
+# If "minArray" is greater than the order "j" in array of "IpaSpace", the less one "j" will replace the former "IpaSpace".
+        [[ ${IpaSpace[$j]} -lt "0" ]] && exit 1
+        [[ $minArray -gt $j ]] && minArray=$j
+      done
+    done
+# The least "minArray" will be the result and once it plus "SetRootCfg" will be the nearest row number of "insmod part_".
+# So we can figure out the valid section of boot configuration in "grub.cfg" like:
+#
+# insmod part_gpt
+# insmod xfs
+# search --no-floppy --fs-uuid --set=root 9340b3c7-e898-44ae-bd1e-4c58dec2b16d
+#
+    CFG0=`expr $SetRootCfg - $minArray`
+    CFG1="$SetRootCfg"
   fi
+  [[ -z "$CFG0" || -z "$CFG1" ]] && {
+    echo -ne "\n\033[31mError: \033[0mread $GRUBFILE.\n"
+    exit 1
+  }
   sed -n "$CFG0,$CFG1"p $GRUBDIR/$GRUBFILE >/tmp/grub.new
   sed -i -e 's/^/  /' /tmp/grub.new
   [[ -f /tmp/grub.new ]] && [[ "$(grep -c '{' /tmp/grub.new)" -eq "$(grep -c '}' /tmp/grub.new)" ]] || {
