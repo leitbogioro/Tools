@@ -889,6 +889,13 @@ EOF
 
 checkSys
 
+# Get the name of network adapter($interface).
+[[ -z "$interface" ]] && interface=`getInterface "$CurrentOSCurrentOS" "$CurrentOSVer"`
+# Try to enable IPv4 by DHCP
+timeout 5 dhclient -4 $interface
+# Try to enable IPv6 by DHCP
+timeout 5 dhclient -6 $interface
+
 checkIpv4OrIpv6
 
 # Youtube, Instagram and Wikipedia all have public IPv4 and IPv6 address and are also banned in mainland China.
