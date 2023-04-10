@@ -54,7 +54,7 @@ Redhat series(CentOS / AlmaLinux / RockyLinux / OracleLinux / Fedora / VzLinux):
 
 ## Quickly start
 If you need to add other parameters, version number must be assigned!
-### Debian 11
+### Debian 12
 <pre><code>bash InstallNET.sh -debian</code></pre>
 ### CentOS 9 stream
 <pre><code>bash InstallNET.sh -centos</code></pre>
