@@ -939,8 +939,8 @@ dependence awk,basename,cat,cpio,curl,cut,dig,dirname,efibootmgr,file,find,grep,
 if [[ "$ddMode" == '1' ]]; then
   dependence iconv;
   linux_relese='debian';
-  tmpDIST='bullseye';
-  tmpVER='amd64';
+  tmpDIST='bookworm';
+  tmpVER='';
 fi
 
 if [[ "$IPStackType" == "IPv4Stack" ]]; then
@@ -1072,7 +1072,7 @@ if [[ ! -n "$VER" ]]; then
 fi
 
 if [[ -z "$tmpDIST" ]]; then
-  [ "$Relese" == 'Debian' ] && tmpDIST='11'
+  [ "$Relese" == 'Debian' ] && tmpDIST='12'
   [ "$Relese" == 'Ubuntu' ] && tmpDIST='20.04'
   [ "$Relese" == 'CentOS' ] && tmpDIST='9'
   [ "$Relese" == 'RockyLinux' ] && tmpDIST='9'
