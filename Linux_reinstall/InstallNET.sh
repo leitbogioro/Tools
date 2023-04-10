@@ -1651,7 +1651,7 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
     LoaderPath=$(cat /boot/grub2/grubenv | grep 'saved_entry=' | awk -F '=' '{print $2}')
     LpLength=`echo ${#LoaderPath}`
     LpFile="/boot/loader/entries/$LoaderPath.conf"
-# The saved_entry of OpenCloudOS is equal "0"
+# The saved_entry of OpenCloudOS(Tencent Cloud) is equal "0"
 # [root@VM-4-11-opencloudos ~]# cat /boot/grub2/grubenv
 # GRUB Environment Block
 # saved_entry=0
