@@ -728,6 +728,13 @@ function DebianModifiedPreseed(){
     elif [[ "$NetworkConfig" == "isStatic" ]]; then
       [[ "$IPStackType" == "BioStack" || "$IPStackType" == "IPv6Stack" ]] && SupportIPv6="$1 sed -i '\$aiface $interface inet6 static' /etc/network/interfaces; $1 sed -i '\$a\\\taddress $ip6Addr' /etc/network/interfaces; $1 sed -i '\$a\\\tgateway $ip6Gate' /etc/network/interfaces; $1 sed -i '\$a\\\tnetmask $ip6Mask' /etc/network/interfaces; $1 sed -i '\$a\\\tdns-nameservers $ip6DNS' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16   2' /etc/gai.conf"
 # a typical network configuration sample of IPv6 static for Debian:
+# iface eth0 inet static
+#         address 10.0.0.72
+#         gateway 10.0.0.1
+#         netmask 255.255.255.0
+#         dns-nameservers 1.0.0.1 8.4.4.8
+#
+# a typical network configuration sample of IPv6 static for Debian:
 # iface eth0 inet6 static
 #         address 2702:b43c:492a:9d1e:8270:fd59:6de4:20f1
 #         gateway fe80::200:17ff:fe9e:f9d0
@@ -1673,13 +1680,14 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
   else
     [[ -n "$(grep 'linux.*/\|kernel.*/' $GRUBDIR/$GRUBFILE | awk '{print $2}' | tail -n 1 | grep '^/boot/')" ]] && BootDIR='/boot' || BootDIR='';
   fi
-# Confirm if BIOS or UEFI firmware
+# Confirm if BIOS or UEFI firmware for architecture of x86_64(AMD64) processors.
   if [[ "$VER" == "x86_64" || "$VER" == "amd64" ]]; then
     if [[ "$EfiSupport" == "enabled" ]]; then
       BootHex="efi"
     else
       BootHex="16"
     fi
+# The architecture of aarch64(ARM64) processors have matched for only UEFI firmware even nowadays.
   elif [[ "$VER" == "aarch64" || "$VER" == "arm64" ]]; then
     BootHex=""
   fi
@@ -1703,7 +1711,17 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
 #   search --no-floppy --fs-uuid --set=root d34311d7-62fd-419e-8f19-71494c773ddd
 # fi
 #
-# But in Rocky Linux 9.1 of official templates in Oracle Cloud, only the following method will effective:
+# But in Rocky Linux 9.1 of official templates in Oracle Cloud, the boot configuration in "grub.cfg" is different from any other of redhat release version compeletely:
+#
+# insmod part_gpt
+# insmod xfs
+# search --no-floppy --fs-uuid --set=root 11000e8c-9777-43c3-a83b-54a13d609fdb
+# insmod part_gpt
+# insmod fat
+# search --no-floppy --fs-uuid --set=boot 9E70-9B63
+#
+# Only the following method will effective:
+#
 # The expect component in grub file should be like "search --no-floppy --fs-uuid --set=root 9340b3c7-e898-44ae-bd1e-4c58dec2b16d".
     SetRootCfg="$(awk '/--fs-uuid --set=root/{print NR}' $GRUBDIR/$GRUBFILE|head -n 2|tail -n 1)"
 # An array for depositing all rows of "insmod part_".
