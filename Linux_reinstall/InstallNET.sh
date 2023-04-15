@@ -641,8 +641,8 @@ function getInterface(){
     done
   else
     for Count in "/run/network/" "/etc/network/"; do
-      NetCfgWhole=`grep -wrl "network" | grep -wrl "iface" | grep -wrl "lo" | grep -wrl "inet\|inte6" $Count* | grep -v "if-*" | grep -v "state"`
-      if [[ "$NetCfgWhole" != "" ]]; then
+      NetCfgWhole=`grep -wrl "network" | grep -wrl "iface" | grep -wrl "lo" | grep -wrl "inet\|inte6" | grep -wrl "dhcp\|static" $Count* | grep -v "if-*" | grep -v "state"`
+      if [[ "$NetCfgWhole" != "" ]] && [[ `grep -c "source /etc/network/interfaces.d/\*" "$NetCfgWhole"` -lt "1" ]]; then
         NetCfgFile=`echo $NetCfgWhole | awk -F/ '{print $NF}'`
         NetCfgDir=`echo $NetCfgWhole | sed "s/$NetCfgFile//g"`
         break
