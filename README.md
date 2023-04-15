@@ -67,9 +67,14 @@ For Debian, official recommend mirror lists are here:
 <pre><code>https://www.debian.org/mirror/list.html</code></pre>
 <br />
 
-For CentOS, official recommend mirror lists are here:
+For CentOS 7 and 8-stream, official recommend mirror lists are here:
 <br />
 <pre><code>https://www.centos.org/download/mirrors/</code></pre>
+<br />
+
+For CentOS 9-stream and later, official recommend mirror lists are here:
+<br />
+<pre><code>https://admin.fedoraproject.org/mirrormanager/mirrors/CentOS</code></pre>
 <br />
 
 For AlmaLinux, official recommend mirror lists are here:
@@ -144,46 +149,49 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-### Advanced usage, for example Debian 11 (recommend for servers which are locating outside of mainland China)
+### Advanced usage, for example Debian 12 (recommend for servers which are locating outside of mainland China)
 Japan:
 <br />
-<pre><code>bash InstallNET.sh -debian 11 -mirror "http://ftp.riken.jp/Linux/debian/debian/"</code></pre>
+<pre><code>bash InstallNET.sh -debian 12 -mirror "http://ftp.riken.jp/Linux/debian/debian/"</code></pre>
 HongKong:
 <br />
-<pre><code>bash InstallNET.sh -debian 11 -mirror "http://ftp.hk.debian.org/debian/"</code></pre>
+<pre><code>bash InstallNET.sh -debian 12 -mirror "http://ftp.hk.debian.org/debian/"</code></pre>
 Singapore:
 <br />
-<pre><code>bash InstallNET.sh -debian 11 -mirror "http://ftp.sg.debian.org/debian/"</code></pre>
+<pre><code>bash InstallNET.sh -debian 12 -mirror "http://ftp.sg.debian.org/debian/"</code></pre>
 South Korea:
 <br />
-<pre><code>bash InstallNET.sh -debian 11 -mirror "https://ftp.jaist.ac.jp/pub/Linux/debian/"</code></pre>
+<pre><code>bash InstallNET.sh -debian 12 -mirror "https://ftp.jaist.ac.jp/pub/Linux/debian/"</code></pre>
 Taiwan:
 <br />
-<pre><code>bash InstallNET.sh -debian 11 -mirror "http://ftp.tw.debian.org/debian/"</code></pre>
+<pre><code>bash InstallNET.sh -debian 12 -mirror "http://ftp.tw.debian.org/debian/"</code></pre>
 America:
 <br />
-<pre><code>bash InstallNET.sh -debian 11 -mirror "https://mirrors.ocf.berkeley.edu/debian/"</code></pre>
+<pre><code>bash InstallNET.sh -debian 12 -mirror "https://mirrors.ocf.berkeley.edu/debian/"</code></pre>
 Canada:
 <br />
-<pre><code>bash InstallNET.sh -debian 11 -mirror "http://ftp.ca.debian.org/debian/"</code></pre>
+<pre><code>bash InstallNET.sh -debian 12 -mirror "http://ftp.ca.debian.org/debian/"</code></pre>
 Britain:
 <br />
-<pre><code>bash InstallNET.sh -debian 11 -mirror "http://ftp.uk.debian.org/debian/"</code></pre>
+<pre><code>bash InstallNET.sh -debian 12 -mirror "http://ftp.uk.debian.org/debian/"</code></pre>
 Germany:
 <br />
-<pre><code>bash InstallNET.sh -debian 11 -mirror "http://ftp.de.debian.org/debian/"</code></pre>
+<pre><code>bash InstallNET.sh -debian 12 -mirror "http://ftp.de.debian.org/debian/"</code></pre>
 France:
 <br />
-<pre><code>bash InstallNET.sh -debian 11 -mirror "http://ftp.fr.debian.org/debian/"</code></pre>
+<pre><code>bash InstallNET.sh -debian 12 -mirror "http://ftp.fr.debian.org/debian/"</code></pre>
 Netherlands:
 <br />
-<pre><code>bash InstallNET.sh -debian 11 -mirror "http://ftp.nl.debian.org/debian/"</code></pre>
+<pre><code>bash InstallNET.sh -debian 12 -mirror "http://ftp.nl.debian.org/debian/"</code></pre>
+Switzerland:
+<br />
+<pre><code>bash InstallNET.sh -debian 12 -mirror "http://ftp.ch.debian.org/debian/"</code></pre>
 Russia:
 <br />
-<pre><code>bash InstallNET.sh -debian 11 -mirror "http://ftp.ru.debian.org/debian/"</code></pre>
+<pre><code>bash InstallNET.sh -debian 12 -mirror "http://ftp.ru.debian.org/debian/"</code></pre>
 Australia:
 <br />
-<pre><code>bash InstallNET.sh -debian 11 -mirror "http://ftp.au.debian.org/debian/"</code></pre>
+<pre><code>bash InstallNET.sh -debian 12 -mirror "http://ftp.au.debian.org/debian/"</code></pre>
 
 ## Default configurations
 ### Time zone
