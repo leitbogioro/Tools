@@ -210,14 +210,14 @@ LeitboGi0ro
 
 ## Errors and solutions:
 In some versions of CentOS 8 which are not subsumed into CentOS-stream are end of supporting by CentOS official, so the source is failure:
-<code>Failed to synchronize cache for repo 'baseos', ignoring this repo.
-Failed to synchronize cache for repo 'appstream', ignoring this repo.</code>
+<pre><code>Failed to synchronize cache for repo 'baseos', ignoring this repo.
+Failed to synchronize cache for repo 'appstream', ignoring this repo.</pre></code>
 You first need to fix the source available and then execute this script.
-<code>
+<pre><code>
 cd /etc/yum.repos.d/
 sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
 sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
-</code>
+</pre></code>
 
 ## How to install Windows?
 Notice: Microsoft products and services—including images, text, and software downloads (the "content")—are owned either by Microsoft Corporation or by third parties who have granted Microsoft permission to use the content. Microsoft cannot grant you permission for content that is owned by third parties. You may only copy, modify, distribute, display, license, or sell the content if you are granted explicit permission within the End-User License Agreement (EULA) or license terms that accompany the content or are provided in the following guidelines. For more information, consult your copyright attorney.
