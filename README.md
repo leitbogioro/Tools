@@ -12,7 +12,6 @@ Debian series(Debian / Ubuntu):
 <pre><code>apt update -y</code></pre>
 <pre><code>apt install wget -y</code></pre>
 Redhat series(CentOS / AlmaLinux / RockyLinux / OracleLinux / Fedora / VzLinux):
-<pre><code>yum update --allowerasing -y</code></pre>
 <pre><code>yum install wget -y</code></pre>
 
 ## Quickly start
