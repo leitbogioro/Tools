@@ -1411,7 +1411,7 @@ fi
 [[ "$setNetbootXyz" == "0" ]] && echo -e "\n[\033[33m$Relese\033[0m] [\033[33m$DIST\033[0m] [\033[33m$VER\033[0m] Downloading...\n" || echo -e "\n[\033[33mnetboot.xyz\033[0m] Downloading...\n"
 
 # RAM of RedHat series is 2GB required at least.
-checkMem "$linux_relese" "$RedHatSeries"
+[[ "$setNetbootXyz" == "0" ]] && checkMem "$linux_relese" "$RedHatSeries"
 
 if [[ "$setNetbootXyz" == "1" ]]; then
   [[ "$VER" == "x86_64" || "$VER" == "amd64" ]] && apt install grub-imageboot -y
