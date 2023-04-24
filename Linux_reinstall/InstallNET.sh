@@ -1346,10 +1346,13 @@ fi
 [[ "$setNetbootXyz" == "1" ]] && SpikCheckDIST="1"
 if [[ "$SpikCheckDIST" == '0' ]]; then
   echo -e "\n\033[36m# Check DIST\033[0m"
-  DistsList="$(wget --no-check-certificate -qO- "$LinuxMirror/dists/" |grep -o 'href=.*/"' |cut -d'"' -f2 |sed '/-\|old\|Debian\|experimental\|stable\|test\|sid\|devel/d' |grep '^[^/]' |sed -n '1h;1!H;$g;s/\n//g;s/\//\;/g;$p')";
+  DistsList="$(wget --no-check-certificate -qO- "$LinuxMirror/dists/" |grep -o 'href=.*/"' |cut -d'"' -f2 |sed '/-\|old\|Debian\|experimental\|stable\|test\|sid\|devel/d' |grep '^[^/]' |sed -n '1h;1!H;$g;s/\n//g;s/\//\;/g;$p')"
   for CheckDEB in `echo "$DistsList" |sed 's/;/\n/g'`
     do
-      [[ "$CheckDEB" == "$DIST" ]] && FindDists='1' && break;
+# In some mirror, the value of parameter "DistsList" is "?C=N;O=Dbookworm;bullseye;buster;http:;;wisepoint.jp;product;wpshibb;"
+# The second item in "DistsList" which is splited by ";" is O=Dbookworm.
+# So we need to check whether "DIST" is approximately equal(contains) to "CheckDEB".
+	  [[ "$CheckDEB" =~ "$DIST" ]] && FindDists='1' && break;
     done
   [[ "$FindDists" == '0' ]] && {
     echo -ne '\n\033[31mError! \033[0mThe dists version not found, Please check it! \n\n'
