@@ -493,12 +493,12 @@ function checkMem(){
     if [[ "$1" == 'rockylinux' || "$1" == 'almalinux' || "$1" == 'centos' ]]; then
       if [[ "$TotalMem1" -le "2406400" || "$TotalMem2" -le "2406400" ]]; then
         if [[ "$2" == "8" ]] || [[ "$1" == 'centos' && "$2" == "9" ]]; then
-		  echo -ne "\n\033[31mError: \033[0mMinimum system memory requirement is 2.5GB!\n"
+          echo -ne "\n\033[31mError: \033[0mMinimum system memory requirement is 2.5GB!\n"
           exit 1
         fi
       elif [[ "$TotalMem1" -le "1740800" || "$TotalMem2" -le "1740800" ]]; then
         [[ "$2" -ge "9" ]] && {
-		  echo -ne "\n\033[31mError: \033[0mMinimum system memory requirement is 2GB!\n"
+          echo -ne "\n\033[31mError: \033[0mMinimum system memory requirement is 2GB!\n"
           exit 1
         }
       elif [[ "$TotalMem1" -le "1384200" || "$TotalMem2" -le "1384200" ]]; then
@@ -598,14 +598,14 @@ function checkSys(){
       yum install epel-release -y
       yum install dnf -y
 # Run dnf update and install components.
-	  dnf install bind-utils curl dnsutils efibootmgr file ipcalc jq net-tools redhat-lsb syslinux wget xz --skip-broken -y
+      dnf install bind-utils curl dnsutils efibootmgr file ipcalc jq net-tools redhat-lsb syslinux wget xz --skip-broken -y
       dnf update -y
 # Oracle Linux 7 doesn't support DNF.
-	elif [[ `grep -i "no package" /root/yum_execute.log` ]]; then
+    elif [[ `grep -i "no package" /root/yum_execute.log` ]]; then
       yum install bind-utils curl dnsutils efibootmgr file ipcalc jq net-tools redhat-lsb syslinux wget xz --skip-broken -y
       yum update -y
     fi
-	rm -rf /root/yum_execute.log
+    rm -rf /root/yum_execute.log
   fi
 }
 
@@ -1352,7 +1352,7 @@ if [[ "$SpikCheckDIST" == '0' ]]; then
 # In some mirror, the value of parameter "DistsList" is "?C=N;O=Dbookworm;bullseye;buster;http:;;wisepoint.jp;product;wpshibb;"
 # The second item in "DistsList" which is splited by ";" is O=Dbookworm.
 # So we need to check whether "DIST" is approximately equal(contains) to "CheckDEB".
-	  [[ "$CheckDEB" =~ "$DIST" ]] && FindDists='1' && break;
+      [[ "$CheckDEB" =~ "$DIST" ]] && FindDists='1' && break;
     done
   [[ "$FindDists" == '0' ]] && {
     echo -ne '\n\033[31mError! \033[0mThe dists version not found, Please check it! \n\n'
