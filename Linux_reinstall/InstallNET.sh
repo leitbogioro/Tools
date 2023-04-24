@@ -1839,7 +1839,7 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
 # Debian/Ubuntu grub1 set end
   elif [[ "$setNetbootXyz" == "1" ]]; then
     grub-mkconfig -o $GRUBDIR/$GRUBFILE >>/dev/null 2>&1
-	grub-set-default "Bootable ISO Image: netboot.xyz" >>/dev/null 2>&1
+    grub-set-default "Bootable ISO Image: netboot.xyz" >>/dev/null 2>&1
     grub-reboot "Bootable ISO Image: netboot.xyz" >>/dev/null 2>&1
   fi
 elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
