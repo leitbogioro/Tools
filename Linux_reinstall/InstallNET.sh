@@ -1160,8 +1160,8 @@ checkDHCP "$CurrentOS" "$CurrentOSVer" "$IPStackType"
 getUserTimezone "/root/timezonelists" "ZGEyMGNhYjhhMWM2NDJlMGE0YmZhMDVmMDZlNzBmN2E=" "ZTNlMjBiN2JjOTE2NGY2YjllNzUzYWU5ZDFjYjdjOTc=" "MWQ2NGViMGQ4ZmNlNGMzYTkxYjNiMTdmZDMxODQwZDc="
 
 [ -n "$tmpWORD" ] && dependence openssl
-[[ -n "$tmpWORD" ]] && myPASSWORD="$(openssl passwd -1 "$tmpWORD")";
-[[ -z "$myPASSWORD" ]] && myPASSWORD='$1$OCy2O5bt$m2N6XMgFUwCn/2PPP114J/';
+[[ -n "$tmpWORD" ]] && myPASSWORD=$(openssl passwd -1 ''$tmpWORD'')
+[[ -z "$myPASSWORD" ]] && myPASSWORD='$1$OCy2O5bt$m2N6XMgFUwCn/2PPP114J/'
 
 tempDisk=`getDisk`
 [ -n "$tempDisk" ] && IncDisk="$tempDisk"
