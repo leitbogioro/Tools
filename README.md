@@ -100,7 +100,7 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**-pwd ""**: you can pre-specify ssh password of system, both Redhat series or Debian series could be supported, **default is 'LeitboGi0ro'**.
+**-pwd ''**: you can pre-specify ssh password of system, both Redhat series or Debian series could be supported, **default is 'LeitboGi0ro'**.
 <br />
 <br />
 
