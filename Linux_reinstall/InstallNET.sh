@@ -1170,18 +1170,16 @@ tempDisk=`getDisk`
 # Get architecture of current os automatically
 ArchName=`uname -m`
 [[ -z "$ArchName" ]] && ArchName=$(echo `hostnamectl status | grep "Architecture" | cut -d':' -f 2`)
-case $ArchName in arm64) VER="arm64";; aarch64) VER="aarch64";; x86|i386|i686) VER="i386";; x86_64) VER="x86_64";; x86-64) VER="x86-64";; amd64) VER="amd64";; *) VER="";; esac
+case $ArchName in arm64) VER="arm64";; aarch64) VER="aarch64";; x86|i386|i686) VER="i386";; x86_64) VER="x86_64";; amd64) VER="amd64";; *) VER="";; esac
 # Exchange architecture name
 if [[ "$linux_relese" == "debian" ]] || [[ "$linux_relese" == "ubuntu" ]]; then
-# In debian 12, the result of "uname -m" is "x86_64";
-# the result of "echo `hostnamectl status | grep "Architecture" | cut -d':' -f 2`" is "x86-64"
-  if [[ "$VER" == "x86_64" ]] || [[ "$VER" == "x86-64" ]]; then
+  if [[ "$VER" == "x86_64" ]]; then
     VER="amd64"
   elif [[ "$VER" == "aarch64" ]]; then
     VER="arm64"
   fi
 elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
-  if [[ "$VER" == "amd64" ]] || [[ "$VER" == "x86-64" ]]; then
+  if [[ "$VER" == "amd64" ]]; then
     VER="x86_64"
   elif [[ "$VER" == "arm64" ]]; then
     VER="aarch64"
