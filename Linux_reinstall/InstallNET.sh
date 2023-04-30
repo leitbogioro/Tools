@@ -697,6 +697,11 @@ function getInterface(){
     done
   else
     for Count in "/etc/network/" "/run/network/"; do
+# In some debian templates like DigitalOcean, there are three directions deposing network configurations:
+# /etc/network/interfaces
+# /etc/network/interfaces.d/50-cloud-init
+# /etc/network/cloud-interfaces-template
+# We should filter the largest file, the correct configuration is just there.
       NetCfgWhole=`grep -wrl "network" | grep -wrl "iface" | grep -wrl "lo" | grep -wrl "inet\|inte6" | grep -wrl "dhcp\|static" $Count* | grep -v "if-*" | grep -v "state" | sort -hr | head -1`
       if [[ "$NetCfgWhole" != "" ]]; then
         NetCfgFile=`echo $NetCfgWhole | awk -F/ '{print $NF}'`
