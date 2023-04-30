@@ -697,7 +697,7 @@ function getInterface(){
     done
   else
     for Count in "/etc/network/" "/run/network/"; do
-      NetCfgWhole=`grep -wrl "network" | grep -wrl "iface" | grep "eth0" | grep -wrl "lo" | grep -wrl "inet\|inte6" | grep -wrl "dhcp\|static" /etc/network/ | grep -v "if-*" | grep -v "state" | sort -hr | head -1`
+      NetCfgWhole=`grep -wrl "network" | grep -wrl "iface" | grep -wrl "lo" | grep -wrl "inet\|inte6" | grep -wrl "dhcp\|static" $Count* | grep -v "if-*" | grep -v "state" | sort -hr | head -1`
       if [[ "$NetCfgWhole" != "" ]]; then
         NetCfgFile=`echo $NetCfgWhole | awk -F/ '{print $NF}'`
         NetCfgDir=`echo $NetCfgWhole | sed "s/$NetCfgFile//g"`
@@ -786,7 +786,7 @@ function checkDHCP(){
   elif [[ "$1" == 'Debian' ]] || [[ "$1" == 'Ubuntu' && "$2" -le "16" ]]; then
 # Debian network configs may be deposited in the following directions.
 # /etc/network/interfaces or /etc/network/interfaces.d/interface or /run/network/interfaces.d/interface
-	if [[ "$3" == "IPv4Stack" ]]; then
+    if [[ "$3" == "IPv4Stack" ]]; then
       Network6Config="isDHCP"
       [[ `grep -c "iface $interface inet static" $NetCfgDir/$NetCfgFile` -ge "1" ]] && Network4Config="isStatic" || Network4Config="isDHCP"
     elif [[ "$3" == "BioStack" ]]; then
