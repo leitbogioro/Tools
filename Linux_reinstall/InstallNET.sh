@@ -696,8 +696,8 @@ function getInterface(){
       [[ -n `grep -wlr "BOOTPROTO=*\|DEVICE=*\|ONBOOT=*\|DEFROUTE=*\|id=*\|\[connection\]\|interface-name=*\|method=*" $NetCfgDir*` ]] && break
     done
   else
-    for Count in "/run/network/" "/etc/network/"; do
-      NetCfgWhole=`grep -wrl "network" | grep -wrl "iface" | grep -wrl "lo" | grep -wrl "inet\|inte6" | grep -wrl "dhcp\|static" $Count* | grep -v "if-*" | grep -v "state"`
+    for Count in "/etc/network/" "/run/network/"; do
+      NetCfgWhole=`grep -wrl "network" | grep -wrl "iface" | grep "eth0" | grep -wrl "lo" | grep -wrl "inet\|inte6" | grep -wrl "dhcp\|static" /etc/network/ | grep -v "if-*" | grep -v "state" | sort -hr | head -1`
       if [[ "$NetCfgWhole" != "" ]]; then
         NetCfgFile=`echo $NetCfgWhole | awk -F/ '{print $NF}'`
         NetCfgDir=`echo $NetCfgWhole | sed "s/$NetCfgFile//g"`
@@ -786,7 +786,7 @@ function checkDHCP(){
   elif [[ "$1" == 'Debian' ]] || [[ "$1" == 'Ubuntu' && "$2" -le "16" ]]; then
 # Debian network configs may be deposited in the following directions.
 # /etc/network/interfaces or /etc/network/interfaces.d/interface or /run/network/interfaces.d/interface
-    if [[ "$3" == "IPv4Stack" ]]; then
+	if [[ "$3" == "IPv4Stack" ]]; then
       Network6Config="isDHCP"
       [[ `grep -c "iface $interface inet static" $NetCfgDir/$NetCfgFile` -ge "1" ]] && Network4Config="isStatic" || Network4Config="isDHCP"
     elif [[ "$3" == "BioStack" ]]; then
@@ -818,7 +818,7 @@ function checkDHCP(){
   [[ "$tmpDHCP" == "static" || "$tmpDHCP" == "manual" || "$tmpDHCP" == "none" || "$tmpDHCP" == "false" || "$tmpDHCP" == "no" || "$tmpDHCP" == "0" ]] && {
     Network4Config="isStatic"
     Network6Config="isStatic"
-  } 
+  }
 }
 
 function DebianModifiedPreseed(){
@@ -831,7 +831,7 @@ function DebianModifiedPreseed(){
 # $1 is "in-target"
     AptUpdating="$1 apt update;"
 # pre-install some commonly used software.
-    InstallComponents="$1 apt install sudo apt-transport-https bc binutils ca-certificates cron curl debian-keyring debian-archive-keyring dnsutils dosfstools efibootmgr ethtool fail2ban file figlet iptables iptables-persistent iputils-tracepath jq lrzsz libnet-ifconfig-wrapper-perl lsof libnss3 lsb-release mtr-tiny mlocate netcat-openbsd net-tools ncdu nmap ntfs-3g parted psmisc python3 socat sosreport subnetcalc tcpdump telnet traceroute unzip unrar-free uuid-runtime vim vim-gtk3 wget xz-utils -y;"
+    InstallComponents="$1 apt install sudo apt-transport-https bc binutils ca-certificates cron curl debian-keyring debian-archive-keyring dnsutils dosfstools dpkg efibootmgr ethtool fail2ban file figlet iptables iptables-persistent iputils-tracepath jq lrzsz libnet-ifconfig-wrapper-perl lsof libnss3 lsb-release mtr-tiny mlocate netcat-openbsd net-tools ncdu nmap ntfs-3g parted psmisc python3 socat sosreport subnetcalc tcpdump telnet traceroute unzip unrar-free uuid-runtime vim vim-gtk3 wget xz-utils -y;"
 # In debian 9 and former, some certificates are expired.
     DisableCertExpiredCheck="$1 sed -i '/^mozilla\/DST_Root_CA_X3/s/^/!/' /etc/ca-certificates.conf; $1 update-ca-certificates -f;"
     if [[ "$IsCN" == "cn" ]]; then
