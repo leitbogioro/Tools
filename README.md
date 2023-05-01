@@ -24,7 +24,7 @@ If you need to add other parameters, version number must be assigned!
 <pre><code>bash InstallNET.sh -almalinux</code></pre>
 ### RockyLinux 9
 <pre><code>bash InstallNET.sh -rockylinux</code></pre>
-### Fedora 37
+### Fedora 38
 <pre><code>bash InstallNET.sh -fedora</code></pre>
 ### Ubuntu 20.04
 <pre><code>bash InstallNET.sh -ubuntu</code></pre>
