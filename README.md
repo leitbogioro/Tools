@@ -42,7 +42,7 @@ If you need to add other parameters, version number must be assigned!
 <br />
 <br />
 
-**-kali rolling/dev/experimental** : Kali Rolling, Development and Experimental
+**-kali rolling/dev/experimental** : Kali Rolling, Development and Experimental, "Kali Rolling" is most recommend obviously.
 <br />
 <br />
 
