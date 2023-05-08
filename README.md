@@ -9,7 +9,7 @@ Something about scripts
 ## Download:
 <pre><code>wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh</code></pre>
 
-## Dependences:
+## Dependences && Supporting the following OS list to install to the OS that script supported:
 Debian series(Debian / Ubuntu / Kali):
 <pre><code>apt update -y</code></pre>
 <pre><code>apt install wget -y</code></pre>
