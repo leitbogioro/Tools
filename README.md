@@ -39,6 +39,10 @@ If you need to add other parameters, version number must be assigned!
 <br />
 <br />
 
+**-kali rolling/dev/experimental** : Kali Rolling, Development and Experimental
+<br />
+<br />
+
 **-centos 7/8/9-stream**: CentOS 7 and later
 <br />
 <br />
@@ -51,7 +55,7 @@ If you need to add other parameters, version number must be assigned!
 <br />
 <br />
 
-**-fedora 34/35/36/37**: Fedora 34 and later
+**-fedora 36/37/38**: Fedora 36 and later
 <br />
 <br />
 
@@ -66,6 +70,11 @@ If you need to add other parameters, version number must be assigned!
 For Debian, official recommend mirror lists are here:
 <br />
 <pre><code>https://www.debian.org/mirror/list.html</code></pre>
+<br />
+
+For Kali, official recommend mirror lists are here:
+<br />
+<pre><code>https://http.kali.org/README.mirrorlist</code></pre>
 <br />
 
 For CentOS 7 and 8-stream, official recommend mirror lists are here:
