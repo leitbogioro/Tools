@@ -422,6 +422,15 @@ function getDisk() {
   [ -n "$disks" ] || echo ""
   echo "$disks" |grep -q "/dev"
   [ $? -eq 0 ] && echo "$disks" || echo "/dev/$disks"
+  AllDisks=""
+  for Count in `lsblk | sed 's/[[:space:]]*$//g' | grep "disk$" | cut -d' ' -f1 | grep -v "fd[0-9]*\|sr[0-9]*"`; do
+    AllDisks+="/dev/$Count "
+  done
+  [[ "$AllDisks" == "" ]] && {
+    for Count in `lsblk | sed 's/[[:space:]]*$//g' | grep "disk" | grep -i "g\|t\|p\|e\|z\|y" | cut -d' ' -f1`; do
+      AllDisks+="/dev/$Count "
+    done
+  }
 }
 
 function diskType() {
@@ -1180,9 +1189,14 @@ d-i mdadm/boot_degraded boolean true"`
 
 function DebianPreseedProcess() {
 # Default to make a GPT partition to support 3TB hard drive or larger.
-  FormatDisk=`echo -e "d-i partman/mount_style select uuid\nd-i partman-auto/method string regular\nd-i partman-auto/init_automatically_partition select Guided - use entire disk\nd-i partman-auto/choose_recipe select All files in one partition (recommended for new users)\nd-i partman-basicfilesystems/choose_label string gpt\nd-i partman-basicfilesystems/default_label string gpt\nd-i partman-partitioning/choose_label string gpt\nd-i partman-partitioning/default_label string gpt\nd-i partman/choose_label string gpt\nd-i partman/default_label string gpt"`
+# To remove LVM VGM PVM force automatically:
+# https://serverfault.com/questions/571363/unable-to-automatically-remove-lvm-data
+# To part all disks:
+# https://unix.stackexchange.com/questions/341253/using-d-i-partman-recipe-strings
+  FormatDisk=`echo -e "d-i partman/mount_style select uuid\nd-i partman-auto/disk string ${AllDisks}\nd-i partman-auto/method string regular\nd-i partman-auto/init_automatically_partition select Guided - use entire disk\nd-i partman-auto/choose_recipe select All files in one partition (recommended for new users)\nd-i partman-basicfilesystems/choose_label string gpt\nd-i partman-basicfilesystems/default_label string gpt\nd-i partman-partitioning/choose_label string gpt\nd-i partman-partitioning/default_label string gpt\nd-i partman/choose_label string gpt\nd-i partman/default_label string gpt"`
 # Default disk format recipe:
 # d-i partman/mount_style select uuid
+# d-i partman-auto/disk string ${AllDisks}
 # d-i partman-auto/method string regular
 # d-i partman-auto/init_automatically_partition select Guided - use entire disk
 # d-i partman-auto/choose_recipe select All files in one partition (recommended for new users)
@@ -1256,7 +1270,10 @@ d-i clock-setup/ntp-server string ntp.nict.jp
 
 ### Get harddisk name and Windows DD installation set up
 d-i preseed/early_command string anna-install libfuse2-udeb fuse-udeb ntfs-3g-udeb libcrypto1.1-udeb libpcre2-8-0-udeb libssl1.1-udeb libuuid1-udeb zlib1g-udeb wget-udeb
-d-i partman/early_command string [[ -n "\$(blkid -t TYPE='vfat' -o device)" ]] && umount "\$(blkid -t TYPE='vfat' -o device)"; \
+d-i partman/early_command string lvremove --select all -ff -y; \
+vgremove --select all -ff -y; \
+pvremove /dev/* -ff -y; \
+[[ -n "\$(blkid -t TYPE='vfat' -o device)" ]] && umount "\$(blkid -t TYPE='vfat' -o device)"; \
 debconf-set partman-auto/disk "\$(list-devices disk | head -n1)"; \
 wget -qO- '$DDURL' | $DEC_CMD | /bin/dd of=\$(list-devices disk | head -n1); \
 mount.ntfs-3g \$(list-devices partition | head -n1) /mnt; \
@@ -1291,7 +1308,7 @@ popularity-contest popularity-contest/participate boolean false
 
 ### Grub
 d-i grub-installer/only_debian boolean true
-d-i grub-installer/bootdev string $IncDisk
+d-i grub-installer/bootdev string ${IncDisk}
 d-i grub-installer/force-efi-extra-removable boolean true
 d-i debian-installer/add-kernel-opts string net.ifnames=0 biosdevname=0 ipv6.disable=1
 
@@ -1358,7 +1375,7 @@ dependence awk,basename,cat,cpio,curl,cut,dig,dirname,file,find,grep,gzip,lsblk,
 [[ "$ddMode" == '1' ]] && {
   dependence iconv
   linux_relese='debian'
-  tmpDIST='bookworm'
+  tmpDIST='bullseye'
   tmpVER=''
 }
 
@@ -1496,7 +1513,7 @@ fi
 }
 
 [[ -z "$tmpDIST" ]] && {
-  [ "$Relese" == 'Debian' ] && tmpDIST='12'
+  [ "$Relese" == 'Debian' ] && tmpDIST='11'
   [ "$Relese" == 'Kali' ] && tmpDIST='rolling'
   [ "$Relese" == 'Ubuntu' ] && tmpDIST='20.04'
   [ "$Relese" == 'CentOS' ] && tmpDIST='9'
@@ -1519,7 +1536,7 @@ if [[ -n "$tmpDIST" ]]; then
         [[ "$isDigital" == '9' ]] && DIST='stretch'
         [[ "$isDigital" == '10' ]] && DIST='buster'
         [[ "$isDigital" == '11' ]] && DIST='bullseye'
-        [[ "$isDigital" == '12' ]] && DIST='bookworm'
+        # [[ "$isDigital" == '12' ]] && DIST='bookworm'
         # [[ "$isDigital" == '13' ]] && DIST='trixie'
         # [[ "$isDigital" == '14' ]] && DIST='forky'
       }
