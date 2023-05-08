@@ -1,7 +1,7 @@
 #!/bin/bash
 ##
 ## License: GPL
-## It can reinstall Debian, Ubuntu, CentOS, AlmaLinux, RockyLinux, Fedora linux system with network.
+## It can reinstall Debian, Ubuntu, Kali, CentOS, AlmaLinux, RockyLinux, Fedora linux system via network automatically without any other external measures and manual operations.
 ## Default root password: LeitboGi0ro
 ## Written By MoeClub.org
 ## Blog: https://moeclub.org
@@ -14,6 +14,13 @@
 ## Modified By Leitbogioro
 ## Blog: https://www.zhihu.com/column/originaltechnic
 
+# color
+blue='\033[0;34m'
+yellow='\033[0;33m'
+green='\033[0;32m'
+red='\033[0;31m'
+plain='\033[0m'
+
 export tmpVER=''
 export tmpDIST=''
 export tmpURL=''
@@ -24,11 +31,11 @@ export TimeZone=''
 export ipAddr=''
 export ipMask=''
 export ipGate=''
-export ipDNS='1.0.0.1'
+export ipDNS='1.0.0.1 8.8.4.4'
 export ip6Addr=''
 export ip6Mask=''
 export ip6Gate=''
-export ip6DNS='2606:4700:4700::1001'
+export ip6DNS='2606:4700:4700::1001 2001:4860:4860::8844'
 export IncDisk='default'
 export interface=''
 export interfaceSelect=''
@@ -76,6 +83,12 @@ while [[ $# -ge 1 ]]; do
     -ubuntu|-Ubuntu)
       shift
       Relese='Ubuntu'
+      tmpDIST="$1"
+      shift
+      ;;
+    -kali|-Kali)
+      shift
+      Relese='Kali'
       tmpDIST="$1"
       shift
       ;;
@@ -230,16 +243,17 @@ while [[ $# -ge 1 ]]; do
       ;;
     *)
       if [[ "$1" != 'error' ]]; then echo -ne "\nInvaild option: '$1'\n\n"; fi
-      echo -ne " Usage:\n\tbash $(basename $0)\t-debian       [\033[33m\033[04mdists-name\033[0m]\n\t\t\t\t-ubuntu       [\033[04mdists-name\033[0m]\n\t\t\t\t-centos       [\033[04mdists-name\033[0m]\n\t\t\t\t-rockylinux   [\033[04mdists-name\033[0m]\n\t\t\t\t-almalinux    [\033[04mdists-name\033[0m]\n\t\t\t\t-fedora       [\033[04mdists-name\033[0m]\n\t\t\t\t-v/--ver      [32/i386|64/\033[33m\033[04mamd64\033[0m|arm/\033[33m\033[04marm64\033[0m] [\033[33m\033[04mdists-verison\033[0m]\n\t\t\t\t--ip-addr/--ip-gate/--ip-mask\n\t\t\t\t-apt/-yum/-mirror\n\t\t\t\t-dd/--image\n\t\t\t\t-pwd [linux password]\n\t\t\t\t-port [linux ssh port] [only support debian or ubuntu]\n"
-      exit 1;
+      echo -ne " Usage:\n\tbash $(basename $0)\t\t\t-debian       [\033[33m\033[04mdists-name\033[0m]\n\t\t\t\t-ubuntu       [\033[04mdists-name\033[0m]\n\t\t\t\t-kali         [\033[04mdists-name\033[0m]\n\t\t\t\t-centos       [\033[04mdists-name\033[0m]\n\t\t\t\t-rockylinux   [\033[04mdists-name\033[0m]\n\t\t\t\t-almalinux    [\033[04mdists-name\033[0m]\n\t\t\t\t-fedora       [\033[04mdists-name\033[0m]\n\t\t\t\t-v/--ver      [32/i386|64/\033[33m\033[04mamd64\033[0m|arm/\033[33m\033[04marm64\033[0m] [\033[33m\033[04mdists-verison\033[0m]\n\t\t\t\t--ip-addr/--ip-gate/--ip-mask\n\t\t\t\t-apt/-yum/-mirror\n\t\t\t\t-dd/--image\n\t\t\t\t-pwd          [linux password]\n\t\t\t\t-port         [linux ssh port]\n"
+      exit 1
       ;;
     esac
   done
 
-[[ "$EUID" -ne '0' ]] && echo -ne "\n\033[31mError: \033[0mThis script must be run as root!\n" && exit 1;
+# Check Root
+[[ "$EUID" -ne '0' || $(id -u) != '0' ]] && echo -ne "\n[${red}Error${plain}] This script must be executed as root!\n\nTry to type:\n${yellow}sudo -s\n${plain}\nAfter entering the password, switch to root dir to execute this script:\n${yellow}cd ~${plain}\n\n" && exit 1
 
 # Ping delay to YouTube($1) and Instagram($2) and Twitter($3), support both ipv4 and ipv6, $4 is $IPStackType
-function checkCN(){
+function checkCN() {
   for TestUrl in "$1" "$2" "$3"; do
     IPv4PingDelay=`ping -4 -c 2 -w 2 "$TestUrl" | grep rtt | cut -d'/' -f5 | awk -F'.' '{print $NF}' | sed -n '/^[0-9]\+\(\.[0-9]\+\)\?$/p'`
     IPv6PingDelay=`ping -6 -c 2 -w 2 "$TestUrl" | grep rtt | cut -d'/' -f5 | awk -F'.' '{print $NF}' | sed -n '/^[0-9]\+\(\.[0-9]\+\)\?$/p'`
@@ -272,15 +286,28 @@ function checkCN(){
   if [[ "$IsCN" == "cn" ]]; then
     TimeZone="Asia/Shanghai"
     if [[ "$4" == "BioStack" || "$4" == "IPv6Stack" ]]; then
-      ipDNS="101.6.6.6"
-      ip6DNS="2001:da8::666"
+      ipDNS="202.38.93.95 101.6.6.6"
+      ip6DNS="2001:da8:8000:1:202:120:2:101 2001:da8::666"
     else
-      ipDNS="101.6.6.6"
+      ipDNS="202.38.93.95 101.6.6.6"
     fi
   fi
 }
 
-function dependence(){
+# "$1" is "$ipDNS" or "$ip6DNS"
+# The delimiter of several dns settings in automatic response file of Debian is " "(space), for RedHat, it's ","(comma).
+# Reference: https://lists.debian.org/debian-user/2009/10/msg00149.html
+#            https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/installation_guide/sect-kickstart-syntax
+function checkDNS() {
+  if [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then   
+    tmpDNS=`echo $1 | sed 's/ /,/g'`
+    echo "$tmpDNS"
+  else
+    echo "$1"
+  fi
+}
+
+function dependence() {
   Full='0';
   for BIN_DEP in `echo "$1" |sed 's/,/\n/g'`
     do
@@ -304,21 +331,22 @@ function dependence(){
       fi
     done
   if [ "$Full" == '1' ]; then
-    echo -ne "\n\033[31mError! \033[0mPlease use '\033[33mapt-get\033[0m' or '\033[33myum\033[0m' install it.\n\n\n"
+    echo -ne "\n\033[31mError! \033[0mPlease use '\033[33mapt-get\033[0m' or '\033[33myum / dnf\033[0m' install it.\n\n\n"
     exit 1;
   fi
 }
 
-function selectMirror(){
+function selectMirror() {
   [ $# -ge 3 ] || exit 1
   Relese=$(echo "$1" |sed -r 's/(.*)/\L\1/')
   DIST=$(echo "$2" |sed 's/\ //g' |sed -r 's/(.*)/\L\1/')
   VER=$(echo "$3" |sed 's/\ //g' |sed -r 's/(.*)/\L\1/')
   New=$(echo "$4" |sed 's/\ //g')
   [ -n "$Relese" ] && [ -n "$DIST" ] && [ -n "$VER" ] || exit 1
-  if [ "$Relese" == "debian" ] || [ "$Relese" == "ubuntu" ]; then
+  if [ "$Relese" == "debian" ] || [ "$Relese" == "ubuntu" ] || [ "$Relese" == "kali" ]; then
     [ "$DIST" == "focal" ] && legacy="legacy-" || legacy=""
     TEMP="SUB_MIRROR/dists/${DIST}/main/installer-${VER}/current/${legacy}images/netboot/${Relese}-installer/${VER}/initrd.gz"
+    [[ "$Relese" == "kali" ]] && TEMP="SUB_MIRROR/dists/${DIST}/main/installer-${VER}/current/images/netboot/debian-installer/${VER}/initrd.gz"
   elif [ "$Relese" == "centos" ] || [ "$Relese" == "rockylinux" ] || [ "$Relese" == "almalinux" ]; then
     if [ "$Relese" == "centos" ] && [[ "$RedHatSeries" -le "7" ]]; then
       TEMP="SUB_MIRROR/${DIST}/os/${VER}/images/pxeboot/initrd.img"
@@ -332,9 +360,9 @@ function selectMirror(){
   mirrorStatus=0
   declare -A MirrorBackup
   if [[ "$IsCN" == "cn" ]]; then
-    MirrorBackup=(["debian0"]="" ["debian1"]="http://mirror.nju.edu.cn/debian" ["debian2"]="http://mirrors.hit.edu.cn/debian" ["debian3"]="https://mirrors.aliyun.com/debian-archive/debian" ["ubuntu0"]="" ["ubuntu1"]="https://mirrors.ustc.edu.cn/ubuntu" ["ubuntu2"]="http://mirrors.xjtu.edu.cn/ubuntu" ["centos0"]="" ["centos1"]="https://mirrors.ustc.edu.cn/centos-stream" ["centos2"]="https://mirrors.tuna.tsinghua.edu.cn/centos" ["centos3"]="http://mirror.nju.edu.cn/centos-altarch" ["centos4"]="https://mirrors.tuna.tsinghua.edu.cn/centos-vault" ["fedora0"]="" ["fedora1"]="https://mirrors.bfsu.edu.cn/fedora" ["fedora2"]="https://mirrors.tuna.tsinghua.edu.cn/fedora" ["rockylinux0"]="" ["rockylinux1"]="http://mirror.nju.edu.cn/rocky" ["rockylinux2"]="http://mirrors.sdu.edu.cn/rocky" ["almalinux0"]="" ["almalinux1"]="https://mirror.sjtu.edu.cn/almalinux" ["almalinux2"]="http://mirrors.neusoft.edu.cn/almalinux")
+    MirrorBackup=(["debian0"]="" ["debian1"]="http://mirror.nju.edu.cn/debian" ["debian2"]="http://mirrors.hit.edu.cn/debian" ["debian3"]="https://mirrors.aliyun.com/debian-archive/debian" ["ubuntu0"]="" ["ubuntu1"]="https://mirrors.ustc.edu.cn/ubuntu" ["ubuntu2"]="http://mirrors.xjtu.edu.cn/ubuntu" ["kali0"]="" ["kali1"]="https://mirrors.tuna.tsinghua.edu.cn/kali" ["kali2"]="http://mirrors.zju.edu.cn/kali" ["centos0"]="" ["centos1"]="https://mirrors.ustc.edu.cn/centos-stream" ["centos2"]="https://mirrors.tuna.tsinghua.edu.cn/centos" ["centos3"]="http://mirror.nju.edu.cn/centos-altarch" ["centos4"]="https://mirrors.tuna.tsinghua.edu.cn/centos-vault" ["fedora0"]="" ["fedora1"]="https://mirrors.bfsu.edu.cn/fedora" ["fedora2"]="https://mirrors.tuna.tsinghua.edu.cn/fedora" ["rockylinux0"]="" ["rockylinux1"]="http://mirror.nju.edu.cn/rocky" ["rockylinux2"]="http://mirrors.sdu.edu.cn/rocky" ["almalinux0"]="" ["almalinux1"]="https://mirror.sjtu.edu.cn/almalinux" ["almalinux2"]="http://mirrors.neusoft.edu.cn/almalinux")
   else
-    MirrorBackup=(["debian0"]="" ["debian1"]="http://deb.debian.org/debian" ["debian2"]="http://ftp.kddilabs.jp/pub/debian" ["debian3"]="http://archive.debian.org/debian" ["ubuntu0"]="" ["ubuntu1"]="http://archive.ubuntu.com/ubuntu" ["ubuntu2"]="http://ports.ubuntu.com" ["centos0"]="" ["centos1"]="http://mirror.centos.org/centos" ["centos2"]="http://mirror.stream.centos.org" ["centos3"]="http://mirror.math.princeton.edu/pub/centos-altarch" ["centos4"]="http://vault.centos.org" ["fedora0"]="" ["fedora1"]="https://download-ib01.fedoraproject.org/pub/fedora/linux" ["fedora2"]="https://download-cc-rdu01.fedoraproject.org/pub/fedora/linux" ["rockylinux0"]="" ["rockylinux1"]="http://download.rockylinux.org/pub/rocky" ["rockylinux2"]="http://ftp.riken.jp/Linux/rocky" ["almalinux0"]="" ["almalinux1"]="http://repo.almalinux.org/almalinux" ["almalinux2"]="http://ftp.iij.ad.jp/pub/linux/almalinux")
+    MirrorBackup=(["debian0"]="" ["debian1"]="http://deb.debian.org/debian" ["debian2"]="http://ftp.kddilabs.jp/pub/debian" ["debian3"]="http://archive.debian.org/debian" ["ubuntu0"]="" ["ubuntu1"]="http://archive.ubuntu.com/ubuntu" ["ubuntu2"]="http://ports.ubuntu.com" ["kali0"]="" ["kali1"]="http://http.kali.org/kali" ["kali2"]="https://ftp.riken.jp/Linux/kali" ["centos0"]="" ["centos1"]="http://mirror.centos.org/centos" ["centos2"]="http://mirror.stream.centos.org" ["centos3"]="http://mirror.math.princeton.edu/pub/centos-altarch" ["centos4"]="http://vault.centos.org" ["fedora0"]="" ["fedora1"]="https://download-ib01.fedoraproject.org/pub/fedora/linux" ["fedora2"]="https://download-cc-rdu01.fedoraproject.org/pub/fedora/linux" ["rockylinux0"]="" ["rockylinux1"]="http://download.rockylinux.org/pub/rocky" ["rockylinux2"]="http://ftp.riken.jp/Linux/rocky" ["almalinux0"]="" ["almalinux1"]="http://repo.almalinux.org/almalinux" ["almalinux2"]="http://ftp.iij.ad.jp/pub/linux/almalinux")
   fi
   echo "$New" | grep -q '^http://\|^https://\|^ftp://' && MirrorBackup[${Relese}0]="${New%*/}"
   for mirror in $(echo "${!MirrorBackup[@]}" |sed 's/\ /\n/g' |sort -n |grep "^$Relese"); do
@@ -387,19 +415,21 @@ function ipv4Calc() {
   echo -e "Network:   $tmpNetwork\nBroadcast: $tmpBroadcast\nFirstIP:   $FirstIP\nLastIP:    $LastIP\n"
 }
 
-function getDisk(){
-  disks=`lsblk | sed 's/[[:space:]]*$//g' |grep "disk$" |cut -d' ' -f1 |grep -v "fd[0-9]*\|sr[0-9]*" |head -n1`
+function getDisk() {
+  disks=`lsblk | sed 's/[[:space:]]*$//g' | grep "disk$" | cut -d' ' -f1 | grep -v "fd[0-9]*\|sr[0-9]*" | head -n1`
+  [[ "$disks" == "" ]] && disks=`lsblk | sed 's/[[:space:]]*$//g' | grep "disk" | grep -i "g\|t\|p\|e\|z\|y" | cut -d' ' -f1 | head -1`
+  echo "${disks: -1}" | [[ -n "`sed -n '/^[0-9][0-9]*$/p'`" ]] && disks=`echo "$disks" | sed 's/[0-9]//g'`
   [ -n "$disks" ] || echo ""
   echo "$disks" |grep -q "/dev"
   [ $? -eq 0 ] && echo "$disks" || echo "/dev/$disks"
 }
 
-function diskType(){
+function diskType() {
   echo `udevadm info --query all "$1" 2>/dev/null |grep 'ID_PART_TABLE_TYPE' |cut -d'=' -f2`
 }
 
 # $1 is timezone checkfile direction, $2 $3 $4 are api keys.
-function getUserTimezone(){
+function getUserTimezone() {
   if [[ "$TimeZone" == "" ]]; then
     GuestIP=`who am i | awk '{print $5}' | sed 's/(//g' | sed 's/)//g'`
     for Count in "$2" "$3" "$4"; do
@@ -416,7 +446,7 @@ function getUserTimezone(){
   fi
 }
 
-function checkEfi(){
+function checkEfi() {
   EfiStatus=`efibootmgr l | head -n 1`
   EfiVars=""
   for Count in "$1" "$2" "$3" "$4"; do
@@ -433,7 +463,7 @@ function checkEfi(){
   fi
 }
 
-function checkGrub(){
+function checkGrub() {
   GRUBDIR=""
   GRUBFILE=""
   for Count in "$1" "$2" "$3"; do
@@ -469,13 +499,12 @@ function checkGrub(){
 }
 
 # $1 is $linux_relese, $2 is $RedHatSeries
-function checkMem(){
+function checkMem() {
   TotalMem1=$(cat /proc/meminfo | grep "^MemTotal:" | sed 's/kb//i' | grep -o "[0-9]*" | awk -F' ' '{print $NF}')
   TotalMem2=$(free -k | grep -wi "mem*" | awk '{printf $2}')
-# In any servers that total memory below 384mb install any OS, the installation will be failed.
-  [[ "$TotalMem1" -le "368000" || "$TotalMem2" -le "368000" ]] && {
-    echo -ne "\n\033[31mError: \033[0mMinimum system memory requirement is 512MB!\n"
-    exit 1
+# In any servers that total memory below 512mb install any OS, the low memory installation will be force enabled.
+  [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ "$linux_relese" == 'kali' ]] && {
+    [[ "$TotalMem1" -le "450560" || "$TotalMem2" -le "450560" ]] && return 1 || return 0
   }
 # Without the function of OS re-installation templates in control panel which provided by cloud companies(many companies even have not).
 # A independent VPS with only one hard drive is lack of the secondary hard drive to format and copy new OS file to main hard drive.
@@ -493,32 +522,40 @@ function checkMem(){
     if [[ "$1" == 'rockylinux' || "$1" == 'almalinux' || "$1" == 'centos' ]]; then
       if [[ "$TotalMem1" -le "2406400" || "$TotalMem2" -le "2406400" ]]; then
         if [[ "$2" == "8" ]] || [[ "$1" == 'centos' && "$2" == "9" ]]; then
-          echo -ne "\n\033[31mError: \033[0mMinimum system memory requirement is 2.5GB!\n"
+          echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 2.5GB!\n"
           exit 1
         fi
       elif [[ "$TotalMem1" -le "1740800" || "$TotalMem2" -le "1740800" ]]; then
         [[ "$2" -ge "9" ]] && {
-          echo -ne "\n\033[31mError: \033[0mMinimum system memory requirement is 2GB!\n"
+          echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 2GB!\n"
           exit 1
         }
       elif [[ "$TotalMem1" -le "1384200" || "$TotalMem2" -le "1384200" ]]; then
         [[ "$2" == "7" ]] && {
-          echo -ne "\n\033[31mError: \033[0mMinimum system memory requirement is 1.5GB!\n"
+          echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 1.5GB!\n"
           exit 1
         }
       fi
     elif [[ "$1" == 'fedora' ]]; then
       if [[ "$TotalMem1" -le "1740800" || "$TotalMem2" -le "1740800" ]]; then
-        echo -ne "\n\033[31mError: \033[0mMinimum system memory requirement is 2GB!\n"
+        echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 2GB!\n"
         exit 1
       fi
     fi
   }
 }
 
-function checkSys(){
+function checkVirt() {
+  virtType=""
+  for Count in $(dmidecode -s system-manufacturer | awk '{print $1}' | sed 's/[A-Z]/\l&/g') $(systemd-detect-virt | sed 's/[A-Z]/\l&/g') $(lscpu | grep -i "hypervisor vendor" | cut -d ':' -f 2 | sed 's/^[ \t]*//g' | sed 's/[A-Z]/\l&/g'); do
+    virtType+="$Count"
+  done
+}
+
+function checkSys() {
   apt update -y
   apt install lsb-release -y
+  yum install redhat-lsb -y
   OsLsb=`lsb_release -d | awk '{print$2}'`
   
   CurrentOSVer=`cat /etc/os-release | grep -w "VERSION_ID=*" | awk -F '=' '{print $2}' | sed 's/\"//g' | cut -d'.' -f 1`
@@ -531,36 +568,47 @@ function checkSys(){
   DebianRelease=""
   IsUbuntu=`uname -a | grep -i "ubuntu"`
   IsDebian=`uname -a | grep -i "debian"`
+  IsKali=`uname -a | grep -i "kali"`
   for Count in `cat /etc/os-release | grep -w "ID=*" | awk -F '=' '{print $2}'` `cat /etc/issue | awk '{print $1}'` "$OsLsb"; do
     [[ -n "$Count" ]] && DebianRelease=`echo -e "$Count"`"$DebianRelease"
   done
   
-  if [[ `echo "$RedHatRelease" | grep -i "centos"` != "" ]]; then
+  if [[ `echo "$RedHatRelease" | grep -i 'centos'` != "" ]]; then
     CurrentOS="CentOS"
-  elif [[ `echo "$RedHatRelease" | grep -i "almalinux"` != "" ]]; then
+  elif [[ `echo "$RedHatRelease" | grep -i 'alma'` != "" ]]; then
     CurrentOS="AlmaLinux"
-  elif [[ `echo "$RedHatRelease" | grep -i "rocky"` != "" ]]; then
+  elif [[ `echo "$RedHatRelease" | grep -i 'rocky'` != "" ]]; then
     CurrentOS="RockyLinux"
-  elif [[ `echo "$RedHatRelease" | grep -i "fedora"` != "" ]]; then
+  elif [[ `echo "$RedHatRelease" | grep -i 'fedora'` != "" ]]; then
     CurrentOS="Fedora"
-  elif [[ `echo "$RedHatRelease" | grep -i "virtuozzo"` != "" ]]; then
+  elif [[ `echo "$RedHatRelease" | grep -i 'virtuozzo'` != "" ]]; then
     CurrentOS="Vzlinux"
   elif [[ `echo "$RedHatRelease" | grep -i 'ol\|oracle'` != "" ]]; then
     CurrentOS="OracleLinux"
-  elif [[ `echo "$RedHatRelease" | grep -i 'opencloudos'` != "" ]]; then
+  elif [[ `echo "$RedHatRelease" | grep -i 'opencloud'` != "" ]]; then
     CurrentOS="OpenCloudOS"
-  elif [[ `echo "$RedHatRelease" | grep -i 'alibaba\|aliyun'` != "" ]]; then
+  elif [[ `echo "$RedHatRelease" | grep -i 'alibaba\|alinux\|aliyun'` != "" ]]; then
     CurrentOS="AlibabaCloudLinux"
+  elif [[ `echo "$RedHatRelease" | grep -i 'amazon\|amzn'` != "" ]]; then
+    CurrentOS="AmazonLinux"
+    amazon-linux-extras install epel -y
+  elif [[ `echo "$RedHatRelease" | grep -i 'red\|rhel'` != "" ]]; then
+    CurrentOS="RedHatEnterpriseLinux"
+  elif [[ `echo "$RedHatRelease" | grep -i 'anolis'` != "" ]]; then
+    CurrentOS="OpenAnolis"
   elif [[ `echo "$RedHatRelease" | grep -i 'scientific'` != "" ]]; then
     CurrentOS="ScientificLinux"
-  elif [[ "$IsUbuntu" ]] || [[ `echo "$DebianRelease" | grep -i "ubuntu"` != "" ]]; then
+  elif [[ "$IsUbuntu" ]] || [[ `echo "$DebianRelease" | grep -i 'ubuntu'` != "" ]]; then
     CurrentOS="Ubuntu"
     CurrentOSVer=`lsb_release -r | awk '{print$2}' | cut -d'.' -f1`
-  elif [[ "$IsDebian" ]] || [[ `echo "$DebianRelease" | grep -i "debian"` != "" ]]; then
+  elif [[ "$IsDebian" ]] || [[ `echo "$DebianRelease" | grep -i 'debian'` != "" ]]; then
     CurrentOS="Debian"
     CurrentOSVer=`lsb_release -r | awk '{print$2}' | cut -d'.' -f1`
+  elif [[ "$IsKali" ]] || [[ `echo "$DebianRelease" | grep -i 'kali'` != "" ]]; then
+    CurrentOS="Kali"
+    CurrentOSVer=`lsb_release -r | awk '{print$2}' | cut -d'.' -f1`
   else
-    echo -e "Does't support your system!\n"
+    echo -ne "\n[${red}Error${plain}] Does't support your system!\n"
     exit 1
   fi
 # Don't support Redhat like linux OS under 6 version.
@@ -570,7 +618,7 @@ function checkSys(){
   fi
 
 # Debian like linux OS necessary components.
-  apt install curl dnsutils efibootmgr file net-tools subnetcalc jq wget xz-utils -y
+  apt install curl dnsutils efibootmgr file jq net-tools subnetcalc tuned wget xz-utils -y
 
 # Redhat like Linux OS prefer to use dnf instead of yum because former has a higher execute efficiency.
   yum install epel-release -y
@@ -580,7 +628,7 @@ function checkSys(){
 # Reference: https://anatolinicolae.com/failed-loading-plugin-osmsplugin-no-module-named-librepo/
     [[ "$CurrentOS" == "CentOS" && "$CurrentOSVer" == "8" ]] && dnf install python3-librepo -y
 # Redhat like linux OS necessary components.
-    dnf install bind-utils curl dnsutils efibootmgr file ipcalc jq net-tools redhat-lsb syslinux wget xz --skip-broken -y
+    dnf install bind-utils curl dnsutils efibootmgr file ipcalc jq net-tools redhat-lsb syslinux tuned wget xz --skip-broken -y
     dnf update -y
   else
     yum install dnf -y > /root/yum_execute.log 2>&1
@@ -598,20 +646,22 @@ function checkSys(){
       yum install epel-release -y
       yum install dnf -y
 # Run dnf update and install components.
-      dnf install bind-utils curl dnsutils efibootmgr file ipcalc jq net-tools redhat-lsb syslinux wget xz --skip-broken -y
+# In official template of AlmaLinux 9 of Linode, "tuned" must be installed otherwise "grub2-mkconfig" can't work formally.
+# Reference: https://phanes.silogroup.org/fips-disa-stig-hardening-on-centos9/
+      dnf install bind-utils curl dnsutils efibootmgr file ipcalc jq net-tools redhat-lsb syslinux tuned wget xz --skip-broken -y
       dnf update -y
 # Oracle Linux 7 doesn't support DNF.
     elif [[ `grep -i "no package" /root/yum_execute.log` ]]; then
-      yum install bind-utils curl dnsutils efibootmgr file ipcalc jq net-tools redhat-lsb syslinux wget xz --skip-broken -y
+      yum install bind-utils curl dnsutils efibootmgr file ipcalc jq net-tools redhat-lsb syslinux tuned wget xz --skip-broken -y
       yum update -y
     fi
     rm -rf /root/yum_execute.log
   fi
 }
 
-function checkIpv4OrIpv6(){
-  IPv4DNSLookup=`timeout 2 dig -4 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
-  IPv6DNSLookup=`timeout 2 dig -6 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
+function checkIpv4OrIpv6() {
+  IPv4DNSLookup=`timeout 3 dig -4 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
+  IPv6DNSLookup=`timeout 3 dig -6 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
   IP_Check="$IPv4DNSLookup"
   if expr "$IP_Check" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; then
     for i in 1 2 3 4; do
@@ -664,14 +714,109 @@ function checkIpv4OrIpv6(){
   [[ "$IP_Check" != "isIPv4" && "$IP6_Check" == "isIPv6" ]] && IPStackType="IPv6Stack"
 }
 
+# This function help us to sort sizes for different files from different directions.
+# "$FilesDirArr" storages original absolute pathes of files.
+# "$FilesLineArr" receives amount of alphabets and numbers etc. in one file from "$FilesDirNum"
+# "$FilesDir" is the list of absolute files' pathes those are executed by command like "grep" etc.
+# According to file size, "$tmpSizeArray" sorts "$FilesLineArr"'s numbers from smallest to largest(-sort h) or from largest to smallest(-sort hr).
+# "$1" are direction of files, "$2" is sort method.
+function sortFileSize() {
+  FilesDirArr=()
+  FilesLineArr=()
+  FilesDir="$1"
+
+  for Count in $FilesDir; do
+    FilesDirArr+=($Count)
+    FilesDirNum=`cat $Count | wc -c`
+    FilesLineArr+=($FilesDirNum)
+  done
+  
+  tmpSizeArray=(`echo ${FilesLineArr[*]} | tr ' ' '\n' | $2`)
+}
+
+# This function may help us to find the index order in one array if we provide a random data in this array.
+# "$1" is one array like "${FilesLineArr[*]}", "$2" is one element which index of this array needs to be found like "${tmpSizeArray[0]}"
+function getArrItemIdx() {
+  arr=$1
+  item=$2
+  index=0
+
+  for i in ${arr[*]}; do
+    [[ $item == $i ]] && {
+      echo $index >>/dev/null 2>&1
+      return
+    }
+    index=$(( $index + 1 ))
+  done
+}
+
+# "$1" is the absolute path of a file.
+function splitDirAndFile() {
+  FileName=`echo $1 | awk -F/ '{print $NF}'`
+  FileDirection=`echo $1 | sed "s/$FileName//g"`
+}
+
+# In Debian 11 OS template of DigitalOcean, there are 5 directions deposing network configurations after filtered by command of "find" and "grep":
+# /run/network/interfaces.d/eth0            31  bytes
+# /run/network/interfaces.d/eth1            31  bytes
+# /etc/network/interfaces                   755 bytes
+# /etc/network/interfaces.d/50-cloud-init   716 bytes
+# /etc/network/cloud-interfaces-template    39  bytes
+# We should get help by some algorithms to select the largest size of the file, the correct network configuration, "/etc/network/interfaces" is just there.
+#
+# "$1" is an array which storages temp files. "$2" is sort method, "sort -hr" is largest, "sort -h" is smallest.
+function getLargestOrSmallestFile() {
+  for Count in "$1"; do
+    sortFileSize "$Count" "$2"
+    getArrItemIdx "${FilesLineArr[*]}" "${tmpSizeArray[0]}"
+    fullFilePath="${FilesDirArr[$index]}"
+    [[ "$fullFilePath" != "" ]] && {
+      splitDirAndFile "$fullFilePath"
+      break
+    } 
+  done
+}
+
+# A function about parsing "*.yaml" files by native bash.
+# Reference: https://stackoverflow.com/questions/5014632/how-can-i-parse-a-yaml-file-from-a-linux-shell-script
+function parseYaml() {
+  prefix=$2
+  s='[[:space:]]*' w='[a-zA-Z0-9_]*'
+  fs=$(echo @|tr @ '\034')
+  sed -ne "s|,$s\]$s\$|]|" \
+      -e ":1;s|^\($s\)\($w\)$s:$s\[$s\(.*\)$s,$s\(.*\)$s\]|\1\2: [\3]\n\1  - \4|;t1" \
+      -e "s|^\($s\)\($w\)$s:$s\[$s\(.*\)$s\]|\1\2:\n\1  - \3|;p" $1 | \
+  sed -ne "s|,$s}$s\$|}|" \
+      -e ":1;s|^\($s\)-$s{$s\(.*\)$s,$s\($w\)$s:$s\(.*\)$s}|\1- {\2}\n\1  \3: \4|;t1" \
+      -e "s|^\($s\)-$s{$s\(.*\)$s}|\1-\n\1  \2|;p" | \
+  sed -ne "s|^\($s\):|\1|" \
+      -e "s|^\($s\)-$s[\"']\(.*\)[\"']$s\$|\1$fs$fs\2|p" \
+      -e "s|^\($s\)-$s\(.*\)$s\$|\1$fs$fs\2|p" \
+      -e "s|^\($s\)\($w\)$s:$s[\"']\(.*\)[\"']$s\$|\1$fs\2$fs\3|p" \
+      -e "s|^\($s\)\($w\)$s:$s\(.*\)$s\$|\1$fs\2$fs\3|p" | \
+  awk -F$fs '{
+    indent=length($1)/2
+    vname[indent]=$2
+    for (i in vname) {if (i>indent) {delete vname[i]; idx[i]=0}}
+    if (length($2)==0) {vname[indent]= ++idx[indent]}
+    if (length($3)>0) {
+      vn=""
+      for (i=0;i<indent;i++) {vn=(vn)(vname[i])("_")}
+      printf("%s%s%s=\"%s\"\n","'$prefix'",vn,vname[indent],$3)
+    }
+  }'
+}
+
 # $1 is $CurrentOS $2 is $CurrentOSVer
-function getInterface(){
+function getInterface() {
 # Network config file for Ubuntu 16.04 and former version, 
 # Debian all version included the latest Debian 11 is deposited in /etc/network/interfaces, they managed by "ifupdown".
 # Ubuntu 18.04 and later version, using netplan to replace legacy ifupdown, the network config file is in /etc/netplan/
   interface=""
   Interfaces=`cat /proc/net/dev |grep ':' |cut -d':' -f1 |sed 's/\s//g' |grep -iv '^lo\|^sit\|^stf\|^gif\|^dummy\|^vmnet\|^vir\|^gre\|^ipip\|^ppp\|^bond\|^tun\|^tap\|^ip6gre\|^ip6tnl\|^teql\|^ocserv\|^vpn'`
   defaultRoute=`ip route show default | grep "^default"`
+# In Vultr server of 2.5$/mo plan, it has only IPv6 address, so the default route is via IPv6. 
+  [[ "$defaultRoute" == "" ]] && defaultRoute=`ip -6 route show default | grep "^default"`
   for item in `echo "$Interfaces"`; do
     [ -n "$item" ] || continue
     echo "$defaultRoute" | grep -q "$item"
@@ -683,38 +828,131 @@ function getInterface(){
 # This setting may confuse program to get real adapter name from reading /proc/cat/dev
   GrubCmdLine=`grep "GRUB_CMDLINE_LINUX" /etc/default/grub | grep -v "#" | grep "net.ifnames=0\|biosdevname=0"`
 # So we need to comfirm whether adapter name is renamed and whether we should inherit it into new system.
-  if [[ -n "$GrubCmdLine" && -z "$interfaceSelect" ]] || [[ "$interface" == "eth0" ]]; then
+  if [[ -n "$GrubCmdLine" && -z "$interfaceSelect" ]] || [[ "$interface" == "eth0" ]] || [[ "$linux_relese" == "kali" ]]; then
     setInterfaceName='1'
   fi
   if [[ "$1" == 'Ubuntu' ]] && [[ "$2" -ge "18" ]]; then
-    NetCfgDir="/etc/netplan"
-    NetCfgFile=`ls -Sl $NetCfgDir"/" | grep ".yaml" | head -n 1 | awk -F' ' '{print $NF}'`
-  elif [[ "$1" == 'CentOS' || "$1" == 'AlmaLinux' || "$1" == 'RockyLinux' || "$1" == 'Fedora' || "$1" == 'Vzlinux' || "$1" == 'OracleLinux' || "$1" == 'OpenCloudOS' || "$1" == 'AlibabaCloudLinux' || "$1" == 'ScientificLinux' ]]; then
-    for Count in "/etc/sysconfig/network-scripts/" "/etc/NetworkManager/system-connections/" "/run/NetworkManager/system-connections/" "/usr/lib/NetworkManager/system-connections/" "/run/sysconfig/network-scripts/" "/run/network-scripts/" "/usr/lib/sysconfig/network-scripts/" "/usr/lib/network-scripts/"; do
-      NetCfgDir="$Count"
-      NetCfgFile=`ls -Sl $NetCfgDir | grep "nmconnection\|ifcfg-*" | grep -iv 'lo\|sit\|stf\|gif\|dummy\|vmnet\|vir\|gre\|ipip\|ppp\|bond\|tun\|tap\|ip6gre\|ip6tnl\|teql\|ocserv\|vpn' | head -n 1 | awk -F' ' '{print $NF}'`
-      [[ -n `grep -wlr "BOOTPROTO=*\|DEVICE=*\|ONBOOT=*\|DEFROUTE=*\|id=*\|\[connection\]\|interface-name=*\|method=*" $NetCfgDir*` ]] && break
+    # NetCfgDir="/etc/netplan/"
+    # NetCfgFile=`ls -Sl $NetCfgDir | grep ".yaml" | head -n 1 | awk -F' ' '{print $NF}'`
+    tmpNetCfgFiles=""
+    for Count in $(find $(echo `find / -maxdepth 5 -path /*netplan`) -maxdepth 1 -name "*.yaml" -print); do
+      tmpNetCfgFiles+=$(echo -e "\n"`grep -wrl "network" | grep -wrl "ethernets" | grep -wrl "$interface" | grep -wrl "version" "$Count" 2>/dev/null`)
     done
+    getLargestOrSmallestFile "$tmpNetCfgFiles" "sort -hr"
+    NetCfgFile="$FileName"
+    NetCfgDir="$FileDirection"
+    NetCfgWhole="$NetCfgDir$NetCfgFile"
+  elif [[ "$1" == 'CentOS' || "$1" == 'AlmaLinux' || "$1" == 'RockyLinux' || "$1" == 'Fedora' || "$1" == 'Vzlinux' || "$1" == 'OracleLinux' || "$1" == 'OpenCloudOS' || "$1" == 'AlibabaCloudLinux' || "$1" == 'ScientificLinux' || "$1" == 'AmazonLinux' || "$1" == 'RedHatEnterpriseLinux' || "$1" == 'OpenAnolis' ]]; then
+    NetCfgWhole=()
+    tmpNetCfgFiles=""
+    for Count in $(find / -maxdepth 6 -path /*network-scripts -type d -print -or -path /*system-connections -type d -print); do
+      NetCfgDir="$Count""/"
+# If "NetworkManager" replaced "network-scripts", there is a file called "readme-ifcfg-rh.txt" in dir: /etc/sysconfig/network-scripts/
+      # NetCfgFile=`ls -Sl $NetCfgDir 2>/dev/null | awk -F' ' '{print $NF}' | grep -iv 'lo\|sit\|stf\|gif\|dummy\|vmnet\|vir\|gre\|ipip\|ppp\|bond\|tun\|tap\|ip6gre\|ip6tnl\|teql\|ocserv\|vpn\|readme' | grep -s "$interface" | head -n 1`
+# Condition of "grep -iv 'lo\|sit\|stf..." has been deperated because the config file name of "NetworkManager" which initiated by "cloud init" is like "cloud-init-eth0.nmconnection".
+# Different from command "grep", command "ls" can only show file name but not full file direction.
+# There are 3 files named "ifcfg-ens18  ifcfg-eth0  ifcfg-eth1" in dir "/etc/sysconfig/network-scripts/" of Almalinux 8 of Bandwagonhosts template.
+# We should select the correct one by adjust whether includes interface name and file size.
+      NetCfgFiles=`ls -Sl $NetCfgDir 2>/dev/null | awk -F' ' '{print $NF}' | grep -iv 'readme\|ifcfg-lo\|ifup-\|ifdown-\|vpn' | grep -s "ifcfg\|nmconnection"`
+      for Files in $NetCfgFiles; do
+        if [[ `grep -w "$interface" "$NetCfgDir$Files"` != "" ]]; then
+          tmpNetCfgFiles+=$(echo -e "\n""$NetCfgDir$Files")
+        fi
+      done
+      getLargestOrSmallestFile "$tmpNetCfgFiles" "sort -hr"
+      NetCfgFile="$FileName"
+# In Google Cloud Platform, network configuration files of Redhat Enterprise 8+, CentOS-stream 8+, RockyLinux 8+ are all named " 'Wired connection 1.nmconnection' " in "/run/NetworkManager/system-connections/" direction.
+# Yes, that's right, the name of this file includes spaces and two single quotes which are in the first and last.
+# Only command "ls" can show the whole file name:
+#
+# [root@instance-2 ~]# ls -l /run/NetworkManager/system-connections/
+# total 4
+# -rw-------. 1 root root 270 May  4 22:15 'Wired connection 1.nmconnection'
+#
+# Many commands in linux can't handle these son of bitches because single quote is a strong reference so that the strings between two single quotes can't be any parameters.
+# The most typical case is when you search these fuckin files by "grub", the result deleted two single quotes automatically like:
+#
+# [root@instance-2 ~]# grep -r "ipv4" /run/NetworkManager/system-connections/
+# /run/NetworkManager/system-connections/Wired connection 1.nmconnection:[ipv4]
+# 
+# When we try to use command "head" and "tail" to be pipeline items after the first command "ls", the result is also the same:
+#
+# [root@instance-2 ~]# ls /run/NetworkManager/system-connections/ | head -n 1 | tail -n 1
+# Wired connection 1.nmconnection
+#
+# A file name includes space is very dangerous in linux because the operating system will use a couple of single quotes to bundle it as a "not be referenced" file to prevent os identify them error.
+# No matter what command you choice, unless attach its' absolute direction and execute it with other commands directly in the shell, it can work correctly, otherwise you wanna be cried when handle them by parameters transactions.
+# We should use "grep" to extract which key words we need and print the result to another file.
+# If this universe has hell, those jackass  who deployed these tortured settings of OS templates works on Google Cloud Platform will go to there when they died.
+      if [[ ! -z "$NetCfgFile" && ! -f "$NetCfgDir$NetCfgFile" ]]; then
+        tmpNetcfgDir="/root/tmp/installNetcfgCollections/"
+        [[ ! -d "$tmpNetcfgDir" ]] && mkdir -p "$tmpNetcfgDir"
+        if [[ "$NetCfgFile" =~ "nmconnection" ]]; then
+          NetCfgFile="$interface.nmconnection"
+          grep -wr "$interface\|\[ipv4\]\|\[ipv6\]\|\[connection\]\|\[ethernet\]\|id=*\|interface-name=*\|type=*\|method=*" "$NetCfgDir" | cut -d ':' -f 2 | tee -a "$tmpNetcfgDir$NetCfgFile"
+          NetCfgDir="$tmpNetcfgDir"
+        elif [[ "$NetCfgFile" =~ "ifcfg" ]]; then
+          NetCfgFile="$ifcfg-$interface"
+          grep -wr "$interface\|BOOTPROTO=*\|DEVICE=*\|ONBOOT=*\|TYPE=*\|HWADDR=*\|IPV6_AUTOCONF=*\|DHCPV6C=*" "$NetCfgDir" | cut -d ':' -f 2 | tee -a "$tmpNetcfgDir$NetCfgFile"
+          NetCfgDir="$tmpNetcfgDir"
+        fi
+      fi
+# The following conditions must appeared at least 3 times in a vaild network config file.
+      [[ `grep -wcs "$interface\|BOOTPROTO=*\|DEVICE=*\|ONBOOT=*\|TYPE=*\|HWADDR=*\|id=*\|\[connection\]\|interface-name=*\|type=*\|method=*" $NetCfgDir$NetCfgFile` -ge "3" ]] && {
+# In AlmaLinux 9 template of DigitalOcean, network adapter name is "eth0", there are two network config files in the OS, and they all belong to "eth0".
+# /etc/sysconfig/network-scripts/ifcfg-eth0
+# /etc/NetworkManager/system-connections/eth0.nmconnection
+# Which is the vaild one? We can storage them to one array first.
+        NetCfgWhole+=("$NetCfgDir$NetCfgFile")
+      }
+    done
+# If index "1"(starts in "0") is not empty, it means there at least two network config files in current OS.
+    if [[ "${NetCfgWhole[1]}" != "" ]]; then
+      for c in "${NetCfgWhole[@]}"; do
+# Cloud providers usually use automatic tools like SolusVM or Cloud-init etc. to initial different Linux OS.
+# The first row of the network config files is showed like the following example regularly:
+# # Generated by SolusVM
+# # Created by cloud-init on instance boot automatically, do not edit.
+# So the "#" and preposition "(did something) by (who)" is a obvious hint to help us to distinguish:
+        [[ `sed -e "4"p "$c" | grep " by " | grep -c "#"` -ge "1" ]] && {
+          NetCfgWhole="$c"
+          break
+        }
+      done
+# If the array of "${NetCfgWhole}" doesn't be turned into a parameter, it means there are not any annotates generated by automatic tools.
+# We need to import command "declare" to make an inspection to comfirm whether it's an array or a parameter,
+# If it's still an arrary, we can only assume the index "0" in this array as the valid network config file.
+      [[ `declare -p NetCfgWhole 2>/dev/null | grep -iw '^declare -a'` ]] && {
+        NetCfgWhole="${NetCfgWhole[0]}"
+      }
+    fi
+    splitDirAndFile "$NetCfgWhole"
+    NetCfgFile="$FileName"
+    NetCfgDir="$FileDirection"
   else
-    for Count in "/etc/network/" "/run/network/"; do
-# In some debian templates like DigitalOcean, there are three directions deposing network configurations:
-# /etc/network/interfaces
-# /etc/network/interfaces.d/50-cloud-init
-# /etc/network/cloud-interfaces-template
-# We should filter the largest file, the correct configuration is just there.
-      NetCfgWhole=`grep -wrl "network" | grep -wrl "iface" | grep -wrl "lo" | grep -wrl "inet\|inte6" | grep -wrl "dhcp\|static" $Count* | grep -v "if-*" | grep -v "state" | sort -hr | head -1`
-      if [[ "$NetCfgWhole" != "" ]]; then
-        NetCfgFile=`echo $NetCfgWhole | awk -F/ '{print $NF}'`
-        NetCfgDir=`echo $NetCfgWhole | sed "s/$NetCfgFile//g"`
-        break
-      fi  
+# Collect all eligible config files by the several parent directions names "network".
+# Reference: https://wiki.debian.org/NetworkConfiguration           
+#            https://wiki.debian.org/IPv6PrefixDelegation
+    tmpNetCfgFiles=""
+    for Count in $(find / -maxdepth 5 -path /*network -type d -print); do
+      NetCfgFiles=`grep -wrl "iface" | grep -wrl "inet\|inet6" | grep -wrl "auto\|dhcp\|static\|manual" "$Count""/" 2>/dev/null | grep -v "if-*" | grep -v "state" | grep -v "helper" | grep -v "template"`
+      for Files in $NetCfgFiles; do
+        if [[ `grep -w "$interface" "$Files"` != "" ]]; then
+          tmpNetCfgFiles+=$(echo -e "\n""$Files")
+        fi
+      done
     done
+    getLargestOrSmallestFile "$tmpNetCfgFiles" "sort -hr"
+    NetCfgFile="$FileName"
+    NetCfgDir="$FileDirection"
+    NetCfgWhole="$NetCfgDir$NetCfgFile"
   fi
+  echo "$NetCfgWhole"
 }
 
 # To confuse whether ipv4 is dhcp or static and whether ipv6 is dhcp or static in Redhat like os in version 9 and later,
 # $1 is $NetCfgDir, $2 is $NetCfgFile, $3 is "ipv4" or "ipv6", $4 is "method="
-function checkIpv4OrIpv6ConfigForRedhat9Later(){
+function checkIpv4OrIpv6ConfigForRedhat9Later() {
   IpTypeLine="`awk '/\['$3'\]/{print NR}' $1/$2 | head -n 2 | tail -n 1`"
   ConnectTypeArray=()
   CtaSpace=()
@@ -739,27 +977,31 @@ function checkIpv4OrIpv6ConfigForRedhat9Later(){
 # So we need to distinguish whether IPv4 is DHCP or STATIC and whether IPv6 is DHCP or STATIC separately and clearly.
 
 # $1 is $CurrentOS, $2 is $CurrentOSVer, $3 is $IPStackType
-function checkDHCP(){
+function checkDHCP() {
   getInterface "$1" "$2"
-  if [[ "$1" == 'CentOS' || "$1" == 'AlmaLinux' || "$1" == 'RockyLinux' || "$1" == 'Fedora' || "$1" == 'Vzlinux' || "$1" == 'OracleLinux' || "$1" == 'OpenCloudOS' || "$1" == 'AlibabaCloudLinux' || "$1" == 'ScientificLinux' ]]; then
+  if [[ "$1" == 'CentOS' || "$1" == 'AlmaLinux' || "$1" == 'RockyLinux' || "$1" == 'Fedora' || "$1" == 'Vzlinux' || "$1" == 'OracleLinux' || "$1" == 'OpenCloudOS' || "$1" == 'AlibabaCloudLinux' || "$1" == 'ScientificLinux' || "$1" == 'AmazonLinux' || "$1" == 'RedHatEnterpriseLinux' || "$1" == 'OpenAnolis' ]]; then
 # RedHat like linux system 8 and before network config name is "ifcfg-interface", deposited in /etc/sysconfig/network-scripts/
 # RedHat like linux system 9 and later network config name is "interface.nmconnection", deposited in /etc/NetworkManager/system-connections/
-    if [[ "$2" -le "8" ]]; then
-# BOOTPROTO="dhcp" is for IPv4 DHCP, "none" or "static" is Static.
-# IPv6_AUTOCONf=yes is IPv6 DHCP, =no is IPv6 Static.
-# For IPv6 STATIC configuration, "IPv6_AUTOCONf=no" doesn't exist is allowed.
-# For IPv6 DHCP configuration, "IPv6_AUTOCONf=yes" is necessary.
+# In some templates like RockyLinux 9 x64 of DigitalOcean, both "/etc/sysconfig/network-scripts/ifcfg-eth0" and "/etc/NetworkManager/system-connections/ens3.nmconnection" are existed.
+# in "ifcfg-eth0", BOOTPROTO=none; in "ens3.nmconnection", [ipv4] method=auto. the actually network adapter is "eth0", so the vaild network config file name is "ifcfg-eth0".
+# So we need to check the type of the network configuration file to determine whether the method of config is dhcp or static.
+    if [[ "$NetCfgFile" =~ "ifcfg" ]]; then
+# "BOOTPROTO=dhcp" is for IPv4 DHCP, "=none" or "=static" is Static.
+# "IPv6_AUTOCONf=yes" or "DHCPV6C=yes" is IPv6 DHCP, "=no" is IPv6 Static.
+# For IPv6 STATIC configuration, "IPv6_AUTOCONf=no" or "DHCPV6C=no" doesn't exist is allowed.
+# For IPv6 DHCP configuration, "IPv6_AUTOCONf=yes" or "DHCPV6C=yes" is necessary.
+# Reference: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/deployment_guide/s1-networkscripts-interfaces
       if [[ "$3" == "IPv4Stack" ]]; then
         Network6Config="isDHCP"
-        [[ -n `grep -Ewrn "BOOTPROTO=none|BOOTPROTO=\"none\"|BOOTPROTO=\'none\'|BOOTPROTO=NONE|BOOTPROTO=\"NONE\"|BOOTPROTO=\'NONE\'|BOOTPROTO=static|BOOTPROTO=\"static\"|BOOTPROTO=\'static\'|BOOTPROTO=STATIC|BOOTPROTO=\"STATIC\"|BOOTPROTO=\'STATIC\'" $NetCfgDir/$NetCfgFile` ]] && Network4Config="isStatic" || Network4Config="isDHCP"
+        [[ -n `grep -Ewirn "BOOTPROTO=none|BOOTPROTO=\"none\"|BOOTPROTO=\'none\'|BOOTPROTO=NONE|BOOTPROTO=\"NONE\"|BOOTPROTO=\'NONE\'|BOOTPROTO=static|BOOTPROTO=\"static\"|BOOTPROTO=\'static\'|BOOTPROTO=STATIC|BOOTPROTO=\"STATIC\"|BOOTPROTO=\'STATIC\'" $NetCfgWhole` ]] && Network4Config="isStatic" || Network4Config="isDHCP"
       elif [[ "$3" == "BioStack" ]]; then
-        [[ -n `grep -Ewrn "BOOTPROTO=none|BOOTPROTO=\"none\"|BOOTPROTO=\'none\'|BOOTPROTO=NONE|BOOTPROTO=\"NONE\"|BOOTPROTO=\'NONE\'|BOOTPROTO=static|BOOTPROTO=\"static\"|BOOTPROTO=\'static\'|BOOTPROTO=STATIC|BOOTPROTO=\"STATIC\"|BOOTPROTO=\'STATIC\'" $NetCfgDir/$NetCfgFile` ]] && Network4Config="isStatic" || Network4Config="isDHCP"
-        [[ -n `grep -Ewrn "IPV6_AUTOCONF=yes|IPV6_AUTOCONF=\"yes\"|IPV6_AUTOCONF=YES|IPV6_AUTOCONF=\"YES\"" $NetCfgDir/$NetCfgFile` ]] && Network6Config="isDHCP" || Network6Config="isStatic"
+        [[ -n `grep -Ewirn "BOOTPROTO=none|BOOTPROTO=\"none\"|BOOTPROTO=\'none\'|BOOTPROTO=NONE|BOOTPROTO=\"NONE\"|BOOTPROTO=\'NONE\'|BOOTPROTO=static|BOOTPROTO=\"static\"|BOOTPROTO=\'static\'|BOOTPROTO=STATIC|BOOTPROTO=\"STATIC\"|BOOTPROTO=\'STATIC\'" $NetCfgWhole` ]] && Network4Config="isStatic" || Network4Config="isDHCP"
+        [[ -n `grep -Ewirn "IPV6_AUTOCONF=yes|IPV6_AUTOCONF=\"yes\"|IPV6_AUTOCONF=YES|IPV6_AUTOCONF=\"YES\"|DHCPV6C=yes|DHCPV6C=\"yes\"" $NetCfgWhole` ]] && Network6Config="isDHCP" || Network6Config="isStatic"
       elif [[ "$3" == "IPv6Stack" ]]; then
         Network4Config="isDHCP"
-        [[ -n `grep -Ewrn "IPV6_AUTOCONF=yes|IPV6_AUTOCONF=\"yes\"|IPV6_AUTOCONF=YES|IPV6_AUTOCONF=\"YES\"" $NetCfgDir/$NetCfgFile` ]] && Network6Config="isDHCP" || Network6Config="isStatic"
+        [[ -n `grep -Ewirn "IPV6_AUTOCONF=yes|IPV6_AUTOCONF=\"yes\"|IPV6_AUTOCONF=YES|IPV6_AUTOCONF=\"YES\"|DHCPV6C=yes|DHCPV6C=\"yes\"" $NetCfgWhole` ]] && Network6Config="isDHCP" || Network6Config="isStatic"
       fi
-    elif [[ "$2" -ge "9" ]]; then
+    elif [[ "$NetCfgFile" =~ "nmconnection" ]]; then
 # In NetworkManager for Redhat 9 and later, IPv4 and IPv6 share the same config method and value like the following sample:
 #
 # [ethernet]
@@ -779,41 +1021,44 @@ function checkDHCP(){
       NetCfg6LineNum="$NetCfgLineNum"
       if [[ "$3" == "IPv4Stack" ]]; then
         Network6Config="isDHCP"
-        [[ `sed -n "$NetCfg4LineNum"p $NetCfgDir/$NetCfgFile` == "method=manual" ]] && Network4Config="isStatic" || Network4Config="isDHCP"
+        [[ `sed -n "$NetCfg4LineNum"p $NetCfgWhole` == "method=manual" ]] && Network4Config="isStatic" || Network4Config="isDHCP"
       elif [[ "$3" == "BioStack" ]]; then
-        [[ `sed -n "$NetCfg4LineNum"p $NetCfgDir/$NetCfgFile` == "method=manual" ]] && Network4Config="isStatic" || Network4Config="isDHCP"
-        [[ `sed -n "$NetCfg6LineNum"p $NetCfgDir/$NetCfgFile` == "method=manual" ]] && Network6Config="isStatic" || Network6Config="isDHCP"
+        [[ `sed -n "$NetCfg4LineNum"p $NetCfgWhole` == "method=manual" ]] && Network4Config="isStatic" || Network4Config="isDHCP"
+        [[ `sed -n "$NetCfg6LineNum"p $NetCfgWhole` == "method=manual" ]] && Network6Config="isStatic" || Network6Config="isDHCP"
       elif [[ "$3" == "IPv6Stack" ]]; then
         Network4Config="isDHCP"
-        [[ `sed -n "$NetCfg4LineNum"p $NetCfgDir/$NetCfgFile` == "method=manual" ]] && Network4Config="isStatic" || Network4Config="isDHCP"
+        [[ `sed -n "$NetCfg4LineNum"p $NetCfgWhole` == "method=manual" ]] && Network4Config="isStatic" || Network4Config="isDHCP"
       fi
     fi
-  elif [[ "$1" == 'Debian' ]] || [[ "$1" == 'Ubuntu' && "$2" -le "16" ]]; then
+  elif [[ "$1" == 'Debian' ]] || [[ "$1" == 'Kali' ]] || [[ "$1" == 'Ubuntu' && "$2" -le "16" ]]; then
 # Debian network configs may be deposited in the following directions.
 # /etc/network/interfaces or /etc/network/interfaces.d/interface or /run/network/interfaces.d/interface
     if [[ "$3" == "IPv4Stack" ]]; then
       Network6Config="isDHCP"
-      [[ `grep -c "iface $interface inet static" $NetCfgDir/$NetCfgFile` -ge "1" ]] && Network4Config="isStatic" || Network4Config="isDHCP"
+      [[ `grep -iw "iface" $NetCfgWhole | grep -iw "$interface" | grep -iw "inet" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
     elif [[ "$3" == "BioStack" ]]; then
-      [[ `grep -c "iface $interface inet static" $NetCfgDir/$NetCfgFile` -ge "1" ]] && Network4Config="isStatic" || Network4Config="isDHCP"
-      [[ `grep -c "iface $interface inet6 static" $NetCfgDir/$NetCfgFile` -ge "1" ]] && Network6Config="isStatic" || Network6Config="isDHCP"
+      [[ `grep -iw "iface" $NetCfgWhole | grep -iw "$interface" | grep -iw "inet" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
+      [[ `grep -iw "iface" $NetCfgWhole | grep -iw "$interface" | grep -iw "inet6" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
     elif [[ "$3" == "IPv6Stack" ]]; then
       Network4Config="isDHCP"
-      [[ `grep -c "iface $interface inet6 static" $NetCfgDir/$NetCfgFile` -ge "1" ]] && Network6Config="isStatic" || Network6Config="isDHCP"
+      [[ `grep -iw "iface" $NetCfgWhole | grep -iw "$interface" | grep -iw "inet6" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
     fi
   elif [[ "$1" == 'Ubuntu' ]] && [[ "$2" -ge "18" ]]; then
 # For netplan(Ubuntu 18 and later), if network configuration is Static whether IPv4 or IPv6
 # in "*.yaml" config file, dhcp(4 or 6): no or false doesn't exist is allowed.
 # But if is DHCP, dhcp(4 or 6): yes or true is necessary.
+# Typical format of dhcp status in "*.yaml" is "dhcp4/6: true/false" or "dhcp4/6: yes/no".
+# The raw sample processed by function "parseYaml" is: " network_ethernets_enp1s0_dhcp4="true" network_ethernets_enp1s0_dhcp6="true" "
+    dhcpStatus=$(parseYaml "$NetCfgWhole" | grep "$interface" | grep "dhcp")
     if [[ "$3" == "IPv4Stack" ]]; then
       Network6Config="isDHCP"
-      [[ `grep -c "dhcp4: yes" $NetCfgDir/$NetCfgFile` -ge "1" || `grep -c "dhcp4: true" $NetCfgDir/$NetCfgFile` -ge "1" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
+      [[ "$dhcpStatus" =~ "dhcp4=\"true\"" || "$dhcpStatus" =~ "dhcp4=\"yes\"" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
     elif [[ "$3" == "BioStack" ]]; then
-      [[ `grep -c "dhcp4: yes" $NetCfgDir/$NetCfgFile` -ge "1" || `grep -c "dhcp4: true" $NetCfgDir/$NetCfgFile` -ge "1" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
-      [[ `grep -c "dhcp6: yes" $NetCfgDir/$NetCfgFile` -ge "1" || `grep -c "dhcp6: true" $NetCfgDir/$NetCfgFile` -ge "1" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
+      [[ "$dhcpStatus" =~ "dhcp4=\"true\"" || "$dhcpStatus" =~ "dhcp4=\"yes\"" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
+      [[ "$dhcpStatus" =~ "dhcp6=\"true\"" || "$dhcpStatus" =~ "dhcp6=\"yes\"" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
     elif [[ "$3" == "IPv6Stack" ]]; then
       Network4Config="isDHCP"
-      [[ `grep -c "dhcp6: yes" $NetCfgDir/$NetCfgFile` -ge "1" || `grep -c "dhcp6: true" $NetCfgDir/$NetCfgFile` -ge "1" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
+      [[ "$dhcpStatus" =~ "dhcp6=\"true\"" || "$dhcpStatus" =~ "dhcp6=\"yes\"" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
     fi
   fi
   [[ "$tmpDHCP" == "dhcp" || "$tmpDHCP" == "auto" || "$tmpDHCP" == "automatic" || "$tmpDHCP" == "true" || "$tmpDHCP" == "yes" || "$tmpDHCP" == "1" ]] && {
@@ -824,16 +1069,21 @@ function checkDHCP(){
     Network4Config="isStatic"
     Network6Config="isStatic"
   }
+  [[ "$Network4Config" == "" ]] && Network4Config="isStatic"
+  [[ "$Network6Config" == "" ]] && Network6Config="isStatic"
+  echo "$Network4Config"
+  echo "$Network6Config"
+  rm -rf "$tmpNetcfgDir"
 }
 
-function DebianModifiedPreseed(){
-  if [[ "$linux_relese" == 'debian' ]]; then
+# $1 is "in-target"
+function DebianModifiedPreseed() {
+  if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]]; then
 # Must use ";" instead of using "&&", "echo -e" etc to combine multiple commands, or write text in files, recommend sed.
 # Can't pass parameters correctly in preseed environment
 # DebianVimVer=`ls -a /usr/share/vim | grep vim[0-9]`
     DebianVimVer="vim"`expr ${DebianDistNum} + 71`
-    [[ "$DIST" == "bookworm" ]] && DebianVimVer="vim90"
-# $1 is "in-target"
+    [[ "$DIST" == "bookworm" || "$DIST" == "kali-rolling" ]] && DebianVimVer="vim90"
     AptUpdating="$1 apt update;"
 # pre-install some commonly used software.
     InstallComponents="$1 apt install sudo apt-transport-https bc binutils ca-certificates cron curl debian-keyring debian-archive-keyring dnsutils dosfstools dpkg efibootmgr ethtool fail2ban file figlet iptables iptables-persistent iputils-tracepath jq lrzsz libnet-ifconfig-wrapper-perl lsof libnss3 lsb-release mtr-tiny mlocate netcat-openbsd net-tools ncdu nmap ntfs-3g parted psmisc python3 socat sosreport subnetcalc tcpdump telnet traceroute unzip unrar-free uuid-runtime vim vim-gtk3 wget xz-utils -y;"
@@ -867,25 +1117,25 @@ function DebianModifiedPreseed(){
     if [[ "$Network6Config" == "isDHCP" ]]; then
 # This IPv4Stack DHCP machine can access IPv6 network in the future, maybe.
 # But it should be setting as IPv4 network priority.
-      SupportIPv6="$1 sed -i '\$aiface $interface inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel ::ffff:0:0/96' /etc/gai.conf"
+#     SupportIPv6="$1 sed -i '\$aiface $interface inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel ::ffff:0:0/96' /etc/gai.conf;"
 # Enable IPv6 dhcp and set prefer IPv6 access for BioStack or IPv6Stack machine: add "label 2002::/16", "label 2001:0::/32" in last line of the "/etc/gai.conf"
-      [[ "$IPStackType" == "BioStack" || "$IPStackType" == "IPv6Stack" ]] && SupportIPv6="$1 sed -i '\$aiface $interface inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf"
+      [[ "$IPStackType" == "BioStack" ]] && SupportIPv6="$1 sed -i '\$aiface $interface inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
     elif [[ "$Network6Config" == "isStatic" ]]; then
-      [[ "$IPStackType" == "BioStack" || "$IPStackType" == "IPv6Stack" ]] && SupportIPv6="$1 sed -i '\$aiface $interface inet6 static' /etc/network/interfaces; $1 sed -i '\$a\\\taddress $ip6Addr' /etc/network/interfaces; $1 sed -i '\$a\\\tgateway $ip6Gate' /etc/network/interfaces; $1 sed -i '\$a\\\tnetmask $ip6Mask' /etc/network/interfaces; $1 sed -i '\$a\\\tdns-nameservers $ip6DNS' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf"
+      [[ "$IPStackType" == "BioStack" ]] && SupportIPv6="$1 sed -i '\$aiface $interface inet6 static' /etc/network/interfaces; $1 sed -i '\$a\\\taddress $ip6Addr' /etc/network/interfaces; $1 sed -i '\$a\\\tnetmask $ip6Mask' /etc/network/interfaces; $1 sed -i '\$a\\\tgateway $ip6Gate' /etc/network/interfaces; $1 sed -i '\$a\\\tdns-nameservers $ip6DNS' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
     fi
 # a typical network configuration sample of IPv6 static for Debian:
 # iface eth0 inet static
 #         address 10.0.0.72
-#         gateway 10.0.0.1
 #         netmask 255.255.255.0
+#         gateway 10.0.0.1
 #         dns-nameservers 1.0.0.1 8.4.4.8
 #
 # a typical network configuration sample of IPv6 static for Debian:
 # iface eth0 inet6 static
 #         address 2702:b43c:492a:9d1e:8270:fd59:6de4:20f1
-#         gateway fe80::200:17ff:fe9e:f9d0
 #         netmask 128
-#         dns-nameservers 2606:4700:4700::1001
+#         gateway fe80::200:17ff:fe9e:f9d0
+#         dns-nameservers 2606:4700:4700::1001 2001:4860:4860::8844
     [[ "$setRaid" == "0" ]] && FormatDisk=`echo -e "d-i partman-md/confirm boolean true
 d-i partman-md/confirm_nooverwrite boolean true
 d-i partman-basicfilesystems/no_swap boolean false
@@ -913,13 +1163,24 @@ d-i mdadm/boot_degraded boolean true"`
 #     400 100 400 raid \$bootable{ } \$primary{ } method{ raid } . \
 #     100 200  -1 raid               \$primary{ } method{ raid } .
 # d-i mdadm/boot_degraded boolean true
-    export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${DnsChangePermanently} ${ModifyMOTD} ${SupportIPv6}"
+#
+    EnableSSH=""
+    ReviseMOTD=""
+    SupportZSH=""
+    [[ "$linux_relese" == "kali" ]] && {
+# Enable Kali ssh service.
+      EnableSSH="$1 update-rc.d ssh enable; $1 /etc/init.d/ssh restart;"
+# Revise terms of license from "Debian" to "Kali" in motd file of "00-header".
+      ReviseMOTD="$1 sed -ri 's/Debian/Kali/g' /etc/update-motd.d/00-header;"
+      SupportZSH="$1 apt install zsh -y; $1 chsh -s /bin/zsh;"
+    }
+    export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${DnsChangePermanently} ${ModifyMOTD} ${SupportIPv6} ${EnableSSH} ${ReviseMOTD} ${SupportZSH}"
   fi
 }
 
-function DebianPreseedProcess(){
+function DebianPreseedProcess() {
 # Default to make a GPT partition to support 3TB hard drive or larger.
-FormatDisk=`echo -e "d-i partman/mount_style select uuid\nd-i partman-auto/method string regular\nd-i partman-auto/init_automatically_partition select Guided - use entire disk\nd-i partman-auto/choose_recipe select All files in one partition (recommended for new users)\nd-i partman-basicfilesystems/choose_label string gpt\nd-i partman-basicfilesystems/default_label string gpt\nd-i partman-partitioning/choose_label string gpt\nd-i partman-partitioning/default_label string gpt\nd-i partman/choose_label string gpt\nd-i partman/default_label string gpt"`
+  FormatDisk=`echo -e "d-i partman/mount_style select uuid\nd-i partman-auto/method string regular\nd-i partman-auto/init_automatically_partition select Guided - use entire disk\nd-i partman-auto/choose_recipe select All files in one partition (recommended for new users)\nd-i partman-basicfilesystems/choose_label string gpt\nd-i partman-basicfilesystems/default_label string gpt\nd-i partman-partitioning/choose_label string gpt\nd-i partman-partitioning/default_label string gpt\nd-i partman/choose_label string gpt\nd-i partman/default_label string gpt"`
 # Default disk format recipe:
 # d-i partman/mount_style select uuid
 # d-i partman-auto/method string regular
@@ -931,7 +1192,7 @@ FormatDisk=`echo -e "d-i partman/mount_style select uuid\nd-i partman-auto/metho
 # d-i partman-partitioning/default_label string gpt
 # d-i partman/choose_label string gpt
 # d-i partman/default_label string gpt
-[[ "$Network4Config" == "isDHCP" ]] && NetConfigManually="" || NetConfigManually=`echo -e "d-i netcfg/disable_autoconfig boolean true\nd-i netcfg/dhcp_failed note\nd-i netcfg/dhcp_options select Configure network manually\nd-i netcfg/get_ipaddress string $IPv4\nd-i netcfg/get_netmask string $MASK\nd-i netcfg/get_gateway string $GATE\nd-i netcfg/get_nameservers string $ipDNS\nd-i netcfg/no_default_route boolean true\nd-i netcfg/confirm_static boolean true"`
+  [[ "$Network4Config" == "isDHCP" ]] && NetConfigManually="" || NetConfigManually=`echo -e "d-i netcfg/disable_autoconfig boolean true\nd-i netcfg/dhcp_failed note\nd-i netcfg/dhcp_options select Configure network manually\nd-i netcfg/get_ipaddress string $IPv4\nd-i netcfg/get_netmask string $MASK\nd-i netcfg/get_gateway string $GATE\nd-i netcfg/get_nameservers string $ipDNS\nd-i netcfg/no_default_route boolean true\nd-i netcfg/confirm_static boolean true"`
 # Manually network setting configurations, including:
 # d-i netcfg/disable_autoconfig boolean true
 # d-i netcfg/dhcp_failed note
@@ -942,8 +1203,8 @@ FormatDisk=`echo -e "d-i partman/mount_style select uuid\nd-i partman-auto/metho
 # d-i netcfg/get_nameservers string $ipDNS
 # d-i netcfg/no_default_route boolean true
 # d-i netcfg/confirm_static boolean true
-DebianModifiedPreseed "in-target"
-cat >/tmp/boot/preseed.cfg<<EOF
+  DebianModifiedPreseed "in-target"
+  cat >/tmp/boot/preseed.cfg<<EOF
 ### Unattended Installation
 d-i auto-install/enable boolean true
 d-i debconf/priority select critical
@@ -958,6 +1219,16 @@ d-i keyboard-configuration/xkb-keymap string us
 
 ### Low memory mode
 d-i lowmem/low boolean true
+
+### Disable security, updates and backports
+d-i apt-setup/services-select multiselect
+
+### Disable source repositories
+d-i apt-setup/enable-source-repositories boolean false
+
+### Enable contrib and non-free
+d-i apt-setup/non-free boolean true
+d-i apt-setup/contrib boolean true
 
 ### Network configuration
 d-i netcfg/choose_interface select $interfaceSelect
@@ -983,12 +1254,12 @@ d-i time/zone string ${TimeZone}
 d-i clock-setup/ntp boolean true
 d-i clock-setup/ntp-server string ntp.nict.jp
 
-### Windows DD installation set up
+### Get harddisk name and Windows DD installation set up
 d-i preseed/early_command string anna-install libfuse2-udeb fuse-udeb ntfs-3g-udeb libcrypto1.1-udeb libpcre2-8-0-udeb libssl1.1-udeb libuuid1-udeb zlib1g-udeb wget-udeb
 d-i partman/early_command string [[ -n "\$(blkid -t TYPE='vfat' -o device)" ]] && umount "\$(blkid -t TYPE='vfat' -o device)"; \
-debconf-set partman-auto/disk "\$(list-devices disk |head -n1)"; \
-wget -qO- '$DDURL' | $DEC_CMD | /bin/dd of=\$(list-devices disk |head -n1); \
-mount.ntfs-3g \$(list-devices partition |head -n1) /mnt; \
+debconf-set partman-auto/disk "\$(list-devices disk | head -n1)"; \
+wget -qO- '$DDURL' | $DEC_CMD | /bin/dd of=\$(list-devices disk | head -n1); \
+mount.ntfs-3g \$(list-devices partition | head -n1) /mnt; \
 cd '/mnt/ProgramData/Microsoft/Windows/Start Menu/Programs'; \
 cd Start* || cd start*; \
 cp -f '/net.bat' './net.bat'; \
@@ -1009,9 +1280,10 @@ ${FormatDisk}
 
 ### Package selection
 tasksel tasksel/first multiselect minimal
+d-i pkgsel/include string openssh-server
+
 # Automatic updates are not applied, everything is updated manually.
 d-i pkgsel/update-policy select none
-d-i pkgsel/include string openssh-server
 d-i pkgsel/upgrade select none
 
 ### Disable to upload developer statistics anonymously
@@ -1021,7 +1293,7 @@ popularity-contest popularity-contest/participate boolean false
 d-i grub-installer/only_debian boolean true
 d-i grub-installer/bootdev string $IncDisk
 d-i grub-installer/force-efi-extra-removable boolean true
-d-i debian-installer/add-kernel-opts string net.ifnames=0 biosdevname=0
+d-i debian-installer/add-kernel-opts string net.ifnames=0 biosdevname=0 ipv6.disable=1
 
 ### Shutdown machine
 d-i finish-install/reboot_in_progress note
@@ -1055,6 +1327,8 @@ checkCN "www.youtube.com" "www.instagram.com" "www.wikipedia.org" "$IPStackType"
 
 checkEfi "/sys/firmware/efi/efivars/" "/sys/firmware/efi/mok-variables/" "/sys/firmware/efi/runtime-map/" "/sys/firmware/efi/vars/"
 
+checkVirt
+
 if [[ ! ${sshPORT} -ge "1" ]] || [[ ! ${sshPORT} -le "65535" ]] || [[ `grep '^[[:digit:]]*$' <<< '${sshPORT}'` ]]; then
   sshPORT='22'
 fi
@@ -1079,7 +1353,7 @@ fi
 linux_relese=$(echo "$Relese" |sed 's/\ //g' |sed -r 's/(.*)/\L\1/')
 clear && echo -e "\n\033[36m# Check Dependence\033[0m\n"
 
-dependence awk,basename,cat,cpio,curl,cut,dig,dirname,efibootmgr,file,find,grep,gzip,jq,lsblk,sed,wget,xz;
+dependence awk,basename,cat,cpio,curl,cut,dig,dirname,file,find,grep,gzip,lsblk,sed,wget,xz;
 
 [[ "$ddMode" == '1' ]] && {
   dependence iconv
@@ -1087,6 +1361,9 @@ dependence awk,basename,cat,cpio,curl,cut,dig,dirname,efibootmgr,file,find,grep,
   tmpDIST='bookworm'
   tmpVER=''
 }
+
+ipDNS=$(checkDNS "$ipDNS")
+ip6DNS=$(checkDNS "$ip6DNS")
 
 if [[ "$IPStackType" == "IPv4Stack" ]]; then
   [[ -n "$ipAddr" && -n "$ipMask" && -n "$ipGate" ]] && setNet='1'
@@ -1177,7 +1454,7 @@ ArchName=`uname -m`
 [[ -z "$ArchName" ]] && ArchName=$(echo `hostnamectl status | grep "Architecture" | cut -d':' -f 2`)
 case $ArchName in arm64) VER="arm64";; aarch64) VER="aarch64";; x86|i386|i686) VER="i386";; x86_64) VER="x86_64";; x86-64) VER="x86-64";; amd64) VER="amd64";; *) VER="";; esac
 # Exchange architecture name
-if [[ "$linux_relese" == "debian" ]] || [[ "$linux_relese" == "ubuntu" ]]; then
+if [[ "$linux_relese" == "debian" ]] || [[ "$linux_relese" == "ubuntu" ]] || [[ "$linux_relese" == "kali" ]]; then
 # In debian 12, the result of "uname -m" is "x86_64";
 # the result of "echo `hostnamectl status | grep "Architecture" | cut -d':' -f 2`" is "x86-64"
   if [[ "$VER" == "x86_64" ]] || [[ "$VER" == "x86-64" ]]; then
@@ -1220,11 +1497,12 @@ fi
 
 [[ -z "$tmpDIST" ]] && {
   [ "$Relese" == 'Debian' ] && tmpDIST='12'
+  [ "$Relese" == 'Kali' ] && tmpDIST='rolling'
   [ "$Relese" == 'Ubuntu' ] && tmpDIST='20.04'
   [ "$Relese" == 'CentOS' ] && tmpDIST='9'
   [ "$Relese" == 'RockyLinux' ] && tmpDIST='9'
   [ "$Relese" == 'AlmaLinux' ] && tmpDIST='9'
-  [ "$Relese" == 'Fedora' ] && tmpDIST='37'
+  [ "$Relese" == 'Fedora' ] && tmpDIST='38'
 }
 
 if [[ -n "$tmpDIST" ]]; then
@@ -1246,6 +1524,12 @@ if [[ -n "$tmpDIST" ]]; then
         # [[ "$isDigital" == '14' ]] && DIST='forky'
       }
     }
+    LinuxMirror=$(selectMirror "$Relese" "$DIST" "$VER" "$tmpMirror")
+  fi
+  if [[ "$Relese" == 'Kali' ]]; then
+    SpikCheckDIST='0'
+    DIST="$(echo "$tmpDIST" |sed -r 's/(.*)/\L\1/')"
+    [[ ! "$DIST" =~ "kali-" ]] && DIST="kali-""$DIST"
     LinuxMirror=$(selectMirror "$Relese" "$DIST" "$VER" "$tmpMirror")
   fi
   if [[ "$Relese" == 'Ubuntu' ]]; then
@@ -1270,7 +1554,7 @@ if [[ -n "$tmpDIST" ]]; then
 # So we have no possibility to accomplish Ubuntu network installation in future.
 # Canonical.inc is son of a bitch, they change back and forth, pood and pee everywhere.
 # More discussions: https://discourse.ubuntu.com/t/netbooting-the-live-server-installer/14510/18
-       # [[ "$isDigital" == '22.04' ]] && DIST='jammy';
+        # [[ "$isDigital" == '22.04' ]] && DIST='jammy';
       }
     }
     LinuxMirror=$(selectMirror "$Relese" "$DIST" "$VER" "$tmpMirror")
@@ -1279,6 +1563,8 @@ if [[ -n "$tmpDIST" ]]; then
     SpikCheckDIST='1'
     DISTCheck="$(echo "$tmpDIST" |grep -o '[\.0-9]\{1,\}' |head -n1)"
     RedHatSeries=`echo "$tmpDIST" | cut -d"." -f 1 | cut -d"-" -f 1`
+# CentOS and CentOS stream releases history:
+# https://endoflife.date/centos
     if [[ "$linux_relese" == 'centos' ]]; then
       [[ "$RedHatSeries" =~ [0-9]{${#1}} ]] && {
         if [[ "$RedHatSeries" == "6" ]]; then
@@ -1300,10 +1586,16 @@ if [[ -n "$tmpDIST" ]]; then
     fi
     if [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
       [[ "$RedHatSeries" =~ [0-9]{${#1}} ]] && {
+# RockyLinux releases history:
+# https://wiki.rockylinux.org/rocky/version/
+# AlmaLinux releases history:
+# https://wiki.almalinux.org/release-notes/
         if [[ "$linux_relese" == 'rockylinux' || "$linux_relese" == 'almalinux' ]] && [[ "$RedHatSeries" -le "7" ]]; then
           echo -ne "\n\033[33mWarning: \033[0m$Relese $DISTCheck is not supported!\n"
           exit 1
-        elif [[ "$linux_relese" == 'fedora' ]] && [[ "$RedHatSeries" -le "33" ]]; then
+# Fedora releases history:
+# https://en.wikipedia.org/wiki/Fedora_Linux_release_history
+        elif [[ "$linux_relese" == 'fedora' ]] && [[ "$RedHatSeries" -le "35" ]]; then
           echo -ne "\n\033[33mWarning: \033[0m$Relese $DISTCheck is not supported!\n"
           exit 1
         fi
@@ -1342,6 +1634,7 @@ fi
   echo -ne "\033[31mError! \033[0mInvaild mirror! \n"
   [ "$Relese" == 'Debian' ] && echo -en "\033[33mPlease check mirror lists:\033[0m https://www.debian.org/mirror/list\n\n"
   [ "$Relese" == 'Ubuntu' ] && echo -en "\033[33mPlease check mirror lists:\033[0m https://launchpad.net/ubuntu/+archivemirrors\n\n"
+  [ "$Relese" == 'Kali' ] && echo -en "\033[33mPlease check mirror lists:\033[0m https://http.kali.org/README.mirrorlist\n\n"
   [ "$Relese" == 'CentOS' ] && echo -en "\033[33mPlease check mirror lists:\033[0m https://www.centos.org/download/mirrors/\n\n"
   [ "$Relese" == 'RockyLinux' ] && echo -en "\033[33mPlease check mirror lists:\033[0m https://mirrors.rockylinux.org/mirrormanager/mirrors\n\n"
   [ "$Relese" == 'AlmaLinux' ] && echo -en "\033[33mPlease check mirror lists:\033[0m https://mirrors.almalinux.org/\n\n"
@@ -1354,6 +1647,7 @@ fi
 if [[ "$SpikCheckDIST" == '0' ]]; then
   echo -e "\n\033[36m# Check DIST\033[0m"
   DistsList="$(wget --no-check-certificate -qO- "$LinuxMirror/dists/" |grep -o 'href=.*/"' |cut -d'"' -f2 |sed '/-\|old\|Debian\|experimental\|stable\|test\|sid\|devel/d' |grep '^[^/]' |sed -n '1h;1!H;$g;s/\n//g;s/\//\;/g;$p')"
+  [[ "$linux_relese" == "kali" ]] && DistsList="$(wget --no-check-certificate -qO- "$LinuxMirror/dists/" | grep -o 'href=.*/"' | cut -d'"' -f2 | grep '^[^/]' | sed -n '1h;1!H;$g;s/\n//g;s/\//\;/g;$p')"
   for CheckDEB in `echo "$DistsList" |sed 's/;/\n/g'`
     do
 # In some mirror, the value of parameter "DistsList" is "?C=N;O=Dbookworm;bullseye;buster;http:;;wisepoint.jp;product;wpshibb;"
@@ -1395,7 +1689,7 @@ clear && echo -e "\n\033[36m# Install\033[0m\n"
 [[ "$ddMode" == '1' ]] && echo -ne "\033[34mAuto Mode\033[0m insatll \033[33mWindows\033[0m\n[\033[33m$DDURL\033[0m]\n"
 
 if [ -z "$interfaceSelect" ]; then
-  if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
+  if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ "$linux_relese" == 'kali' ]]; then
     interfaceSelect="auto"
   elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
     interfaceSelect="link"
@@ -1421,7 +1715,12 @@ fi
 [[ "$setNetbootXyz" == "0" ]] && echo -e "\n[\033[33m$Relese\033[0m] [\033[33m$DIST\033[0m] [\033[33m$VER\033[0m] Downloading...\n" || echo -e "\n[\033[33mnetboot.xyz\033[0m] Downloading...\n"
 
 # RAM of RedHat series is 2GB required at least.
-[[ "$setNetbootXyz" == "0" ]] && checkMem "$linux_relese" "$RedHatSeries"
+[[ "$setNetbootXyz" == "0" ]] && {
+# "lowmem=+0" is only for Debian like.
+  checkMem "$linux_relese" "$RedHatSeries" || Add_OPTION="$Add_OPTION lowmem=+0"
+# Microsoft Hyper-V needs "vmlinuz" to boot with parameter "lowmem+=0".
+  [[ "$virtType" =~ "microsoft" && ! "$Add_OPTION" =~ "lowmem=+0" ]] && Add_OPTION="$Add_OPTION lowmem=+0"
+}
 
 if [[ "$setNetbootXyz" == "1" ]]; then
   [[ "$VER" == "x86_64" || "$VER" == "amd64" ]] && apt install grub-imageboot -y
@@ -1450,17 +1749,21 @@ if [[ "$setNetbootXyz" == "1" ]]; then
     cp /usr/share/syslinux/memdisk /boot/memdisk
     ln -s /usr/share/grub/grub-mkconfig_lib /usr/lib/grub/grub-mkconfig_lib
   }
-elif [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
+elif [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ "$linux_relese" == 'kali' ]]; then
   [ "$DIST" == "focal" ] && legacy="legacy-" || legacy=""
   InitrdUrl="${LinuxMirror}/dists/${DIST}/main/installer-${VER}/current/${legacy}images/netboot/${linux_relese}-installer/${VER}/initrd.gz"
   VmLinuzUrl="${LinuxMirror}/dists/${DIST}${inUpdate}/main/installer-${VER}/current/${legacy}images/netboot/${linux_relese}-installer/${VER}/linux"
+  [[ "$linux_relese" == 'kali' ]] && {
+    InitrdUrl="${LinuxMirror}/dists/${DIST}/main/installer-${VER}/current/images/netboot/debian-installer/${VER}/initrd.gz"
+    VmLinuzUrl="${LinuxMirror}/dists/${DIST}/main/installer-${VER}/current/images/netboot/debian-installer/${VER}/linux"
+  }
   echo -e "[\033[33mMirror\033[0m] $InitrdUrl\n\t $VmLinuzUrl\n"
   wget --no-check-certificate -qO '/tmp/initrd.img' "$InitrdUrl"
   [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'initrd.img' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
   wget --no-check-certificate -qO '/tmp/vmlinuz' "$VmLinuzUrl"
   [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'vmlinuz' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
-  MirrorHost="$(echo "$LinuxMirror" |awk -F'://|/' '{print $2}')";
-  MirrorFolder="$(echo "$LinuxMirror" |awk -F''${MirrorHost}'' '{print $2}')";
+  MirrorHost="$(echo "$LinuxMirror" |awk -F'://|/' '{print $2}')"
+  MirrorFolder="$(echo "$LinuxMirror" |awk -F''${MirrorHost}'' '{print $2}')"
   [ -n "$MirrorFolder" ] || MirrorFolder="/"
 elif [[ "$linux_relese" == 'centos' ]] && [[ "$RedHatSeries" -le "7" ]]; then
   InitrdUrl="${LinuxMirror}/${DIST}/os/${VER}/images/pxeboot/initrd.img"
@@ -1492,7 +1795,7 @@ else
 fi
 if [[ "$linux_relese" == 'debian' ]]; then
   [[ "$IsCN" == "cn" ]] && FirmwareImage="cn"
-  if [[ "$IncFirmware" == '1' ]]; then	
+  if [[ "$IncFirmware" == '1' ]]; then
     if [[ "$FirmwareImage" == "cn" ]]; then
       wget --no-check-certificate -qO '/tmp/firmware.cpio.gz' "https://mirrors.ustc.edu.cn/debian-cdimage/unofficial/non-free/firmware/${DIST}/current/firmware.cpio.gz"
       [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'firmware' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
@@ -1511,7 +1814,7 @@ fi
 mkdir -p /tmp/boot
 cd /tmp/boot
 
-if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
+if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ "$linux_relese" == 'kali' ]]; then
   COMPTYPE="gzip"
 elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
   COMPTYPE="$(file ../initrd.img |grep -o ':.*compressed data' |cut -d' ' -f2 |sed -r 's/(.*)/\L\1/' |head -n1)"
@@ -1537,7 +1840,7 @@ for COMP in `echo -en 'gzip\nlzma\nxz'`
 [[ "$COMPTYPE" == 'gzip' ]] && UNCOMP='gzip -d'
 $UNCOMP < /tmp/$NewIMG | cpio --extract --verbose --make-directories --no-absolute-filenames >>/dev/null 2>&1
 
-if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
+if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ "$linux_relese" == 'kali' ]]; then
   DebianPreseedProcess
   if [[ "$loaderMode" != "0" ]] && [[ "$setNet" == '0' ]]; then
     sed -i '/netcfg\/disable_autoconfig/d' /tmp/boot/preseed.cfg
@@ -1545,7 +1848,7 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
     sed -i '/netcfg\/get_.*/d' /tmp/boot/preseed.cfg
     sed -i '/netcfg\/confirm_static/d' /tmp/boot/preseed.cfg
   fi
-  if [[ "$linux_relese" == 'debian' ]]; then
+  if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]]; then
     sed -i '/user-setup\/allow-password-weak/d' /tmp/boot/preseed.cfg
     sed -i '/user-setup\/encrypt-home/d' /tmp/boot/preseed.cfg
     sed -i '/pkgsel\/update-policy/d' /tmp/boot/preseed.cfg
@@ -1554,13 +1857,13 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
 # Debian 8 and former or Raid 0 mode don't support xfs.
     [[ "$DebianDistNum" -le "8" || "$setRaid" == "0" ]] && sed -i '/d-i\ partman\/default_filesystem string xfs/d' /tmp/boot/preseed.cfg
   fi
-# To avoid to entry into low memory mode, Debian 10 needs at least 512M memory and more, Debian 11 needs at least 768MB memory and more. 
-  if [[ "$DebianDistNum" == "11" ]]; then
-    [[ "$TotalMem1" -ge "768000" || "$TotalMem2" -ge "768000" ]] && sed -i '/d-i\ lowmem\/low boolean true/d' /tmp/boot/preseed.cfg
+# To avoid to entry into low memory mode, Debian 10 needs at least 1GB memory and more, Debian 11+ and Kali needs at least 1.5GB memory and more. 
+  if [[ "$DebianDistNum" -ge "11" || "$linux_relese" == "kali" ]]; then
+    [[ "$TotalMem1" -ge "1572864" || "$TotalMem2" -ge "1572864" ]] && sed -i '/d-i\ lowmem\/low boolean true/d' /tmp/boot/preseed.cfg
   elif [[ "$DebianDistNum" == "10" ]]; then
-    [[ "$TotalMem1" -ge "512000" || "$TotalMem2" -ge "512000" ]] && sed -i '/d-i\ lowmem\/low boolean true/d' /tmp/boot/preseed.cfg
+    [[ "$TotalMem1" -ge "1048576" || "$TotalMem2" -ge "1048576" ]] && sed -i '/d-i\ lowmem\/low boolean true/d' /tmp/boot/preseed.cfg
   elif [[ "$DebianDistNum" -le "9" ]]; then
-    sed -i '/d-i\ lowmem\/low boolean true/d' /tmp/boot/preseed.cfg
+    [[ "$TotalMem1" -ge "786432" || "$TotalMem2" -ge "786432" ]] && sed -i '/d-i\ lowmem\/low boolean true/d' /tmp/boot/preseed.cfg
   fi
 # Ubuntu 20.04 and below does't support xfs, force grub-efi installation to the removable media path may cause grub install failed, low memory mode.
   if [[ "$linux_relese" == 'ubuntu' ]]; then
@@ -1568,13 +1871,31 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
     sed -i '/d-i\ grub-installer\/force-efi-extra-removable/d' /tmp/boot/preseed.cfg
     sed -i '/d-i\ lowmem\/low boolean true/d' /tmp/boot/preseed.cfg
   fi
+# Kali preseed.cfg reference:
+# https://github.com/iesplin/kali-preseed/blob/master/preseed/core-minimal.cfg
+#
+# Kali metapackages reference:
+# https://www.kali.org/docs/general-use/metapackages/
+  if [[ "$linux_relese" == 'kali' ]]; then
+    sed -i 's/first multiselect minimal/first multiselect standard/g' /tmp/boot/preseed.cfg
+    sed -i 's/upgrade select none/upgrade select full-upgrade/g' /tmp/boot/preseed.cfg
+    sed -i 's/include string openssh-server/include string kali-linux-core openssh-server/g' /tmp/boot/preseed.cfg
+  fi
+  if [[ "$linux_relese" != 'kali' ]]; then
+    sed -i '/d-i\ apt-setup\/services-select multiselect/d' /tmp/boot/preseed.cfg
+    sed -i '/d-i\ apt-setup\/enable-source-repositories boolean false/d' /tmp/boot/preseed.cfg
+  fi
 # Static network environment doesn't support ntp clock setup.
   if [[ "$Network4Config" == "isStatic" ]] || [[ "$Network6Config" == "isStatic" ]]; then
     sed -i 's/ntp boolean true/ntp boolean false/g' /tmp/boot/preseed.cfg
     sed -i '/d-i\ clock-setup\/ntp-server string ntp.nict.jp/d' /tmp/boot/preseed.cfg
   fi
 # If network adapter is not redirected, delete this setting to new system.
-  [[ "$setInterfaceName" == "0" ]] && sed -i '/d-i\ debian-installer\/add-kernel-opts string net.ifnames=0 biosdevname=0/d' /tmp/boot/preseed.cfg
+  [[ "$setInterfaceName" == "0" ]] && sed -i 's/net.ifnames=0 biosdevname=0//g' /tmp/boot/preseed.cfg
+# If user not setting disable IPv6 or network is IPv6 or bio-stack, "ipv6.disable=1" should be deleted.
+  if [[ "$setIPv6" == "0" ]]; then
+    [[ "$IPStackType" != "IPv4Stack" ]] && sed -i 's/ipv6.disable=1//g' /tmp/boot/preseed.cfg
+  fi
 
   [[ "$ddMode" == '1' ]] && {
     WinNoDHCP(){
@@ -1712,6 +2033,7 @@ file
 ipcalc
 jq
 lrzsz
+lsof
 net-tools
 opensslwget
 traceroute
@@ -1770,7 +2092,7 @@ cp -f /tmp/initrd.img /boot/initrd.img || sudo cp -f /tmp/initrd.img /boot/initr
 cp -f /tmp/vmlinuz /boot/vmlinuz || sudo cp -f /tmp/vmlinuz /boot/vmlinuz
 
 # Grub config start
-# Debian/Ubuntu Grub1 set start
+# Debian/Ubuntu/Kali Grub1 set start
 if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
   if [[ "$setNetbootXyz" == "0" ]]; then
     READGRUB='/tmp/grub.read'
@@ -1778,15 +2100,53 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
     touch $READGRUB
 # Backup original grub config file
     cp $GRUBDIR/$GRUBFILE "$GRUBDIR/$GRUBFILE_$(date "+%Y%m%d%H%M").bak"
-# Read grub file, search boot item
+# Read grub file, search boot item.
+#
+# Here is the sample of "menuentry" in most regular Debian like Linux releases:
+#
+# menuentry 'Debian GNU/Linux' {
+#   load_video
+#   insmod ...
+#   if [ x$grub_platform = xxen ]; then insmod ...; fi
+#   set root='hd...'
+#   if [ x$feature_platform_search_hint = xy ]; then
+#	    search --no-floppy --fs-uuid --set=root --hint- ...
+#   else
+#     search --no-floppy --fs-uuid --set=root some uuid
+#   fi
+#   echo	'Loading Linux ...'
+#	  linux	/boot/vmlinuz
+#   echo	'Loading initial ramdisk ...'
+#   initrd	/boot/initrd.img
+# }
+#
+# But in Ubuntu series(version 20.04+) of official templates of Amazon Lightsail, there are two "}" in one set of the "menuentry" like:
+#
+# menuentry 'Ubuntu' {
+#   gfxpayload ...
+#   insmod ...
+#   if [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
+#   if [ x$feature_platform_search_hint = xy ]; then ...; fi
+#   if [ "${initrdfail}" = 1 ]; then
+#     linux	/boot/vmlinuz
+#     initrd	/boot/initrd.img
+#   else
+#     ...
+#   fi
+#   initrdfail
+# }
+#
+# Original regex " grep -om 1 'menuentry\ [^}]*}' " written by "MoeClub" can only matches end to " menuentry 'Ubuntu' {..... if [ "${initrdfail} " so that " grep -om 1 'menuentry\ [^}]*}%%%%%%% " caused "$READGRUB" has nothing.
+# That's why we need to add "." to split every regex conditions and delete space lines of "# code comments".
+#
 # Some grub file is written as a binary file, add parameter "-a, --text" process this file as if it were text; this is equivalent to the --binary-files=text option
-    cat $GRUBDIR/$GRUBFILE |sed -n '1h;1!H;$g;s/\n/%%%%%%%/g;$p' |grep -aom 1 'menuentry\ [^{]*{[^}]*}%%%%%%%' |sed 's/%%%%%%%/\n/g' >$READGRUB
-    LoadNum="$(cat $READGRUB |grep -c 'menuentry ')"
+    cat $GRUBDIR/$GRUBFILE | sed -n '1h;1!H;$g;s/\n/%%%%%%%/g;$p' | grep -aom 1 'menuentry\ [^{].*{.[^}].*}%%%%%%%' | sed 's/%%%%%%%/\n/g' | grep -v '^#' | sed '/^[[:space:]]*$/d' >$READGRUB
+    LoadNum="$(cat $READGRUB | grep -c 'menuentry ')"
     if [[ "$LoadNum" -eq '1' ]]; then
-      cat $READGRUB |sed '/^$/d' >/tmp/grub.new;
+      cat $READGRUB | sed '/^$/d' >/tmp/grub.new;
     elif [[ "$LoadNum" -gt '1' ]]; then
-      CFG0="$(awk '/menuentry /{print NR}' $READGRUB|head -n 1)";
-      CFG2="$(awk '/menuentry /{print NR}' $READGRUB|head -n 2 |tail -n 1)";
+      CFG0="$(awk '/menuentry /{print NR}' $READGRUB | head -n 1)";
+      CFG2="$(awk '/menuentry /{print NR}' $READGRUB | head -n 2 | tail -n 1)";
       CFG1="";
       for tmpCFG in `awk '/}/{print NR}' $READGRUB`; do
         [ "$tmpCFG" -gt "$CFG0" -a "$tmpCFG" -lt "$CFG2" ] && CFG1="$tmpCFG";
@@ -1814,10 +2174,10 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
     [ -z "$LinuxIMG" ] && sed -i "/$LinuxKernel.*\//a\\\tinitrd\ \/" /tmp/grub.new && LinuxIMG='initrd';
 # If network adapter need to redirect eth0, eth1... in new system, add this setting in grub file of the current system for netboot install file which need to be loaded after restart.
 # The same behavior for grub2.
-    [[ "$setInterfaceName" == "1" ]] && Add_OPTION="net.ifnames=0 biosdevname=0" || Add_OPTION=""
+    [[ "$setInterfaceName" == "1" ]] && Add_OPTION="$Add_OPTION net.ifnames=0 biosdevname=0" || Add_OPTION="$Add_OPTION"
     [[ "$setIPv6" == "1" || "$IPStackType" == "IPv4Stack" ]] && Add_OPTION="$Add_OPTION ipv6.disable=1"
 
-    if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
+    if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ "$linux_relese" == 'kali' ]]; then
 # The method for Debian series installer to search network adapter automatically is to set "d-i netcfg/choose_interface select auto" in preseed file.
 # The same behavior for grub2.
       BOOT_OPTION="auto=true $Add_OPTION hostname=$(hostname) domain=$linux_relese quiet"
@@ -1826,7 +2186,6 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
 # The same behavior for grub2.
       BOOT_OPTION="inst.ks=file://ks.cfg $Add_OPTION ksdevice=$interfaceSelect quiet"
     fi
-  
     [ -n "$setConsole" ] && BOOT_OPTION="$BOOT_OPTION --- console=$setConsole"
   
     [[ "$Type" == 'InBoot' ]] && {
@@ -1888,7 +2247,7 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
       [ "$tmpCFG" -ge "$CFG0" -a "$tmpCFG" -le "$CFG2" ] && CFG1="$tmpCFG"
     done
     if [[ -z "$CFG1" ]]; then
-# In standard redhat like linux os with grub2 above version of 7, the boot configuration in "grub.cfg" is like:
+# In standard Redhat like linux OS with grub2 above version of 7, the OS boot configuration in "grub.cfg" is like:
 #
 # insmod part_msdos
 # insmod xfs
@@ -1899,7 +2258,7 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
 #   search --no-floppy --fs-uuid --set=root d34311d7-62fd-419e-8f19-71494c773ddd
 # fi
 #
-# But in Rocky Linux 9.1 of official templates in Oracle Cloud, the boot configuration in "grub.cfg" is different from any other of redhat release version compeletely:
+# But in RockyLinux 9.1 of official templates in Oracle Cloud, the boot configuration in "grub.cfg" is different from any other of Redhat release versions compeletely:
 #
 # insmod part_gpt
 # insmod xfs
@@ -1908,10 +2267,20 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
 # insmod fat
 # search --no-floppy --fs-uuid --set=boot 9E70-9B63
 #
+# In CentOS 7, Fedora 36+, AlmaLinux/CentOS-stream/RockyLinux 8+ of official templates in Linode, all the samples are the same:
+#
+# insmod part_msdos
+# insmod ext2
+# set root='hd0'
+# insmod part_msdos
+# insmod ext2
+# set boot='hd0'
+#
 # Only the following method will effective:
 #
-# The expect component in grub file should be like "search --no-floppy --fs-uuid --set=root 9340b3c7-e898-44ae-bd1e-4c58dec2b16d".
-      SetRootCfg="$(awk '/--fs-uuid --set=root/{print NR}' $GRUBDIR/$GRUBFILE|head -n 2|tail -n 1)"
+# The expect component in grub file should be like "search --no-floppy --fs-uuid --set=root 9340b3c7-e898-44ae-bd1e-4c58dec2b16d" or "set boot='hd0'".
+      SetRootCfg="$(awk '/--fs-uuid --set=root/{print NR}' $GRUBDIR/$GRUBFILE | head -n 2 | tail -n 1)"
+      [[ "$SetRootCfg" == "" ]] && SetRootCfg="$(awk '/set root='\''hd[0-9]/{print NR}' /boot/grub2/grub.cfg | head -n 2 | tail -n 1)"
 # An array for depositing all rows of "insmod part_".
       InsmodPartArray=()
 # An array for row number of "search --no-floppy --fs-uuid --set=root..." minus row number of "insmod part_".
@@ -1959,7 +2328,13 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
     [[ "$setInterfaceName" == "1" ]] && Add_OPTION="net.ifnames=0 biosdevname=0" || Add_OPTION=""
     [[ "$setIPv6" == "1" || "$IPStackType" == "IPv4Stack" ]] && Add_OPTION="$Add_OPTION ipv6.disable=1"
 # Write menuentry to grub
-    [[ "$linux_relese" == 'ubuntu'  || "$linux_relese" == 'debian' ]] && BOOT_OPTION="auto=true $Add_OPTION hostname=$(hostname) domain=$linux_relese quiet" || BOOT_OPTION="inst.ks=file://ks.cfg $Add_OPTION ksdevice=$interfaceSelect quiet"
+    if [[ "$linux_relese" == 'ubuntu'  || "$linux_relese" == 'debian' || "$linux_relese" == 'kali' ]]; then
+      checkMem || Add_OPTION="$Add_OPTION lowmem=+0"
+      [[ "$virtType" =~ "microsoft" && ! "$Add_OPTION" =~ "lowmem=+0" ]] && Add_OPTION="$Add_OPTION lowmem=+0"
+      BOOT_OPTION="auto=true $Add_OPTION hostname=$(hostname) domain=$linux_relese quiet"
+    else
+      BOOT_OPTION="inst.ks=file://ks.cfg $Add_OPTION ksdevice=$interfaceSelect quiet"
+    fi
     cat >> /etc/grub.d/40_custom <<EOF
 menuentry 'Install $Relese $DIST $VER' --class $linux_relese --class gnu-linux --class gnu --class os {
   load_video
