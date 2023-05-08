@@ -20,6 +20,9 @@ Redhat series(CentOS / AlmaLinux / RockyLinux / OracleLinux / Fedora / VzLinux):
 If you need to add other parameters, version number must be assigned!
 ### Debian 12
 <pre><code>bash InstallNET.sh -debian</code></pre>
+### Kali Rolling
+<pre><code>bash InstallNET.sh -kali</code></pre>
+<b>Kali has a bad hardware compatibility for architecture of ARM64, don't install it on OracleCloud Ampere A1 machine!</b>
 ### CentOS 9 stream
 <pre><code>bash InstallNET.sh -centos</code></pre>
 ### AlmaLinux 9
