@@ -8,6 +8,8 @@ Something about scripts
 
 ## Download:
 <pre><code>wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh</code></pre>
+Servers in mainland of China:
+<pre><code>wget --no-check-certificate -qO InstallNET.sh 'https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh</code></pre>
 
 ## Dependences && Supporting the following OS list to install to the OS that script supported:
 Debian series(Debian / Ubuntu / Kali):
