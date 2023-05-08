@@ -10,10 +10,10 @@ Something about scripts
 <pre><code>wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh</code></pre>
 
 ## Dependences:
-Debian series(Debian / Ubuntu):
+Debian series(Debian / Ubuntu / Kali):
 <pre><code>apt update -y</code></pre>
 <pre><code>apt install wget -y</code></pre>
-Redhat series(CentOS / AlmaLinux / RockyLinux / OracleLinux / Fedora / VzLinux):
+Redhat series(CentOS / AlmaLinux / RockyLinux / OracleLinux / Fedora / VzLinux / ScientificOS / RedHat Enterprise Linux / Tencent OpenCloudOS / AWS AmazonLinux / AlibabaCloudLinux or AliyunLinux / OpenAnolis):
 <pre><code>yum install wget -y</code></pre>
 
 ## Quickly start
