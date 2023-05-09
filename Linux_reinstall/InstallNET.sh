@@ -63,6 +63,7 @@ export GRUBVER=''
 export VER=''
 export setCMD=""
 export setConsole=''
+export setAutoConfig='1'
 export FirmwareImage=''
 export AddNum='1'
 export DebianModifiedProcession='echo "";'
@@ -235,6 +236,10 @@ while [[ $# -ge 1 ]]; do
     --noipv6)
       shift
       setIPv6='1'
+      ;;
+    --allbymyself)
+      shift
+      setAutoConfig='0'
       ;;
     -netbootxyz)
       shift
@@ -420,7 +425,7 @@ function getDisk() {
   [[ "$disks" == "" ]] && disks=`lsblk | sed 's/[[:space:]]*$//g' | grep "disk" | grep -i "g\|t\|p\|e\|z\|y" | cut -d' ' -f1 | head -1`
   echo "${disks: -1}" | [[ -n "`sed -n '/^[0-9][0-9]*$/p'`" ]] && disks=`echo "$disks" | sed 's/[0-9]//g'`
   [ -n "$disks" ] || echo ""
-  echo "$disks" |grep -q "/dev"
+  echo "$disks" | grep -q "/dev"
   [ $? -eq 0 ] && echo "$disks" || echo "/dev/$disks"
   AllDisks=""
   for Count in `lsblk | sed 's/[[:space:]]*$//g' | grep "disk$" | cut -d' ' -f1 | grep -v "fd[0-9]*\|sr[0-9]*"`; do
@@ -456,7 +461,7 @@ function getUserTimezone() {
 }
 
 function checkEfi() {
-  EfiStatus=`efibootmgr l | head -n 1`
+  EfiStatus=`efibootmgr l`
   EfiVars=""
   for Count in "$1" "$2" "$3" "$4"; do
     EfiVars=`ls -Sa $Count | wc -l`
@@ -464,7 +469,7 @@ function checkEfi() {
   done
   if [[ "$EfiStatus" == "" ]] || [[ "$EfiVars" == "0" ]]; then
     EfiSupport="disabled"
-  elif [[ -n `echo "$EfiStatus" | awk '{print $2}' | sed -n '/^[0-9][0-9]*$/p'` ]] && [[ "$EfiVars" != "0" ]]; then
+  elif [[ -n `echo "$EfiStatus" | grep -i "bootcurrent" | awk '{print $2}' | sed -n '/^[[:xdigit:]]*$/p' | head -n 1` || -n `echo "$EfiStatus" | grep -i "bootorder" | awk '{print $2}' | awk -F ',' '{print $NF}' | sed -n '/^[[:xdigit:]]*$/p' | head -n 1` ]] && [[ "$EfiVars" != "0" ]]; then
     EfiSupport="enabled"
   else
     echo -ne "\n\033[31mError: \033[0mboot firmware of your system could not be confirmed!\n"
@@ -816,7 +821,7 @@ function parseYaml() {
   }'
 }
 
-# $1 is $CurrentOS $2 is $CurrentOSVer
+# $1 is $CurrentOS
 function getInterface() {
 # Network config file for Ubuntu 16.04 and former version, 
 # Debian all version included the latest Debian 11 is deposited in /etc/network/interfaces, they managed by "ifupdown".
@@ -840,18 +845,11 @@ function getInterface() {
   if [[ -n "$GrubCmdLine" && -z "$interfaceSelect" ]] || [[ "$interface" == "eth0" ]] || [[ "$linux_relese" == "kali" ]]; then
     setInterfaceName='1'
   fi
-  if [[ "$1" == 'Ubuntu' ]] && [[ "$2" -ge "18" ]]; then
-    # NetCfgDir="/etc/netplan/"
-    # NetCfgFile=`ls -Sl $NetCfgDir | grep ".yaml" | head -n 1 | awk -F' ' '{print $NF}'`
-    tmpNetCfgFiles=""
-    for Count in $(find $(echo `find / -maxdepth 5 -path /*netplan`) -maxdepth 1 -name "*.yaml" -print); do
-      tmpNetCfgFiles+=$(echo -e "\n"`grep -wrl "network" | grep -wrl "ethernets" | grep -wrl "$interface" | grep -wrl "version" "$Count" 2>/dev/null`)
-    done
-    getLargestOrSmallestFile "$tmpNetCfgFiles" "sort -hr"
-    NetCfgFile="$FileName"
-    NetCfgDir="$FileDirection"
-    NetCfgWhole="$NetCfgDir$NetCfgFile"
-  elif [[ "$1" == 'CentOS' || "$1" == 'AlmaLinux' || "$1" == 'RockyLinux' || "$1" == 'Fedora' || "$1" == 'Vzlinux' || "$1" == 'OracleLinux' || "$1" == 'OpenCloudOS' || "$1" == 'AlibabaCloudLinux' || "$1" == 'ScientificLinux' || "$1" == 'AmazonLinux' || "$1" == 'RedHatEnterpriseLinux' || "$1" == 'OpenAnolis' ]]; then
+  if [[ "$1" == 'CentOS' || "$1" == 'AlmaLinux' || "$1" == 'RockyLinux' || "$1" == 'Fedora' || "$1" == 'Vzlinux' || "$1" == 'OracleLinux' || "$1" == 'OpenCloudOS' || "$1" == 'AlibabaCloudLinux' || "$1" == 'ScientificLinux' || "$1" == 'AmazonLinux' || "$1" == 'RedHatEnterpriseLinux' || "$1" == 'OpenAnolis' ]]; then
+    [[ ! $(find / -maxdepth 6 -path /*network-scripts -type d -print -or -path /*system-connections -type d -print) ]] && {
+      echo -ne "\n[${red}Error${plain}] Invalid network configuration!\n"
+      exit 1
+    }
     NetCfgWhole=()
     tmpNetCfgFiles=""
     for Count in $(find / -maxdepth 6 -path /*network-scripts -type d -print -or -path /*system-connections -type d -print); do
@@ -939,22 +937,43 @@ function getInterface() {
     NetCfgFile="$FileName"
     NetCfgDir="$FileDirection"
   else
+    readNetplan=$(find $(echo `find / -maxdepth 5 -path /*netplan`) -maxdepth 1 -name "*.yaml" -print)
+    readIfupdown=$(find / -maxdepth 5 -path /*network -type d -print | grep -v "lib\|systemd")
+    if [[ ! -z "$readNetplan" ]]; then
+# Ubuntu 18+ network configuration
+      networkManagerType="netplan"    
+      tmpNetCfgFiles=""
+      for Count in $readNetplan; do
+        tmpNetCfgFiles+=$(echo -e "\n"`grep -wrl "network" | grep -wrl "ethernets" | grep -wrl "$interface" | grep -wrl "version" "$Count" 2>/dev/null`)
+      done
+      getLargestOrSmallestFile "$tmpNetCfgFiles" "sort -hr"
+      NetCfgFile="$FileName"
+      NetCfgDir="$FileDirection"
+      NetCfgWhole="$NetCfgDir$NetCfgFile"  
+    elif [[ ! -z "$readIfupdown" ]]; then
+# Debian/Kali network configuration
+# Some versions of Ubuntu 18 like virmach template use ifupdown not netplan.
+      networkManagerType="ifupdown"
 # Collect all eligible config files by the several parent directions names "network".
 # Reference: https://wiki.debian.org/NetworkConfiguration           
 #            https://wiki.debian.org/IPv6PrefixDelegation
-    tmpNetCfgFiles=""
-    for Count in $(find / -maxdepth 5 -path /*network -type d -print); do
-      NetCfgFiles=`grep -wrl "iface" | grep -wrl "inet\|inet6" | grep -wrl "auto\|dhcp\|static\|manual" "$Count""/" 2>/dev/null | grep -v "if-*" | grep -v "state" | grep -v "helper" | grep -v "template"`
-      for Files in $NetCfgFiles; do
-        if [[ `grep -w "$interface" "$Files"` != "" ]]; then
-          tmpNetCfgFiles+=$(echo -e "\n""$Files")
-        fi
+      tmpNetCfgFiles=""
+      for Count in $readIfupdown; do
+        NetCfgFiles=`grep -wrl "iface" | grep -wrl "inet\|inet6" | grep -wrl "auto\|dhcp\|static\|manual" "$Count""/" 2>/dev/null | grep -v "if-*" | grep -v "state" | grep -v "helper" | grep -v "template"`
+        for Files in $NetCfgFiles; do
+          if [[ `grep -w "$interface" "$Files"` != "" ]]; then
+            tmpNetCfgFiles+=$(echo -e "\n""$Files")
+          fi
+        done
       done
-    done
-    getLargestOrSmallestFile "$tmpNetCfgFiles" "sort -hr"
-    NetCfgFile="$FileName"
-    NetCfgDir="$FileDirection"
-    NetCfgWhole="$NetCfgDir$NetCfgFile"
+      getLargestOrSmallestFile "$tmpNetCfgFiles" "sort -hr"
+      NetCfgFile="$FileName"
+      NetCfgDir="$FileDirection"
+      NetCfgWhole="$NetCfgDir$NetCfgFile"
+    else
+      echo -ne "\n[${red}Error${plain}] Invalid network configuration!\n"
+      exit 1
+    fi
   fi
   echo "$NetCfgWhole"
 }
@@ -987,7 +1006,7 @@ function checkIpv4OrIpv6ConfigForRedhat9Later() {
 
 # $1 is $CurrentOS, $2 is $CurrentOSVer, $3 is $IPStackType
 function checkDHCP() {
-  getInterface "$1" "$2"
+  getInterface "$1"
   if [[ "$1" == 'CentOS' || "$1" == 'AlmaLinux' || "$1" == 'RockyLinux' || "$1" == 'Fedora' || "$1" == 'Vzlinux' || "$1" == 'OracleLinux' || "$1" == 'OpenCloudOS' || "$1" == 'AlibabaCloudLinux' || "$1" == 'ScientificLinux' || "$1" == 'AmazonLinux' || "$1" == 'RedHatEnterpriseLinux' || "$1" == 'OpenAnolis' ]]; then
 # RedHat like linux system 8 and before network config name is "ifcfg-interface", deposited in /etc/sysconfig/network-scripts/
 # RedHat like linux system 9 and later network config name is "interface.nmconnection", deposited in /etc/NetworkManager/system-connections/
@@ -1039,7 +1058,7 @@ function checkDHCP() {
         [[ `sed -n "$NetCfg4LineNum"p $NetCfgWhole` == "method=manual" ]] && Network4Config="isStatic" || Network4Config="isDHCP"
       fi
     fi
-  elif [[ "$1" == 'Debian' ]] || [[ "$1" == 'Kali' ]] || [[ "$1" == 'Ubuntu' && "$2" -le "16" ]]; then
+  elif [[ "$1" == 'Debian' ]] || [[ "$1" == 'Kali' ]] || [[ "$1" == 'Ubuntu' && "$networkManagerType" == "ifupdown" ]]; then
 # Debian network configs may be deposited in the following directions.
 # /etc/network/interfaces or /etc/network/interfaces.d/interface or /run/network/interfaces.d/interface
     if [[ "$3" == "IPv4Stack" ]]; then
@@ -1052,7 +1071,7 @@ function checkDHCP() {
       Network4Config="isDHCP"
       [[ `grep -iw "iface" $NetCfgWhole | grep -iw "$interface" | grep -iw "inet6" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
     fi
-  elif [[ "$1" == 'Ubuntu' ]] && [[ "$2" -ge "18" ]]; then
+  elif [[ "$1" == 'Ubuntu' && "$networkManagerType" == "netplan" ]]; then
 # For netplan(Ubuntu 18 and later), if network configuration is Static whether IPv4 or IPv6
 # in "*.yaml" config file, dhcp(4 or 6): no or false doesn't exist is allowed.
 # But if is DHCP, dhcp(4 or 6): yes or true is necessary.
@@ -1188,12 +1207,13 @@ d-i mdadm/boot_degraded boolean true"`
 }
 
 function DebianPreseedProcess() {
+  if [[ "$setAutoConfig" == "1" ]]; then
 # Default to make a GPT partition to support 3TB hard drive or larger.
 # To remove LVM VGM PVM force automatically:
 # https://serverfault.com/questions/571363/unable-to-automatically-remove-lvm-data
 # To part all disks:
 # https://unix.stackexchange.com/questions/341253/using-d-i-partman-recipe-strings
-  FormatDisk=`echo -e "d-i partman/mount_style select uuid\nd-i partman-auto/disk string ${AllDisks}\nd-i partman-auto/method string regular\nd-i partman-auto/init_automatically_partition select Guided - use entire disk\nd-i partman-auto/choose_recipe select All files in one partition (recommended for new users)\nd-i partman-basicfilesystems/choose_label string gpt\nd-i partman-basicfilesystems/default_label string gpt\nd-i partman-partitioning/choose_label string gpt\nd-i partman-partitioning/default_label string gpt\nd-i partman/choose_label string gpt\nd-i partman/default_label string gpt"`
+    FormatDisk=`echo -e "d-i partman/mount_style select uuid\nd-i partman-auto/disk string ${AllDisks}\nd-i partman-auto/method string regular\nd-i partman-auto/init_automatically_partition select Guided - use entire disk\nd-i partman-auto/choose_recipe select All files in one partition (recommended for new users)\nd-i partman-basicfilesystems/choose_label string gpt\nd-i partman-basicfilesystems/default_label string gpt\nd-i partman-partitioning/choose_label string gpt\nd-i partman-partitioning/default_label string gpt\nd-i partman/choose_label string gpt\nd-i partman/default_label string gpt"`
 # Default disk format recipe:
 # d-i partman/mount_style select uuid
 # d-i partman-auto/disk string ${AllDisks}
@@ -1206,7 +1226,7 @@ function DebianPreseedProcess() {
 # d-i partman-partitioning/default_label string gpt
 # d-i partman/choose_label string gpt
 # d-i partman/default_label string gpt
-  [[ "$Network4Config" == "isDHCP" ]] && NetConfigManually="" || NetConfigManually=`echo -e "d-i netcfg/disable_autoconfig boolean true\nd-i netcfg/dhcp_failed note\nd-i netcfg/dhcp_options select Configure network manually\nd-i netcfg/get_ipaddress string $IPv4\nd-i netcfg/get_netmask string $MASK\nd-i netcfg/get_gateway string $GATE\nd-i netcfg/get_nameservers string $ipDNS\nd-i netcfg/no_default_route boolean true\nd-i netcfg/confirm_static boolean true"`
+    [[ "$Network4Config" == "isDHCP" ]] && NetConfigManually="" || NetConfigManually=`echo -e "d-i netcfg/disable_autoconfig boolean true\nd-i netcfg/dhcp_failed note\nd-i netcfg/dhcp_options select Configure network manually\nd-i netcfg/get_ipaddress string $IPv4\nd-i netcfg/get_netmask string $MASK\nd-i netcfg/get_gateway string $GATE\nd-i netcfg/get_nameservers string $ipDNS\nd-i netcfg/no_default_route boolean true\nd-i netcfg/confirm_static boolean true"`
 # Manually network setting configurations, including:
 # d-i netcfg/disable_autoconfig boolean true
 # d-i netcfg/dhcp_failed note
@@ -1217,8 +1237,8 @@ function DebianPreseedProcess() {
 # d-i netcfg/get_nameservers string $ipDNS
 # d-i netcfg/no_default_route boolean true
 # d-i netcfg/confirm_static boolean true
-  DebianModifiedPreseed "in-target"
-  cat >/tmp/boot/preseed.cfg<<EOF
+    DebianModifiedPreseed "in-target"
+    cat >/tmp/boot/preseed.cfg<<EOF
 ### Unattended Installation
 d-i auto-install/enable boolean true
 d-i debconf/priority select critical
@@ -1326,12 +1346,13 @@ echo '' >>/target/etc/crontab; \
 echo '${setCMD}' >/target/etc/run.sh; \
 ${DebianModifiedProcession}
 EOF
+  fi
 }
 
 checkSys
 
 # Get the name of network adapter($interface).
-# [[ -z "$interface" ]] && interface=`getInterface "$CurrentOSCurrentOS" "$CurrentOSVer"`
+# [[ -z "$interface" ]] && interface=`getInterface "$CurrentOS"
 # Try to enable IPv4 by DHCP
 # timeout 5 dhclient -4 $interface
 # Try to enable IPv6 by DHCP
@@ -1342,7 +1363,7 @@ checkIpv4OrIpv6
 # Youtube, Instagram and Wikipedia all have public IPv4 and IPv6 address and are also banned in mainland China.
 checkCN "www.youtube.com" "www.instagram.com" "www.wikipedia.org" "$IPStackType"
 
-checkEfi "/sys/firmware/efi/efivars/" "/sys/firmware/efi/mok-variables/" "/sys/firmware/efi/runtime-map/" "/sys/firmware/efi/vars/"
+checkEfi "/sys/firmware/efi/vars/" "/sys/firmware/efi/efivars/" "/sys/firmware/efi/runtime-map/" "/sys/firmware/efi/mok-variables/"
 
 checkVirt
 
@@ -1389,7 +1410,7 @@ else
 fi
 if [[ "$setNet" == "0" ]]; then
   dependence ip
-  [[ -n "$interface" ]] || interface=`getInterface "$CurrentOS" "$CurrentOSVer"`
+  [[ -n "$interface" ]] || interface=`getInterface "$CurrentOS"`
   iAddr=`ip addr show | grep -wv "lo\|host" | grep -w "inet" | grep "$interface" | grep -w "scope global*\|link*" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
   ipAddr=`echo ${iAddr} | cut -d'/' -f1`
   ipMask=`netmask $(echo ${iAddr} | cut -d'/' -f2)`
@@ -1447,7 +1468,7 @@ if [[ "$setNet" == "0" ]]; then
 fi
 if [ -z "$interface" ]; then
   dependence ip
-  [ -n "$interface" ] || interface=`getInterface "$CurrentOS" "$CurrentOSVer"`
+  [ -n "$interface" ] || interface=`getInterface "$CurrentOS"`
 fi
 IPv4="$ipAddr"; MASK="$ipMask"; GATE="$ipGate";
 [[ -z "$IPv4" && -z "$MASK" && -z "$GATE" ]] && {
@@ -1983,7 +2004,8 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
   elif [[ "$Network4Config" == "isStatic" ]] && [[ "$Network6Config" == "isStatic" ]]; then
     NetConfigManually="network --device=$interface --bootproto=static --ip=$IPv4 --netmask=$MASK --gateway=$GATE --ipv6=$i6Addr --ipv6gateway=$ip6Gate --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
   fi
-cat >/tmp/boot/ks.cfg<<EOF
+if [[ "$setAutoConfig" == "1" ]]; then
+  cat >/tmp/boot/ks.cfg<<EOF
 # platform x86, AMD64, or Intel EM64T, or ARM aarch64
 # Firewall configuration
 firewall --enabled --ssh
@@ -2097,6 +2119,7 @@ rm -rf /root/install.*log
 %end
 
 EOF
+fi
 # If network adapter is not redirected, delete this setting to new system.
   [[ "$setInterfaceName" == "0" ]] && sed -i 's/ net.ifnames=0 biosdevname=0//g' /tmp/boot/ks.cfg
   
@@ -2203,6 +2226,8 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
 # The same behavior for grub2.
       BOOT_OPTION="inst.ks=file://ks.cfg $Add_OPTION ksdevice=$interfaceSelect quiet"
     fi
+    [[ "$setAutoConfig" == "0" ]] && sed -i 's/inst.ks=file:\/\/ks.cfg//' $GRUBDIR/$GRUBFILE
+    
     [ -n "$setConsole" ] && BOOT_OPTION="$BOOT_OPTION --- console=$setConsole"
   
     [[ "$Type" == 'InBoot' ]] && {
@@ -2352,6 +2377,7 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
     else
       BOOT_OPTION="inst.ks=file://ks.cfg $Add_OPTION ksdevice=$interfaceSelect quiet"
     fi
+    [[ "$setAutoConfig" == "0" ]] && sed -i 's/inst.ks=file:\/\/ks.cfg//' $GRUBDIR/$GRUBFILE
     cat >> /etc/grub.d/40_custom <<EOF
 menuentry 'Install $Relese $DIST $VER' --class $linux_relese --class gnu-linux --class gnu --class os {
   load_video
