@@ -1149,7 +1149,7 @@ function DebianModifiedPreseed() {
     if [[ "$Network6Config" == "isDHCP" ]]; then
 # This IPv4Stack DHCP machine can access IPv6 network in the future, maybe.
 # But it should be setting as IPv4 network priority.
-#     SupportIPv6="$1 sed -i '\$aiface $interface inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel ::ffff:0:0/96' /etc/gai.conf;"
+      SupportIPv6="$1 sed -i '\$aiface $interface inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel ::ffff:0:0/96' /etc/gai.conf;"
 # Enable IPv6 dhcp and set prefer IPv6 access for BioStack or IPv6Stack machine: add "label 2002::/16", "label 2001:0::/32" in last line of the "/etc/gai.conf"
       [[ "$IPStackType" == "BioStack" ]] && SupportIPv6="$1 sed -i '\$aiface $interface inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
     elif [[ "$Network6Config" == "isStatic" ]]; then
