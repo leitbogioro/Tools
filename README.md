@@ -26,7 +26,7 @@ If you need to add other parameters, version number must be assigned!
 <pre><code>bash InstallNET.sh -debian</code></pre>
 ### Kali Rolling
 <pre><code>bash InstallNET.sh -kali</code></pre>
-<b>Kali can be installed and run in OracleCloud Ampere A1 ARM64 machine but there are not any output results in VNC, just waiting patiently after installation has been finished!</b>
+<b>Kali can be installed and run in OracleCloud Ampere A1 ARM64 machine successfully but there are not any output results in VNC screen, just waiting patiently after installation has been finished!</b>
 ### CentOS 9 stream
 <pre><code>bash InstallNET.sh -centos</code></pre>
 ### AlmaLinux 9
