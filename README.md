@@ -26,7 +26,7 @@ If you need to add other parameters, version number must be assigned!
 <pre><code>bash InstallNET.sh -debian</code></pre>
 ### Kali Rolling
 <pre><code>bash InstallNET.sh -kali</code></pre>
-<b>Kali has a bad hardware compatibility for architecture of ARM64, don't install it on OracleCloud Ampere A1 machine!</b>
+<b>Kali can be installed and run in OracleCloud Ampere A1 ARM64 machine but there are not any output results in VNC, just waiting patiently after installation has been finished!</b>
 ### CentOS 9 stream
 <pre><code>bash InstallNET.sh -centos</code></pre>
 ### AlmaLinux 9
@@ -134,7 +134,7 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**-raid "0"**: Only for raid 0 disk partition, if your machine has only one hard drive, don't assign it!
+**-raid "0"**: Only for Debian 10 raid 0 disk partition recipe, Debian 11+ doesn't work, if your machine has only one hard drive, don't assign it!
 <br />
 <br />
 
@@ -142,19 +142,47 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**--ip-addr "IPv4 address"**: It must be added with --ip-gate and --ip-mask together, if you have added --dhcp-static, don't assign it again!
+**--ip-addr "IPv4 address"**: It must be added with --ip-gate and --ip-mask together, if you have added --network "static/manual", don't assign it again!
 <br />
 <br />
 
-**--ip-gate "IPv4 gateway"**: It must be added with --ip-addr and --ip-mask together, if you have added --dhcp-static, don't assign it again!
+**--ip-gate "IPv4 gateway"**: It must be added with --ip-addr and --ip-mask together, if you have added --network "static/manual", don't assign it again!
 <br />
 <br />
 
-**--ip-mask "IPv4 subnet musk"**: It must be added with --ip-addr and --ip-gate together, if you have added --dhcp-static, don't assign it again!
+**--ip-mask "IPv4 subnet musk"**: It must be added with --ip-addr and --ip-gate together, if you have added --network "static/manual", don't assign it again!
 <br />
 <br />
 
-**--ip-dns "IPv4 DNS server"**: This one is only for static network configuration and default is 1.0.0.1, you can also change other IPv4 dns server like 8.8.8.8, 9.9.9.9, 4.4.2.2 etc to replace it. If the network of your machine is DHCP, don't assign it!
+**--ip-dns "IPv4 DNS server"**: This one is only for static network configuration and default is 1.0.0.1 and 8.8.4.4, you can also change other IPv4 dns server like 8.8.8.8, 9.9.9.9, 4.4.2.2 etc to replace it. If the network of your machine is DHCP, don't assign it!
+<br />
+<br />
+
+**--ip6-addr "IPv6 address"**: It must be added with --ip6-gate and --ip6-mask together, if you have added --network "static/manual", don't assign it again!
+<br />
+<br />
+
+**--ip6-gate "IPv6 gateway"**: It must be added with --ip6-addr and --ip6-mask together, if you have added --network "static/manual", don't assign it again!
+<br />
+<br />
+
+**--ip6-mask "IPv6 subnet musk"**: It must be added with --ip6-addr and --ip6-gate together, if you have added --network "static/manual", don't assign it again!
+<br />
+<br />
+
+**--ip6-dns "IPv6 DNS server"**: This one is only for static network configuration and default is 2606:4700:4700::1001 and 2001:4860:4860::8844, you can also change other IPv6 dns server to replace it. If the network of your machine is DHCP, don't assign it!
+<br />
+<br />
+
+**--setipv6 "0 is disabled, 1 is enabled"**: Both IPv6 stack or bio-stack(both has IPv4 and IPv6 address) server will enable IPv6, IPv4 stack server will be disabled IPv6 by default(because Racknerd will give IPv6 DNS for IPv4 stack server, the server will access to invalid IPv6 network for priority, not IPv4 route.), if you want to load IPv6 modules or original os has IPv6 network access(only IPv6 dhcp) but due to missing IPv6 modules loading, the IPv6 access is disabled, you can add --setipv6 "1" to enable IPv6 modules force in new os.
+<br />
+<br />
+
+**-netbootxyz**: Use netbootXYZ(https://netboot.xyz/) to install netbootXYZ supported OS manually, must have VNC, only for x86_64 and AMD64 with BIOS firmware(UEFI is not supported!)
+<br />
+<br />
+
+**-allbymyself**: Install OS supported by this script manually, must have VNC.
 <br />
 <br />
 
