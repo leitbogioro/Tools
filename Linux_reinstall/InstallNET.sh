@@ -1200,7 +1200,7 @@ d-i mdadm/boot_degraded boolean true"`
       EnableSSH="$1 update-rc.d ssh enable; $1 /etc/init.d/ssh restart;"
 # Revise terms of license from "Debian" to "Kali" in motd file of "00-header".
       ReviseMOTD="$1 sed -ri 's/Debian/Kali/g' /etc/update-motd.d/00-header;"
-      SupportZSH="$1 apt install zsh -y; $1 chsh -s /bin/zsh;"
+      SupportZSH="$1 apt install zsh -y; $1 chsh -s /bin/zsh; $1 rm -rf /root/.bashrc.original;"
     }
     export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${DnsChangePermanently} ${ModifyMOTD} ${SupportIPv6} ${EnableSSH} ${ReviseMOTD} ${SupportZSH}"
   fi
