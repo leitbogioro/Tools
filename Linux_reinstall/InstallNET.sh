@@ -47,7 +47,7 @@ export ddMode='0'
 export setNet='0'
 export setNetbootXyz='0'
 export setRDP='0'
-export setIPv6='0'
+export tmpSetIPv6=''
 export setRaid=''
 export isMirror='0'
 export FindDists='0'
@@ -233,9 +233,10 @@ while [[ $# -ge 1 ]]; do
       tmpWORD="$1"
       shift
       ;;
-    --noipv6)
+    --setipv6)
       shift
-      setIPv6='1'
+      tmpSetIPv6="$1"
+      shift
       ;;
     --allbymyself)
       shift
@@ -726,6 +727,9 @@ function checkIpv4OrIpv6() {
   [[ "$IP_Check" == "isIPv4" && "$IP6_Check" == "isIPv6" ]] && IPStackType="BioStack"
   [[ "$IP_Check" == "isIPv4" && "$IP6_Check" != "isIPv6" ]] && IPStackType="IPv4Stack"
   [[ "$IP_Check" != "isIPv4" && "$IP6_Check" == "isIPv6" ]] && IPStackType="IPv6Stack"
+  [[ "$IPStackType" == "IPv4Stack" ]] && setIPv6="0" || setIPv6="1"
+  [[ "$tmpSetIPv6" == "1" ]] && setIPv6="1"
+  [[ "$tmpSetIPv6" == "0" ]] && setIPv6="0"
 }
 
 # This function help us to sort sizes for different files from different directions.
@@ -1931,9 +1935,7 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ 
 # If network adapter is not redirected, delete this setting to new system.
   [[ "$setInterfaceName" == "0" ]] && sed -i 's/net.ifnames=0 biosdevname=0//g' /tmp/boot/preseed.cfg
 # If user not setting disable IPv6 or network is IPv6 or bio-stack, "ipv6.disable=1" should be deleted.
-  if [[ "$setIPv6" == "0" ]]; then
-    [[ "$IPStackType" != "IPv4Stack" ]] && sed -i 's/ipv6.disable=1//g' /tmp/boot/preseed.cfg
-  fi
+  [[ "$setIPv6" == "1" ]] && sed -i 's/ipv6.disable=1//g' /tmp/boot/preseed.cfg
 
   [[ "$ddMode" == '1' ]] && {
     WinNoDHCP(){
@@ -2215,7 +2217,7 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
 # If network adapter need to redirect eth0, eth1... in new system, add this setting in grub file of the current system for netboot install file which need to be loaded after restart.
 # The same behavior for grub2.
     [[ "$setInterfaceName" == "1" ]] && Add_OPTION="$Add_OPTION net.ifnames=0 biosdevname=0" || Add_OPTION="$Add_OPTION"
-    [[ "$setIPv6" == "1" || "$IPStackType" == "IPv4Stack" ]] && Add_OPTION="$Add_OPTION ipv6.disable=1"
+    [[ "$setIPv6" == "0" ]] && Add_OPTION="$Add_OPTION ipv6.disable=1" || Add_OPTION="$Add_OPTION"
 
     if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ "$linux_relese" == 'kali' ]]; then
 # The method for Debian series installer to search network adapter automatically is to set "d-i netcfg/choose_interface select auto" in preseed file.
@@ -2368,7 +2370,7 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
     [ ! -f /tmp/grub.new ] && echo -e "\n\033[31mError: \033[0m$GRUBFILE.\n" && exit 1
 # Set IPv6 or distribute unite network adapter interface
     [[ "$setInterfaceName" == "1" ]] && Add_OPTION="net.ifnames=0 biosdevname=0" || Add_OPTION=""
-    [[ "$setIPv6" == "1" || "$IPStackType" == "IPv4Stack" ]] && Add_OPTION="$Add_OPTION ipv6.disable=1"
+    [[ "$setIPv6" == "0" ]] && Add_OPTION="$Add_OPTION ipv6.disable=1" || Add_OPTION="$Add_OPTION"
 # Write menuentry to grub
     if [[ "$linux_relese" == 'ubuntu'  || "$linux_relese" == 'debian' || "$linux_relese" == 'kali' ]]; then
       checkMem || Add_OPTION="$Add_OPTION lowmem=+0"
