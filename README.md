@@ -178,6 +178,14 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
+**--adapter "real network adapter interface name of the machine, like ens3, enp6s0 etc."**: If the kernel is added parameter "net.ifnames=0" or "biosdevname=0", all different network adapters' name will be directed to the same like "eth0", "eth1" etc. If you know the the real name of the network adapter and want let them to replace "eth0", please input the correct value, if you are not sure the real name of it, don't assign it!
+<br />
+<br />
+
+**--netdevice-unite**: This function has an opposite effect of --adapter "real interface name", it will add "net.ifnames=0 biosdevname=0" to the kernel to redirect all different network adapters' interface name to united "eth0", this one don't need to assign any value, I suggest you that before input it and start OS installation, you should backup the real name of the network adapter carefully!
+<br />
+<br />
+
 **-netbootxyz**: Use netbootXYZ(https://netboot.xyz/) to install netbootXYZ supported OS manually, must have VNC, only for x86_64 and AMD64 with BIOS firmware(UEFI is not supported!)
 <br />
 <br />
