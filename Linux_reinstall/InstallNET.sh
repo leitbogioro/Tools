@@ -48,6 +48,7 @@ export setNet='0'
 export setNetbootXyz='0'
 export setRDP='0'
 export tmpSetIPv6=''
+export setIPv6='1'
 export setRaid=''
 export isMirror='0'
 export FindDists='0'
@@ -727,9 +728,8 @@ function checkIpv4OrIpv6() {
   [[ "$IP_Check" == "isIPv4" && "$IP6_Check" == "isIPv6" ]] && IPStackType="BioStack"
   [[ "$IP_Check" == "isIPv4" && "$IP6_Check" != "isIPv6" ]] && IPStackType="IPv4Stack"
   [[ "$IP_Check" != "isIPv4" && "$IP6_Check" == "isIPv6" ]] && IPStackType="IPv6Stack"
-  [[ "$IPStackType" == "IPv4Stack" ]] && setIPv6="0" || setIPv6="1"
-  [[ "$tmpSetIPv6" == "1" ]] && setIPv6="1"
-  [[ "$tmpSetIPv6" == "0" ]] && setIPv6="0"
+  # [[ "$IPStackType" == "IPv4Stack" ]] && setIPv6="0" || setIPv6="1"
+  [[ "$tmpSetIPv6" == "0" ]] && setIPv6="0" || setIPv6="1"
 }
 
 # This function help us to sort sizes for different files from different directions.
