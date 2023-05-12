@@ -174,7 +174,7 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**--setipv6 "0 is disabled, 1 is enabled"**: Both IPv6 stack or bio-stack(both has IPv4 and IPv6 address) server will enable IPv6, IPv4 stack server's IPv6 modules will all be disabled by default(because Racknerd and Virmach etc. will give IPv6 DNS for IPv4 stack server, the server will access to invalid IPv6 network for priority, not IPv4 route.), if you want to load IPv6 modules or original os has IPv6 network access(only IPv6 dhcp) but due to missing IPv6 modules loading, the IPv6 access is disabled, you can add --setipv6 "1" to enable IPv6 modules force in new os.
+**--setipv6 "0 is disabled"**: Default will enable IPv6, if your machine is IPv4 stack and provided by Racknerd and Virmach etc. they will give IPv6 DNS for IPv4 stack server, the server will access to invalid IPv6 network for priority, not IPv4 first, you can remove all IPv6 modules force in new os by adding --setipv6 "0"
 <br />
 <br />
 
