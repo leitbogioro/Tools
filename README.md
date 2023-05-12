@@ -174,7 +174,7 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**--setipv6 "0 is disabled"**: Default will enable IPv6, if your machine is IPv4 stack and provided by Racknerd and Virmach etc. they will give IPv6 DNS for IPv4 stack server, the server will access to invalid IPv6 network for priority, not IPv4 first, you can remove all IPv6 modules force in new os by adding --setipv6 "0"
+**--setipv6 "0 is disabled"**: Default will enable IPv6, if your machine is IPv4 stack and provided by Racknerd and Virmach etc. they will give IPv6 DNS for IPv4 stack server, the server will access to invalid IPv6 network for priority, not IPv4 first, you can remove all IPv6 modules force in new os by adding --setipv6 "0" to avoid the situation of above.
 <br />
 <br />
 
