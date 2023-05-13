@@ -50,6 +50,7 @@ export setRDP='0'
 export tmpSetIPv6=''
 export setIPv6='1'
 export setRaid=''
+export setDisk='0'
 export isMirror='0'
 export FindDists='0'
 export setFileType=''
@@ -232,6 +233,11 @@ while [[ $# -ge 1 ]]; do
     -pwd)
       shift
       tmpWORD="$1"
+      shift
+      ;;
+    -setdisk)
+      shift
+      setDisk="$1"
       shift
       ;;
     --setipv6)
@@ -423,6 +429,7 @@ function ipv4Calc() {
 }
 
 function getDisk() {
+# $disks is definited as the default disk, if server has 2 and more disks, the first disk will be responsible of the grub booting.
   disks=`lsblk | sed 's/[[:space:]]*$//g' | grep "disk$" | cut -d' ' -f1 | grep -v "fd[0-9]*\|sr[0-9]*" | head -n1`
   [[ "$disks" == "" ]] && disks=`lsblk | sed 's/[[:space:]]*$//g' | grep "disk" | grep -i "g\|t\|p\|e\|z\|y" | cut -d' ' -f1 | head -1`
   echo "${disks: -1}" | [[ -n "`sed -n '/^[0-9][0-9]*$/p'`" ]] && disks=`echo "$disks" | sed 's/[0-9]//g'`
@@ -430,6 +437,7 @@ function getDisk() {
   echo "$disks" | grep -q "/dev"
   [ $? -eq 0 ] && echo "$disks" || echo "/dev/$disks"
   AllDisks=""
+# Find all disks on this server.
   for Count in `lsblk | sed 's/[[:space:]]*$//g' | grep "disk$" | cut -d' ' -f1 | grep -v "fd[0-9]*\|sr[0-9]*"`; do
     AllDisks+="/dev/$Count "
   done
@@ -438,6 +446,8 @@ function getDisk() {
       AllDisks+="/dev/$Count "
     done
   }
+# All numbers of disks' statistic of this server.
+  disksNum=$(echo $AllDisks | grep -o "/dev/*" | wc -l)
 }
 
 function diskType() {
@@ -474,7 +484,7 @@ function checkEfi() {
   elif [[ -n `echo "$EfiStatus" | grep -i "bootcurrent" | awk '{print $2}' | sed -n '/^[[:xdigit:]]*$/p' | head -n 1` || -n `echo "$EfiStatus" | grep -i "bootorder" | awk '{print $2}' | awk -F ',' '{print $NF}' | sed -n '/^[[:xdigit:]]*$/p' | head -n 1` ]] && [[ "$EfiVars" != "0" ]]; then
     EfiSupport="enabled"
   else
-    echo -ne "\n\033[31mError: \033[0mboot firmware of your system could not be confirmed!\n"
+    echo -ne "\n[${red}Error${plain}] UEFI boot firmware of your system could not be confirmed!\n"
     exit 1
   fi
 }
@@ -1217,10 +1227,14 @@ function DebianPreseedProcess() {
 # https://serverfault.com/questions/571363/unable-to-automatically-remove-lvm-data
 # To part all disks:
 # https://unix.stackexchange.com/questions/341253/using-d-i-partman-recipe-strings
-    FormatDisk=`echo -e "d-i partman/mount_style select uuid\nd-i partman-auto/disk string ${AllDisks}\nd-i partman-auto/method string regular\nd-i partman-auto/init_automatically_partition select Guided - use entire disk\nd-i partman-auto/choose_recipe select All files in one partition (recommended for new users)\nd-i partman-basicfilesystems/choose_label string gpt\nd-i partman-basicfilesystems/default_label string gpt\nd-i partman-partitioning/choose_label string gpt\nd-i partman-partitioning/default_label string gpt\nd-i partman/choose_label string gpt\nd-i partman/default_label string gpt"`
+    if [[ "$setDisk" == "all" ]]; then
+      FormatDisk=`echo -e "d-i partman/mount_style select uuid\nd-i partman-auto/disk string $AllDisks\nd-i partman-auto/method string regular\nd-i partman-auto/init_automatically_partition select Guided - use entire disk\nd-i partman-auto/choose_recipe select All files in one partition (recommended for new users)\nd-i partman-basicfilesystems/choose_label string gpt\nd-i partman-basicfilesystems/default_label string gpt\nd-i partman-partitioning/choose_label string gpt\nd-i partman-partitioning/default_label string gpt\nd-i partman/choose_label string gpt\nd-i partman/default_label string gpt"`
+    else
+      FormatDisk=`echo -e "d-i partman/mount_style select uuid\nd-i partman-auto/disk string $IncDisk\nd-i partman-auto/method string regular\nd-i partman-auto/init_automatically_partition select Guided - use entire disk\nd-i partman-auto/choose_recipe select All files in one partition (recommended for new users)\nd-i partman-basicfilesystems/choose_label string gpt\nd-i partman-basicfilesystems/default_label string gpt\nd-i partman-partitioning/choose_label string gpt\nd-i partman-partitioning/default_label string gpt\nd-i partman/choose_label string gpt\nd-i partman/default_label string gpt"`
+    fi
 # Default disk format recipe:
 # d-i partman/mount_style select uuid
-# d-i partman-auto/disk string ${AllDisks}
+# d-i partman-auto/disk string $AllDisks/$IncDisk
 # d-i partman-auto/method string regular
 # d-i partman-auto/init_automatically_partition select Guided - use entire disk
 # d-i partman-auto/choose_recipe select All files in one partition (recommended for new users)
@@ -1294,7 +1308,8 @@ d-i clock-setup/ntp-server string ntp.nict.jp
 
 ### Get harddisk name and Windows DD installation set up
 d-i preseed/early_command string anna-install libfuse2-udeb fuse-udeb ntfs-3g-udeb libcrypto1.1-udeb libpcre2-8-0-udeb libssl1.1-udeb libuuid1-udeb zlib1g-udeb wget-udeb
-d-i partman/early_command string lvremove --select all -ff -y; \
+d-i partman/early_command string \
+lvremove --select all -ff -y; \
 vgremove --select all -ff -y; \
 pvremove /dev/* -ff -y; \
 [[ -n "\$(blkid -t TYPE='vfat' -o device)" ]] && umount "\$(blkid -t TYPE='vfat' -o device)"; \
@@ -1487,6 +1502,7 @@ getUserTimezone "/root/timezonelists" "ZGEyMGNhYjhhMWM2NDJlMGE0YmZhMDVmMDZlNzBmN
 [[ -n "$tmpWORD" ]] && myPASSWORD=$(openssl passwd -1 ''$tmpWORD'')
 [[ -z "$myPASSWORD" ]] && myPASSWORD='$1$OCy2O5bt$m2N6XMgFUwCn/2PPP114J/'
 
+getDisk
 tempDisk=`getDisk`
 [ -n "$tempDisk" ] && IncDisk="$tempDisk"
 [[ "$setRaid" == "0" ]] && IncDisk="/dev/sda"
@@ -1835,20 +1851,35 @@ else
   bash $0 error
   exit 1
 fi
-if [[ "$linux_relese" == 'debian' ]]; then
-  [[ "$IsCN" == "cn" ]] && FirmwareImage="cn"
-  if [[ "$IncFirmware" == '1' ]]; then
-    if [[ "$FirmwareImage" == "cn" ]]; then
+
+if [[ "$IncFirmware" == '1' ]]; then
+  if [[ "$linux_relese" == 'debian' ]]; then
+    if [[ "$IsCN" == "cn" ]]; then
       wget --no-check-certificate -qO '/tmp/firmware.cpio.gz' "https://mirrors.ustc.edu.cn/debian-cdimage/unofficial/non-free/firmware/${DIST}/current/firmware.cpio.gz"
-      [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'firmware' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
-    elif [[ "$FirmwareImage" == '' ]]; then
+      [[ $? -ne '0' ]] && echo -ne "\n[${red}Error${plain}] Download firmware for ${red}$linux_relese${plain} failed! \n" && exit 1
+    else
       wget --no-check-certificate -qO '/tmp/firmware.cpio.gz' "http://cdimage.debian.org/cdimage/unofficial/non-free/firmware/${DIST}/current/firmware.cpio.gz"
-      [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'firmware' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
+      [[ $? -ne '0' ]] && echo -ne "\n[${red}Error${plain}] Download firmware for ${red}$linux_relese${plain} failed! \n" && exit 1
     fi
-  fi
-  if [[ "$ddMode" == '1' ]]; then
-    vKernel_udeb=$(wget --no-check-certificate -qO- "http://$LinuxMirror/dists/$DIST/main/installer-$VER/current/images/udeb.list" |grep '^acpi-modules' |head -n1 |grep -o '[0-9]\{1,2\}.[0-9]\{1,2\}.[0-9]\{1,2\}-[0-9]\{1,2\}' |head -n1)
-    [[ -z "vKernel_udeb" ]] && vKernel_udeb="5.19.0-1"
+    if [[ "$ddMode" == '1' ]]; then
+      vKernel_udeb=$(wget --no-check-certificate -qO- "http://$LinuxMirror/dists/$DIST/main/installer-$VER/current/images/udeb.list" |grep '^acpi-modules' |head -n1 |grep -o '[0-9]\{1,2\}.[0-9]\{1,2\}.[0-9]\{1,2\}-[0-9]\{1,2\}' |head -n1)
+      [[ -z "vKernel_udeb" ]] && vKernel_udeb="5.10.0-22"
+    fi
+  elif [[ "$linux_relese" == 'kali' ]]; then
+    if [[ "$IsCN" == "cn" ]]; then
+      wget --no-check-certificate -qO /root/kaliFirmwareCheck 'https://mirrors.tuna.tsinghua.edu.cn/kali/pool/non-free/f/firmware-nonfree/?C=S&O=D'
+      kaliFirmwareName=$(grep "href=\"firmware-nonfree" /root/kaliFirmwareCheck | head -n 1 | awk -F'\">' '/tar.xz/{print $3}' | cut -d'<' -f1 | cut -d'/' -f2)
+      wget --no-check-certificate -qO '/tmp/kali_firmware.tar.xz' "https://mirrors.tuna.tsinghua.edu.cn/kali/pool/non-free/f/firmware-nonfree/$kaliFirmwareName"
+      [[ $? -ne '0' ]] && echo -ne "\n[${red}Error${plain}] Download firmware for ${red}$linux_relese${plain} failed! \n" && exit 1    
+      rm -rf /root/kaliFirmwareCheck
+    else
+      wget --no-check-certificate -qO /root/kaliFirmwareCheck 'http://http.kali.org/pool/non-free/f/firmware-nonfree/?C=S;O=D'
+      kaliFirmwareName=$(grep "href=\"firmware-nonfree" /root/kaliFirmwareCheck | head -n 1 | awk -F'\">' '/tar.xz/{print $4}' | cut -d'<' -f1 | cut -d'/' -f2)
+      wget --no-check-certificate -qO '/tmp/kali_firmware.tar.xz' "http://http.kali.org/pool/non-free/f/firmware-nonfree/$kaliFirmwareName"
+      [[ $? -ne '0' ]] && echo -ne "\n[${red}Error${plain}] Download firmware for ${red}$linux_relese${plain} failed! \n" && exit 1
+      rm -rf /root/kaliFirmwareCheck
+    fi
+    decompressedKaliFirmwareDir=$(echo $kaliFirmwareName | cut -d'.' -f 1 | sed 's/_/-/g')
   fi
 fi
 
@@ -1890,12 +1921,24 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ 
     sed -i '/netcfg\/get_.*/d' /tmp/boot/preseed.cfg
     sed -i '/netcfg\/confirm_static/d' /tmp/boot/preseed.cfg
   fi
+# If server has only one disk, lv/vg/pv volumes removement by force should be disallowed, it may causes partitioner continuous execution but not finished.
+  if [[ "$disksNum" -le "1" || "$setDisk" != "all" ]]; then
+    sed -i '/lvremove --select all -ff -y/d' /tmp/boot/preseed.cfg
+    sed -i '/vgremove --select all -ff -y/d' /tmp/boot/preseed.cfg
+    sed -i '/pvremove /dev/* -ff -y/d' /tmp/boot/preseed.cfg
+  fi
   if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]]; then
     sed -i '/user-setup\/allow-password-weak/d' /tmp/boot/preseed.cfg
     sed -i '/user-setup\/encrypt-home/d' /tmp/boot/preseed.cfg
     sed -i '/pkgsel\/update-policy/d' /tmp/boot/preseed.cfg
     sed -i 's/umount\ \/media.*true\;\ //g' /tmp/boot/preseed.cfg
     [[ -f '/tmp/firmware.cpio.gz' ]] && gzip -d < /tmp/firmware.cpio.gz | cpio --extract --verbose --make-directories --no-absolute-filenames >>/dev/null 2>&1
+# Uncompressed hardware drivers size of Kali firmware non-free such as "firmware-nonfree_20230210.orig.tar.xz" is almost 800MB,
+# if the physical memory of server is below 3GB, I suggested that not load parameter "-firmware".
+    [[ -f '/tmp/kali_firmware.tar.xz' ]] && {
+      tar -Jxvf '/tmp/kali_firmware.tar.xz' -C /tmp/
+      mv /tmp/$decompressedKaliFirmwareDir/* '/tmp/boot/lib/firmware/'
+    }
 # Debian 8 and former or Raid 0 mode don't support xfs.
     [[ "$DebianDistNum" -le "8" || "$setRaid" == "0" ]] && sed -i '/d-i\ partman\/default_filesystem string xfs/d' /tmp/boot/preseed.cfg
   fi
