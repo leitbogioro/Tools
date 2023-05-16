@@ -1415,7 +1415,7 @@ dependence awk,basename,cat,cpio,curl,cut,dig,dirname,file,find,grep,gzip,lsblk,
 [[ "$ddMode" == '1' ]] && {
   dependence iconv
   linux_relese='debian'
-  tmpDIST='bullseye'
+  tmpDIST='bookworm'
   tmpVER=''
 }
 
@@ -1554,7 +1554,7 @@ fi
 }
 
 [[ -z "$tmpDIST" ]] && {
-  [ "$Relese" == 'Debian' ] && tmpDIST='11'
+  [ "$Relese" == 'Debian' ] && tmpDIST='12'
   [ "$Relese" == 'Kali' ] && tmpDIST='rolling'
   [ "$Relese" == 'Ubuntu' ] && tmpDIST='20.04'
   [ "$Relese" == 'CentOS' ] && tmpDIST='9'
@@ -1577,7 +1577,7 @@ if [[ -n "$tmpDIST" ]]; then
         [[ "$isDigital" == '9' ]] && DIST='stretch'
         [[ "$isDigital" == '10' ]] && DIST='buster'
         [[ "$isDigital" == '11' ]] && DIST='bullseye'
-        # [[ "$isDigital" == '12' ]] && DIST='bookworm'
+        [[ "$isDigital" == '12' ]] && DIST='bookworm'
         # [[ "$isDigital" == '13' ]] && DIST='trixie'
         # [[ "$isDigital" == '14' ]] && DIST='forky'
       }
