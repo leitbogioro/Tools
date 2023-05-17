@@ -2041,9 +2041,9 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
 # --ipv6="a vaild IPv6 address" is IPv6 Static, --ipv6=auto is IPv6 DHCP.
 # Reference: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/system_design_guide/kickstart-commands-and-options-reference_system-design-guide#network_kickstart-commands-for-network-configuration
   if [[ "$Network4Config" == "isDHCP" ]] && [[ "$Network6Config" == "isDHCP" ]]; then
-    NetConfigManually="network --bootproto=dhcp --ipv6=auto --hostname=$(hostname) --onboot=on"
+    NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=auto --hostname=$(hostname) --onboot=on"
   elif [[ "$Network4Config" == "isDHCP" ]] && [[ "$Network6Config" == "isStatic" ]]; then
-    NetConfigManually="network --bootproto=dhcp --ipv6=$i6Addr --ipv6gateway=$ip6Gate --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
+    NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=$i6Addr --ipv6gateway=$ip6Gate --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
   elif [[ "$Network4Config" == "isStatic" ]] && [[ "$Network6Config" == "isDHCP" ]]; then
     NetConfigManually="network --device=$interface --bootproto=static --ip=$IPv4 --netmask=$MASK --gateway=$GATE --ipv6=auto --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
   elif [[ "$Network4Config" == "isStatic" ]] && [[ "$Network6Config" == "isStatic" ]]; then
@@ -2269,7 +2269,9 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
     elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
 # The method for Redhat series installer to search network adapter automatically is to set "ksdevice=link" in grub file of the current system for netboot install file which need to be loaded after restart.
 # The same behavior for grub2.
-      BOOT_OPTION="inst.ks=file://ks.cfg $Add_OPTION ksdevice=$interfaceSelect quiet"
+# "ksdevice=interface" will be deprecated in future versions of anaconda.
+# Reference: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/performing_an_advanced_rhel_8_installation/kickstart-and-advanced-boot-options_installing-rhel-as-an-experienced-user
+      BOOT_OPTION="inst.ks=file://ks.cfg $Add_OPTION inst.nomemcheck quiet"
     fi
     [[ "$setAutoConfig" == "0" ]] && sed -i 's/inst.ks=file:\/\/ks.cfg//' $GRUBDIR/$GRUBFILE
     
@@ -2420,7 +2422,7 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
       [[ "$virtType" =~ "microsoft" && ! "$Add_OPTION" =~ "lowmem=+0" ]] && Add_OPTION="$Add_OPTION lowmem=+0"
       BOOT_OPTION="auto=true $Add_OPTION hostname=$(hostname) domain=$linux_relese quiet"
     else
-      BOOT_OPTION="inst.ks=file://ks.cfg $Add_OPTION ksdevice=$interfaceSelect quiet"
+      BOOT_OPTION="inst.ks=file://ks.cfg $Add_OPTION inst.nomemcheck quiet"
     fi
     [[ "$setAutoConfig" == "0" ]] && sed -i 's/inst.ks=file:\/\/ks.cfg//' $GRUBDIR/$GRUBFILE
     cat >> /etc/grub.d/40_custom <<EOF
