@@ -1452,7 +1452,7 @@ fi
 linux_relese=$(echo "$Relese" |sed 's/\ //g' |sed -r 's/(.*)/\L\1/')
 clear && echo -e "\n\033[36m# Check Dependence\033[0m\n"
 
-dependence awk,basename,cat,cpio,curl,cut,dig,dirname,file,find,grep,gzip,lsblk,sed,wget,xz;
+dependence awk,basename,cat,cpio,curl,cut,dig,dirname,file,find,grep,gzip,ip,lsblk,sed,wget,xz;
 
 [[ "$ddMode" == '1' ]] && {
   dependence iconv
@@ -1466,13 +1466,21 @@ ip6DNS=$(checkDNS "$ip6DNS")
 
 if [[ "$IPStackType" == "IPv4Stack" ]]; then
   [[ -n "$ipAddr" && -n "$ipMask" && -n "$ipGate" ]] && setNet='1'
-else
+elif [[ "$IPStackType" == "BioStack" ]]; then
   [[ -n "$ipAddr" && -n "$ipMask" && -n "$ipGate" && -n "$ip6Addr" && -n "$ip6Mask" && -n "$ip6Gate" ]] && setNet='1'
+elif [[ "$IPStackType" == "IPv6Stack" ]]; then
+  [[ -n "$ip6Addr" && -n "$ip6Mask" && -n "$ip6Gate" ]] && setNet='1'
 fi
+
+if [ -z "$interface" ]; then
+  [ -n "$interface" ] || interface=`getInterface "$CurrentOS"`
+fi
+
+checkDHCP "$CurrentOS" "$CurrentOSVer" "$IPStackType"
+
 if [[ "$setNet" == "0" ]]; then
-  dependence ip
   [[ -n "$interface" ]] || interface=`getInterface "$CurrentOS"`
-  iAddr=`ip addr show | grep -wv "lo\|host" | grep -w "inet" | grep "$interface" | grep -w "scope global*\|link*" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+  iAddr=`ip -4 addr show | grep -wA 5 "$interface" | grep -wv "lo\|host" | grep -w "inet" | grep -w "scope global*\|link*" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
   ipAddr=`echo ${iAddr} | cut -d'/' -f1`
   ipMask=`netmask $(echo ${iAddr} | cut -d'/' -f2)`
 # In most situation, at least 99.9% probability, the first hop of the network should be the same as the available gateway. 
@@ -1521,7 +1529,7 @@ if [[ "$setNet" == "0" ]]; then
   [[ "$ipGates" == "" || "$ipGate" == "" ]] && ipGate="$FirstRoute"
 
   [[ "$IPStackType" != "IPv4Stack" ]] && {
-    i6Addr=`ip -6 addr show | grep -wv "lo\|host" | grep -wv "link" | grep -w "inet6" | grep "scope" | grep "global" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+    i6Addr=`ip -6 addr show | grep -wA 5 "$interface" | grep -wv "lo\|host" | grep -wv "link" | grep -w "inet6" | grep "scope" | grep "global" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
     ip6Addr=`echo ${i6Addr} |cut -d'/' -f1`
     ip6Mask=`echo ${i6Addr} |cut -d'/' -f2`
 # If mask of IPv6 is 128 in static configuration, it means there is only one IP(current server itself) in the network.
@@ -1531,20 +1539,17 @@ if [[ "$setNet" == "0" ]]; then
 # DHCP IPv6 network doesn't be effected by this situation.
     [[ "$Network6Config" == "isStatic" && "$ip6Mask" -ge "96" ]] && ip6Mask="64"
     ipv6SubnetCalc "$ip6Mask"
-    ip6Gate=`ip -6 route show default | grep -w "via" | grep -w "$interface" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+    ip6Gate=`ip -6 route show default | grep -w "$interface" | grep -w "via" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
   }
 fi
-if [ -z "$interface" ]; then
-  dependence ip
-  [ -n "$interface" ] || interface=`getInterface "$CurrentOS"`
-fi
+
 IPv4="$ipAddr"; MASK="$ipMask"; GATE="$ipGate";
 [[ -z "$IPv4" && -z "$MASK" && -z "$GATE" ]] && {
-  echo -ne "\n\033[31mError: \033[0mThe network of your machine may not be available!\n"
+  echo -ne "\n[${red}Error${plain}] The network of your machine may not be available!\n"
   bash $0 error
   exit 1
 }
-checkDHCP "$CurrentOS" "$CurrentOSVer" "$IPStackType"
+
 getUserTimezone "/root/timezonelists" "ZGEyMGNhYjhhMWM2NDJlMGE0YmZhMDVmMDZlNzBmN2E=" "ZTNlMjBiN2JjOTE2NGY2YjllNzUzYWU5ZDFjYjdjOTc=" "MWQ2NGViMGQ4ZmNlNGMzYTkxYjNiMTdmZDMxODQwZDc="
 
 [ -n "$tmpWORD" ] && dependence openssl
