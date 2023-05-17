@@ -428,6 +428,36 @@ function ipv4Calc() {
   echo -e "Network:   $tmpNetwork\nBroadcast: $tmpBroadcast\nFirstIP:   $FirstIP\nLastIP:    $LastIP\n"
 }
 
+# $1 is $ip6Mask
+function ipv6SubnetCalc() {
+  tmpIp6Subnet=""
+  ip6SubnetEleNum=`expr $1 / 4`
+  ip6SubnetEleNumRemain=`expr $1 - $ip6SubnetEleNum \* 4`
+  if [[ "$ip6SubnetEleNumRemain" == 0 ]]; then
+    ip6SubnetHex="0"
+  elif [[ "$ip6SubnetEleNumRemain" == 1 ]]; then
+    ip6SubnetHex="8"
+  elif [[ "$ip6SubnetEleNumRemain" == 2 ]]; then
+    ip6SubnetHex="c"
+  elif [[ "$ip6SubnetEleNumRemain" == 3 ]]; then
+    ip6SubnetHex="e"
+  fi
+  for ((i=1; i<="$ip6SubnetEleNum"; i++)); do
+    tmpIp6Subnet+="f"
+  done
+  tmpIp6Subnet=$tmpIp6Subnet$ip6SubnetHex
+  for ((j=1; j<=`expr 32 - $ip6SubnetEleNum`; j++)); do
+    tmpIp6Subnet+="0"
+  done
+  if [[ `echo $tmpIp6Subnet | wc -c` -ge "33" ]]; then
+    tmpIp6Subnet=`echo $tmpIp6Subnet | sed 's/.$//'`
+  fi
+  for ((k=0; k<=7; k++)); do
+    ip6Subnet+=$(echo ${tmpIp6Subnet:`expr $k \* 4`:4})":"
+  done
+  ip6Subnet=`echo ${ip6Subnet%?}`
+}
+
 function getDisk() {
 # $disks is definited as the default disk, if server has 2 and more disks, the first disk will be responsible of the grub booting.
   disks=`lsblk | sed 's/[[:space:]]*$//g' | grep "disk$" | cut -d' ' -f1 | grep -v "fd[0-9]*\|sr[0-9]*" | head -n1`
@@ -1113,6 +1143,7 @@ function checkDHCP() {
   }
   [[ "$Network4Config" == "" ]] && Network4Config="isStatic"
   [[ "$Network6Config" == "" ]] && Network6Config="isStatic"
+  echo "$IPStackType"
   echo "$Network4Config"
   echo "$Network6Config"
   rm -rf "$tmpNetcfgDir"
@@ -1155,15 +1186,18 @@ function DebianModifiedPreseed() {
 # only the IPv4 of the server has been configurated.
 # so need to write "iface interface inet6 dhcp" to /etc/network/interfaces in preseeding process,
 # to avoid config IPv6 manually after log into new system.
-    SupportIPv6=""
+    SupportIPv6orIPv4=""
     if [[ "$Network6Config" == "isDHCP" ]]; then
 # This IPv4Stack DHCP machine can access IPv6 network in the future, maybe.
 # But it should be setting as IPv4 network priority.
-      SupportIPv6="$1 sed -i '\$aiface $interface inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel ::ffff:0:0/96' /etc/gai.conf;"
+      SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel ::ffff:0:0/96' /etc/gai.conf;"
 # Enable IPv6 dhcp and set prefer IPv6 access for BioStack or IPv6Stack machine: add "label 2002::/16", "label 2001:0::/32" in last line of the "/etc/gai.conf"
-      [[ "$IPStackType" == "BioStack" ]] && SupportIPv6="$1 sed -i '\$aiface $interface inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
+      [[ "$IPStackType" == "BioStack" ]] && SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
     elif [[ "$Network6Config" == "isStatic" ]]; then
-      [[ "$IPStackType" == "BioStack" ]] && SupportIPv6="$1 sed -i '\$aiface $interface inet6 static' /etc/network/interfaces; $1 sed -i '\$a\\\taddress $ip6Addr' /etc/network/interfaces; $1 sed -i '\$a\\\tnetmask $ip6Mask' /etc/network/interfaces; $1 sed -i '\$a\\\tgateway $ip6Gate' /etc/network/interfaces; $1 sed -i '\$a\\\tdns-nameservers $ip6DNS' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
+# This IPv6Stack Static machine can access IPv4 network in the future, maybe.
+# But it should be setting as IPv6 network priority.
+      SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
+      [[ "$IPStackType" == "BioStack" ]] && SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet6 static' /etc/network/interfaces; $1 sed -i '\$a\\\taddress $ip6Addr' /etc/network/interfaces; $1 sed -i '\$a\\\tnetmask $ip6Mask' /etc/network/interfaces; $1 sed -i '\$a\\\tgateway $ip6Gate' /etc/network/interfaces; $1 sed -i '\$a\\\tdns-nameservers $ip6DNS' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
     fi
 # a typical network configuration sample of IPv6 static for Debian:
 # iface eth0 inet static
@@ -1216,7 +1250,7 @@ d-i mdadm/boot_degraded boolean true"`
       ReviseMOTD="$1 sed -ri 's/Debian/Kali/g' /etc/update-motd.d/00-header;"
       SupportZSH="$1 apt install zsh -y; $1 chsh -s /bin/zsh; $1 rm -rf /root/.bashrc.original;"
     }
-    export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${DnsChangePermanently} ${ModifyMOTD} ${SupportIPv6} ${EnableSSH} ${ReviseMOTD} ${SupportZSH}"
+    export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${DnsChangePermanently} ${ModifyMOTD} ${SupportIPv6orIPv4} ${EnableSSH} ${ReviseMOTD} ${SupportZSH}"
   fi
 }
 
@@ -1244,15 +1278,19 @@ function DebianPreseedProcess() {
 # d-i partman-partitioning/default_label string gpt
 # d-i partman/choose_label string gpt
 # d-i partman/default_label string gpt
-    [[ "$Network4Config" == "isDHCP" ]] && NetConfigManually="" || NetConfigManually=`echo -e "d-i netcfg/disable_autoconfig boolean true\nd-i netcfg/dhcp_failed note\nd-i netcfg/dhcp_options select Configure network manually\nd-i netcfg/get_ipaddress string $IPv4\nd-i netcfg/get_netmask string $MASK\nd-i netcfg/get_gateway string $GATE\nd-i netcfg/get_nameservers string $ipDNS\nd-i netcfg/no_default_route boolean true\nd-i netcfg/confirm_static boolean true"`
+    if [[ "$IPStackType" == "IPv4Stack" ]] || [[ "$IPStackType" == "BioStack" ]]; then
+      [[ "$Network4Config" == "isStatic" ]] && NetConfigManually=`echo -e "d-i netcfg/disable_autoconfig boolean true\nd-i netcfg/dhcp_failed note\nd-i netcfg/dhcp_options select Configure network manually\nd-i netcfg/get_ipaddress string $IPv4\nd-i netcfg/get_netmask string $MASK\nd-i netcfg/get_gateway string $GATE\nd-i netcfg/get_nameservers string $ipDNS\nd-i netcfg/no_default_route boolean true\nd-i netcfg/confirm_static boolean true"` || NetConfigManually=""
+    elif [[ "$IPStackType" == "IPv6Stack" ]]; then
+      [[ "$Network6Config" == "isStatic" ]] && NetConfigManually=`echo -e "d-i netcfg/disable_autoconfig boolean true\nd-i netcfg/dhcp_failed note\nd-i netcfg/dhcp_options select Configure network manually\nd-i netcfg/get_ipaddress string $ip6Addr\nd-i netcfg/get_netmask string $ip6Subnet\nd-i netcfg/get_gateway string $ip6Gate\nd-i netcfg/get_nameservers string $ip6DNS\nd-i netcfg/no_default_route boolean true\nd-i netcfg/confirm_static boolean true"` || NetConfigManually=""
+    fi
 # Manually network setting configurations, including:
 # d-i netcfg/disable_autoconfig boolean true
 # d-i netcfg/dhcp_failed note
 # d-i netcfg/dhcp_options select Configure network manually
-# d-i netcfg/get_ipaddress string $IPv4
-# d-i netcfg/get_netmask string $MASK
-# d-i netcfg/get_gateway string $GATE
-# d-i netcfg/get_nameservers string $ipDNS
+# d-i netcfg/get_ipaddress string $IPv4/$ip6Addr
+# d-i netcfg/get_netmask string $MASK/$ip6Subnet
+# d-i netcfg/get_gateway string $GATE/$ip6Gate
+# d-i netcfg/get_nameservers string $ipDNS/$ip6DNS
 # d-i netcfg/no_default_route boolean true
 # d-i netcfg/confirm_static boolean true
     DebianModifiedPreseed "in-target"
@@ -1478,10 +1516,11 @@ if [[ "$setNet" == "0" ]]; then
 # If there is no one of other gateway in this current network, use if access the public internet, the first hop route of this machine as the gateway.
   [[ "$ipGates" == "" || "$ipGate" == "" ]] && ipGate="$FirstRoute"
 
-  [[ ! "$IPStackType" == "IPv4Stack" ]] && {
+  [[ "$IPStackType" != "IPv4Stack" ]] && {
     i6Addr=`ip -6 addr show | grep -wv "lo\|host" | grep -wv "link" | grep -w "inet6" | grep "scope" | grep "global" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
     ip6Addr=`echo ${i6Addr} |cut -d'/' -f1`
     ip6Mask=`echo ${i6Addr} |cut -d'/' -f2`
+    ipv6SubnetCalc "$ip6Mask"
     ip6Gate=`ip -6 route show default | grep -w "via" | grep -w "$interface" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
   }
 fi
