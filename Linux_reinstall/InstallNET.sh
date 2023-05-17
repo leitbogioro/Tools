@@ -1283,6 +1283,10 @@ function DebianPreseedProcess() {
     elif [[ "$IPStackType" == "IPv6Stack" ]]; then
       [[ "$Network6Config" == "isStatic" ]] && NetConfigManually=`echo -e "d-i netcfg/disable_autoconfig boolean true\nd-i netcfg/dhcp_failed note\nd-i netcfg/dhcp_options select Configure network manually\nd-i netcfg/get_ipaddress string $ip6Addr\nd-i netcfg/get_netmask string $ip6Subnet\nd-i netcfg/get_gateway string $ip6Gate\nd-i netcfg/get_nameservers string $ip6DNS\nd-i netcfg/no_default_route boolean true\nd-i netcfg/confirm_static boolean true"` || NetConfigManually=""
     fi
+# Debian installer can only identify the full IPv6 address of IPv6 mask,
+# so we need to covert IPv6 prefix shortening from "0-128" to whole IPv6 address.
+# The result of "$ip6Subnet" is calculated by function "ipv6SubnetCalc".
+# 
 # Manually network setting configurations, including:
 # d-i netcfg/disable_autoconfig boolean true
 # d-i netcfg/dhcp_failed note
@@ -1520,6 +1524,12 @@ if [[ "$setNet" == "0" ]]; then
     i6Addr=`ip -6 addr show | grep -wv "lo\|host" | grep -wv "link" | grep -w "inet6" | grep "scope" | grep "global" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
     ip6Addr=`echo ${i6Addr} |cut -d'/' -f1`
     ip6Mask=`echo ${i6Addr} |cut -d'/' -f2`
+# If mask of IPv6 is 128 in static configuration, it means there is only one IP(current server itself) in the network.
+# In this condition, if IPv6 gateway has a different address with IPv6 address, the installer couldn't find the correct gateway.
+# The installation will fail in the end. The reason is mostly the upstream wrongly configurated the current network of this system.
+# So we try to revise this value from "128" to "64" to expand the range of the IPv6 network and help installer to find the correct gateway.
+# DHCP IPv6 network doesn't be effected by this situation.
+    [[ "$Network6Config" == "isStatic" && "$ip6Mask" -ge "96" ]] && ip6Mask="64"
     ipv6SubnetCalc "$ip6Mask"
     ip6Gate=`ip -6 route show default | grep -w "via" | grep -w "$interface" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
   }
