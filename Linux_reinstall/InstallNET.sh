@@ -905,7 +905,8 @@ function getInterface() {
 # Different from command "grep", command "ls" can only show file name but not full file direction.
 # There are 3 files named "ifcfg-ens18  ifcfg-eth0  ifcfg-eth1" in dir "/etc/sysconfig/network-scripts/" of Almalinux 8 of Bandwagonhosts template.
 # We should select the correct one by adjust whether includes interface name and file size.
-      NetCfgFiles=`ls -Sl $NetCfgDir 2>/dev/null | awk -F' ' '{print $NF}' | grep -iv 'readme\|ifcfg-lo\|ifup-\|ifdown-\|vpn' | grep -s "ifcfg\|nmconnection"`
+# Files in "/etc/sysconfig/network-scripts/", reference: https://zetawiki.com/wiki/%EB%B6%84%EB%A5%98:/etc/sysconfig/network-scripts
+      NetCfgFiles=`ls -Sl $NetCfgDir 2>/dev/null | awk -F' ' '{print $NF}' | grep -iv 'readme\|ifcfg-lo\|ifcfg-bond0\|ifup\|ifdown\|vpn\|init.ipv6-global\|network-functions' | grep -s "ifcfg\|nmconnection"`
       for Files in $NetCfgFiles; do
         if [[ `grep -w "$interface" "$NetCfgDir$Files"` != "" ]]; then
           tmpNetCfgFiles+=$(echo -e "\n""$NetCfgDir$Files")
@@ -986,7 +987,7 @@ function getInterface() {
     readIfupdown=$(find / -maxdepth 5 -path /*network -type d -print | grep -v "lib\|systemd")
     if [[ ! -z "$readNetplan" ]]; then
 # Ubuntu 18+ network configuration
-      networkManagerType="netplan"    
+      networkManagerType="netplan"
       tmpNetCfgFiles=""
       for Count in $readNetplan; do
         tmpNetCfgFiles+=$(echo -e "\n"`grep -wrl "network" | grep -wrl "ethernets" | grep -wrl "$interface" | grep -wrl "version" "$Count" 2>/dev/null`)
@@ -994,7 +995,7 @@ function getInterface() {
       getLargestOrSmallestFile "$tmpNetCfgFiles" "sort -hr"
       NetCfgFile="$FileName"
       NetCfgDir="$FileDirection"
-      NetCfgWhole="$NetCfgDir$NetCfgFile"  
+      NetCfgWhole="$NetCfgDir$NetCfgFile"
     elif [[ ! -z "$readIfupdown" ]]; then
 # Debian/Kali network configuration
 # Some versions of Ubuntu 18 like virmach template use ifupdown not netplan.
@@ -1004,7 +1005,11 @@ function getInterface() {
 #            https://wiki.debian.org/IPv6PrefixDelegation
       tmpNetCfgFiles=""
       for Count in $readIfupdown; do
-        NetCfgFiles=`grep -wrl "iface" | grep -wrl "inet\|inet6" | grep -wrl "auto\|dhcp\|static\|manual" "$Count""/" 2>/dev/null | grep -v "if-*" | grep -v "state" | grep -v "helper" | grep -v "template"`
+        if [[ "$IPStackType" == "IPv4Stack" ]]; then
+          NetCfgFiles=`grep -wrl 'iface' | grep -wrl "auto\|dhcp\|static\|manual" | grep -wrl 'inet' "$Count""/" 2>/dev/null | grep -v "if-*" | grep -v "state" | grep -v "helper" | grep -v "template"`
+        elif [[ "$IPStackType" == "BioStack" ]] || [[ "$IPStackType" == "IPv6Stack" ]]; then
+          NetCfgFiles=`grep -wrl 'iface' | grep -wrl "auto\|dhcp\|static\|manual" | grep -wrl 'inet' | grep -wrl 'inet6' "$Count""/" 2>/dev/null | grep -v "if-*" | grep -v "state" | grep -v "helper" | grep -v "template"`
+        fi
         for Files in $NetCfgFiles; do
           if [[ `grep -w "$interface" "$Files"` != "" ]]; then
             tmpNetCfgFiles+=$(echo -e "\n""$Files")
@@ -2449,7 +2454,7 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
 #   search --no-floppy --fs-uuid --set=root d34311d7-62fd-419e-8f19-71494c773ddd
 # fi
 #
-# But in RockyLinux 9.1 of official templates in Oracle Cloud, the boot configuration in "grub.cfg" is different from any other of Redhat release versions compeletely:
+# But in RockyLinux 9.1 of official templates in Oracle Cloud, OVH Cloud etc, the boot configuration in "grub.cfg" is different from any other of Redhat release versions compeletely:
 #
 # insmod part_gpt
 # insmod xfs
@@ -2462,10 +2467,10 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
 #
 # insmod part_msdos
 # insmod ext2
-# set root='hd0'
+# set root='hd0,gpt2'
 # insmod part_msdos
 # insmod ext2
-# set boot='hd0'
+# set boot='hd0,gpt2'
 #
 # Only the following method will effective:
 #
