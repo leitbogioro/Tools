@@ -402,6 +402,7 @@ function netmask() {
   echo "$m"
 }
 
+# $1 is IPv4 address, $2 is IPv4 subnet.
 function ipv4Calc() {
   tmpIp4="$1"
   tmpIp4Mask=`netmask "$2"`
@@ -1482,7 +1483,8 @@ if [[ "$setNet" == "0" ]]; then
   [[ -n "$interface" ]] || interface=`getInterface "$CurrentOS"`
   iAddr=`ip -4 addr show | grep -wA 5 "$interface" | grep -wv "lo\|host" | grep -w "inet" | grep -w "scope global*\|link*" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
   ipAddr=`echo ${iAddr} | cut -d'/' -f1`
-  ipMask=`netmask $(echo ${iAddr} | cut -d'/' -f2)`
+  ipPrefix=`echo ${iAddr} | cut -d'/' -f2`
+  ipMask=`netmask "$ipPrefix"`
 # In most situation, at least 99.9% probability, the first hop of the network should be the same as the available gateway. 
 # But in 0.1%, they are actually different. 
 # Because one of the first hop of a tested machine is 5.45.72.1, I told Debian installer this router as a gateway 
@@ -1527,16 +1529,62 @@ if [[ "$setNet" == "0" ]]; then
   done
 # If there is no one of other gateway in this current network, use if access the public internet, the first hop route of this machine as the gateway.
   [[ "$ipGates" == "" || "$ipGate" == "" ]] && ipGate="$FirstRoute"
+ 
+# Some cloud providers like godaddy, arkecx etc, the subnet mask of IPv4 static network configuration of their original template OS is incorrect.
+# The following is the sample:
+# auto eth0
+#   iface eth0 inet static
+#     address 192.169.119.26
+#     gateway 156.59.39.113
+#     netmask 255.255.255.240
+#     dns-nameservers 8.8.8.8 8.8.4.4
+#
+# The netmask tells the total number of IP in the network is only 15(255 - 240),
+# but we obsessed that there are more than 15 IP between 156.59.39.113 and 192.169.119.26 clearly.
+# So if netmask is 255.255.255.240(prefix is 28), the computer only find IP between 192.169.119.192 and 192.169.119.207,
+# the gateway 156.59.39.113 is obviously not be included in this range.
+# So we need to expand the range of the netmask(reduce the of the prefix) to make sure the IP of gateway have been contained.
+# If this mistake has not be repaired, Debian installer will return error "untouchable gateway".
+# DHCP IPv4 network doesn't be effected by this situation.
+  [[ "$Network4Config" == "isStatic" ]] && {
+# If the IP and gateway are not in the same IPv4 A class, the prefix of netmask should be "1", transfer to whole IPv4 address is 128.0.0.1
+# The range of 192.169.119.26/1 is 128.0.0.0 - 255.255.255.255, the gateway 156.59.39.113 can be included.
+    [[ `echo $ipAddr | cut -d'.' -f 1` != `echo $ipGate | cut -d'.' -f 1` ]] && ipMask=`netmask "1"`
+# If the IP and gateway are in the same IPv4 A class, not in the same IPv4 B class, the prefix of netmask should less than "8", transfer to whole IPv4 address is 255.0.0.0
+# The range of 192.169.119.26/8 is 192.0.0.0 - 192.255.255.255, the gateway can be included.
+    if [[ `echo $ipAddr | cut -d'.' -f 1` == `echo $ipGate | cut -d'.' -f 1` ]] && [[ "$ipPrefix" -gt "8" ]]; then
+      ipMask=`netmask "8"`
+    fi
+# If the IP and gateway are in the same IPv4 A B class, not in the same IPv4 C class, the prefix of netmask should less than "16", transfer to whole IPv4 address is 255.255.0.0
+# The range of 192.169.119.26/16 is 192.169.0.0 - 192.169.255.255, the gateway can be included.
+    if [[ `echo $ipAddr | cut -d'.' -f 1,2` == `echo $ipGate | cut -d'.' -f 1,2` ]] && [[ "$ipPrefix" -gt "16" ]]; then
+      ipMask=`netmask "16"`
+    fi
+# If the IP and gateway are in the same IPv4 A B C class, not in the same IPv4 D class, the prefix of netmask should less than "24", transfer to whole IPv4 address is 255.255.255.0
+# The range of 192.169.119.26/24 is 192.169.119.0 - 192.169.119.255, the gateway can be included.
+    if [[ `echo $ipAddr | cut -d'.' -f 1,2,3` == `echo $ipGate | cut -d'.' -f 1,2,3` ]] && [[ "$ipPrefix" -gt "24" ]]; then
+      ipMask=`netmask "24"`
+    fi
+  }
 
   [[ "$IPStackType" != "IPv4Stack" ]] && {
     i6Addr=`ip -6 addr show | grep -wA 5 "$interface" | grep -wv "lo\|host" | grep -wv "link" | grep -w "inet6" | grep "scope" | grep "global" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
     ip6Addr=`echo ${i6Addr} |cut -d'/' -f1`
     ip6Mask=`echo ${i6Addr} |cut -d'/' -f2`
-# If mask of IPv6 is 128 in static configuration, it means there is only one IP(current server itself) in the network.
-# In this condition, if IPv6 gateway has a different address with IPv6 address, the installer couldn't find the correct gateway.
+# In some original template OS of akile.io etc, if mask prefix of IPv6 is 128 in static network configuration, it means there is only one IP(current server itself) in the network.
+# The following is the sample:
+# auto eth0
+#   iface eth0 inet6 static
+#     address 2001:b030:a42d:5d00::ffff:4e9a
+#     gateway 2001:b030:a42d:5d00::ffff
+#     netmask 128
+#     dns-nameservers 2001:4860:4860::8888
+#
+# In this condition, if IPv6 gateway has a different address with IPv6 address, the Debian installer couldn't find the correct gateway.
 # The installation will fail in the end. The reason is mostly the upstream wrongly configurated the current network of this system.
 # So we try to revise this value from "128" to "64" to expand the range of the IPv6 network and help installer to find the correct gateway.
 # DHCP IPv6 network doesn't be effected by this situation.
+# The result of function ' ipv6SubnetCalc "$ip6Mask" ' is "$ip6Subnet"
     [[ "$Network6Config" == "isStatic" && "$ip6Mask" -ge "96" ]] && ip6Mask="64"
     ipv6SubnetCalc "$ip6Mask"
     ip6Gate=`ip -6 route show default | grep -w "$interface" | grep -w "via" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
