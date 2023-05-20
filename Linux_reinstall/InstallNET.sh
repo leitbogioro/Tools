@@ -773,6 +773,54 @@ function checkIpv4OrIpv6() {
   [[ "$tmpSetIPv6" == "0" ]] && setIPv6="0" || setIPv6="1"
 }
 
+# Examples:
+# input:    ::
+# output:   0:0:0:0:0:0:0:0
+# input:    2620:119:35::c4
+# output:   2620:119:35:0:0:0:0:c4
+function fillAbbrOfIpv6() {
+  inputIpv6="$1"
+# Static of how many delimiters of ":" are in one ipv6 address, only one abbreviation of "::" is allowed in one IPv6 address in principle.
+  delimiterNum=$(echo $inputIpv6 | awk '{print gsub(/:/, "")}')
+  replaceStr=""
+# A standard of IPv6 should have 7 colons, the number "7" minus total numbers of colons in an abbreviated IPv6 address and add "0" after every ":" can help us to fulfill the whole IPv6 address.
+  for ((i=0; i<=$((7-$delimiterNum)); i++)); do
+    replaceStr="$replaceStr"":0"
+  done
+# Must add one ":" after the last of expanded "0" to separate with the following IPv6 block which is not been abbreviated.
+  replaceStr="$replaceStr"":"
+# Replace abbreviated IPv6 address "::" to expanded IPv6 address($replaceStr).
+  ipv6Expanded=${inputIpv6/::/$replaceStr}
+# If the last two strings of abbreviated IPv6 is "::", we should add a "0" for the last ":" to pledge the validation of this IPv6(can't end with ":").
+  [[ "$ipv6Expanded" == *: ]] && ipv6Expanded="$ipv6Expanded""0"
+# If the first two strings of abbreviated IPv6 is "::", we should add a "0" for the first ":" to pledge the validation of this IPv6(can't begin with ":").
+  [[ "$ipv6Expanded" == :* ]] && ipv6Expanded="0""$ipv6Expanded"
+# Return IPv6 which is filled with one "0" in every abbreviated block.
+  echo "$ipv6Expanded"
+}
+
+# Examples:
+# input:    0:0:0:0:0:0:0:0
+# output:   0000:0000:0000:0000:0000:0000:0000:0000
+# input:    2620:119:35:0:0:0:0:c4
+# output:   2620:0119:0035:0000:0000:0000:0000:00c4
+function ultimateFormatOfIpv6() {
+  abbrExpandedOfIpv6=$(fillAbbrOfIpv6 "$1")
+# To make a new array names "$ipv6Hex" to storage every hex block like "2620" "119e" of IPv6, this array should have 8 indices.
+  ipv6Hex=(${abbrExpandedOfIpv6//:/ })
+  for ((j=0; j<8; j++)); do
+# Static number of strings in every hex block of IPv6.
+    length="${#ipv6Hex[j]}"
+# Use decrement cycle to count how many zeroes need to be fulfilled because there are most 4 strings in one hex block in theory.
+    for ((k=4; k>$length; k--)); do
+# Zeroes which must be added on the head if number of digits of a hexadecimal number in one hex block is less than 4.
+      ipv6Hex[j]="0${ipv6Hex[j]}"
+    done
+  done
+# Return all elements of array of "$ipv6Hex" which is filled with 4 digits in every hexadecimal block and use colon to stitch with hexes instead of space to achieve the recovery of an abbreviated IPv6 address.
+  echo ${ipv6Hex[@]} | sed 's/ /\:/g'
+}
+
 # This function help us to sort sizes for different files from different directions.
 # "$FilesDirArr" storages original absolute pathes of files.
 # "$FilesLineArr" receives amount of alphabets and numbers etc. in one file from "$FilesDirNum"
@@ -1535,64 +1583,132 @@ if [[ "$setNet" == "0" ]]; then
 # If there is no one of other gateway in this current network, use if access the public internet, the first hop route of this machine as the gateway.
   [[ "$ipGates" == "" || "$ipGate" == "" ]] && ipGate="$FirstRoute"
  
-# Some cloud providers like godaddy, arkecx etc, the subnet mask of IPv4 static network configuration of their original template OS is incorrect.
+# Some cloud providers like Godaddy, Arkecx, Hetzner(include DHCP) etc, the subnet mask of IPv4 static network configuration of their original template OS is incorrect.
 # The following is the sample:
+#
 # auto eth0
 #   iface eth0 inet static
-#     address 192.169.119.26
-#     gateway 156.59.39.113
+#     address 190.168.23.175
 #     netmask 255.255.255.240
 #     dns-nameservers 8.8.8.8 8.8.4.4
+#     up ip -4 route add default via 169.254.0.1 dev eth0 onlink
 #
-# The netmask tells the total number of IP in the network is only 15(255 - 240),
-# but we obsessed that there are more than 15 IP between 156.59.39.113 and 192.169.119.26 clearly.
-# So if netmask is 255.255.255.240(prefix is 28), the computer only find IP between 192.169.119.192 and 192.169.119.207,
-# the gateway 156.59.39.113 is obviously not be included in this range.
-# So we need to expand the range of the netmask(reduce the of the prefix) to make sure the IP of gateway have been contained.
+# The netmask tells the total number of IP in the network is only 15(240 - 255),
+# but we obsessed that there are more than 15 IPv4 addresses between 169.254.0.1 and 190.168.23.175 clearly.
+# So if netmask is 255.255.255.240(prefix is 28), the computer only find IP between 190.168.23.160 and 190.168.23.175,
+# the gateway 169.254.0.1 is obviously not be included in this range.
+# So we need to expand the range of the netmask(reduce the value number of the prefix) to make sure the IPv4 gateway can be contained.
 # If this mistake has not be repaired, Debian installer will return error "untouchable gateway".
-# DHCP IPv4 network doesn't be effected by this situation.
+# DHCP IPv4 network(even IPv4 netmask is "32") may not be effected by this situation.
+# The following consulted calculations are calculated by Vultr IPv4 subnet calculator, reference: https://www.vultr.com/resources/subnet-calculator/
   [[ "$Network4Config" == "isStatic" ]] && {
 # If the IP and gateway are not in the same IPv4 A class, the prefix of netmask should be "1", transfer to whole IPv4 address is 128.0.0.1
-# The range of 192.169.119.26/1 is 128.0.0.0 - 255.255.255.255, the gateway 156.59.39.113 can be included.
+# The range of 190.168.23.175/1 is 128.0.0.0 - 255.255.255.255, the gateway 169.254.0.1 can be included.
     [[ `echo $ipAddr | cut -d'.' -f 1` != `echo $ipGate | cut -d'.' -f 1` ]] && ipMask=`netmask "1"`
-# If the IP and gateway are in the same IPv4 A class, not in the same IPv4 B class, the prefix of netmask should less than "8", transfer to whole IPv4 address is 255.0.0.0
-# The range of 192.169.119.26/8 is 192.0.0.0 - 192.255.255.255, the gateway can be included.
+# If the IP and gateway are in the same IPv4 A class, not in the same IPv4 B class, the prefix of netmask should less equal than "8", transfer to whole IPv4 address is 255.0.0.0
+# The range of 190.168.23.175/8 is 190.0.0.0 - 190.255.255.255, the gateway 169... can't be included.
     if [[ `echo $ipAddr | cut -d'.' -f 1` == `echo $ipGate | cut -d'.' -f 1` ]] && [[ "$ipPrefix" -gt "8" ]]; then
       ipMask=`netmask "8"`
     fi
-# If the IP and gateway are in the same IPv4 A B class, not in the same IPv4 C class, the prefix of netmask should less than "16", transfer to whole IPv4 address is 255.255.0.0
-# The range of 192.169.119.26/16 is 192.169.0.0 - 192.169.255.255, the gateway can be included.
+# If the IP and gateway are in the same IPv4 A B class, not in the same IPv4 C class, the prefix of netmask should less equal than "16", transfer to whole IPv4 address is 255.255.0.0
+# The range of 190.168.23.175/16 is 190.168.0.0 - 190.168.255.255, the gateway 169... can't be included.
     if [[ `echo $ipAddr | cut -d'.' -f 1,2` == `echo $ipGate | cut -d'.' -f 1,2` ]] && [[ "$ipPrefix" -gt "16" ]]; then
       ipMask=`netmask "16"`
     fi
-# If the IP and gateway are in the same IPv4 A B C class, not in the same IPv4 D class, the prefix of netmask should less than "24", transfer to whole IPv4 address is 255.255.255.0
-# The range of 192.169.119.26/24 is 192.169.119.0 - 192.169.119.255, the gateway can be included.
+# If the IP and gateway are in the same IPv4 A B C class, not in the same IPv4 D class, the prefix of netmask should less equal than "24", transfer to whole IPv4 address is 255.255.255.0
+# The range of 190.168.23.175/24 is 190.168.23.0 - 190.168.23.255, the gateway 169... can't be included.
     if [[ `echo $ipAddr | cut -d'.' -f 1,2,3` == `echo $ipGate | cut -d'.' -f 1,2,3` ]] && [[ "$ipPrefix" -gt "24" ]]; then
       ipMask=`netmask "24"`
     fi
   }
+# So in summary of the IPv4 sample in above, we should assign subnet mask "128.0.0.1"(prefix is "1") for it.
 
   [[ "$IPStackType" != "IPv4Stack" ]] && {
     i6Addr=`ip -6 addr show | grep -wA 5 "$interface" | grep -wv "lo\|host" | grep -wv "link" | grep -w "inet6" | grep "scope" | grep "global" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
     ip6Addr=`echo ${i6Addr} |cut -d'/' -f1`
     ip6Mask=`echo ${i6Addr} |cut -d'/' -f2`
-# In some original template OS of akile.io etc, if mask prefix of IPv6 is 128 in static network configuration, it means there is only one IP(current server itself) in the network.
+    ip6Gate=`ip -6 route show default | grep -w "$interface" | grep -w "via" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+# IPv6 expansion algorithm code reference: https://blog.caoyu.info/expand-ipv6-by-shell.html
+    ip6AddrWhole=`ultimateFormatOfIpv6 "$ip6Addr"`
+    ip6GateWhole=`ultimateFormatOfIpv6 "$ip6Gate"`
+# In some original template OS of cloud provider like Akile.io etc,
+# if prefix of IPv6 mask is 128 in static network configuration, it means there is only one IPv6(current server itself) in the network.
 # The following is the sample:
+#
 # auto eth0
 #   iface eth0 inet6 static
-#     address 2001:b030:a42d:5d00::ffff:4e9a
-#     gateway 2001:b030:a42d:5d00::ffff
+#     address 2603:c020:8:a19b::ffff:e6da
+#     gateway 2603:c020:8:a19b::ffff
 #     netmask 128
 #     dns-nameservers 2001:4860:4860::8888
 #
 # In this condition, if IPv6 gateway has a different address with IPv6 address, the Debian installer couldn't find the correct gateway.
 # The installation will fail in the end. The reason is mostly the upstream wrongly configurated the current network of this system.
-# So we try to revise this value from "128" to "64" to expand the range of the IPv6 network and help installer to find the correct gateway.
-# DHCP IPv6 network doesn't be effected by this situation.
+# So we try to revise this value for 8 levels to expand the range of the IPv6 network and help installer to find the correct gateway.
+# DHCP IPv6 network(even IPv6 netmask is "128") may not be effected by this situation.
 # The result of function ' ipv6SubnetCalc "$ip6Mask" ' is "$ip6Subnet"
-    [[ "$Network6Config" == "isStatic" && "$ip6Mask" -ge "96" ]] && ip6Mask="64"
-    ipv6SubnetCalc "$ip6Mask"
-    ip6Gate=`ip -6 route show default | grep -w "$interface" | grep -w "via" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+# The following consulted calculations are calculated by Vultr IPv6 subnet calculator and IPv6 subnet range calculator which is provided by iP Jisuanqi.
+# Reference: https://www.vultr.com/resources/subnet-calculator-ipv6/
+#            https://ipjisuanqi.com/ipv6.html
+    [[ "$Network6Config" == "isStatic" ]] && {
+# If the IPv6 and IPv6 gateway are not in the same IPv6 A class, the prefix of netmask should be "1",
+# transfer to whole IPv6 subnet address is 8000:0000:0000:0000:0000:0000:0000:0000.
+# The range of 2603:c020:8:a19b::ffff:e6da/1 is 0000:0000:0000:0000:0000:0000:0000:0000 - 7fff:ffff:ffff:ffff:ffff:ffff:ffff:ffff, the gateway 2603:c020:0008:a19b:0000:0000:0000:ffff can be included.
+      if [[ `echo $ip6AddrWhole | cut -d':' -f 1` != `echo $ip6GateWhole | cut -d':' -f 1` ]]; then
+        ip6Mask="1"
+        ipv6SubnetCalc "$ip6Mask"
+      fi
+# If the IP and gateway are in the same IPv6 A class, not in the same IPv6 B class, the prefix of netmask should less equal than "16",
+# transfer to whole IPv6 subnet address is ffff:0000:0000:0000:0000:0000:0000:0000.
+# The range of 2603:c020:8:a19b::ffff:e6da/16 is 2603:0000:0000:0000:0000:0000:0000:0000 - 2603:ffff:ffff:ffff:ffff:ffff:ffff:ffff, the gateway 2603:... can be included.
+      if [[ `echo $ip6AddrWhole | cut -d':' -f 1` == `echo $ip6GateWhole | cut -d':' -f 1` ]]; then
+        ip6Mask="16"
+        ipv6SubnetCalc "$ip6Mask"
+      fi
+# If the IP and gateway are in the same IPv6 A B class, not in the same IPv6 C class, the prefix of netmask should less equal than "32",
+# transfer to whole IPv6 subnet address is ffff:ffff:0000:0000:0000:0000:0000:0000.
+# The range of 2603:c020:8:a19b::ffff:e6da/32 is 2603:c020:0000:0000:0000:0000:0000:0000 - 2603:c020:ffff:ffff:ffff:ffff:ffff:ffff, the gateway 2603:... can be included.
+      if [[ `echo $ip6AddrWhole | cut -d':' -f 1,2` == `echo $ip6GateWhole | cut -d':' -f 1,2` ]]; then
+        ip6Mask="32"
+        ipv6SubnetCalc "$ip6Mask"
+      fi
+# If the IP and gateway are in the same IPv6 A B C class, not in the same IPv6 D class, the prefix of netmask should less equal than "48",
+# transfer to whole IPv6 subnet address is ffff:ffff:ffff:0000:0000:0000:0000:0000.
+# The range of 2603:c020:8:a19b::ffff:e6da/48 is 2603:c020:0008:0000:0000:0000:0000:0000 - 2603:c020:0008:ffff:ffff:ffff:ffff:ffff, the gateway 2603:... can be included.
+      if [[ `echo $ip6AddrWhole | cut -d':' -f 1,2,3` == `echo $ip6GateWhole | cut -d':' -f 1,2,3` ]]; then
+        ip6Mask="48"
+        ipv6SubnetCalc "$ip6Mask"
+      fi
+# If the IP and gateway are in the same IPv6 A B C D class, not in the same IPv6 E class, the prefix of netmask should less equal than "64",
+# transfer to whole IPv6 subnet address is ffff:ffff:ffff:ffff:0000:0000:0000:0000.
+# The range of 2603:c020:8:a19b::ffff:e6da/64 is 2603:c020:0008:a19b:0000:0000:0000:0000 - 2603:c020:0008:a19b:ffff:ffff:ffff:ffff, the gateway 2603:... can be included.
+      if [[ `echo $ip6AddrWhole | cut -d':' -f 1,2,3,4` == `echo $ip6GateWhole | cut -d':' -f 1,2,3,4` ]]; then
+        ip6Mask="64"
+        ipv6SubnetCalc "$ip6Mask"
+      fi
+# If the IP and gateway are in the same IPv6 A B C D E class, not in the same IPv6 F class, the prefix of netmask should less equal than "80",
+# transfer to whole IPv6 subnet address is ffff:ffff:ffff:ffff:ffff:0000:0000:0000.
+# The range of 2603:c020:8:a19b::ffff:e6da/80 is 2603:c020:0008:a19b:0000:0000:0000:0000 - 2603:c020:0008:a19b:0000:ffff:ffff:ffff, the gateway 2603:... can be included.
+      if [[ `echo $ip6AddrWhole | cut -d':' -f 1,2,3,4,5` == `echo $ip6GateWhole | cut -d':' -f 1,2,3,4,5` ]]; then
+        ip6Mask="80"
+        ipv6SubnetCalc "$ip6Mask"
+      fi
+# If the IP and gateway are in the same IPv6 A B C D E F class, not in the same IPv6 G class, the prefix of netmask should less equal than "96",
+# transfer to whole IPv6 subnet address is ffff:ffff:ffff:ffff:ffff:ffff:0000:0000.
+# The range of 2603:c020:8:a19b::ffff:e6da/96 is 2603:c020:0008:a19b:0000:0000:0000:0000 - 2603:c020:0008:a19b:0000:0000:ffff:ffff, the gateway 2603:... can be included.
+      if [[ `echo $ip6AddrWhole | cut -d':' -f 1,2,3,4,5,6` == `echo $ip6GateWhole | cut -d':' -f 1,2,3,4,5,6` ]]; then
+        ip6Mask="96"
+        ipv6SubnetCalc "$ip6Mask"
+      fi
+# If the IP and gateway are in the same IPv6 A B C D E F G class, not in the same IPv6 H class, the prefix of netmask should less equal than "112",
+# transfer to whole IPv6 subnet address is ffff:ffff:ffff:ffff:ffff:ffff:ffff:0000.
+# The range of 2603:c020:8:a19b::ffff:e6da/112 is 2603:c020:0008:a19b:0000:0000:ffff:0000 - 2603:c020:0008:a19b:0000:0000:ffff:ffff, the gateway 2603:c020:0008:a19b:0000:0000:0000:ffff can't be included.
+      if [[ `echo $ip6AddrWhole | cut -d':' -f 1,2,3,4,5,6,7` == `echo $ip6GateWhole | cut -d':' -f 1,2,3,4,5,6,7` ]]; then
+        ip6Mask="112"
+        ipv6SubnetCalc "$ip6Mask"
+      fi
+    }
+# So in summary of the IPv6 sample in above, we should assign subnet mask "ffff:ffff:ffff:ffff:ffff:ffff:0000:0000"(prefix is "96") for it.
   }
 fi
 
