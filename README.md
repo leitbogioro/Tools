@@ -2,6 +2,8 @@
 Something about scripts
 # Linux reinstall useage
 
+![3](3.png)
+
 ![1](1.jpg)
 
 ![2](2.jpg)
