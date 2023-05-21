@@ -15,10 +15,12 @@
 ## Blog: https://www.zhihu.com/column/originaltechnic
 
 # color
-blue='\033[0;34m'
-yellow='\033[0;33m'
-green='\033[0;32m'
-red='\033[0;31m'
+underLine='\033[4m'
+aoiBlue='\033[36m'
+blue='\033[34m'
+yellow='\033[33m'
+green='\033[32m'
+red='\033[31m'
 plain='\033[0m'
 
 export tmpVER=''
@@ -256,14 +258,14 @@ while [[ $# -ge 1 ]]; do
       ;;
     *)
       if [[ "$1" != 'error' ]]; then echo -ne "\nInvaild option: '$1'\n\n"; fi
-      echo -ne " Usage:\n\tbash $(basename $0)\t\t\t-debian       [\033[33m\033[04mdists-name\033[0m]\n\t\t\t\t-ubuntu       [\033[04mdists-name\033[0m]\n\t\t\t\t-kali         [\033[04mdists-name\033[0m]\n\t\t\t\t-centos       [\033[04mdists-name\033[0m]\n\t\t\t\t-rockylinux   [\033[04mdists-name\033[0m]\n\t\t\t\t-almalinux    [\033[04mdists-name\033[0m]\n\t\t\t\t-fedora       [\033[04mdists-name\033[0m]\n\t\t\t\t-v/--ver      [32/i386|64/\033[33m\033[04mamd64\033[0m|arm/\033[33m\033[04marm64\033[0m] [\033[33m\033[04mdists-verison\033[0m]\n\t\t\t\t--ip-addr/--ip-gate/--ip-mask\n\t\t\t\t-apt/-yum/-mirror\n\t\t\t\t-dd/--image\n\t\t\t\t-pwd          [linux password]\n\t\t\t\t-port         [linux ssh port]\n"
+      echo -ne " Usage:\n\tbash $(basename $0)\t-debian       [${underLine}${yellow}dists-name${plain}]\n\t\t\t\t-ubuntu       [${underLine}dists-name${plain}]\n\t\t\t\t-kali         [${underLine}dists-name${plain}]\n\t\t\t\t-centos       [${underLine}dists-name${plain}]\n\t\t\t\t-rockylinux   [${underLine}dists-name${plain}]\n\t\t\t\t-almalinux    [${underLine}dists-name${plain}]\n\t\t\t\t-fedora       [${underLine}dists-name${plain}]\n\t\t\t\t-version      [32/i386|64/${underLine}${yellow}amd64${plain}|arm/${underLine}${yellow}arm64${plain}] [${underLine}${yellow}dists-verison${plain}]\n\t\t\t\t--ip-addr/--ip-gate/--ip-mask\n\t\t\t\t-apt/-yum/-mirror\n\t\t\t\t-dd/--image\n\t\t\t\t-pwd          [linux password]\n\t\t\t\t-port         [linux ssh port]\n"
       exit 1
       ;;
     esac
   done
 
 # Check Root
-[[ "$EUID" -ne '0' || $(id -u) != '0' ]] && echo -ne "\n[${red}Error${plain}] This script must be executed as root!\n\nTry to type:\n${yellow}sudo -s\n${plain}\nAfter entering the password, switch to root dir to execute this script:\n${yellow}cd ~${plain}\n\n" && exit 1
+[[ "$EUID" -ne '0' || $(id -u) != '0' ]] && echo -ne "\n[${red}Error!${plain}] This script must be executed as root!\n\nTry to type:\n${yellow}sudo -s\n${plain}\nAfter entering the password, switch to root dir to execute this script:\n${yellow}cd ~${plain}\n\n" && exit 1
 
 # Ping delay to YouTube($1) and Instagram($2) and Twitter($3), support both ipv4 and ipv6, $4 is $IPStackType
 function checkCN() {
@@ -335,16 +337,16 @@ function dependence() {
             fi
           done
         if [ "$Found" == '1' ]; then
-          echo -en "[\033[32mok\033[0m]\t";
+          echo -en "[${green}ok${plain}]\t";
         else
           Full='1';
-          echo -en "[\033[31mNot Install\033[0m]";
+          echo -en "[${red}Not Install${plain}]";
         fi
         echo -en "\t$BIN_DEP\n";
       fi
     done
   if [ "$Full" == '1' ]; then
-    echo -ne "\n\033[31mError! \033[0mPlease use '\033[33mapt-get\033[0m' or '\033[33myum / dnf\033[0m' install it.\n\n\n"
+    echo -ne "\n${red}Error!${plain} Please use '${yellow}apt-get${plain}' or '${yellow}yum / dnf${plain}' install it.\n\n\n"
     exit 1;
   fi
 }
@@ -465,8 +467,8 @@ function getDisk() {
   [[ "$disks" == "" ]] && disks=`lsblk | sed 's/[[:space:]]*$//g' | grep "disk" | grep -i "g\|t\|p\|e\|z\|y" | cut -d' ' -f1 | head -1`
   echo "${disks: -1}" | [[ -n "`sed -n '/^[0-9][0-9]*$/p'`" ]] && disks=`echo "$disks" | sed 's/[0-9]//g'`
   [ -n "$disks" ] || echo ""
-  echo "$disks" | grep -q "/dev"
-  [ $? -eq 0 ] && echo "$disks" || echo "/dev/$disks"
+  echo "$disks" > /dev/null | grep -q "/dev"
+  [ $? -eq 0 ] && echo "$disks" > /dev/null || echo "/dev/$disks" > /dev/null
   AllDisks=""
 # Find all disks on this server.
   for Count in `lsblk | sed 's/[[:space:]]*$//g' | grep "disk$" | cut -d' ' -f1 | grep -v "fd[0-9]*\|sr[0-9]*"`; do
@@ -929,7 +931,7 @@ function getInterface() {
     echo "$defaultRoute" | grep -q "$item"
     [ $? -eq 0 ] && interface="$item" && break
   done
-  echo "$interface"
+  echo "$interface" > /dev/null
 # Some templates of cloud provider like Bandwagonhosts, Ubuntu 22.04, may modify parameters in " GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0" " in /etc/default/grub
 # to make Linux kernel redirect names of network adapters from real name like ens18, ens3, enp0s4 to eth0, eth1, eth2...
 # This setting may confuse program to get real adapter name from reading /proc/cat/dev
@@ -1073,7 +1075,6 @@ function getInterface() {
       exit 1
     fi
   fi
-  echo "$NetCfgWhole"
 }
 
 # To confuse whether ipv4 is dhcp or static and whether ipv6 is dhcp or static in Redhat like os in version 9 and later,
@@ -1197,9 +1198,6 @@ function checkDHCP() {
   }
   [[ "$Network4Config" == "" ]] && Network4Config="isStatic"
   [[ "$Network6Config" == "" ]] && Network6Config="isStatic"
-  echo "$IPStackType"
-  echo "$Network4Config"
-  echo "$Network6Config"
   rm -rf "$tmpNetcfgDir"
 }
 
@@ -1489,7 +1487,7 @@ fi
 # Disable SELinux
 [[ -f /etc/selinux/config ]] && {
   SELinuxStatus=$(sestatus -v | grep "SELinux status:" | grep enabled)
-  [[ "$SELinuxStatus" != "" ]] && echo -e "\033[36mDisabled SELinux\033[0m" && setenforce 0
+  [[ "$SELinuxStatus" != "" ]] && echo -ne "\n${aoiBlue}# Disabled SELinux${plain}" && setenforce 0
 }
 
 [[ ! -d "/tmp/" ]] && mkdir /tmp
@@ -1497,14 +1495,14 @@ fi
 if [[ "$loaderMode" == "0" ]]; then
   checkGrub "/boot/grub/" "/boot/grub2/" "/etc/" "grub.cfg" "grub.conf" "/boot/efi/EFI/"
   if [[ -z "$GRUBTYPE" ]]; then
-    echo -ne "\n\033[31mError: \033[0mNot Found grub.\n"
+    echo -ne "\n${red}Error!${plain} Not Found grub.\n"
     exit 1
   fi
 fi
 
 [ -n "$Relese" ] || Relese='Debian'
 linux_relese=$(echo "$Relese" |sed 's/\ //g' |sed -r 's/(.*)/\L\1/')
-clear && echo -e "\n\033[36m# Check Dependence\033[0m\n"
+clear && echo -ne "\n${aoiBlue}# Check Dependence${plain}\n\n"
 
 dependence awk,basename,cat,cpio,curl,cut,dig,dirname,file,find,grep,gzip,ip,lsblk,sed,wget,xz;
 
@@ -1534,6 +1532,7 @@ checkDHCP "$CurrentOS" "$CurrentOSVer" "$IPStackType"
 
 if [[ "$setNet" == "0" ]]; then
   [[ -n "$interface" ]] || interface=`getInterface "$CurrentOS"`
+# Differences from scope link, scope host and scope global of IPv4, reference: https://qiita.com/testnin2/items/7490ff01a4fe1c7ad61f
   iAddr=`ip -4 addr show | grep -wA 5 "$interface" | grep -wv "lo\|host" | grep -w "inet" | grep -w "scope global*\|link*" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
   ipAddr=`echo ${iAddr} | cut -d'/' -f1`
   ipPrefix=`echo ${iAddr} | cut -d'/' -f2`
@@ -1607,23 +1606,24 @@ if [[ "$setNet" == "0" ]]; then
     [[ `echo $ipAddr | cut -d'.' -f 1` != `echo $ipGate | cut -d'.' -f 1` ]] && ipMask=`netmask "1"`
 # If the IP and gateway are in the same IPv4 A class, not in the same IPv4 B class, the prefix of netmask should less equal than "8", transfer to whole IPv4 address is 255.0.0.0
 # The range of 190.168.23.175/8 is 190.0.0.0 - 190.255.255.255, the gateway 169... can't be included.
-    if [[ `echo $ipAddr | cut -d'.' -f 1` == `echo $ipGate | cut -d'.' -f 1` ]] && [[ "$ipPrefix" -gt "8" ]]; then
+    if [[ `echo $ipAddr | cut -d'.' -f 1` == `echo $ipGate | cut -d'.' -f 1` ]]; then
       ipMask=`netmask "8"`
     fi
 # If the IP and gateway are in the same IPv4 A B class, not in the same IPv4 C class, the prefix of netmask should less equal than "16", transfer to whole IPv4 address is 255.255.0.0
 # The range of 190.168.23.175/16 is 190.168.0.0 - 190.168.255.255, the gateway 169... can't be included.
-    if [[ `echo $ipAddr | cut -d'.' -f 1,2` == `echo $ipGate | cut -d'.' -f 1,2` ]] && [[ "$ipPrefix" -gt "16" ]]; then
+    if [[ `echo $ipAddr | cut -d'.' -f 1,2` == `echo $ipGate | cut -d'.' -f 1,2` ]]; then
       ipMask=`netmask "16"`
     fi
 # If the IP and gateway are in the same IPv4 A B C class, not in the same IPv4 D class, the prefix of netmask should less equal than "24", transfer to whole IPv4 address is 255.255.255.0
 # The range of 190.168.23.175/24 is 190.168.23.0 - 190.168.23.255, the gateway 169... can't be included.
-    if [[ `echo $ipAddr | cut -d'.' -f 1,2,3` == `echo $ipGate | cut -d'.' -f 1,2,3` ]] && [[ "$ipPrefix" -gt "24" ]]; then
+    if [[ `echo $ipAddr | cut -d'.' -f 1,2,3` == `echo $ipGate | cut -d'.' -f 1,2,3` ]]; then
       ipMask=`netmask "24"`
     fi
   }
 # So in summary of the IPv4 sample in above, we should assign subnet mask "128.0.0.1"(prefix is "1") for it.
 
   [[ "$IPStackType" != "IPv4Stack" ]] && {
+# Differences from scope link, scope host and scope global of IPv6, reference: https://qiita.com/_dakc_/items/4eefa443306860bdcfde
     i6Addr=`ip -6 addr show | grep -wA 5 "$interface" | grep -wv "lo\|host" | grep -wv "link" | grep -w "inet6" | grep "scope" | grep "global" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
     ip6Addr=`echo ${i6Addr} |cut -d'/' -f1`
     ip6Mask=`echo ${i6Addr} |cut -d'/' -f2`
@@ -1651,12 +1651,41 @@ if [[ "$setNet" == "0" ]]; then
 # Reference: https://www.vultr.com/resources/subnet-calculator-ipv6/
 #            https://ipjisuanqi.com/ipv6.html
     [[ "$Network6Config" == "isStatic" ]] && {
+      tmpIp6AddrFirst=`echo $ip6AddrWhole | sed 's/\(.\{4\}\).*/\1/' | sed 's/[a-z]/\u&/g'`
+      tmpIp6GateFirst=`echo $ip6GateWhole | sed 's/\(.\{4\}\).*/\1/' | sed 's/[a-z]/\u&/g'`
+      if [[ "$tmpIp6AddrFirst" != "$tmpIp6GateFirst" ]]; then
+        if [[ "$((16#$tmpIp6GateFirst))" -ge "$((16#FE80))" && "$((16#$tmpIp6GateFirst))" -le "$((16#FEBF))" ]] || [[ "$((16#$tmpIp6GateFirst))" -ge "$((16#FC00))" && "$((16#$tmpIp6GateFirst))" -le "$((16#FDFF))" ]]; then
+# If some brave guys set --network "static" by force, IPv6 address, mask and gateway of IPv6 DHCP configurations like Oracle Cloud etc. are:
+# a public IPv6 address, a "128" mask, a local IPv6 gateway(starts with "fe80" mostly, like "fe80::200:f1e9:dec3:4ab").
+# The value of mask must be set as "128", not "1" which determined by first condition of above because the local IPv6 address is unique in its' network
+# and plays the role of IPv6 network discovery and identical authentication to ensure that authenticated device is certificated by upstream. 
+# Explanation of using local IPv6 address as gateway quoted from Scott Hogg:
+#
+# Link-local IPv6 addresses are on every interface of every IPv6-enabled host and router. They are essential for LAN-based Neighbor Discovery communication.
+# After the host has gone through the Duplicate Address Detection (DAD) process ensuring that its link-local address (and associated IID) is unique on the LAN segment,
+# it then proceeds to sending an ICMPv6 Router Solicitation (RS) message sourced from that address.
+#
+# There are total three IPv6 address ranges divided into local address: fe80::/10, fec0::/10, fc00::/7.
+# "fe80::/10" is similar with "169.254.0.0/16" of IPv4 of February, 2006 according to RFC 4291, ranges from fe80:0000:0000:0000:0000:0000:0000:0000 to febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff.
+# "fec0::/10" is similar with "192.168.0.0/16" of IPv4 which was deprecated and returned to public IPv6 address again of September, 2004 according to RFC 3879.
+# The function of "fec0::/10" was replaced by "fc00::/7" of October, 2005 according to RFC 4193, ranges from fc00:0000:0000:0000:0000:0000:0000:0000 to fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff.
+# So we need to calculate ranges of "fe80::/10" and "fc00::/7", if IPv6 address is public and IPv6 gateway belongs to local IPv6 address.
+# English strings in hexadecimal must be converted as capital alphabets that comparison operations can be processed by shell.
+# Reference: https://blogs.infoblox.com/ipv6-coe/fe80-1-is-a-perfectly-valid-ipv6-default-gateway-address/ chapter: Link-Local Address as Default Gateway
+#            https://www.wdic.org/w/WDIC/IPv6%E3%82%A2%E3%83%89%E3%83%AC%E3%82%B9 chapter: アドレスの種類(Types of address) → エニキャストアドレス(Anycast address)
+#            https://www.wdic.org/w/WDIC/IPv6%E3%82%A2%E3%83%89%E3%83%AC%E3%82%B9 chapter: サイトローカルアドレス(Site local address)
+#            https://www.wdic.org/w/WDIC/%E3%83%A6%E3%83%8B%E3%83%BC%E3%82%AF%E3%83%AD%E3%83%BC%E3%82%AB%E3%83%AB%E3%83%A6%E3%83%8B%E3%82%AD%E3%83%A3%E3%82%B9%E3%83%88%E3%82%A2%E3%83%89%E3%83%AC%E3%82%B9
+#            https://www.ipentec.com/document/network-format-ipv6-local-adddress chapter: IPv6のリンクローカルアドレス(Link local address of IPv6)
+#            https://www.rfc-editor.org/rfc/rfc4291.html#section-2.4 chapter: 2.4. Address Type Identification
+          ip6Mask="128"
+          ipv6SubnetCalc "$ip6Mask"
+        else
 # If the IPv6 and IPv6 gateway are not in the same IPv6 A class, the prefix of netmask should be "1",
 # transfer to whole IPv6 subnet address is 8000:0000:0000:0000:0000:0000:0000:0000.
 # The range of 2603:c020:8:a19b::ffff:e6da/1 is 0000:0000:0000:0000:0000:0000:0000:0000 - 7fff:ffff:ffff:ffff:ffff:ffff:ffff:ffff, the gateway 2603:c020:0008:a19b:0000:0000:0000:ffff can be included.
-      if [[ `echo $ip6AddrWhole | cut -d':' -f 1` != `echo $ip6GateWhole | cut -d':' -f 1` ]]; then
-        ip6Mask="1"
-        ipv6SubnetCalc "$ip6Mask"
+          ip6Mask="1"
+          ipv6SubnetCalc "$ip6Mask"
+        fi
       fi
 # If the IP and gateway are in the same IPv6 A class, not in the same IPv6 B class, the prefix of netmask should less equal than "16",
 # transfer to whole IPv6 subnet address is ffff:0000:0000:0000:0000:0000:0000:0000.
@@ -1719,16 +1748,37 @@ IPv4="$ipAddr"; MASK="$ipMask"; GATE="$ipGate";
   exit 1
 }
 
+echo -ne "\n${aoiBlue}# Network Details${plain}\n"
+echo -ne "\n[${yellow}Adapter Name${plain}]  $interface"
+echo -ne "\n[${yellow}Network File${plain}]  $NetCfgWhole"
+echo -ne "\n[${yellow}Server Stack${plain}]  $IPStackType\n"
+[[ "$IPStackType" != "IPv6Stack" ]] && echo -ne "\n[${yellow}IPv4  Method${plain}]  $Network4Config\n" || echo -ne "\n[${yellow}IPv4  Method${plain}]  N/A\n"
+[[ "$IPv4" ]] && echo -e "[${yellow}IPv4 Address${plain}]  ""$IPv4" || echo -e "[${yellow}IPv4 Address${plain}]  ""N/A"
+[[ "$IPv4" ]] && echo -e "[${yellow}IPv4  Subnet${plain}]  ""$MASK" || echo -e "[${yellow}IPv4  Subnet${plain}]  ""N/A"
+[[ "$IPv4" ]] && echo -e "[${yellow}IPv4 Gateway${plain}]  ""$GATE" || echo -e "[${yellow}IPv4 Gateway${plain}]  ""N/A"
+[[ "$IPv4" ]] && echo -e "[${yellow}IPv4     DNS${plain}]  ""$ipDNS" || echo -e "[${yellow}IPv4     DNS${plain}]  ""N/A"
+[[ "$IPStackType" != "IPv4Stack" ]] && echo -ne "\n[${yellow}IPv6  Method${plain}]  $Network6Config\n" || echo -ne "\n[${yellow}IPv6  Method${plain}]  N/A\n"
+[[ "$IPStackType" != "IPv4Stack" ]] && echo -e "[${yellow}IPv6 Address${plain}]  ""$ip6Addr" || echo -e "[${yellow}IPv6 Address${plain}]  ""N/A"
+[[ "$IPStackType" != "IPv4Stack" ]] && echo -e "[${yellow}IPv6  Subnet${plain}]  ""$ip6Mask" || echo -e "[${yellow}IPv6  Subnet${plain}]  ""N/A"
+[[ "$IPStackType" != "IPv4Stack" ]] && echo -e "[${yellow}IPv6 Gateway${plain}]  ""$ip6Gate" || echo -e "[${yellow}IPv6 Gateway${plain}]  ""N/A"
+[[ "$IPStackType" != "IPv4Stack" ]] && echo -e "[${yellow}IPv6     DNS${plain}]  ""$ip6DNS" || echo -e "[${yellow}IPv6     DNS${plain}]  ""N/A"
+
 getUserTimezone "/root/timezonelists" "ZGEyMGNhYjhhMWM2NDJlMGE0YmZhMDVmMDZlNzBmN2E=" "ZTNlMjBiN2JjOTE2NGY2YjllNzUzYWU5ZDFjYjdjOTc=" "MWQ2NGViMGQ4ZmNlNGMzYTkxYjNiMTdmZDMxODQwZDc="
+echo -ne "\n${aoiBlue}# User Timezone${plain}\n\n"
+echo "$TimeZone"
 
 [ -n "$tmpWORD" ] && dependence openssl
 [[ -n "$tmpWORD" ]] && myPASSWORD=$(openssl passwd -1 ''$tmpWORD'')
 [[ -z "$myPASSWORD" ]] && myPASSWORD='$1$OCy2O5bt$m2N6XMgFUwCn/2PPP114J/'
+echo -ne "\n${aoiBlue}# SSH Port${plain}\n\n"
+echo "$sshPORT"
 
 getDisk
 tempDisk=`getDisk`
 [ -n "$tempDisk" ] && IncDisk="$tempDisk"
 [[ "$setRaid" == "0" ]] && IncDisk="/dev/sda"
+echo -ne "\n${aoiBlue}# Installing Disks${plain}\n\n"
+echo "$AllDisks"
 
 # Get architecture of current os automatically
 ArchName=`uname -m`
@@ -1771,7 +1821,7 @@ if [[ -n "$tmpVER" ]]; then
 fi
 
 [[ ! -n "$VER" ]] && {
-  echo -ne "\n\033[31mError: \033[0mUnknown architecture.\n"
+  echo -ne "\n${red}Error!${plain} Unknown architecture.\n"
   bash $0 error
   exit 1
 }
@@ -1850,16 +1900,16 @@ if [[ -n "$tmpDIST" ]]; then
       [[ "$RedHatSeries" =~ [0-9]{${#1}} ]] && {
         if [[ "$RedHatSeries" == "6" ]]; then
           DISTCheck="6.10"
-          echo -ne "\n\033[33mWarning: \033[0m$Relese $DISTCheck is not supported!\n"
+          echo -ne "\n${red}Warning:${plain} $Relese $DISTCheck is not supported!\n"
           exit 1
         elif [[ "$RedHatSeries" == "7" ]]; then
           DISTCheck="7.9.2009"
         elif [[ "$RedHatSeries" -ge "8" ]] && [[ ! "$RedHatSeries" =~ "-stream" ]]; then
           DISTCheck="$RedHatSeries""-stream"
         elif [[ "$RedHatSeries" -le "5" ]]; then
-          echo -ne "\n\033[33mWarning: \033[0m$Relese $DISTCheck is not supported!\n"
+          echo -ne "\n${red}Warning:${plain} $Relese $DISTCheck is not supported!\n"
         else
-          echo -ne "\n\033[33mError: \033[0mInvaild $DIST! version!\n"
+          echo -ne "\n${red}Error!${plain} Invaild $DIST! version!\n"
         fi
       }
       LinuxMirror=$(selectMirror "$Relese" "$DISTCheck" "$VER" "$tmpMirror")
@@ -1872,12 +1922,12 @@ if [[ -n "$tmpDIST" ]]; then
 # AlmaLinux releases history:
 # https://wiki.almalinux.org/release-notes/
         if [[ "$linux_relese" == 'rockylinux' || "$linux_relese" == 'almalinux' ]] && [[ "$RedHatSeries" -le "7" ]]; then
-          echo -ne "\n\033[33mWarning: \033[0m$Relese $DISTCheck is not supported!\n"
+          echo -ne "\n${red}Warning:${plain} $Relese $DISTCheck is not supported!\n"
           exit 1
 # Fedora releases history:
 # https://en.wikipedia.org/wiki/Fedora_Linux_release_history
         elif [[ "$linux_relese" == 'fedora' ]] && [[ "$RedHatSeries" -le "35" ]]; then
-          echo -ne "\n\033[33mWarning: \033[0m$Relese $DISTCheck is not supported!\n"
+          echo -ne "\n${red}Warning:${plain} $Relese $DISTCheck is not supported!\n"
           exit 1
         fi
       }
@@ -1892,19 +1942,19 @@ if [[ -n "$tmpDIST" ]]; then
     if [[ "$linux_relese" == 'centos' ]] && [[ "$RedHatSeries" -le "7" ]]; then
       wget --no-check-certificate -qO- "$LinuxMirror/$DIST/os/$VER/.treeinfo" | grep -q 'general'
       [[ $? != '0' ]] && {
-        echo -ne "\n\033[33mWarning: \033[0m$Relese $DISTCheck was not found in this mirror, Please change mirror try again!\n"
+        echo -ne "\n${red}Warning:${plain} $Relese $DISTCheck was not found in this mirror, Please change mirror try again!\n"
         exit 1
       }
     elif [[ "$linux_relese" == 'centos' && "$RedHatSeries" -ge "8" ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]]; then
       wget --no-check-certificate -qO- "$LinuxMirror/$DIST/BaseOS/$VER/os/media.repo" | grep -q 'mediaid'
       [[ $? != '0' ]] && {
-        echo -ne "\n\033[33mWarning: \033[0m$Relese $DISTCheck was not found in this mirror, Please change mirror try again!\n"
+        echo -ne "\n${red}Warning:${plain} $Relese $DISTCheck was not found in this mirror, Please change mirror try again!\n"
         exit 1
       }
     elif [[ "$linux_relese" == 'fedora' ]]; then
       wget --no-check-certificate -qO- "$LinuxMirror/releases/$DIST/Server/$VER/os/media.repo" | grep -q 'mediaid'
       [[ $? != '0' ]] && {
-        echo -ne "\n\033[33mWarning: \033[0m$Relese $DISTCheck was not found in this mirror, Please change mirror try again!\n"
+        echo -ne "\n${red}Warning:${plain} $Relese $DISTCheck was not found in this mirror, Please change mirror try again!\n"
         exit 1
       }
     fi    
@@ -1912,21 +1962,21 @@ if [[ -n "$tmpDIST" ]]; then
 fi
 
 [[ -z "$LinuxMirror" ]] && {
-  echo -ne "\033[31mError! \033[0mInvaild mirror! \n"
-  [ "$Relese" == 'Debian' ] && echo -en "\033[33mPlease check mirror lists:\033[0m https://www.debian.org/mirror/list\n\n"
-  [ "$Relese" == 'Ubuntu' ] && echo -en "\033[33mPlease check mirror lists:\033[0m https://launchpad.net/ubuntu/+archivemirrors\n\n"
-  [ "$Relese" == 'Kali' ] && echo -en "\033[33mPlease check mirror lists:\033[0m https://http.kali.org/README.mirrorlist\n\n"
-  [ "$Relese" == 'CentOS' ] && echo -en "\033[33mPlease check mirror lists:\033[0m https://www.centos.org/download/mirrors/\n\n"
-  [ "$Relese" == 'RockyLinux' ] && echo -en "\033[33mPlease check mirror lists:\033[0m https://mirrors.rockylinux.org/mirrormanager/mirrors\n\n"
-  [ "$Relese" == 'AlmaLinux' ] && echo -en "\033[33mPlease check mirror lists:\033[0m https://mirrors.almalinux.org/\n\n"
-  [ "$Relese" == 'Fedora' ] && echo -en "\033[33mPlease check mirror lists:\033[0m https://mirrors.fedoraproject.org/\n\n"
+  echo -ne "${red}Error! ${plain}Invaild mirror! \n"
+  [ "$Relese" == 'Debian' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://www.debian.org/mirror/list\n\n"
+  [ "$Relese" == 'Ubuntu' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://launchpad.net/ubuntu/+archivemirrors\n\n"
+  [ "$Relese" == 'Kali' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://http.kali.org/README.mirrorlist\n\n"
+  [ "$Relese" == 'CentOS' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://www.centos.org/download/mirrors/\n\n"
+  [ "$Relese" == 'RockyLinux' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://mirrors.rockylinux.org/mirrormanager/mirrors\n\n"
+  [ "$Relese" == 'AlmaLinux' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://mirrors.almalinux.org/\n\n"
+  [ "$Relese" == 'Fedora' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://mirrors.fedoraproject.org/\n\n"
   bash $0 error
   exit 1
 }
 
 [[ "$setNetbootXyz" == "1" ]] && SpikCheckDIST="1"
 if [[ "$SpikCheckDIST" == '0' ]]; then
-  echo -e "\n\033[36m# Check DIST\033[0m"
+  echo -ne "\n${aoiBlue}# Check DIST${plain}\n"
   DistsList="$(wget --no-check-certificate -qO- "$LinuxMirror/dists/" |grep -o 'href=.*/"' |cut -d'"' -f2 |sed '/-\|old\|Debian\|experimental\|stable\|test\|sid\|devel/d' |grep '^[^/]' |sed -n '1h;1!H;$g;s/\n//g;s/\//\;/g;$p')"
   [[ "$linux_relese" == "kali" ]] && DistsList="$(wget --no-check-certificate -qO- "$LinuxMirror/dists/" | grep -o 'href=.*/"' | cut -d'"' -f2 | grep '^[^/]' | sed -n '1h;1!H;$g;s/\n//g;s/\//\;/g;$p')"
   for CheckDEB in `echo "$DistsList" |sed 's/;/\n/g'`
@@ -1937,7 +1987,7 @@ if [[ "$SpikCheckDIST" == '0' ]]; then
       [[ "$CheckDEB" =~ "$DIST" ]] && FindDists='1' && break;
     done
   [[ "$FindDists" == '0' ]] && {
-    echo -ne '\n\033[31mError! \033[0mThe dists version not found, Please check it! \n\n'
+    echo -ne '\n${red}Error!${plain} The dists version not found, Please check it! \n\n'
     bash $0 error
     exit 1
   }
@@ -1965,9 +2015,9 @@ if [[ "$ddMode" == '1' ]]; then
   fi
 fi
 
-clear && echo -e "\n\033[36m# Install\033[0m\n"
+echo -ne "\n${aoiBlue}# Installation Starting${plain}\n"
 
-[[ "$ddMode" == '1' ]] && echo -ne "\033[34mAuto Mode\033[0m insatll \033[33mWindows\033[0m\n[\033[33m$DDURL\033[0m]\n"
+[[ "$ddMode" == '1' ]] && echo -ne "${blue}Auto Mode${plain} insatll [${yellow}Windows${plain}]\n$DDURL\n"
 
 if [ -z "$interfaceSelect" ]; then
   if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ "$linux_relese" == 'kali' ]]; then
@@ -1989,11 +2039,11 @@ if [[ "$linux_relese" == 'centos' ]]; then
     awk 'BEGIN{print '${UNVER}'-'${DIST}'}' |grep -q '^-'
     if [ $? != '0' ]; then
       UNKNOWHW='1'
-      echo -en "\033[33mThe version lower then \033[31m$UNVER\033[33m may not support in auto mode! \033[0m\n";
+      echo -ne "\nThe version lower than ${red}$UNVER${plain} may not support in auto mode!\n"
     fi
   fi
 fi
-[[ "$setNetbootXyz" == "0" ]] && echo -e "\n[\033[33m$Relese\033[0m] [\033[33m$DIST\033[0m] [\033[33m$VER\033[0m] Downloading...\n" || echo -e "\n[\033[33mnetboot.xyz\033[0m] Downloading...\n"
+[[ "$setNetbootXyz" == "0" ]] && echo -ne "\n[${yellow}$Relese${plain}] [${yellow}$DIST${plain}] [${yellow}$VER${plain}] Downloading...\n" || echo -ne "\n[${yellow}netboot.xyz${plain}] Downloading...\n"
 
 # RAM of RedHat series is 2GB required at least.
 [[ "$setNetbootXyz" == "0" ]] && {
@@ -2006,7 +2056,7 @@ fi
 if [[ "$setNetbootXyz" == "1" ]]; then
   [[ "$VER" == "x86_64" || "$VER" == "amd64" ]] && apt install grub-imageboot -y
   if [[ "$EfiSupport" == "enabled" ]] || [[ "$VER" == "aarch64" || "$VER" == "arm64" ]]; then
-    echo -ne "\n\033[31mError: \033[0mNetbootxyz doesn't support $VER architecture!\n"
+    echo -ne "\n${red}Error!${plain} Netbootxyz doesn't support $VER architecture!\n"
     bash $0 error
     exit 1
   fi
@@ -2021,7 +2071,7 @@ if [[ "$setNetbootXyz" == "1" ]]; then
   fi
   [[ ! -d "/boot/images/" ]] && mkdir /boot/images/
   rm -rf /boot/images/netboot.xyz.iso
-  echo -e "[\033[33mMirror\033[0m] $NetbootXyzUrl\n"
+  echo -ne "[${yellow}Mirror${plain}] $NetbootXyzUrl\n"
   wget --no-check-certificate -qO '/boot/images/netboot.xyz.iso' "$NetbootXyzUrl"
   [[ ! -f "/etc/grub.d/60_grub-imageboot" ]] && wget --no-check-certificate -qO '/etc/grub.d/60_grub-imageboot' "$NetbootXyzGrub"
   chmod 755 /etc/grub.d/60_grub-imageboot
@@ -2038,38 +2088,38 @@ elif [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [
     InitrdUrl="${LinuxMirror}/dists/${DIST}/main/installer-${VER}/current/images/netboot/debian-installer/${VER}/initrd.gz"
     VmLinuzUrl="${LinuxMirror}/dists/${DIST}/main/installer-${VER}/current/images/netboot/debian-installer/${VER}/linux"
   }
-  echo -e "[\033[33mMirror\033[0m] $InitrdUrl\n\t $VmLinuzUrl\n"
+  echo -ne "[${yellow}Mirror${plain}] $InitrdUrl\n\t $VmLinuzUrl\n"
   wget --no-check-certificate -qO '/tmp/initrd.img' "$InitrdUrl"
-  [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'initrd.img' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
+  [[ $? -ne '0' ]] && echo -ne "${red}Error!${plain} Download 'initrd.img' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
   wget --no-check-certificate -qO '/tmp/vmlinuz' "$VmLinuzUrl"
-  [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'vmlinuz' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
+  [[ $? -ne '0' ]] && echo -ne "${red}Error!${plain} Download 'vmlinuz' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
   MirrorHost="$(echo "$LinuxMirror" |awk -F'://|/' '{print $2}')"
   MirrorFolder="$(echo "$LinuxMirror" |awk -F''${MirrorHost}'' '{print $2}')"
   [ -n "$MirrorFolder" ] || MirrorFolder="/"
 elif [[ "$linux_relese" == 'centos' ]] && [[ "$RedHatSeries" -le "7" ]]; then
   InitrdUrl="${LinuxMirror}/${DIST}/os/${VER}/images/pxeboot/initrd.img"
   VmLinuzUrl="${LinuxMirror}/${DIST}/os/${VER}/images/pxeboot/vmlinuz"
-  echo -e "[\033[33mMirror\033[0m] $InitrdUrl\n\t $VmLinuzUrl\n"
+  echo -ne "[${yellow}Mirror${plain}] $InitrdUrl\n\t $VmLinuzUrl\n"
   wget --no-check-certificate -qO '/tmp/initrd.img' "$InitrdUrl"
-  [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'initrd.img' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
+  [[ $? -ne '0' ]] && echo -ne "${red}Error!${plain} Download 'initrd.img' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
   wget --no-check-certificate -qO '/tmp/vmlinuz' "$VmLinuzUrl"
-  [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'vmlinuz' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
+  [[ $? -ne '0' ]] && echo -ne "${red}Error!${plain} Download 'vmlinuz' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
 elif [[ "$linux_relese" == 'centos' && "$RedHatSeries" -ge "8" ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]]; then
   InitrdUrl="${LinuxMirror}/${DIST}/BaseOS/${VER}/os/images/pxeboot/initrd.img"
   VmLinuzUrl="${LinuxMirror}/${DIST}/BaseOS/${VER}/os/images/pxeboot/vmlinuz"
-  echo -e "[\033[33mMirror\033[0m] $InitrdUrl\n\t $VmLinuzUrl\n"
+  echo -ne "[${yellow}Mirror${plain}] $InitrdUrl\n\t $VmLinuzUrl\n"
   wget --no-check-certificate -qO '/tmp/initrd.img' "$InitrdUrl"
-  [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'initrd.img' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
+  [[ $? -ne '0' ]] && echo -ne "${red}Error!${plain} Download 'initrd.img' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
   wget --no-check-certificate -qO '/tmp/vmlinuz' "$VmLinuzUrl"
-  [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'vmlinuz' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
+  [[ $? -ne '0' ]] && echo -ne "${red}Error!${plain} Download 'vmlinuz' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
 elif [[ "$linux_relese" == 'fedora' ]]; then
   InitrdUrl="${LinuxMirror}/releases/${DIST}/Server/${VER}/os/images/pxeboot/initrd.img"
   VmLinuzUrl="${LinuxMirror}/releases/${DIST}/Server/${VER}/os/images/pxeboot/vmlinuz"
-  echo -e "[\033[33mMirror\033[0m] $InitrdUrl\n\t $VmLinuzUrl\n"
+  echo -ne "[${yellow}Mirror${plain}] $InitrdUrl\n\t $VmLinuzUrl\n"
   wget --no-check-certificate -qO '/tmp/initrd.img' "$InitrdUrl"
-  [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'initrd.img' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
+  [[ $? -ne '0' ]] && echo -ne "${red}Error!${plain} Download 'initrd.img' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
   wget --no-check-certificate -qO '/tmp/vmlinuz' "$VmLinuzUrl"
-  [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'vmlinuz' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
+  [[ $? -ne '0' ]] && echo -ne "${red}Error!${plain} Download 'vmlinuz' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
 else
   bash $0 error
   exit 1
@@ -2460,16 +2510,16 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
         [ "$tmpCFG" -gt "$CFG0" -a "$tmpCFG" -lt "$CFG2" ] && CFG1="$tmpCFG";
       done
       [[ -z "$CFG1" ]] && {
-        echo "Error! read $GRUBFILE.\n";
+        echo -ne "\n${red}Error!${plain} read $GRUBFILE.\n";
         exit 1;
       }
       sed -n "$CFG0,$CFG1"p $READGRUB >/tmp/grub.new;
       [[ -f /tmp/grub.new ]] && [[ "$(grep -c '{' /tmp/grub.new)" -eq "$(grep -c '}' /tmp/grub.new)" ]] || {
-        echo -ne "\033[31mError! \033[0mNot configure $GRUBFILE.\n";
+        echo -ne "\n${red}Error!${plain} Not configure $GRUBFILE.\n";
         exit 1;
       }
     fi  
-    [ ! -f /tmp/grub.new ] && echo -ne "\033[31mError! \033[0m $GRUBFILE. " && exit 1;
+    [ ! -f /tmp/grub.new ] && echo -ne "\n${red}Error!${plain} $GRUBFILE. " && exit 1;
     sed -i "/menuentry.*/c\menuentry\ \'Install OS \[$Relese\ $DIST\ $VER\]\'\ --class debian\ --class\ gnu-linux\ --class\ gnu\ --class\ os\ \{" /tmp/grub.new
     sed -i "/echo.*Loading/d" /tmp/grub.new;
     INSERTGRUB="$(awk '/menuentry /{print NR}' $GRUBDIR/$GRUBFILE|head -n 1)"
@@ -2477,7 +2527,7 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
     [[ -n "$(grep 'linux.*/\|kernel.*/' /tmp/grub.new |awk '{print $2}' |tail -n 1 |grep '^/boot/')" ]] && Type='InBoot' || Type='NoBoot';
   
     LinuxKernel="$(grep 'linux.*/\|kernel.*/' /tmp/grub.new |awk '{print $1}' |head -n 1)";
-    [[ -z "$LinuxKernel" ]] && echo -ne "\n\033[31mError: \033[0mread grub config!\n" && exit 1;
+    [[ -z "$LinuxKernel" ]] && echo -ne "\n${red}Error!${plain} read grub config!\n" && exit 1;
     LinuxIMG="$(grep 'initrd.*/' /tmp/grub.new |awk '{print $1}' |tail -n 1)";
     [ -z "$LinuxIMG" ] && sed -i "/$LinuxKernel.*\//a\\\tinitrd\ \/" /tmp/grub.new && LinuxIMG='initrd';
 # If network adapter need to redirect eth0, eth1... in new system, add this setting in grub file of the current system for netboot install file which need to be loaded after restart.
@@ -2626,16 +2676,16 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
       CFG1="$SetRootCfg"
     fi
     [[ -z "$CFG0" || -z "$CFG1" ]] && {
-      echo -ne "\n\033[31mError: \033[0mread $GRUBFILE.\n"
+      echo -ne "\n${red}Error!${plain} read $GRUBFILE.\n"
       exit 1
     }
     sed -n "$CFG0,$CFG1"p $GRUBDIR/$GRUBFILE >/tmp/grub.new
     sed -i -e 's/^/  /' /tmp/grub.new
     [[ -f /tmp/grub.new ]] && [[ "$(grep -c '{' /tmp/grub.new)" -eq "$(grep -c '}' /tmp/grub.new)" ]] || {
-      echo -ne "\033[31mError! \033[0mNot configure $GRUBFILE. \n"
+      echo -ne "\n${red}Error!${plain} Not configure $GRUBFILE. \n"
       exit 1
     }
-    [ ! -f /tmp/grub.new ] && echo -e "\n\033[31mError: \033[0m$GRUBFILE.\n" && exit 1
+    [ ! -f /tmp/grub.new ] && echo -ne "\n${red}Error!${plain} $GRUBFILE.\n" && exit 1
 # Set IPv6 or distribute unite network adapter interface
     [[ "$setInterfaceName" == "1" ]] && Add_OPTION="net.ifnames=0 biosdevname=0" || Add_OPTION=""
     [[ "$setIPv6" == "0" ]] && Add_OPTION="$Add_OPTION ipv6.disable=1" || Add_OPTION="$Add_OPTION"
