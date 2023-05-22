@@ -2147,9 +2147,9 @@ if [[ "$IncFirmware" == '1' ]]; then
       [[ $? -ne '0' ]] && echo -ne "\n[${red}Error${plain}] Download firmware for ${red}$linux_relese${plain} failed! \n" && exit 1    
       rm -rf /root/kaliFirmwareCheck
     else
-      wget --no-check-certificate -qO /root/kaliFirmwareCheck 'http://http.kali.org/pool/non-free/f/firmware-nonfree/?C=S;O=D'
-      kaliFirmwareName=$(grep "href=\"firmware-nonfree" /root/kaliFirmwareCheck | head -n 1 | awk -F'\">' '/tar.xz/{print $4}' | cut -d'<' -f1 | cut -d'/' -f2)
-      wget --no-check-certificate -qO '/tmp/kali_firmware.tar.xz' "http://http.kali.org/pool/non-free/f/firmware-nonfree/$kaliFirmwareName"
+      wget --no-check-certificate -qO /root/kaliFirmwareCheck 'https://mirrors.ocf.berkeley.edu/kali/pool/non-free/f/firmware-nonfree/?C=S&O=D'
+      kaliFirmwareName=$(grep "href=\"firmware-nonfree" /root/kaliFirmwareCheck | head -n 1 | awk -F'\">' '/tar.xz/{print $3}' | cut -d'<' -f1 | cut -d'/' -f2)
+      wget --no-check-certificate -qO '/tmp/kali_firmware.tar.xz' "https://mirrors.ocf.berkeley.edu/kali/pool/non-free/f/firmware-nonfree/$kaliFirmwareName"
       [[ $? -ne '0' ]] && echo -ne "\n[${red}Error${plain}] Download firmware for ${red}$linux_relese${plain} failed! \n" && exit 1
       rm -rf /root/kaliFirmwareCheck
     fi
