@@ -200,6 +200,8 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
+**-setdisk "all"**: If your machine has 2 or more hard drives, and every hard drive want to format during the installation, you can assign -setdisk "all" to enable it, data is invaluable, you should deal with them carefully! This parameter is only suitable for Debian/Kali.
+
 **-version 32/i386 or 64/amd64 or arm/arm64**: OS bit. Program will automatically detect and redirect the CPU architecture from your machine to new system which would be installed, if you aren't known it well, don't assign it!
 <br />
 <br />
