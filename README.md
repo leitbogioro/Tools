@@ -301,7 +301,7 @@ RDC(Remote Desktop Connection) port: 5900
 <br />
 Network: **IPv4 DHCP is necessary**
 <br />
-CPU: AMD64 architecture, single core at least, dual core or more is recommend.
+CPU: **AMD64** architecture, single core at least, dual core or more is recommend.
 <br />
 Hard Drive: 20GB at least, 50GB or more, SSD is recommend.
 <br />
