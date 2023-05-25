@@ -274,6 +274,7 @@ You first need to fix the source available and then execute this script.
 sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
 sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*</pre></code>
 If script notices any error like in "# Check Dependence", please execute it again!
+<br />
 If you have enabled and assigned IPv6 address after server had been created in the website panel of some cloud providers like Oracle etc. but IPv6 is still invalid in the original system, you can try "dhclient" command to enable IPv6, the same as IPv4:
 <pre><code>dhclient -6 "network adapter name"</pre></code>
 <pre><code>dhclient -4 "network adapter name"</pre></code>
