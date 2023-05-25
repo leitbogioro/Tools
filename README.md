@@ -280,7 +280,7 @@ Notice: Microsoft products and services—including images, text, and software d
 <br />
 <br />
 <b>"InstallNET.sh" doesn't provide any third-part activation service for Windows, this function is only aim to assist you with researching, evaluating related features of Windows. "InstallNET.sh" is not responsible or liable if someone cause any illegal circumstance or loss their data by inappropriate using without any backups. "InstallNET.sh" only supports your server to install from Linux to Windows but it can't work well in Windows so that you have no more chance to use "InstallNET.sh" to install from Windows to Linux again.</b>
-### Servers based on KVM or XEN virtualization, the middle handling linux system is Debian 12(bookworm):
+### Servers based on KVM or XEN or QEMU virtualization, the middle handling linux system is Debian 12(bookworm):
 <pre><code>bash InstallNET.sh -dd 'DD image download URL'</code></pre>
 ### Servers based on physical hardware, Intel network adapter, kimsufi etc:
 Change netboot to rescue mode, receive mail, get temporary username and password, log into linux, execute:
