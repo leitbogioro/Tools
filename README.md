@@ -274,6 +274,9 @@ You first need to fix the source available and then execute this script.
 sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
 sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*</pre></code>
 If script notices any error like in "# Check Dependence", please execute it again!
+If you have enabled and assigned IPv6 address after server had been created in the website panel of some cloud providers like Oracle etc. but IPv6 is still invalid in the original system, you can try "dhclient" command to enable IPv6, the same as IPv4:
+<pre><code>dhclient -6 "network adapter name"</pre></code>
+<pre><code>dhclient -4 "network adapter name"</pre></code>
 
 ## How to install Windows?
 Notice: Microsoft products and services—including images, text, and software downloads (the "content")—are owned either by Microsoft Corporation or by third parties who have granted Microsoft permission to use the content. Microsoft cannot grant you permission for content that is owned by third parties. You may only copy, modify, distribute, display, license, or sell the content if you are granted explicit permission within the End-User License Agreement (EULA) or license terms that accompany the content or are provided in the following guidelines. For more information, consult your copyright attorney.
