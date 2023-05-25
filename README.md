@@ -333,7 +333,7 @@ English: https://dl.lamp.sh/vhd/en_win2012r2.xz
 <br />
 Japanese: https://dl.lamp.sh/vhd/ja_win2012r2.xz
 
-##### For BIOS firmware and MBR partition table #####
+##### For UEFI firmware and GPT partition table #####
 
 - Windows 11 Pro for Workstations 22H2
 
