@@ -1404,7 +1404,7 @@ d-i clock-setup/ntp boolean true
 d-i clock-setup/ntp-server string ntp.nict.jp
 
 ### Get harddisk name and Windows DD installation set up
-d-i preseed/early_command string anna-install libfuse2-udeb fuse-udeb ntfs-3g-udeb libcrypto1.1-udeb libpcre2-8-0-udeb libssl1.1-udeb libuuid1-udeb zlib1g-udeb wget-udeb
+d-i preseed/early_command string anna-install libfuse2-udeb fuse-udeb ntfs-3g-udeb libcrypto3-udeb libpcre2-8-0-udeb libssl3-udeb libuuid1-udeb zlib1g-udeb wget-udeb
 d-i partman/early_command string \
 lvremove --select all -ff -y; \
 vgremove --select all -ff -y; \
@@ -1513,7 +1513,7 @@ dependence awk,basename,cat,cpio,curl,cut,dig,dirname,file,find,grep,gzip,ip,lsb
   dependence iconv
   linux_relese='debian'
   tmpDIST='bookworm'
-  tmpVER=''
+  tmpVER='amd64'
 }
 
 ipDNS=$(checkDNS "$ipDNS")
@@ -2008,7 +2008,8 @@ if [[ "$ddMode" == '1' ]]; then
       DEC_CMD="xzcat"
       [[ $(echo "$DDURL" | grep -o ...$) == ".gz" ]] && DEC_CMD="gunzip -dc"
     else
-      DEC_CMD="gunzip -dc"
+      [[ $(echo "$DDURL" | grep -o ...$) == ".xz" ]] && DEC_CMD="xzcat"
+      [[ $(echo "$DDURL" | grep -o ...$) == ".gz" ]] && DEC_CMD="gunzip -dc"
     fi
   else
     echo 'Please input a vaild image URL!'
