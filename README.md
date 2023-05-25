@@ -279,18 +279,32 @@ If script notices any error like in "# Check Dependence", please execute it agai
 Notice: Microsoft products and services—including images, text, and software downloads (the "content")—are owned either by Microsoft Corporation or by third parties who have granted Microsoft permission to use the content. Microsoft cannot grant you permission for content that is owned by third parties. You may only copy, modify, distribute, display, license, or sell the content if you are granted explicit permission within the End-User License Agreement (EULA) or license terms that accompany the content or are provided in the following guidelines. For more information, consult your copyright attorney.
 <br />
 <br />
-<b>"installNET.sh" doesn't provide any third-part activation service for Windows, this function is only help you to research, evaluate related features of Windows. "installNET.sh" is not responsible or liable if someone cause any illegal circumstance.</b>
-### Servers based on KVM or XEN virtualization, Debian series only:
-<pre><code>bash InstallNET.sh -dd "DD image download URL"</code></pre>
+<b>"InstallNET.sh" doesn't provide any third-part activation service for Windows, this function is only help you to research, evaluate related features of Windows. "InstallNET.sh" is not responsible or liable if someone cause any illegal circumstance.</b>
+### Servers based on KVM or XEN virtualization, the middle handling linux system is Debian 12(bookworm):
+<pre><code>bash InstallNET.sh -dd 'DD image download URL'</code></pre>
 ### Servers based on physical hardware, Intel network adapter, kimsufi etc:
 Change netboot to rescue mode, receive mail, get temporary username and password, log into linux, execute:
-<pre><code>wget -O- "DD download URL" | xzcat | dd of=/dev/sda</code></pre>
-### Available Windows DD images:
-#### Windows Server series from TeddySun(https://teddysun.com/):
+<pre><code>wget -O- 'DD download URL' | xzcat | dd of=/dev/sda</code></pre>
+#### Available Windows series DD image download URLs and initial connection configurations provided by TeddySun(thanks for his efforts, here is his blog: https://teddysun.com/):
 Username: Administrator
 <br />
 Password: Teddysun.com
 <br />
+RDC(Remote Desktop Connection) port: 5900
+<br />
+Network: **IPv4 dhcp is necessary**
+
+##### For BIOS firmware and MBR partition table #####
+
+- Windows 11 Pro for Workstations 22H2
+
+Chinese: https://dl.lamp.sh/vhd/zh-cn_windows11_22h2.xz
+<br />
+English: https://dl.lamp.sh/vhd/en-us_windows11_22h2.xz
+<br />
+Japanese: https://dl.lamp.sh/vhd/ja-jp_windows11_22h2.xz
+<br />
+
 - Windows Server 2022 Datacenter
 
 Chinese: https://dl.lamp.sh/vhd/zh-cn_win2022.xz
@@ -299,14 +313,16 @@ English: https://dl.lamp.sh/vhd/en-us_win2022.xz
 <br />
 Japanese: https://dl.lamp.sh/vhd/ja-jp_win2022.xz
 <br />
-- Windows Server 2019 Datacenter
 
-Chinese: https://dl.lamp.sh/vhd/cn_win2019.xz
+- Windows 10 Enterprise LTSC
+
+Chinese: https://dl.lamp.sh/vhd/zh-cn_windows10_ltsc.xz
 <br />
-English: https://dl.lamp.sh/vhd/en_win2019.xz
+English: https://dl.lamp.sh/vhd/en-us_windows10_ltsc.xz
 <br />
-Japanese: https://dl.lamp.sh/vhd/ja_win2019.xz
+Japanese: https://dl.lamp.sh/vhd/ja-jp_windows10_ltsc.xz
 <br />
+
 - Windows Server 2012 R2 Datacenter
 
 Chinese: https://dl.lamp.sh/vhd/cn_win2012r2.xz
@@ -314,6 +330,44 @@ Chinese: https://dl.lamp.sh/vhd/cn_win2012r2.xz
 English: https://dl.lamp.sh/vhd/en_win2012r2.xz
 <br />
 Japanese: https://dl.lamp.sh/vhd/ja_win2012r2.xz
+
+##### For BIOS firmware and MBR partition table #####
+
+- Windows 11 Pro for Workstations 22H2
+
+Chinese: https://dl.lamp.sh/vhd/zh-cn_windows11_22h2_uefi.xz
+<br />
+English: https://dl.lamp.sh/vhd/en-us_windows11_22h2_uefi.xz
+<br />
+Japanese: https://dl.lamp.sh/vhd/ja-jp_windows11_22h2_uefi.xz
+<br />
+
+- Windows Server 2022 Datacenter
+
+Chinese: https://dl.lamp.sh/vhd/zh-cn_win2022_uefi.xz
+<br />
+English: https://dl.lamp.sh/vhd/en-us_win2022_uefi.xz
+<br />
+Japanese: https://dl.lamp.sh/vhd/ja-jp_win2022_uefi.xz
+<br />
+
+- Windows 10 Enterprise LTSC
+
+Chinese: https://dl.lamp.sh/vhd/zh-cn_win10_ltsc_uefi.xz
+<br />
+English: https://dl.lamp.sh/vhd/en-us_win10_ltsc_uefi.xz
+<br />
+Japanese: https://dl.lamp.sh/vhd/ja-jp_win10_ltsc_uefi.xz
+<br />
+
+- Windows Server 2012 R2 Datacenter
+
+Chinese: https://dl.lamp.sh/vhd/cn_win2012r2_uefi.xz
+<br />
+English: https://dl.lamp.sh/vhd/en_win2012r2_uefi.xz
+<br />
+Japanese: https://dl.lamp.sh/vhd/ja_win2012r2_uefi.xz
+<br />
 
 ## Features and updates:
 - "InstallNET.sh" will give you a clean, safe, official Linux system, and help you escape of your server providers' monitoring.
