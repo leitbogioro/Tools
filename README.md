@@ -287,14 +287,20 @@ Change netboot to rescue mode, receive mail, get temporary username and password
 <pre><code>wget -O- 'DD download URL' | xzcat | dd of=/dev/sda</code></pre>
 Wait until downloading and unpackaging are all finished, change netboot to formal mode, restart rescue linux:
 <pre><code>reboot</code></pre>
-#### Available Windows series DD image download URLs and initial connection configurations provided by TeddySun(thanks for his efforts, here is his blog: https://teddysun.com/):
+#### Initial connection configurations, hardware requirements and available Windows series DD image download URLs which are provided by TeddySun(thanks for his efforts, here is his blog: https://teddysun.com/):
 Username: Administrator
 <br />
 Password: Teddysun.com
 <br />
 RDC(Remote Desktop Connection) port: 5900
 <br />
-Network: **IPv4 dhcp is necessary**
+Network: **IPv4 DHCP is necessary**
+<br />
+CPU: AMD64 architecture, single core at least, dual core or more is recommend.
+<br />
+Hard Drive: 20GB at least, 50GB or more, SSD is recommend.
+<br />
+Memory: 2GB at least, 8GB or more is recommend.
 
 ##### For BIOS firmware and MBR partition table #####
 
