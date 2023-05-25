@@ -288,9 +288,9 @@ Change netboot to rescue mode, receive mail, get temporary username and password
 Wait until downloading and unpackaging are all finished, change netboot to formal mode, restart rescue linux:
 <pre><code>reboot</code></pre>
 #### Initial connection configurations, hardware requirements and available Windows series DD image download URLs which are provided by TeddySun(thanks for his efforts, here is his blog: https://teddysun.com/):
-Username: Administrator
+Username: **Administrator**
 <br />
-Password: Teddysun.com
+Password: **Teddysun.com**
 <br />
 RDC(Remote Desktop Connection) port: 5900
 <br />
