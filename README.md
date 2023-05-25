@@ -283,8 +283,11 @@ Notice: Microsoft products and services—including images, text, and software d
 ### Servers based on KVM or XEN or QEMU virtualization, the middle handling linux system is Debian 12(bookworm):
 <pre><code>bash InstallNET.sh -dd 'DD image download URL'</code></pre>
 ### Servers based on physical hardware, Intel network adapter, kimsufi etc:
-Change netboot to rescue mode, receive mail, get temporary username and password, log into linux, execute:
+Change netboot to rescue mode, receive mail, get temporary username and password, log into rescue linux, execute:
 <pre><code>wget -O- 'DD download URL' | xzcat | dd of=/dev/sda</code></pre>
+Wait until downloading and unpackaging are all finished, change netboot to formal mode, restart rescue linux:
+<pre><code>reboot</code></pre>
+<br />
 #### Available Windows series DD image download URLs and initial connection configurations provided by TeddySun(thanks for his efforts, here is his blog: https://teddysun.com/):
 Username: Administrator
 <br />
