@@ -26,8 +26,8 @@ date=`date`
 load=`cat /proc/loadavg | awk '{print $1}'`
 root_usage=`df -h / | awk '/\// {print $(NF-1)}'`
 memory_usage=`free -m | awk '/Mem:/ { total=$2; used=$3 } END { printf("%3.1f%%", used/total*100)}'`
- 
-swap_usage=`free -m | awk '/Swap/ { printf("%3.1f%%", $3/$2*100) }'`
+
+[[ `free -m | awk '/Swap/ {print $2}'` == "0" ]] && swap_usage="0.0%" || swap_usage=`free -m | awk '/Swap/ { printf("%3.1f%%", $3/$2*100) }'`
 users=`users | wc -w`
 time=`uptime | grep -ohe 'up .*' | sed 's/,/\ hours/g' | awk '{ printf $2" "$3 }'`
 processes=`ps aux | wc -l`
@@ -72,7 +72,7 @@ fi
 
 [[ "${IP_Check}" != "isIPv4" ]] && IPv4="N/A"
 
-if [[ "${localip}" == "${IPv4}" ]] || [[ "${localip}" == "${IPv6}" ]]; then
+if [[ "${localip}" == "${IPv4}" ]] || [[ "${localip}" == "${IPv6}" ]] || [[ -z "${localip}" ]]; then
   # localip=`ip -o a show | grep -w "lo" | grep -w "inet" | cut -d ' ' -f7 | awk '{split($1, a, "/"); print $2 "" a[1]}'`
   localip=`cat /etc/hosts | grep "localhost" | sed -n 1p | awk '{print $1}'`
 fi
