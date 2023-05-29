@@ -32,7 +32,8 @@ MASK=$(grep "MASK" $confFile | awk '{print $2}')
 GATE=$(grep "GATE" $confFile | awk '{print $2}')
 ip6Addr=$(grep "ip6Addr" $confFile | awk '{print $2}')
 ip6Mask=$(grep "ip6Mask" $confFile | awk '{print $2}')
-ip6Gate=$(grep "" $confFile | awk '{print $2}')
+ip6Gate=$(grep "ip6Gate" $confFile | awk '{print $2}')
+HostName=$(grep "HostName" $confFile | awk '{print $2}')
 
 # Setting Alpine Linux by "setup-alpine" will enable the following services
 # https://github.com/alpinelinux/alpine-conf/blob/c5131e9a038b09881d3d44fb35e86851e406c756/setup-alpine.in#L189
@@ -85,6 +86,17 @@ sed -ri 's/ip6Gate/'${ip6Gate}'/g' /etc/network/interfaces
 chmod a+x /etc/network/interfaces
 # Enable IPv6
 modprobe ipv6
+# Add special IPv6 addresses
+echo "::1             localhost ipv6-localhost ipv6-loopback" >> /etc/hosts
+echo "fe00::0         ipv6-localnet" >> /etc/hosts
+echo "ff00::0         ipv6-mcastprefix" >> /etc/hosts
+echo "ff02::1         ipv6-allnodes" >> /etc/hosts
+echo "ff02::2         ipv6-allrouters" >> /etc/hosts
+echo "ff02::3         ipv6-allhosts" >> /etc/hosts
+# Hostname
+rm -rf /etc/hostname
+echo "$HostName" > /etc/hostname
+hostname -F /etc/hostname
 
 # Localization
 setup-keymap us us
@@ -105,6 +117,10 @@ sed -ri 's/ash/bash/g' /etc/passwd
 # Insall more components.
 apk update
 apk add axel bind-tools cpio curl e2fsprogs figlet grep grub gzip hdparm lsblk net-tools parted python3 py3-pip udev util-linux vim wget
+
+# Vim support copy from terminal.
+alpineVimVer="vim90"
+sed -i 's/set mouse=a/set mouse-=a/g' /usr/share/vim/${alpineVimVer}/defaults.vim
 
 # Install to hard drive.
 export BOOTLOADER="grub"
