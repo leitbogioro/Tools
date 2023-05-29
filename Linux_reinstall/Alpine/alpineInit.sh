@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/ash
 #
 # Alpine Linux use "ash" as default shell.
 
