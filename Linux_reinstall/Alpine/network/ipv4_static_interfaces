@@ -1,0 +1,8 @@
+auto lo
+iface lo inet loopback
+
+iface eth0 inet static
+        address IPv4
+        netmask MASK
+        gateway GATE
+iface eth0 inet6 auto
