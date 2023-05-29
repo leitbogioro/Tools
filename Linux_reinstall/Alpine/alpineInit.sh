@@ -120,8 +120,7 @@ apk update
 apk add axel bind-tools cpio curl e2fsprogs figlet grep grub gzip hdparm lsblk net-tools parted python3 py3-pip udev util-linux virt-what vim wget
 
 # Vim support copy from terminal.
-alpineVimVer="vim90"
-sed -ri 's/set mouse=a/set mouse-=a/g' /usr/share/vim/${alpineVimVer}/defaults.vim
+sed -ri 's/mouse=a/mouse-=a/g' /usr/share/vim/vim90/defaults.vim
 
 # Use kernel "virt" if be executed on virtual machine
 cp /etc/apk/world /tmp/world.old
