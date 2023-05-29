@@ -1,134 +1,91 @@
-#!/bin/ash
+#!/bin/bash
 #
-# Alpine Linux use "ash" as the default shell.
 
-exec >/dev/tty0 2>&1
+DISTRIB_DESCRIPTION=`cat /etc/os-release | grep -i "id=" | grep -vi "version\|like\|platform" | cut -d "=" -f2 | sed 's/\"//g' | tr 'A-Z' 'a-z' | sed 's/\b[a-z]/\u&/g'`
 
-addCommunityRepo() {
-  alpineVer=$(cut -d. -f1,2 </etc/alpine-release)
-  echo $LinuxMirror/v$alpineVer/community >>/etc/apk/repositories
-}
+figlet "$DISTRIB_DESCRIPTION"
+printf "\n"
+printf "Welcome to %s %s (%s)!\n" "$DISTRIB_DESCRIPTION" "$(uname -o)" "$(uname -r) $(uname -m)"
+printf "\n"
+printf "The Alpine Wiki contains a large amount of how-to guides and general"
+printf "\n"
+printf "information about administrating Alpine systems."
+printf "\n"
+printf "See <https://wiki.alpinelinux.org/>."
+printf "\n"
+printf "\n"
+printf "You can setup the system with the command: setup-alpine"
+printf "\n"
+printf "\n"
+printf "You may change this message by editing /etc/profile.d/motd.sh."
+printf "\n"
+printf "\n"
 
-# Delete the initial script itself to prevent to be executed in the new system.
-rm -f /etc/local.d/alpineConf.start
-rm -f /etc/runlevels/default/local
+date=`date`
+load=`cat /proc/loadavg | awk '{print $1}'`
+root_usage=`df -h / | awk '/\// {print $(NF-1)}'`
+memory_usage=`free -m | awk '/Mem:/ { total=$2; used=$3 } END { printf("%3.1f%%", used/total*100)}'`
 
-# Install necessary components.
-apk update
-apk add bash bash bash-doc bash-completion coreutils sed
+[[ `free -m | awk '/Swap/ {print $2}'` == "0" ]] && swap_usage="0.0%" || swap_usage=`free -m | awk '/Swap/ { printf("%3.1f%%", $3/$2*100) }'`
+users=`users | wc -w`
+time=`uptime | grep -ohe 'up .*' | sed 's/,/\ hours/g' | awk '{ printf $2" "$3 }'`
+processes=`ps aux | wc -l`
+localip=`hostname -i | awk '{print $1}'`
 
-# Get Alpine Linux configurations.
-confFile="/root/alpine.config"
+IPv4=`timeout 0.2s dig -4 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
+[[ "$IPv4" == "" ]] && IPv4=`timeout 0.2s dig -4 TXT CH +short whoami.cloudflare @1.0.0.1 | sed 's/\"//g'`
+IPv6=`timeout 0.2s dig -6 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
+[[ "$IPv6" == "" ]] && IPv6=`timeout 0.2s dig -6 TXT CH +short whoami.cloudflare @2606:4700:4700::1001 | sed 's/\"//g'`
+# IP_Check=$(echo $IPv4 | awk -F. '$1<255&&$2<255&&$3<255&&$4<255{print "isIPv4"}')
+IP_Check="$IPv4"
+if expr "$IP_Check" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; then
+  for i in 1 2 3 4; do
+    if [ $(echo "$IP_Check" | cut -d. -f$i) -gt 255 ]; then
+      echo "fail ($IP_Check)"
+      exit 1
+    fi
+  done
+  IP_Check="isIPv4"
+fi
 
-# Read configs from initial file.
-AllDisks=$(grep "AllDisks" $confFile | awk '{print $2}')
-LinuxMirror=$(grep "LinuxMirror" $confFile | awk '{print $2}')
-TimeZone=$(grep "TimeZone" $confFile | awk '{print $2}')
-tmpWORD=$(grep "tmpWORD" $confFile | awk '{print $2}')
-sshPORT=$(grep "sshPORT" $confFile | awk '{print $2}')
-AlpineTestRepository=$(grep "AlpineTestRepository" $confFile | awk '{print $2}')
-IPv4=$(grep "IPv4" $confFile | awk '{print $2}')
-MASK=$(grep "MASK" $confFile | awk '{print $2}')
-GATE=$(grep "GATE" $confFile | awk '{print $2}')
-ip6Addr=$(grep "ip6Addr" $confFile | awk '{print $2}')
-ip6Mask=$(grep "ip6Mask" $confFile | awk '{print $2}')
-ip6Gate=$(grep "ip6Gate" $confFile | awk '{print $2}')
-HostName=$(grep "HostName" $confFile | awk '{print $2}')
+[[ ${IPv6: -1} == ":" ]] && IPv6=$(echo "$IPv6" | sed 's/.$/0/')
+[[ ${IPv6:0:1} == ":" ]] && IPv6=$(echo "$IPv6" | sed 's/^./0/')
+IP6_Check="$IPv6"":"
+IP6_Hex_Num=`echo "$IP6_Check" | tr -cd ":" | wc -c`
+IP6_Hex_Abbr="0"
+if [[ `echo "$IPv6" | grep -i '[[:xdigit:]]' | grep ':'` ]] && [[ "$IP6_Hex_Num" -le "8" ]]; then
+  for ((i=1; i<="$IP6_Hex_Num"; i++)){
+    IP6_Hex=$(echo "$IP6_Check" | cut -d: -f$i)
+    [[ "$IP6_Hex" == "" ]] && IP6_Hex_Abbr=`expr $IP6_Hex_Abbr + 1`
+    [[ `echo "$IP6_Hex" | wc -c` -le "4" ]] && {
+      if [[ `echo "$IP6_Hex" | grep -iE '[^0-9a-f]'` ]] || [[ "$IP6_Hex_Abbr" -gt "1" ]]; then
+        echo "fail ($IP6_Check)"
+        exit 1
+      fi
+    }
+  }
+  IP6_Check="isIPv6"
+fi
 
-# Setting Alpine Linux by "setup-alpine" will enable the following services
-# https://github.com/alpinelinux/alpine-conf/blob/c5131e9a038b09881d3d44fb35e86851e406c756/setup-alpine.in#L189
-acpid | default
-crond | default
-seedrng | boot
+[[ "${IP6_Check}" != "isIPv6" ]] && IPv6="N/A"
 
-# Add virt-what to community repository
-addCommunityRepo
+[[ "${IP_Check}" != "isIPv4" ]] && IPv4="N/A"
 
-# Reset configurations of repositories
-true >/etc/apk/repositories
-setup-apkrepos -1
-setup-apkcache /var/cache/apk
+if [[ "${localip}" == "${IPv4}" ]] || [[ "${localip}" == "${IPv6}" ]] || [[ -z "${localip}" ]] || [[ "${localip}" =~ ":" ]]; then
+  # localip=`ip -o a show | grep -w "lo" | grep -w "inet" | cut -d ' ' -f7 | awk '{split($1, a, "/"); print $2 "" a[1]}'`
+  localip=`cat /etc/hosts | grep "localhost" | sed -n 1p | awk '{print $1}'`
+fi
 
-# Delete comment in the repositories
-sed -i 's/#//' /etc/apk/repositories
-
-# Add edge testing to the repositories
-sed -i '$a\'${AlpineTestRepository}'' /etc/apk/repositories
-
-# Synchronize time from hardware
-hwclock -s
-
-# Install and enable ssh
-echo root:${tmpWORD} | chpasswd
-printf '\nyes' | setup-sshd
-sed -ri 's/^#?Port.*/Port '${sshPORT}'/g' /etc/ssh/sshd_config
-
-# Network configurations.
-# https://wiki.alpinelinux.org/wiki/Configure_Networking
-# Setup adapter.
-setup-interfaces -a
-# Generate network file of "/etc/network/interfaces"
-rc-update add networking boot
-# Delete network file and replace it by us.
-rm -rf /etc/network/interfaces
-mv /etc/network/tmp_interfaces /etc/network/interfaces
-# Static network configurating
-sed -ri 's/IPv4/'${IPv4}'/g' /etc/network/interfaces
-sed -ri 's/MASK/'${MASK}'/g' /etc/network/interfaces
-sed -ri 's/GATE/'${GATE}'/g' /etc/network/interfaces
-sed -ri 's/ip6Addr/'${ip6Addr}'/g' /etc/network/interfaces
-sed -ri 's/ip6Mask/'${ip6Mask}'/g' /etc/network/interfaces
-sed -ri 's/ip6Gate/'${ip6Gate}'/g' /etc/network/interfaces
-# Restoring access permission.
-chmod a+x /etc/network/interfaces
-# Enable IPv6
-modprobe ipv6
-# Add special IPv6 addresses
-echo "::1             localhost ipv6-localhost ipv6-loopback" >> /etc/hosts
-echo "fe00::0         ipv6-localnet" >> /etc/hosts
-echo "ff00::0         ipv6-mcastprefix" >> /etc/hosts
-echo "ff02::1         ipv6-allnodes" >> /etc/hosts
-echo "ff02::2         ipv6-allrouters" >> /etc/hosts
-echo "ff02::3         ipv6-allhosts" >> /etc/hosts
-# Hostname
-rm -rf /etc/hostname
-echo "$HostName" > /etc/hostname
-hostname -F /etc/hostname
-
-# Localization
-setup-keymap us us
-setup-timezone -i ${TimeZone}
-setup-ntp chrony
-
-# In arm netboot initramfs init,
-# If rtc hardware is detected, add hwclock for system, otherwise add swclock
-# This settings will be copied to the new system
-# But the new system boot from initramfs chroot can detect rtc hardwa1 correctly
-# So we use hwclock manually to fix it
-rc-update del swclock boot
-rc-update add hwclock boot
-
-# Replace "ash" to "bash" as the default shell of the Alpine Linux.
-sed -ri 's/ash/bash/g' /etc/passwd
-
-# Insall more components.
-apk update
-apk add axel bind-tools cpio curl e2fsprogs figlet grep grub gzip hdparm lsblk net-tools parted python3 py3-pip udev util-linux virt-what vim wget
-
-# Vim support copy from terminal.
-alpineVimVer="vim90"
-sed -i 's/set mouse=a/set mouse-=a/g' /usr/share/vim/${alpineVimVer}/defaults.vim
-
-# Use kernel "virt" if be executed on virtual machine
-cp /etc/apk/world /tmp/world.old
-[[ -n "$(virt-what)" ]] && kernelOpt="-k virt"
-
-# Delete the former motd.
-rm -rf /etc/motd
-
-# Install to hard drive.
-export BOOTLOADER="grub"
-printf 'y' | setup-disk -m sys $kernelOpt -s 0 $AllDisks
-
-# Reboot, the system in the memory will all be written to the hard drive.
-exec reboot
+echo " System information as of $date"
+echo
+printf "%-30s%-15s\n" " System Load:" "$load"
+printf "%-30s%-15s\n" " Private IP Address:" "$localip"
+printf "%-30s%-15s\n" " Public IPv4 Address:" "$IPv4"
+printf "%-30s%-15s\n" " Public IPv6 Address:" "$IPv6"
+printf "%-30s%-15s\n" " Memory Usage:" "$memory_usage"
+printf "%-30s%-15s\n" " Usage On /:" "$root_usage"
+printf "%-30s%-15s\n" " Swap Usage:" "$swap_usage"
+printf "%-30s%-15s\n" " Local Users:" "$users"
+printf "%-30s%-15s\n" " Processes:" "$processes"
+printf "%-30s%-15s\n" " System Uptime:" "$time"
+echo
