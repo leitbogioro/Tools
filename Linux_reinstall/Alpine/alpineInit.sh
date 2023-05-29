@@ -9,9 +9,13 @@ addCommunityRepo() {
   echo $LinuxMirror/v$alpineVer/community >>/etc/apk/repositories
 }
 
+# Delete the initial script itself to prevent to be executed in the new system.
+rm -f /etc/local.d/alpineConf.start
+rm -f /etc/runlevels/default/local
+
 # Install necessary components.
 apk update
-apk add axel bash bash-doc bash-completion bind-tools coreutils cpio curl e2fsprogs figlet grep grub gzip hdparm lsblk net-tools parted python3 py3-pip sed udev util-linux vim virt-what wget
+apk add bash bash bash-doc bash-completion coreutils sed
 
 # Get Alpine Linux configurations.
 confFile="/root/alpine.config"
@@ -56,18 +60,14 @@ echo root:${tmpWORD} | chpasswd
 printf '\nyes' | setup-sshd
 sed -ri 's/^#?Port.*/Port '${sshPORT}'/g' /etc/ssh/sshd_config
 
-# Delete the initial script itself to prevent to be executed in the new system.
-rm -f /etc/local.d/alpineConf.start
-rm -f /etc/runlevels/default/local
-
 # Network configurations.
 # Setup adapter.
 setup-interfaces -a
 # Generate network file of "/etc/network/interfaces"
 rc-update add networking boot
 # Delete network file and replace it by us.
-rm -rf /etc/network/interfaces
-mv /etc/network/tmp_interfaces /etc/network/interfaces
+#rm -rf /etc/network/interfaces
+#mv /etc/network/tmp_interfaces /etc/network/interfaces
 
 # Localization
 setup-keymap us us
@@ -87,7 +87,9 @@ export BOOTLOADER="grub"
 printf 'y' | setup-disk -m sys $kernelOpt -s 0 $AllDisks
 
 # Replace "ash" to "bash" as the default shell of the Alpine Linux.
-sed -i 's/ash/bash/g' /etc/passwd
+sed -ri 's/ash/bash/g' /etc/passwd
+
+apk add axel bind-tools cpio curl e2fsprogs figlet grep grub gzip hdparm lsblk net-tools parted python3 py3-pip udev util-linux vim virt-what wget
 
 # Reboot, the system in the memory will all be written to the hard drive.
 exec reboot
