@@ -6,8 +6,23 @@ exec >/dev/tty0 2>&1
 
 addCommunityRepo() {
   alpineVer=$(cut -d. -f1,2 </etc/alpine-release)
-  echo LinuxMirror/v$alpineVer/community >>/etc/apk/repositories
+  echo $LinuxMirror/v$alpineVer/community >>/etc/apk/repositories
 }
+
+# Install necessary components.
+apk update
+apk add axel bash bash-doc bash-completion bind-tools coreutils cpio curl e2fsprogs figlet grep grub gzip hdparm lsblk net-tools parted python3 py3-pip sed udev util-linux vim virt-what wget
+
+# Get Alpine Linux configurations.
+confFile="/root/alpine.config"
+
+# Read configs from initial file.
+AllDisks=$(grep "AllDisks" $confFile | awk '{print $2}')
+LinuxMirror=$(grep "LinuxMirror" $confFile | awk '{print $2}')
+TimeZone=$(grep "TimeZone" $confFile | awk '{print $2}')
+tmpWORD=$(grep "tmpWORD" $confFile | awk '{print $2}')
+sshPORT=$(grep "sshPORT" $confFile | awk '{print $2}')
+AlpineTestRepository=$(grep "AlpineTestRepository" $confFile | awk '{print $2}')
 
 # Setting Alpine Linux by "setup-alpine" will enable the following services
 # https://github.com/alpinelinux/alpine-conf/blob/c5131e9a038b09881d3d44fb35e86851e406c756/setup-alpine.in#L189
@@ -29,21 +44,6 @@ setup-apkcache /var/cache/apk
 
 # Delete comment in the repositories
 sed -i 's/#//' /etc/apk/repositories
-
-# Install necessary components.
-apk update
-apk add axel bash bash-doc bash-completion bind-tools coreutils cpio curl e2fsprogs figlet grep grub gzip hdparm lsblk net-tools parted python3 py3-pip sed udev util-linux vim virt-what wget
-
-# Get Alpine Linux configurations.
-confFile="/root/alpine.config"
-
-# Read configs from initial file.
-AllDisks=$(grep "AllDisks" $confFile | awk '{print $2}')
-LinuxMirror=$(grep "LinuxMirror" $confFile | awk '{print $2}')
-TimeZone=$(grep "TimeZone" $confFile | awk '{print $2}')
-tmpWORD=$(grep "tmpWORD" $confFile | awk '{print $2}')
-sshPORT=$(grep "sshPORT" $confFile | awk '{print $2}')
-AlpineTestRepository=$(grep "AlpineTestRepository" $confFile | awk '{print $2}')
 
 # Add edge testing to the repositories
 sed -i '$a\${AlpineTestRepository}' /etc/apk/repositories
