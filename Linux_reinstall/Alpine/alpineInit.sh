@@ -12,7 +12,7 @@ apk add axel bash bash-doc bash-completion bind-tools coreutils cpio curl e2fspr
 confFile="/root/alpine.config"
 
 # Read configs from initial file.
-IncDisk=$(grep "IncDisk" $confFile | awk '{print $2}')
+AllDisks=$(grep "AllDisks" $confFile | awk '{print $2}')
 LinuxMirror=$(grep "LinuxMirror" $confFile | awk '{print $2}')
 TimeZone=$(grep "TimeZone" $confFile | awk '{print $2}')
 tmpWORD=$(grep "tmpWORD" $confFile | awk '{print $2}')
