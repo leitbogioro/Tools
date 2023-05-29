@@ -66,8 +66,9 @@ setup-interfaces -a
 # Generate network file of "/etc/network/interfaces"
 rc-update add networking boot
 # Delete network file and replace it by us.
-#rm -rf /etc/network/interfaces
-#mv /etc/network/tmp_interfaces /etc/network/interfaces
+rm -rf /etc/network/interfaces
+mv /etc/network/tmp_interfaces /etc/network/interfaces
+chmod a+x /etc/network/interfaces
 
 # Localization
 setup-keymap us us
@@ -82,14 +83,16 @@ setup-ntp chrony
 rc-update del swclock boot
 rc-update add hwclock boot
 
-# Install to hard drive.
-export BOOTLOADER="grub"
-printf 'y' | setup-disk -m sys $kernelOpt -s 0 $AllDisks
-
 # Replace "ash" to "bash" as the default shell of the Alpine Linux.
 sed -ri 's/ash/bash/g' /etc/passwd
 
+# Insall more components.
+apk update
 apk add axel bind-tools cpio curl e2fsprogs figlet grep grub gzip hdparm lsblk net-tools parted python3 py3-pip udev util-linux vim virt-what wget
+
+# Install to hard drive.
+export BOOTLOADER="grub"
+printf 'y' | setup-disk -m sys $kernelOpt -s 0 $AllDisks
 
 # Reboot, the system in the memory will all be written to the hard drive.
 exec reboot
