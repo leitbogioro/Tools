@@ -2,6 +2,7 @@
 #
 
 [[ -n /etc/motd ]] && rm -rf /etc/motd
+sed -ri 's/set mouse=a/set mouse-=a/g' /usr/share/vim/vim90/defaults.vim
 
 DISTRIB_DESCRIPTION=`cat /etc/os-release | grep -i "id=" | grep -vi "version\|like\|platform" | cut -d "=" -f2 | sed 's/\"//g' | tr 'A-Z' 'a-z' | sed 's/\b[a-z]/\u&/g'`
 
