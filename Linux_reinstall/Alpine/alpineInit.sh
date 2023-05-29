@@ -4,6 +4,10 @@
 
 exec >/dev/tty0 2>&1
 
+# Install necessary components.
+apk update
+apk add axel bash curl e2fsprogs grub hdparm parted sed udev util-linux virt-what wget
+
 # Replace "ash" to "bash" as the default shell of the Alpine Linux.
 sed -i 's/ash/bash/' /etc/passwd
 
