@@ -123,6 +123,9 @@ sed -i 's/set mouse=a/set mouse-=a/g' /usr/share/vim/${alpineVimVer}/defaults.vi
 cp /etc/apk/world /tmp/world.old
 [[ -n "$(virt-what)" ]] && kernelOpt="-k virt"
 
+# Delete the former motd.
+rm -rf /etc/motd
+
 # Install to hard drive.
 export BOOTLOADER="grub"
 printf 'y' | setup-disk -m sys $kernelOpt -s 0 $AllDisks
