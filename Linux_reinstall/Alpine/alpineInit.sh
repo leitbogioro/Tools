@@ -24,6 +24,15 @@ sed -ri 's/^#?Port.*/Port sshPORT/g' /etc/ssh/sshd_config
 rm -f /etc/local.d/alpineConf.start
 rm -f /etc/runlevels/default/local
 
+# Network configurations.
+# Setup adapter.
+setup-interfaces -a
+# Generate network file of "/etc/network/interfaces"
+rc-update add networking boot
+# Delete network file and replace it by us.
+rm -rf /etc/network/interfaces
+mv /etc/network/tmp_interfaces /etc/network/interfaces
+
 # Localization
 setup-keymap us us
 setup-timezone -i TimeZone
