@@ -4,10 +4,6 @@
 
 exec >/dev/tty0 2>&1
 
-# Install necessary components.
-apk update
-apk add axel bash bash-doc bash-completion bind-tools coreutils cpio curl e2fsprogs figlet grep grub gzip hdparm lsblk net-tools parted python3 py3-pip sed udev util-linux vim virt-what wget
-
 # Get Alpine Linux configurations.
 confFile="/root/alpine.config"
 
@@ -46,6 +42,10 @@ setup-apkcache /var/cache/apk
 sed -i 's/#//' /etc/apk/repositories
 # Add edge testing to the repositories
 sed -i '$a\${AlpineTestRepository}' /etc/apk/repositories
+
+# Install necessary components.
+apk update
+apk add axel bash bash-doc bash-completion bind-tools coreutils cpio curl e2fsprogs figlet grep grub gzip hdparm lsblk net-tools parted python3 py3-pip sed udev util-linux vim virt-what wget
 
 # Synchronize time from hardware
 hwclock -s
