@@ -15,7 +15,7 @@ rm -f /etc/runlevels/default/local
 
 # Install necessary components.
 apk update
-apk add bash bash bash-doc bash-completion coreutils sed virt-what
+apk add bash bash bash-doc bash-completion coreutils sed
 
 # Get Alpine Linux configurations.
 confFile="/root/alpine.config"
@@ -43,10 +43,6 @@ HostName=$(grep "HostName" $confFile | awk '{print $2}')
 
 # Add virt-what to community repository
 addCommunityRepo
-
-# Use kernel "virt" if be executed on virtual machine
-cp /etc/apk/world /tmp/world.old
-[[ -n "$(virt-what)" ]] && kernelOpt="-k virt"
 
 # Reset configurations of repositories
 true >/etc/apk/repositories
@@ -116,11 +112,15 @@ sed -ri 's/ash/bash/g' /etc/passwd
 
 # Insall more components.
 apk update
-apk add axel bind-tools cpio curl e2fsprogs figlet grep grub gzip hdparm lsblk net-tools parted python3 py3-pip udev util-linux vim wget
+apk add axel bind-tools cpio curl e2fsprogs figlet grep grub gzip hdparm lsblk net-tools parted python3 py3-pip udev util-linux virt-what vim wget
 
 # Vim support copy from terminal.
 alpineVimVer="vim90"
 sed -i 's/set mouse=a/set mouse-=a/g' /usr/share/vim/${alpineVimVer}/defaults.vim
+
+# Use kernel "virt" if be executed on virtual machine
+cp /etc/apk/world /tmp/world.old
+[[ -n "$(virt-what)" ]] && kernelOpt="-k virt"
 
 # Install to hard drive.
 export BOOTLOADER="grub"
