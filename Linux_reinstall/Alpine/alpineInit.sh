@@ -83,6 +83,8 @@ sed -ri 's/ip6Mask/'${ip6Mask}'/g' /etc/network/interfaces
 sed -ri 's/ip6Gate/'${ip6Gate}'/g' /etc/network/interfaces
 # Restoring access permission.
 chmod a+x /etc/network/interfaces
+# Enable IPv6
+modprobe ipv6
 
 # Localization
 setup-keymap us us
