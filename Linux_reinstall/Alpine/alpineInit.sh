@@ -4,9 +4,6 @@
 
 exec >/dev/tty0 2>&1
 
-# Delete the former motd.
-rm -rf /etc/motd
-
 addCommunityRepo() {
   alpineVer=$(cut -d. -f1,2 </etc/alpine-release)
   echo $LinuxMirror/v$alpineVer/community >>/etc/apk/repositories
@@ -125,6 +122,9 @@ sed -i 's/set mouse=a/set mouse-=a/g' /usr/share/vim/${alpineVimVer}/defaults.vi
 # Use kernel "virt" if be executed on virtual machine
 cp /etc/apk/world /tmp/world.old
 [[ -n "$(virt-what)" ]] && kernelOpt="-k virt"
+
+# Delete the former motd.
+rm -rf /etc/motd
 
 # Install to hard drive.
 export BOOTLOADER="grub"
