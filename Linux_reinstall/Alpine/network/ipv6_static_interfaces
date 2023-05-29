@@ -1,0 +1,9 @@
+auto lo
+iface lo inet loopback
+
+iface eth0 inet dhcp
+iface eth0 inet6 static
+        address ip6Addr
+        netmask ip6Mask
+        gateway ip6Gate
+        pre-up echo 0 > /proc/sys/net/ipv6/conf/eth0/accept_ra
