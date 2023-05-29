@@ -15,7 +15,7 @@ rm -f /etc/runlevels/default/local
 
 # Install necessary components.
 apk update
-apk add bash bash bash-doc bash-completion coreutils sed
+apk add bash bash bash-doc bash-completion coreutils sed virt-what
 
 # Get Alpine Linux configurations.
 confFile="/root/alpine.config"
@@ -104,7 +104,7 @@ sed -ri 's/ash/bash/g' /etc/passwd
 
 # Insall more components.
 apk update
-apk add axel bind-tools cpio curl e2fsprogs figlet grep grub gzip hdparm lsblk net-tools parted python3 py3-pip udev util-linux vim virt-what wget
+apk add axel bind-tools cpio curl e2fsprogs figlet grep grub gzip hdparm lsblk net-tools parted python3 py3-pip udev util-linux vim wget
 
 # Install to hard drive.
 export BOOTLOADER="grub"
