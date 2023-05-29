@@ -38,8 +38,8 @@ HostName=$(grep "HostName" $confFile | awk '{print $2}')
 # Setting Alpine Linux by "setup-alpine" will enable the following services
 # https://github.com/alpinelinux/alpine-conf/blob/c5131e9a038b09881d3d44fb35e86851e406c756/setup-alpine.in#L189
 acpid | default
-#crond | default
-#seedrng | boot
+crond | default
+seedrng | boot
 
 # Add virt-what to community repository
 addCommunityRepo
