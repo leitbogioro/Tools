@@ -84,7 +84,7 @@ rc-update add hwclock boot
 
 # Install to hard drive.
 export BOOTLOADER="grub"
-printf 'y' | setup-disk -m sys $kernelOpt -s 0 $IncDisk
+printf 'y' | setup-disk -m sys $kernelOpt -s 0 $AllDisks
 
 # Replace "ash" to "bash" as the default shell of the Alpine Linux.
 sed -i 's/ash/bash/' /etc/passwd
