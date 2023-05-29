@@ -46,7 +46,7 @@ setup-apkcache /var/cache/apk
 sed -i 's/#//' /etc/apk/repositories
 
 # Add edge testing to the repositories
-sed -i '$a\${AlpineTestRepository}' /etc/apk/repositories
+sed -i '$a\'${AlpineTestRepository}'' /etc/apk/repositories
 
 # Synchronize time from hardware
 hwclock -s
@@ -54,7 +54,7 @@ hwclock -s
 # Install and enable ssh
 echo root:${tmpWORD} | chpasswd
 printf '\nyes' | setup-sshd
-sed -ri 's/^#?Port.*/Port ${sshPORT}/g' /etc/ssh/sshd_config
+sed -ri 's/^#?Port.*/Port '${sshPORT}'/g' /etc/ssh/sshd_config
 
 # Delete the initial script itself to prevent to be executed in the new system.
 rm -f /etc/local.d/alpineConf.start
@@ -87,7 +87,7 @@ export BOOTLOADER="grub"
 printf 'y' | setup-disk -m sys $kernelOpt -s 0 $AllDisks
 
 # Replace "ash" to "bash" as the default shell of the Alpine Linux.
-sed -i 's/ash/bash/' /etc/passwd
+sed -i 's/ash/bash/g' /etc/passwd
 
 # Reboot, the system in the memory will all be written to the hard drive.
 exec reboot
