@@ -1,6 +1,8 @@
 #!/bin/bash
 #
 
+[[ -n /etc/motd ]] && rm -rf /etc/motd
+
 DISTRIB_DESCRIPTION=`cat /etc/os-release | grep -i "id=" | grep -vi "version\|like\|platform" | cut -d "=" -f2 | sed 's/\"//g' | tr 'A-Z' 'a-z' | sed 's/\b[a-z]/\u&/g'`
 
 figlet "$DISTRIB_DESCRIPTION"
@@ -30,7 +32,7 @@ memory_usage=`free -m | awk '/Mem:/ { total=$2; used=$3 } END { printf("%3.1f%%"
 users=`users | wc -w`
 time=`uptime | grep -ohe 'up .*' | sed 's/,/\ hours/g' | awk '{ printf $2" "$3 }'`
 processes=`ps aux | wc -l`
-localip=`hostname -i | awk '{print $1}'`
+localip=`ip -4 addr show | grep -wA 5 "eth0" | grep -wv "lo\|host" | grep -w "inet" | grep -w "scope global*\|link*" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}' | cut -d'/' -f1`
 
 IPv4=`timeout 0.2s dig -4 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
 [[ "$IPv4" == "" ]] && IPv4=`timeout 0.2s dig -4 TXT CH +short whoami.cloudflare @1.0.0.1 | sed 's/\"//g'`
@@ -72,7 +74,6 @@ fi
 [[ "${IP_Check}" != "isIPv4" ]] && IPv4="N/A"
 
 if [[ "${localip}" == "${IPv4}" ]] || [[ "${localip}" == "${IPv6}" ]] || [[ -z "${localip}" ]] || [[ "${localip}" =~ ":" ]]; then
-  # localip=`ip -o a show | grep -w "lo" | grep -w "inet" | cut -d ' ' -f7 | awk '{split($1, a, "/"); print $2 "" a[1]}'`
   localip=`cat /etc/hosts | grep "localhost" | sed -n 1p | awk '{print $1}'`
 fi
 
