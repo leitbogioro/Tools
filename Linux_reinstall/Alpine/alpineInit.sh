@@ -83,8 +83,12 @@ sed -ri 's/ip6Gate/'${ip6Gate}'/g' /etc/network/interfaces
 chmod a+x /etc/network/interfaces
 # Enable IPv6
 modprobe ipv6
+# Rebuild hosts
+rm -rf /etc/hosts
+# Add special IPv4 addresses
+echo "127.0.0.1       $HostName localhost.localdomain" >> /etc/hosts
 # Add special IPv6 addresses
-echo "::1             localhost ipv6-localhost ipv6-loopback" >> /etc/hosts
+echo "::1             $HostName localhost.localdomain ipv6-localhost ipv6-loopback" >> /etc/hosts
 echo "fe00::0         ipv6-localnet" >> /etc/hosts
 echo "ff00::0         ipv6-mcastprefix" >> /etc/hosts
 echo "ff02::1         ipv6-allnodes" >> /etc/hosts
@@ -117,7 +121,7 @@ apk add axel bind-tools cpio curl e2fsprogs figlet grep grub gzip hdparm lsblk n
 
 # Vim support copy from terminal.
 alpineVimVer="vim90"
-sed -i 's/set mouse=a/set mouse-=a/g' /usr/share/vim/${alpineVimVer}/defaults.vim
+sed -ri 's/set mouse=a/set mouse-=a/g' /usr/share/vim/${alpineVimVer}/defaults.vim
 
 # Use kernel "virt" if be executed on virtual machine
 cp /etc/apk/world /tmp/world.old
