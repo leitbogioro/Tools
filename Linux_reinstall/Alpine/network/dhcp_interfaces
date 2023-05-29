@@ -1,0 +1,5 @@
+auto lo
+iface lo inet loopback
+
+iface eth0 inet dhcp
+iface eth0 inet6 auto
