@@ -1,6 +1,6 @@
 #!/bin/ash
 #
-# Alpine Linux use "ash" as default shell.
+# Alpine Linux use "ash" as the default shell.
 
 exec >/dev/tty0 2>&1
 
@@ -27,6 +27,12 @@ TimeZone=$(grep "TimeZone" $confFile | awk '{print $2}')
 tmpWORD=$(grep "tmpWORD" $confFile | awk '{print $2}')
 sshPORT=$(grep "sshPORT" $confFile | awk '{print $2}')
 AlpineTestRepository=$(grep "AlpineTestRepository" $confFile | awk '{print $2}')
+IPv4=$(grep "IPv4" $confFile | awk '{print $2}')
+MASK=$(grep "MASK" $confFile | awk '{print $2}')
+GATE=$(grep "GATE" $confFile | awk '{print $2}')
+ip6Addr=$(grep "ip6Addr" $confFile | awk '{print $2}')
+ip6Mask=$(grep "ip6Mask" $confFile | awk '{print $2}')
+ip6Gate=$(grep "" $confFile | awk '{print $2}')
 
 # Setting Alpine Linux by "setup-alpine" will enable the following services
 # https://github.com/alpinelinux/alpine-conf/blob/c5131e9a038b09881d3d44fb35e86851e406c756/setup-alpine.in#L189
@@ -68,6 +74,14 @@ rc-update add networking boot
 # Delete network file and replace it by us.
 rm -rf /etc/network/interfaces
 mv /etc/network/tmp_interfaces /etc/network/interfaces
+# Static network configurating
+sed -ri 's/IPv4/'${IPv4}'/g' /etc/network/interfaces
+sed -ri 's/MASK/'${MASK}'/g' /etc/network/interfaces
+sed -ri 's/GATE/'${GATE}'/g' /etc/network/interfaces
+sed -ri 's/ip6Addr/'${ip6Addr}'/g' /etc/network/interfaces
+sed -ri 's/ip6Mask/'${ip6Mask}'/g' /etc/network/interfaces
+sed -ri 's/ip6Gate/'${ip6Gate}'/g' /etc/network/interfaces
+# Restoring access permission.
 chmod a+x /etc/network/interfaces
 
 # Localization
