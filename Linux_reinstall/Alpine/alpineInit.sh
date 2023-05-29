@@ -4,6 +4,9 @@
 
 exec >/dev/tty0 2>&1
 
+# Replace "ash" to "bash" as the default shell of the Alpine Linux.
+sed -i 's/ash/bash/' /etc/passwd
+
 addCommunityRepo() {
   alpineVer=$(cut -d. -f1,2 </etc/alpine-release)
   echo LinuxMirror/v$alpineVer/community >>/etc/apk/repositories
