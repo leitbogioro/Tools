@@ -119,15 +119,9 @@ sed -ri 's/ash/bash/g' /etc/passwd
 apk update
 apk add axel bind-tools cpio curl e2fsprogs figlet grep grub gzip hdparm lsblk net-tools parted python3 py3-pip udev util-linux virt-what vim wget
 
-# Vim support copy from terminal.
-sed -ri 's/mouse=a/mouse-=a/g' /usr/share/vim/vim90/defaults.vim
-
 # Use kernel "virt" if be executed on virtual machine
 cp /etc/apk/world /tmp/world.old
 [[ -n "$(virt-what)" ]] && kernelOpt="-k virt"
-
-# Delete the former motd.
-rm -rf /etc/motd
 
 # Install to hard drive.
 export BOOTLOADER="grub"
