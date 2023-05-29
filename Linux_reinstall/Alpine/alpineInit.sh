@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/ash
 #
 # Alpine Linux use "ash" as default shell.
 
@@ -7,9 +7,6 @@ exec >/dev/tty0 2>&1
 # Install necessary components.
 apk update
 apk add axel bash curl e2fsprogs grub hdparm parted sed udev util-linux virt-what wget
-
-# Replace "ash" to "bash" as the default shell of the Alpine Linux.
-sed -i 's/ash/bash/' /etc/passwd
 
 addCommunityRepo() {
   alpineVer=$(cut -d. -f1,2 </etc/alpine-release)
@@ -82,6 +79,9 @@ apk add bash bash-doc bash-completion bind-tools coreutils cpio curl figlet grep
 # Install to hard drive.
 export BOOTLOADER="grub"
 printf 'y' | setup-disk -m sys $kernelOpt -s 0 $mainDisk
+
+# Replace "ash" to "bash" as the default shell of the Alpine Linux.
+sed -i 's/ash/bash/' /etc/passwd
 
 # Reboot, the system in the memory will all be written to the hard drive.
 exec reboot
