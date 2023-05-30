@@ -2738,7 +2738,7 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
 # Sample:
 # ip=179.86.100.76::179.86.100.1:255.255.255.0::eth0::1.0.0.1 8.8.8.8:
 # Any of IPv6 address format can't be recognized.
-      [[ "$Network4Config" == "isStatic" ]] && Add_OPTION="ip=$IPv4::$GATE:$MASK::$interfaces::$ipDNS:" || Add_OPTION="ip=dhcp"
+      [[ "$Network4Config" == "isStatic" ]] && Add_OPTION="ip=$IPv4::$GATE:$MASK::$interface::$ipDNS:" || Add_OPTION="ip=dhcp"
       BOOT_OPTION="alpine_repo=$LinuxMirror/$DIST/main modloop=$LinuxMirror/$DIST/releases/$VER/netboot/modloop-lts $Add_OPTION"
       # BOOT_OPTION="alpine_repo=$LinuxMirror/$DIST/main modloop=$LinuxMirror/$DIST/releases/$VER/netboot/modloop-lts ip=2001:19f0:000c:05b9:5400:04ff:fe74:7d40::fe80:0000:0000:0000:fc00:04ff:fe74:7d40:ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff::eth0::2606:4700:4700:0000:0000:0000:0000:1001:"
     elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
@@ -2897,7 +2897,7 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
       [[ "$virtType" =~ "microsoft" && ! "$Add_OPTION" =~ "lowmem=+0" ]] && Add_OPTION="$Add_OPTION lowmem=+0"
       BOOT_OPTION="auto=true $Add_OPTION hostname=$(hostname) domain=$linux_relese quiet"
     elif [[ "$linux_relese" == 'alpinelinux' ]]; then
-      [[ "$Network4Config" == "isStatic" ]] && Add_OPTION="ip=$IPv4::$GATE:$MASK::$interfaces::$ipDNS:" || Add_OPTION="ip=dhcp"
+      [[ "$Network4Config" == "isStatic" ]] && Add_OPTION="ip=$IPv4::$GATE:$MASK::$interface::$ipDNS:" || Add_OPTION="ip=dhcp"
       BOOT_OPTION="alpine_repo=$LinuxMirror/$DIST/main modloop=$LinuxMirror/$DIST/releases/$VER/netboot/modloop-lts $Add_OPTION"
     elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
       BOOT_OPTION="inst.ks=file://ks.cfg $Add_OPTION inst.nomemcheck quiet"
