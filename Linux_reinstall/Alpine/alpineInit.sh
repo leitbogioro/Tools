@@ -15,7 +15,7 @@ rm -f /etc/runlevels/default/local
 
 # Install necessary components.
 apk update
-apk add bash bash bash-doc bash-completion coreutils sed
+apk add bash bash bash-doc bash-completion coreutils sed bind-tools figlet grep grub net-tools util-linux virt-what
 
 # Get Alpine Linux configurations.
 confFile="/root/alpine.config"
@@ -117,8 +117,6 @@ sed -ri 's/ash/bash/g' /etc/passwd
 
 # Insall more components.
 # apk add axel bind-tools cpio curl e2fsprogs figlet grep grub gzip hdparm lsblk lsof net-tools parted python3 py3-pip udev util-linux virt-what vim wget
-
-apk add bind-tools figlet grep grub net-tools util-linux virt-what
 
 # Use kernel "virt" if be executed on virtual machine.
 cp /etc/apk/world /tmp/world.old
