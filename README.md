@@ -31,6 +31,9 @@ If you need to add other parameters, version number must be assigned!
 ### Kali Rolling
 <pre><code>bash InstallNET.sh -kali</code></pre>
 <b>Kali can be installed and run in OracleCloud Ampere A1 ARM64 machine successfully but there are not any output results in VNC screen, just waiting patiently after installation has been finished!</b>
+### Alpine Linux Edge
+<pre><code>bash InstallNET.sh -alpine</code></pre>
+<b>Alpine Linux can't boot IPv6 address in iPXE mode, IPv4 or BiStack server, either of IPv4 or IPv6 dhcp and static can be configurated correctly, Alpine Linux is a kind of light Linux release and it's friendly to low memory machine, even 384mb and lower can be executed, enjoy it!</b>
 ### CentOS 9 stream
 <pre><code>bash InstallNET.sh -centos</code></pre>
 ### AlmaLinux 9
@@ -55,6 +58,10 @@ If you need to add other parameters, version number must be assigned!
 <br />
 
 **-centos 7/8/9-stream**: CentOS 7 and later
+<br />
+<br />
+
+**-alpine 3.16/3.17/3.18/edge**: Alpine Linux 3.16 and later, to keep updating to newest version, "edge" is most recommend obviously.
 <br />
 <br />
 
