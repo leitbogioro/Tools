@@ -577,7 +577,7 @@ function checkMem() {
   TotalMem2=$(free -k | grep -wi "mem*" | awk '{printf $2}')
 # In any servers that total memory below 512mb install any OS, the low memory installation will be force enabled.
   [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ "$linux_relese" == 'kali' ]] && {
-    [[ "$TotalMem1" -le "450560" || "$TotalMem2" -le "450560" ]] && return 1 || return 0
+    [[ "$TotalMem1" -le "1008600" || "$TotalMem2" -le "1008600" ]] && return 1 || return 0
   }
 # Without the function of OS re-installation templates in control panel which provided by cloud companies(many companies even have not).
 # A independent VPS with only one hard drive is lack of the secondary hard drive to format and copy new OS file to main hard drive.
@@ -758,10 +758,10 @@ function checkSys() {
 }
 
 function checkIpv4OrIpv6() {
-  IPv4DNSLookup=`timeout 0.5s dig -4 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
-  [[ "$IPv4DNSLookup" == "" ]] && IPv4DNSLookup=`timeout 0.5s dig -4 TXT CH +short whoami.cloudflare @1.0.0.1 | sed 's/\"//g'`
-  IPv6DNSLookup=`timeout 0.5s dig -6 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
-  [[ "$IPv6DNSLookup" == "" ]] && IPv6DNSLookup=`timeout 0.5s dig -6 TXT CH +short whoami.cloudflare @2606:4700:4700::1001 | sed 's/\"//g'`
+  IPv4DNSLookup=`timeout 1.5s dig -4 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
+  [[ "$IPv4DNSLookup" == "" ]] && IPv4DNSLookup=`timeout 1.5s dig -4 TXT CH +short whoami.cloudflare @1.0.0.1 | sed 's/\"//g'`
+  IPv6DNSLookup=`timeout 1.5s dig -6 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
+  [[ "$IPv6DNSLookup" == "" ]] && IPv6DNSLookup=`timeout 1.5s dig -6 TXT CH +short whoami.cloudflare @2606:4700:4700::1001 | sed 's/\"//g'`
   IP_Check="$IPv4DNSLookup"
   if expr "$IP_Check" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; then
     for i in 1 2 3 4; do
@@ -2118,10 +2118,10 @@ fi
 
 # RAM of RedHat series is 2GB required at least.
 [[ "$setNetbootXyz" == "0" ]] && {
-# "lowmem=+0" is only for Debian like.
-  checkMem "$linux_relese" "$RedHatSeries" || Add_OPTION="$Add_OPTION lowmem=+0"
+# "lowmem=+0, 1 or 2" is only for Debian like, 0 is lowest, 1 is medium, 2 is the highest.
+  checkMem "$linux_relese" "$RedHatSeries" || Add_OPTION="$Add_OPTION lowmem=+1"
 # Microsoft Hyper-V needs "vmlinuz" to boot with parameter "lowmem+=0".
-  [[ "$virtType" =~ "microsoft" && ! "$Add_OPTION" =~ "lowmem=+0" ]] && Add_OPTION="$Add_OPTION lowmem=+0"
+  [[ "$virtType" =~ "microsoft" && ! "$Add_OPTION" =~ "lowmem=+1" ]] && Add_OPTION="$Add_OPTION lowmem=+1"
 }
 
 if [[ "$setNetbootXyz" == "1" ]]; then
@@ -2890,8 +2890,8 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
     [[ "$setIPv6" == "0" ]] && Add_OPTION="$Add_OPTION ipv6.disable=1" || Add_OPTION="$Add_OPTION"
 # Write menuentry to grub
     if [[ "$linux_relese" == 'ubuntu'  || "$linux_relese" == 'debian' || "$linux_relese" == 'kali' ]]; then
-      checkMem || Add_OPTION="$Add_OPTION lowmem=+0"
-      [[ "$virtType" =~ "microsoft" && ! "$Add_OPTION" =~ "lowmem=+0" ]] && Add_OPTION="$Add_OPTION lowmem=+0"
+      checkMem || Add_OPTION="$Add_OPTION lowmem=+1"
+      [[ "$virtType" =~ "microsoft" && ! "$Add_OPTION" =~ "lowmem=+1" ]] && Add_OPTION="$Add_OPTION lowmem=+1"
       BOOT_OPTION="auto=true $Add_OPTION hostname=$(hostname) domain=$linux_relese quiet"
     elif [[ "$linux_relese" == 'alpinelinux' ]]; then
       [[ "$Network4Config" == "isStatic" ]] && Add_OPTION="ip=$IPv4::$GATE:$MASK::$interface::$ipDNS:" || Add_OPTION="ip=dhcp"
