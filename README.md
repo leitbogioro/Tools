@@ -23,6 +23,8 @@ RedHat series, only based on RedHat 7+, grub2(CentOS / AlmaLinux / RockyLinux / 
 <pre><code>yum install wget -y</code></pre>
 or:
 <pre><code>dnf install wget -y</code></pre>
+Alpine Linux:
+<pre><code>apk update</code></pre>
 
 ## Quickly start
 If you need to add other parameters, version number must be assigned!
