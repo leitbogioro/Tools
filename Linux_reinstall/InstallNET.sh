@@ -2384,13 +2384,10 @@ elif [[ "$linux_relese" == 'alpinelinux' ]]; then
         [[ "$IsCN" == "cn" ]] && AlpineNetworkConf="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/ipv4_static_interfaces" || AlpineNetworkConf="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/ipv4_static_interfaces"
       fi
     elif [[ "$IPStackType" == "BiStack" ]]; then
-      if [[ "$Network4Config" == "isDHCP" ]] && [[ "$Network6Config" == "isDHCP" ]]; then
-        [[ "$IsCN" == "cn" ]] && AlpineNetworkConf="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/dhcp_interfaces" || AlpineNetworkConf="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/dhcp_interfaces"
-      elif [[ "$Network4Config" == "isDHCP" ]] && [[ "$Network6Config" == "isStatic" ]]; then
+# Alpine Linux doesn't support IPv6 automatic config, must manually.
+      if [[ "$Network4Config" == "isDHCP" ]]; then
         [[ "$IsCN" == "cn" ]] && AlpineNetworkConf="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/ipv6_static_interfaces" || AlpineNetworkConf="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/ipv6_static_interfaces"
-      elif [[ "$Network4Config" == "isStatic" ]] && [[ "$Network6Config" == "isDHCP" ]]; then
-        [[ "$IsCN" == "cn" ]] && AlpineNetworkConf="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/ipv4_static_interfaces" || AlpineNetworkConf="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/ipv4_static_interfaces"
-      elif [[ "$Network4Config" == "isStatic" ]] && [[ "$Network6Config" == "isStatic" ]]; then
+      elif [[ "$Network4Config" == "isStatic" ]]; then
         [[ "$IsCN" == "cn" ]] && AlpineNetworkConf="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/ipv4_ipv6_static_interfaces" || AlpineNetworkConf="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/ipv4_ipv6_static_interfaces"
       fi
     fi
