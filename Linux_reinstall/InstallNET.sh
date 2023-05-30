@@ -758,10 +758,10 @@ function checkSys() {
 }
 
 function checkIpv4OrIpv6() {
-  IPv4DNSLookup=`timeout 1.5s dig -4 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
-  [[ "$IPv4DNSLookup" == "" ]] && IPv4DNSLookup=`timeout 1.5s dig -4 TXT CH +short whoami.cloudflare @1.0.0.1 | sed 's/\"//g'`
-  IPv6DNSLookup=`timeout 1.5s dig -6 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
-  [[ "$IPv6DNSLookup" == "" ]] && IPv6DNSLookup=`timeout 1.5s dig -6 TXT CH +short whoami.cloudflare @2606:4700:4700::1001 | sed 's/\"//g'`
+  IPv4DNSLookup=`timeout 3s dig -4 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
+  [[ "$IPv4DNSLookup" == "" ]] && IPv4DNSLookup=`timeout 3s dig -4 TXT CH +short whoami.cloudflare @1.0.0.1 | sed 's/\"//g'`
+  IPv6DNSLookup=`timeout 3s dig -6 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
+  [[ "$IPv6DNSLookup" == "" ]] && IPv6DNSLookup=`timeout 3s dig -6 TXT CH +short whoami.cloudflare @2606:4700:4700::1001 | sed 's/\"//g'`
   IP_Check="$IPv4DNSLookup"
   if expr "$IP_Check" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; then
     for i in 1 2 3 4; do
