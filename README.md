@@ -275,7 +275,7 @@ root
 ### Default password
 LeitboGi0ro
 ### Default port
-22
+The same as the former system which you were connected by terminal, if script can't find any port on the former system, the default is 22.
 <br />
 <br />
 <b>If you didn't assign any other ssh password or port, after system installation, you must change password(LeitboGi0ro) and ssh port(22) immediately to prevent unauthorized access!</b>
