@@ -1,7 +1,7 @@
 #!/bin/bash
 ##
 ## License: GPL
-## It can reinstall Debian, Ubuntu, Kali, CentOS, AlmaLinux, RockyLinux, Fedora linux system via network automatically without any other external measures and manual operations.
+## It can reinstall Debian, Ubuntu, Kali, AlpineLinux, CentOS, AlmaLinux, RockyLinux, Fedora and Windows OS via network automatically without any other external measures and manual operations.
 ## Default root password: LeitboGi0ro
 ## Written By MoeClub.org
 ## Blog: https://moeclub.org
@@ -11,6 +11,8 @@
 ## Blog: https://www.idcoffer.com/
 ## Modified By airium
 ## Blog: https://github.com/airium
+## Modified By 王煎饼
+## Github: https://github.com/bin456789/
 ## Modified By Leitbogioro
 ## Blog: https://www.zhihu.com/column/originaltechnic
 
@@ -118,6 +120,12 @@ while [[ $# -ge 1 ]]; do
     -fedora|-Fedora)
       shift
       Relese='Fedora'
+      tmpDIST="$1"
+      shift
+      ;;
+    -alpine|-alpinelinux|-AlpineLinux|-alpineLinux)
+      shift
+      Relese='AlpineLinux'
       tmpDIST="$1"
       shift
       ;;
@@ -258,7 +266,7 @@ while [[ $# -ge 1 ]]; do
       ;;
     *)
       if [[ "$1" != 'error' ]]; then echo -ne "\nInvaild option: '$1'\n\n"; fi
-      echo -ne " Usage:\n\tbash $(basename $0)\t-debian       [${underLine}${yellow}dists-name${plain}]\n\t\t\t\t-ubuntu       [${underLine}dists-name${plain}]\n\t\t\t\t-kali         [${underLine}dists-name${plain}]\n\t\t\t\t-centos       [${underLine}dists-name${plain}]\n\t\t\t\t-rockylinux   [${underLine}dists-name${plain}]\n\t\t\t\t-almalinux    [${underLine}dists-name${plain}]\n\t\t\t\t-fedora       [${underLine}dists-name${plain}]\n\t\t\t\t-version      [32/i386|64/${underLine}${yellow}amd64${plain}|arm/${underLine}${yellow}arm64${plain}] [${underLine}${yellow}dists-verison${plain}]\n\t\t\t\t--ip-addr/--ip-gate/--ip-mask\n\t\t\t\t-apt/-yum/-mirror\n\t\t\t\t-dd/--image\n\t\t\t\t-pwd          [linux password]\n\t\t\t\t-port         [linux ssh port]\n"
+      echo -ne " Usage:\n\tbash $(basename $0)\t-debian       [${underLine}${yellow}dists-name${plain}]\n\t\t\t\t-ubuntu       [${underLine}dists-name${plain}]\n\t\t\t\t-kali         [${underLine}dists-name${plain}]\n\t\t\t\t-alpine         [${underLine}dists-name${plain}]\n\t\t\t\t-centos       [${underLine}dists-name${plain}]\n\t\t\t\t-rockylinux   [${underLine}dists-name${plain}]\n\t\t\t\t-almalinux    [${underLine}dists-name${plain}]\n\t\t\t\t-fedora       [${underLine}dists-name${plain}]\n\t\t\t\t-version      [32/i386|64/${underLine}${yellow}amd64${plain}|arm/${underLine}${yellow}arm64${plain}] [${underLine}${yellow}dists-verison${plain}]\n\t\t\t\t--ip-addr/--ip-gate/--ip-mask\n\t\t\t\t-apt/-yum/-mirror\n\t\t\t\t-dd/--image\n\t\t\t\t-pwd          [linux password]\n\t\t\t\t-port         [linux ssh port]\n"
       exit 1
       ;;
     esac
@@ -270,8 +278,9 @@ while [[ $# -ge 1 ]]; do
 # Ping delay to YouTube($1) and Instagram($2) and Twitter($3), support both ipv4 and ipv6, $4 is $IPStackType
 function checkCN() {
   for TestUrl in "$1" "$2" "$3"; do
-    IPv4PingDelay=`ping -4 -c 2 -w 2 "$TestUrl" | grep rtt | cut -d'/' -f5 | awk -F'.' '{print $NF}' | sed -n '/^[0-9]\+\(\.[0-9]\+\)\?$/p'`
-    IPv6PingDelay=`ping -6 -c 2 -w 2 "$TestUrl" | grep rtt | cut -d'/' -f5 | awk -F'.' '{print $NF}' | sed -n '/^[0-9]\+\(\.[0-9]\+\)\?$/p'`
+# "rtt" result of ping command of Alpine Linux is "round-trip" and it can't handle "sed -n" well.
+    IPv4PingDelay=`ping -4 -c 2 -w 2 "$TestUrl" | grep "rtt\|round-trip" | cut -d'/' -f5 | awk -F'.' '{print $NF}' | sed -E '/^[0-9]\+\(\.[0-9]\+\)\?$/p'`
+    IPv6PingDelay=`ping -6 -c 2 -w 2 "$TestUrl" | grep "rtt\|round-trip" | cut -d'/' -f5 | awk -F'.' '{print $NF}' | sed -E '/^[0-9]\+\(\.[0-9]\+\)\?$/p'`
     if [[ "$4"="BiStack" ]]; then
       if [[ "$IPv4PingDelay" != "" ]] || [[ "$IPv6PingDelay" != "" ]]; then
         IsCN=""
@@ -370,14 +379,16 @@ function selectMirror() {
     fi
   elif [ "$Relese" == "fedora" ]; then
     TEMP="SUB_MIRROR/releases/${DIST}/Server/${VER}/os/images/pxeboot/initrd.img"
+  elif [ "$Relese" == "alpinelinux" ]; then
+    TEMP="SUB_MIRROR/${DIST}/releases/${VER}/netboot/initramfs-lts"
   fi
   [ -n "$TEMP" ] || exit 1
   mirrorStatus=0
   declare -A MirrorBackup
   if [[ "$IsCN" == "cn" ]]; then
-    MirrorBackup=(["debian0"]="" ["debian1"]="http://mirror.nju.edu.cn/debian" ["debian2"]="http://mirrors.hit.edu.cn/debian" ["debian3"]="https://mirrors.aliyun.com/debian-archive/debian" ["ubuntu0"]="" ["ubuntu1"]="https://mirrors.ustc.edu.cn/ubuntu" ["ubuntu2"]="http://mirrors.xjtu.edu.cn/ubuntu" ["kali0"]="" ["kali1"]="https://mirrors.tuna.tsinghua.edu.cn/kali" ["kali2"]="http://mirrors.zju.edu.cn/kali" ["centos0"]="" ["centos1"]="https://mirrors.ustc.edu.cn/centos-stream" ["centos2"]="https://mirrors.tuna.tsinghua.edu.cn/centos" ["centos3"]="http://mirror.nju.edu.cn/centos-altarch" ["centos4"]="https://mirrors.tuna.tsinghua.edu.cn/centos-vault" ["fedora0"]="" ["fedora1"]="https://mirrors.bfsu.edu.cn/fedora" ["fedora2"]="https://mirrors.tuna.tsinghua.edu.cn/fedora" ["rockylinux0"]="" ["rockylinux1"]="http://mirror.nju.edu.cn/rocky" ["rockylinux2"]="http://mirrors.sdu.edu.cn/rocky" ["almalinux0"]="" ["almalinux1"]="https://mirror.sjtu.edu.cn/almalinux" ["almalinux2"]="http://mirrors.neusoft.edu.cn/almalinux")
+    MirrorBackup=(["debian0"]="" ["debian1"]="http://mirror.nju.edu.cn/debian" ["debian2"]="http://mirrors.hit.edu.cn/debian" ["debian3"]="https://mirrors.aliyun.com/debian-archive/debian" ["ubuntu0"]="" ["ubuntu1"]="https://mirrors.ustc.edu.cn/ubuntu" ["ubuntu2"]="http://mirrors.xjtu.edu.cn/ubuntu" ["kali0"]="" ["kali1"]="https://mirrors.tuna.tsinghua.edu.cn/kali" ["kali2"]="http://mirrors.zju.edu.cn/kali" ["alpinelinux0"]="" ["alpinelinux1"]="http://mirrors.nju.edu.cn/alpine" ["alpinelinux2"]="http://mirrors.tuna.tsinghua.edu.cn/alpine" ["centos0"]="" ["centos1"]="https://mirrors.ustc.edu.cn/centos-stream" ["centos2"]="https://mirrors.tuna.tsinghua.edu.cn/centos" ["centos3"]="http://mirror.nju.edu.cn/centos-altarch" ["centos4"]="https://mirrors.tuna.tsinghua.edu.cn/centos-vault" ["fedora0"]="" ["fedora1"]="https://mirrors.bfsu.edu.cn/fedora" ["fedora2"]="https://mirrors.tuna.tsinghua.edu.cn/fedora" ["rockylinux0"]="" ["rockylinux1"]="http://mirror.nju.edu.cn/rocky" ["rockylinux2"]="http://mirrors.sdu.edu.cn/rocky" ["almalinux0"]="" ["almalinux1"]="https://mirror.sjtu.edu.cn/almalinux" ["almalinux2"]="http://mirrors.neusoft.edu.cn/almalinux")
   else
-    MirrorBackup=(["debian0"]="" ["debian1"]="http://deb.debian.org/debian" ["debian2"]="http://ftp.yz.yamagata-u.ac.jp/pub/linux/debian" ["debian3"]="http://archive.debian.org/debian" ["ubuntu0"]="" ["ubuntu1"]="http://archive.ubuntu.com/ubuntu" ["ubuntu2"]="http://ports.ubuntu.com" ["kali0"]="" ["kali1"]="https://mirrors.ocf.berkeley.edu/kali" ["kali2"]="http://ftp.jaist.ac.jp/pub/Linux/kali" ["centos0"]="" ["centos1"]="http://mirror.centos.org/centos" ["centos2"]="http://mirror.stream.centos.org" ["centos3"]="http://mirror.centos.org/altarch" ["centos4"]="http://vault.centos.org" ["fedora0"]="" ["fedora1"]="https://download-ib01.fedoraproject.org/pub/fedora/linux" ["fedora2"]="https://download-cc-rdu01.fedoraproject.org/pub/fedora/linux" ["rockylinux0"]="" ["rockylinux1"]="http://download.rockylinux.org/pub/rocky" ["rockylinux2"]="http://ftp.udx.icscoe.jp/Linux/rocky" ["almalinux0"]="" ["almalinux1"]="http://repo.almalinux.org/almalinux" ["almalinux2"]="http://ftp.iij.ad.jp/pub/linux/almalinux")
+    MirrorBackup=(["debian0"]="" ["debian1"]="http://deb.debian.org/debian" ["debian2"]="http://ftp.yz.yamagata-u.ac.jp/pub/linux/debian" ["debian3"]="http://archive.debian.org/debian" ["ubuntu0"]="" ["ubuntu1"]="http://archive.ubuntu.com/ubuntu" ["ubuntu2"]="http://ports.ubuntu.com" ["kali0"]="" ["kali1"]="https://mirrors.ocf.berkeley.edu/kali" ["kali2"]="http://ftp.jaist.ac.jp/pub/Linux/kali" ["alpinelinux0"]="" ["alpinelinux1"]="http://dl-cdn.alpinelinux.org/alpine" ["alpinelinux2"]="http://ap.edge.kernel.org/alpine" ["centos0"]="" ["centos1"]="http://mirror.centos.org/centos" ["centos2"]="http://mirror.stream.centos.org" ["centos3"]="http://mirror.centos.org/altarch" ["centos4"]="http://vault.centos.org" ["fedora0"]="" ["fedora1"]="https://download-ib01.fedoraproject.org/pub/fedora/linux" ["fedora2"]="https://download-cc-rdu01.fedoraproject.org/pub/fedora/linux" ["rockylinux0"]="" ["rockylinux1"]="http://download.rockylinux.org/pub/rocky" ["rockylinux2"]="http://ftp.udx.icscoe.jp/Linux/rocky" ["almalinux0"]="" ["almalinux1"]="http://repo.almalinux.org/almalinux" ["almalinux2"]="http://ftp.iij.ad.jp/pub/linux/almalinux")
   fi
   echo "$New" | grep -q '^http://\|^https://\|^ftp://' && MirrorBackup[${Relese}0]="${New%*/}"
   for mirror in $(echo "${!MirrorBackup[@]}" |sed 's/\ /\n/g' |sort -n |grep "^$Relese"); do
@@ -492,6 +503,8 @@ function diskType() {
 function getUserTimezone() {
   if [[ "$TimeZone" == "" ]]; then
     GuestIP=`who am i | awk '{print $5}' | sed 's/(//g' | sed 's/)//g'`
+# Alpine Linux doesn't support "who am i".
+    [[ "$GuestIP" == "" ]] && GuestIP=`netstat -anp | grep -i 'sshd: root' | awk '{print $5}' | head -n 1 | cut -d':' -f'1'`
     for Count in "$2" "$3" "$4"; do
       [[ "$TimeZone" == "Asia/Shanghai" ]] && break
       tmpApi=`echo -n "$Count" | base64 -d`
@@ -501,7 +514,7 @@ function getUserTimezone() {
     done
   else
     echo `timedatectl list-timezones` >> "$1"
-    [[ `grep -c "$TimeZone" "$1"` == "0" ]] && TimeZone="Asia/Tokyo"
+    [[ `grep -c "$TimeZone" "$1"` == "0" || ! -f "/usr/share/zoneinfo/$1" ]] && TimeZone="Asia/Tokyo"
     rm -rf "$1"
   fi
 }
@@ -616,6 +629,7 @@ function checkSys() {
   apt update -y
   apt install lsb-release -y
   yum install redhat-lsb -y
+  apk update
   OsLsb=`lsb_release -d | awk '{print$2}'`
   
   CurrentOSVer=`cat /etc/os-release | grep -w "VERSION_ID=*" | awk -F '=' '{print $2}' | sed 's/\"//g' | cut -d'.' -f 1`
@@ -631,6 +645,11 @@ function checkSys() {
   IsKali=`uname -a | grep -i "kali"`
   for Count in `cat /etc/os-release | grep -w "ID=*" | awk -F '=' '{print $2}'` `cat /etc/issue | awk '{print $1}'` "$OsLsb"; do
     [[ -n "$Count" ]] && DebianRelease=`echo -e "$Count"`"$DebianRelease"
+  done
+  
+  AlpineRelease=""
+  for Count in `cat /etc/os-release | grep -w "ID=*" | awk -F '=' '{print $2}'` `cat /etc/issue | awk '{print $3}' | head -n 1` `uname -v | awk '{print $1}' | sed 's/[^a-zA-Z]//g'`; do
+    [[ -n "$Count" ]] && AlpineRelease=`echo -e "$Count"`"$AlpineRelease"
   done
   
   if [[ `echo "$RedHatRelease" | grep -i 'centos'` != "" ]]; then
@@ -658,6 +677,8 @@ function checkSys() {
     CurrentOS="OpenAnolis"
   elif [[ `echo "$RedHatRelease" | grep -i 'scientific'` != "" ]]; then
     CurrentOS="ScientificLinux"
+  elif [[ `echo "$AlpineRelease" | grep -i 'alpine'` != "" ]]; then
+    CurrentOS="AlpineLinux"
   elif [[ "$IsUbuntu" ]] || [[ `echo "$DebianRelease" | grep -i 'ubuntu'` != "" ]]; then
     CurrentOS="Ubuntu"
     CurrentOSVer=`lsb_release -r | awk '{print$2}' | cut -d'.' -f1`
@@ -717,6 +738,23 @@ function checkSys() {
     fi
     rm -rf /root/yum_execute.log
   fi
+
+# Alpine Linux necessary components and configurations.
+  [[ "$CurrentOS" == "AlpineLinux" ]] && {
+# Get current version number of Alpine Linux
+    CurrentAlpineVer=$(cut -d. -f1,2 </etc/alpine-release)
+# Try to remove comments of any valid mirror.
+    sed -i 's/#//' /etc/apk/repositories
+# Add community mirror.
+    [[ ! `grep -i "community" /etc/apk/repositories` ]] && sed -i '$a\http://dl-cdn.alpinelinux.org/alpine/v$CurrentAlpineVer/community' /etc/apk/repositories
+# Add testing mirror.
+    [[ ! `grep -i "testing" /etc/apk/repositories` ]] && sed -i '$a\http://dl-cdn.alpinelinux.org/alpine/edge/testing' /etc/apk/repositories
+# Alpine Linux use "apk" as package management.
+    apk update
+    apk add bash bind-tools coreutils cpio curl efibootmgr file grep gzip ipcalc jq lsblk net-tools sed shadow tzdata wget xz
+# Use bash to replace ash.
+    sed -i 's/root:\/bin\/ash/root:\/bin\/bash/g' /root/passwd
+  }
 }
 
 function checkIpv4OrIpv6() {
@@ -940,7 +978,7 @@ function getInterface() {
 # This setting may confuse program to get real adapter name from reading /proc/cat/dev
   GrubCmdLine=`grep "GRUB_CMDLINE_LINUX" /etc/default/grub | grep -v "#" | grep "net.ifnames=0\|biosdevname=0"`
 # So we need to comfirm whether adapter name is renamed and whether we should inherit it into new system.
-  if [[ -n "$GrubCmdLine" && -z "$interfaceSelect" ]] || [[ "$interface" == "eth0" ]] || [[ "$linux_relese" == "kali" ]]; then
+  if [[ -n "$GrubCmdLine" && -z "$interfaceSelect" ]] || [[ "$interface" == "eth0" ]] || [[ "$linux_relese" == "kali" ]] || [[ "$linux_relese" == "alpinelinux" ]]; then
     setInterfaceName='1'
   fi
   if [[ "$1" == 'CentOS' || "$1" == 'AlmaLinux' || "$1" == 'RockyLinux' || "$1" == 'Fedora' || "$1" == 'Vzlinux' || "$1" == 'OracleLinux' || "$1" == 'OpenCloudOS' || "$1" == 'AlibabaCloudLinux' || "$1" == 'ScientificLinux' || "$1" == 'AmazonLinux' || "$1" == 'RedHatEnterpriseLinux' || "$1" == 'OpenAnolis' ]]; then
@@ -1160,7 +1198,7 @@ function checkDHCP() {
         [[ `sed -n "$NetCfg4LineNum"p $NetCfgWhole` == "method=manual" ]] && Network4Config="isStatic" || Network4Config="isDHCP"
       fi
     fi
-  elif [[ "$1" == 'Debian' ]] || [[ "$1" == 'Kali' ]] || [[ "$1" == 'Ubuntu' && "$networkManagerType" == "ifupdown" ]]; then
+  elif [[ "$1" == 'Debian' ]] || [[ "$1" == 'Kali' ]] || [[ "$1" == 'Ubuntu' && "$networkManagerType" == "ifupdown" ]] || [[ "$1" == 'AlpineLinux' ]]; then
 # Debian network configs may be deposited in the following directions.
 # /etc/network/interfaces or /etc/network/interfaces.d/interface or /run/network/interfaces.d/interface
     if [[ "$3" == "IPv4Stack" ]]; then
@@ -1242,17 +1280,21 @@ function DebianModifiedPreseed() {
 # so need to write "iface interface inet6 dhcp" to /etc/network/interfaces in preseeding process,
 # to avoid config IPv6 manually after log into new system.
     SupportIPv6orIPv4=""
-    if [[ "$Network6Config" == "isDHCP" ]]; then
+    if [[ "$IPStackType" == "IPv4Stack" ]]; then
 # This IPv4Stack DHCP machine can access IPv6 network in the future, maybe.
 # But it should be setting as IPv4 network priority.
       SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel ::ffff:0:0/96' /etc/gai.conf;"
+    elif [[ "$IPStackType" == "BiStack" ]]; then
+      if [[ "$Network6Config" == "isDHCP" ]]; then
 # Enable IPv6 dhcp and set prefer IPv6 access for BiStack or IPv6Stack machine: add "label 2002::/16", "label 2001:0::/32" in last line of the "/etc/gai.conf"
-      [[ "$IPStackType" == "BiStack" ]] && SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
-    elif [[ "$Network6Config" == "isStatic" ]]; then
+        SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
+      elif [[ "$Network6Config" == "isStatic" ]]; then
+        SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet6 static' /etc/network/interfaces; $1 sed -i '\$a\\\taddress $ip6Addr' /etc/network/interfaces; $1 sed -i '\$a\\\tnetmask $ip6Mask' /etc/network/interfaces; $1 sed -i '\$a\\\tgateway $ip6Gate' /etc/network/interfaces; $1 sed -i '\$a\\\tdns-nameservers $ip6DNS' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
+      fi
+    elif [[ "$IPStackType" == "IPv6Stack" ]]; then
 # This IPv6Stack Static machine can access IPv4 network in the future, maybe.
 # But it should be setting as IPv6 network priority.
-      SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
-      [[ "$IPStackType" == "BiStack" ]] && SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet6 static' /etc/network/interfaces; $1 sed -i '\$a\\\taddress $ip6Addr' /etc/network/interfaces; $1 sed -i '\$a\\\tnetmask $ip6Mask' /etc/network/interfaces; $1 sed -i '\$a\\\tgateway $ip6Gate' /etc/network/interfaces; $1 sed -i '\$a\\\tdns-nameservers $ip6DNS' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
+      [[ ! "$IPv4" || "$Network6Config" == "isStatic" ]] && SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;" || SupportIPv6orIPv4="$1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
     fi
 # a typical network configuration sample of IPv6 static for Debian:
 # iface eth0 inet static
@@ -1333,6 +1375,8 @@ function DebianPreseedProcess() {
 # d-i partman-partitioning/default_label string gpt
 # d-i partman/choose_label string gpt
 # d-i partman/default_label string gpt
+#
+# Prefer to use IPv4 to config networking.
     if [[ "$IPStackType" == "IPv4Stack" ]] || [[ "$IPStackType" == "BiStack" ]]; then
       [[ "$Network4Config" == "isStatic" ]] && NetConfigManually=`echo -e "d-i netcfg/disable_autoconfig boolean true\nd-i netcfg/dhcp_failed note\nd-i netcfg/dhcp_options select Configure network manually\nd-i netcfg/get_ipaddress string $IPv4\nd-i netcfg/get_netmask string $MASK\nd-i netcfg/get_gateway string $GATE\nd-i netcfg/get_nameservers string $ipDNS\nd-i netcfg/no_default_route boolean true\nd-i netcfg/confirm_static boolean true"` || NetConfigManually=""
     elif [[ "$IPStackType" == "IPv6Stack" ]]; then
@@ -1483,8 +1527,17 @@ checkEfi "/sys/firmware/efi/vars/" "/sys/firmware/efi/efivars/" "/sys/firmware/e
 
 checkVirt
 
-if [[ ! ${sshPORT} -ge "1" ]] || [[ ! ${sshPORT} -le "65535" ]] || [[ `grep '^[[:digit:]]*$' <<< '${sshPORT}'` ]]; then
-  sshPORT='22'
+if [[ "$sshPORT" ]];then
+  if [[ ! ${sshPORT} -ge "1" ]] || [[ ! ${sshPORT} -le "65535" ]] || [[ `grep '^[[:digit:]]*$' <<< '${sshPORT}'` ]]; then
+    sshPORT='22'
+  fi
+else
+  sshPORT=$(grep -Ei "^port|^#port" /etc/ssh/sshd_config | head -n 1 | awk -F' ' '{print $2}')
+  [[ "$sshPORT" == "" ]] && sshPORT=$(netstat -anp | grep -i 'sshd: root' | grep -iw 'tcp' | awk '{print $4}' | head -n 1 | cut -d':' -f'2')
+  [[ "$sshPORT" == "" ]] && sshPORT=$(netstat -anp | grep -i 'sshd: root' | grep -iw 'tcp6' | awk '{print $4}' | head -n 1 | awk -F':' '{print $NF}')
+  if [[ "$sshPORT" == "" ]] || [[ ! ${sshPORT} -ge "1" ]] || [[ ! ${sshPORT} -le "65535" ]] || [[ `grep '^[[:digit:]]*$' <<< '${sshPORT}'` ]]; then
+    sshPORT='22'
+  fi
 fi
 
 # Disable SELinux
@@ -1754,22 +1807,23 @@ echo -ne "\n[${yellow}Adapter Name${plain}]  $interface"
 echo -ne "\n[${yellow}Network File${plain}]  $NetCfgWhole"
 echo -ne "\n[${yellow}Server Stack${plain}]  $IPStackType\n"
 [[ "$IPStackType" != "IPv6Stack" ]] && echo -ne "\n[${yellow}IPv4  Method${plain}]  $Network4Config\n" || echo -ne "\n[${yellow}IPv4  Method${plain}]  N/A\n"
-[[ "$IPv4" ]] && echo -e "[${yellow}IPv4 Address${plain}]  ""$IPv4" || echo -e "[${yellow}IPv4 Address${plain}]  ""N/A"
-[[ "$IPv4" ]] && echo -e "[${yellow}IPv4  Subnet${plain}]  ""$MASK" || echo -e "[${yellow}IPv4  Subnet${plain}]  ""N/A"
-[[ "$IPv4" ]] && echo -e "[${yellow}IPv4 Gateway${plain}]  ""$GATE" || echo -e "[${yellow}IPv4 Gateway${plain}]  ""N/A"
-[[ "$IPv4" ]] && echo -e "[${yellow}IPv4     DNS${plain}]  ""$ipDNS" || echo -e "[${yellow}IPv4     DNS${plain}]  ""N/A"
+[[ "$IPv4" && "$IPStackType" != "IPv6Stack" ]] && echo -e "[${yellow}IPv4 Address${plain}]  ""$IPv4" || echo -e "[${yellow}IPv4 Address${plain}]  ""N/A"
+[[ "$IPv4" && "$IPStackType" != "IPv6Stack" ]] && echo -e "[${yellow}IPv4  Subnet${plain}]  ""$MASK" || echo -e "[${yellow}IPv4  Subnet${plain}]  ""N/A"
+[[ "$IPv4" && "$IPStackType" != "IPv6Stack" ]] && echo -e "[${yellow}IPv4 Gateway${plain}]  ""$GATE" || echo -e "[${yellow}IPv4 Gateway${plain}]  ""N/A"
+[[ "$IPv4" && "$IPStackType" != "IPv6Stack" ]] && echo -e "[${yellow}IPv4     DNS${plain}]  ""$ipDNS" || echo -e "[${yellow}IPv4     DNS${plain}]  ""N/A"
 [[ "$IPStackType" != "IPv4Stack" ]] && echo -ne "\n[${yellow}IPv6  Method${plain}]  $Network6Config\n" || echo -ne "\n[${yellow}IPv6  Method${plain}]  N/A\n"
-[[ "$IPStackType" != "IPv4Stack" ]] && echo -e "[${yellow}IPv6 Address${plain}]  ""$ip6Addr" || echo -e "[${yellow}IPv6 Address${plain}]  ""N/A"
-[[ "$IPStackType" != "IPv4Stack" ]] && echo -e "[${yellow}IPv6  Subnet${plain}]  ""$ip6Mask" || echo -e "[${yellow}IPv6  Subnet${plain}]  ""N/A"
-[[ "$IPStackType" != "IPv4Stack" ]] && echo -e "[${yellow}IPv6 Gateway${plain}]  ""$ip6Gate" || echo -e "[${yellow}IPv6 Gateway${plain}]  ""N/A"
-[[ "$IPStackType" != "IPv4Stack" ]] && echo -e "[${yellow}IPv6     DNS${plain}]  ""$ip6DNS" || echo -e "[${yellow}IPv6     DNS${plain}]  ""N/A"
+[[ "$ip6Addr" && "$IPStackType" != "IPv4Stack" ]] && echo -e "[${yellow}IPv6 Address${plain}]  ""$ip6Addr" || echo -e "[${yellow}IPv6 Address${plain}]  ""N/A"
+[[ "$ip6Addr" && "$IPStackType" != "IPv4Stack" ]] && echo -e "[${yellow}IPv6  Subnet${plain}]  ""$ip6Mask" || echo -e "[${yellow}IPv6  Subnet${plain}]  ""N/A"
+[[ "$ip6Addr" && "$IPStackType" != "IPv4Stack" ]] && echo -e "[${yellow}IPv6 Gateway${plain}]  ""$ip6Gate" || echo -e "[${yellow}IPv6 Gateway${plain}]  ""N/A"
+[[ "$ip6Addr" && "$IPStackType" != "IPv4Stack" ]] && echo -e "[${yellow}IPv6     DNS${plain}]  ""$ip6DNS" || echo -e "[${yellow}IPv6     DNS${plain}]  ""N/A"
 
 getUserTimezone "/root/timezonelists" "ZGEyMGNhYjhhMWM2NDJlMGE0YmZhMDVmMDZlNzBmN2E=" "ZTNlMjBiN2JjOTE2NGY2YjllNzUzYWU5ZDFjYjdjOTc=" "MWQ2NGViMGQ4ZmNlNGMzYTkxYjNiMTdmZDMxODQwZDc="
 echo -ne "\n${aoiBlue}# User Timezone${plain}\n\n"
 echo "$TimeZone"
 
 [ -n "$tmpWORD" ] && dependence openssl
-[[ -n "$tmpWORD" ]] && myPASSWORD=$(openssl passwd -1 ''$tmpWORD'')
+[[ -z "$tmpWORD" ]] && tmpWORD='LeitboGi0ro'
+myPASSWORD=$(openssl passwd -1 ''$tmpWORD'')
 [[ -z "$myPASSWORD" ]] && myPASSWORD='$1$OCy2O5bt$m2N6XMgFUwCn/2PPP114J/'
 echo -ne "\n${aoiBlue}# SSH Port${plain}\n\n"
 echo "$sshPORT"
@@ -1794,7 +1848,7 @@ if [[ "$linux_relese" == "debian" ]] || [[ "$linux_relese" == "ubuntu" ]] || [[ 
   elif [[ "$VER" == "aarch64" ]]; then
     VER="arm64"
   fi
-elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
+elif [[ "$linux_relese" == 'alpinelinux' ]] || [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
   if [[ "$VER" == "amd64" ]] || [[ "$VER" == "x86-64" ]]; then
     VER="x86_64"
   elif [[ "$VER" == "arm64" ]]; then
@@ -1810,10 +1864,10 @@ if [[ -n "$tmpVER" ]]; then
       VER="i386"
       ;;
     amd64|x86_64|x64|64)
-      [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]] && VER='x86_64' || VER='amd64'
+      [[ "$linux_relese" == 'alpinelinux' ]] || [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]] && VER='x86_64' || VER='amd64'
       ;;
     aarch64|arm64|arm)
-      [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]] && VER='aarch64' || VER='arm64'
+      [[ "$linux_relese" == 'alpinelinux' ]] || [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]] && VER='aarch64' || VER='arm64'
       ;;
     *)
       VER=''
@@ -1831,6 +1885,7 @@ fi
   [ "$Relese" == 'Debian' ] && tmpDIST='12'
   [ "$Relese" == 'Kali' ] && tmpDIST='rolling'
   [ "$Relese" == 'Ubuntu' ] && tmpDIST='20.04'
+  [ "$Relese" == 'AlpineLinux' ] && tmpDIST='edge'
   [ "$Relese" == 'CentOS' ] && tmpDIST='9'
   [ "$Relese" == 'RockyLinux' ] && tmpDIST='9'
   [ "$Relese" == 'AlmaLinux' ] && tmpDIST='9'
@@ -1889,6 +1944,19 @@ if [[ -n "$tmpDIST" ]]; then
         # [[ "$isDigital" == '22.04' ]] && DIST='jammy';
       }
     }
+    LinuxMirror=$(selectMirror "$Relese" "$DIST" "$VER" "$tmpMirror")
+  fi
+  if [[ "$Relese" == 'AlpineLinux' ]]; then
+    SpikCheckDIST='0'
+    DIST="$(echo "$tmpDIST" |sed -r 's/(.*)/\L\1/')"
+# Recommend "edge" version of Alpine Linux to make sure to keep updating always and 3.15 or former versions were deperated.
+    AlpineVer1=`echo "$DIST" | sed 's/[a-z][A-Z]*//g' | cut -d"." -f 1`
+    AlpineVer2=`echo "$DIST" | sed 's/[a-z][A-Z]*//g' | cut -d"." -f 2`
+    if [[ "$AlpineVer1" -lt "3" || "$AlpineVer2" -le "15" ]] && [[ "$DIST" != "edge" ]]; then
+      echo -ne "\n${red}Warning:${plain} $Relese $DIST is not supported!\n"
+      exit 1
+    fi
+    [[ "$DIST" != "edge" && ! "$DIST" =~ "v" ]] && DIST="v""$DIST"
     LinuxMirror=$(selectMirror "$Relese" "$DIST" "$VER" "$tmpMirror")
   fi
   if [[ "$Relese" == 'CentOS' ]] || [[ "$Relese" == 'RockyLinux' ]] || [[ "$Relese" == 'AlmaLinux' ]] || [[ "$Relese" == 'Fedora' ]]; then
@@ -1967,11 +2035,12 @@ fi
   [ "$Relese" == 'Debian' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://www.debian.org/mirror/list\n\n"
   [ "$Relese" == 'Ubuntu' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://launchpad.net/ubuntu/+archivemirrors\n\n"
   [ "$Relese" == 'Kali' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://http.kali.org/README.mirrorlist\n\n"
+  [ "$Relese" == 'AlpineLinux' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://mirrors.alpinelinux.org/\n\n"
   [ "$Relese" == 'CentOS' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://www.centos.org/download/mirrors/\n\n"
   [ "$Relese" == 'RockyLinux' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://mirrors.rockylinux.org/mirrormanager/mirrors\n\n"
   [ "$Relese" == 'AlmaLinux' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://mirrors.almalinux.org/\n\n"
   [ "$Relese" == 'Fedora' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://mirrors.fedoraproject.org/\n\n"
-  bash $0 error
+  # bash $0 error
   exit 1
 }
 
@@ -1980,6 +2049,7 @@ if [[ "$SpikCheckDIST" == '0' ]]; then
   echo -ne "\n${aoiBlue}# Check DIST${plain}\n"
   DistsList="$(wget --no-check-certificate -qO- "$LinuxMirror/dists/" |grep -o 'href=.*/"' |cut -d'"' -f2 |sed '/-\|old\|Debian\|experimental\|stable\|test\|sid\|devel/d' |grep '^[^/]' |sed -n '1h;1!H;$g;s/\n//g;s/\//\;/g;$p')"
   [[ "$linux_relese" == "kali" ]] && DistsList="$(wget --no-check-certificate -qO- "$LinuxMirror/dists/" | grep -o 'href=.*/"' | cut -d'"' -f2 | grep '^[^/]' | sed -n '1h;1!H;$g;s/\n//g;s/\//\;/g;$p')"
+  [[ "$linux_relese" == "alpinelinux" ]] && DistsList="$(wget --no-check-certificate -qO- "$LinuxMirror/" | grep -o 'href=.*/"' | cut -d'"' -f2 | grep '^[^/]' | sed -n '1h;1!H;$g;s/\n//g;s/\//\;/g;$p')"
   for CheckDEB in `echo "$DistsList" |sed 's/;/\n/g'`
     do
 # In some mirror, the value of parameter "DistsList" is "?C=N;O=Dbookworm;bullseye;buster;http:;;wisepoint.jp;product;wpshibb;"
@@ -1989,7 +2059,6 @@ if [[ "$SpikCheckDIST" == '0' ]]; then
     done
   [[ "$FindDists" == '0' ]] && {
     echo -ne '\n${red}Error!${plain} The dists version not found, Please check it! \n\n'
-    bash $0 error
     exit 1
   }
   echo -e "\nSuccess"
@@ -2098,6 +2167,15 @@ elif [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [
   MirrorHost="$(echo "$LinuxMirror" |awk -F'://|/' '{print $2}')"
   MirrorFolder="$(echo "$LinuxMirror" |awk -F''${MirrorHost}'' '{print $2}')"
   [ -n "$MirrorFolder" ] || MirrorFolder="/"
+elif [[ "$linux_relese" == 'alpinelinux' ]]; then
+  InitrdUrl="${LinuxMirror}/${DIST}/releases/${VER}/netboot/initramfs-lts"
+  VmLinuzUrl="${LinuxMirror}/${DIST}/releases/${VER}/netboot/vmlinuz-lts"
+  ModLoop="$LinuxMirror/alpine/$DIST/releases/$VER/netboot/modloop-lts"
+  echo -ne "[${yellow}Mirror${plain}] $InitrdUrl\n\t $VmLinuzUrl\n"
+  wget --no-check-certificate -qO '/tmp/initrd.img' "$InitrdUrl"
+  [[ $? -ne '0' ]] && echo -ne "${red}Error!${plain} Download 'initramfs-lts' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
+  wget --no-check-certificate -qO '/tmp/vmlinuz' "$VmLinuzUrl"
+  [[ $? -ne '0' ]] && echo -ne "${red}Error!${plain} Download 'vmlinuz-lts' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
 elif [[ "$linux_relese" == 'centos' ]] && [[ "$RedHatSeries" -le "7" ]]; then
   InitrdUrl="${LinuxMirror}/${DIST}/os/${VER}/images/pxeboot/initrd.img"
   VmLinuzUrl="${LinuxMirror}/${DIST}/os/${VER}/images/pxeboot/vmlinuz"
@@ -2162,7 +2240,7 @@ fi
 mkdir -p /tmp/boot
 cd /tmp/boot
 
-if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ "$linux_relese" == 'kali' ]]; then
+if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ "$linux_relese" == 'kali' ]] || [[ "$linux_relese" == "alpinelinux" ]]; then
   COMPTYPE="gzip"
 elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
   COMPTYPE="$(file ../initrd.img |grep -o ':.*compressed data' |cut -d' ' -f2 |sed -r 's/(.*)/\L\1/' |head -n1)"
@@ -2275,6 +2353,102 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ 
     sed -i '/anna-install/d' /tmp/boot/preseed.cfg
     sed -i 's/wget.*\/sbin\/reboot\;\ //g' /tmp/boot/preseed.cfg
   }
+elif [[ "$linux_relese" == 'alpinelinux' ]]; then
+# Alpine Linux only support booting with IPv4 by dhcp or static, not support booting from IPv6 by any method.
+  [[ "$IPStackType" == "IPv6Stack" ]] && {
+    echo -ne "\n[${red}Error${plain}] Does't support $IPStackType!\n"
+    exit 1
+  }
+# Hostname should not be "localhost"
+  HostName=$(hostname)
+  [[ "$HostName" == "localhost" ]] && HostName="alpinelinux"
+# Enable IPv6
+  echo "ipv6" >> /tmp/boot/etc/modules
+  if [[ "$setAutoConfig" == "1" ]]; then
+    AlpineTestRepository="$LinuxMirror/edge/testing"
+    AlpineInitLineNum=$(grep -E -n '^exec (/bin/busybox )?switch_root' /tmp/boot/init | cut -d: -f1)
+    AlpineInitLineNum=$((AlpineInitLineNum - 1))
+    if [[ "$IsCN" == "cn" ]]; then
+      AlpineInitFile="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/alpineInit.sh"
+      AlpineDnsFile="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/resolv_cn.conf"
+      AlpineMotd="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/motd.sh"
+    else
+      AlpineInitFile="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/alpineInit.sh"
+      AlpineDnsFile="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/resolv.conf"
+      AlpineMotd="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/motd.sh"
+    fi
+    if [[ "$IPStackType" == "IPv4Stack" ]]; then
+      if [[ "$Network4Config" == "isDHCP" ]]; then
+        [[ "$IsCN" == "cn" ]] && AlpineNetworkConf="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/dhcp_interfaces" || AlpineNetworkConf="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/dhcp_interfaces"
+      elif [[ "$Network4Config" == "isStatic" ]]; then
+        [[ "$IsCN" == "cn" ]] && AlpineNetworkConf="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/ipv4_static_interfaces" || AlpineNetworkConf="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/ipv4_static_interfaces"
+      fi
+    elif [[ "$IPStackType" == "BiStack" ]]; then
+      if [[ "$Network4Config" == "isDHCP" ]] && [[ "$Network6Config" == "isDHCP" ]]; then
+        [[ "$IsCN" == "cn" ]] && AlpineNetworkConf="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/dhcp_interfaces" || AlpineNetworkConf="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/dhcp_interfaces"
+      elif [[ "$Network4Config" == "isDHCP" ]] && [[ "$Network6Config" == "isStatic" ]]; then
+        [[ "$IsCN" == "cn" ]] && AlpineNetworkConf="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/ipv6_static_interfaces" || AlpineNetworkConf="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/ipv6_static_interfaces"
+      elif [[ "$Network4Config" == "isStatic" ]] && [[ "$Network6Config" == "isDHCP" ]]; then
+        [[ "$IsCN" == "cn" ]] && AlpineNetworkConf="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/ipv4_static_interfaces" || AlpineNetworkConf="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/ipv4_static_interfaces"
+      elif [[ "$Network4Config" == "isStatic" ]] && [[ "$Network6Config" == "isStatic" ]]; then
+        [[ "$IsCN" == "cn" ]] && AlpineNetworkConf="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/ipv4_ipv6_static_interfaces" || AlpineNetworkConf="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/ipv4_ipv6_static_interfaces"
+      fi
+    fi
+# All the following steps are processed in the temporary Alpine Linux.
+    cat <<EOF | sed -i "${AlpineInitLineNum}r /dev/stdin" /tmp/boot/init
+# Download "interfaces" templates and replace IP details.
+wget --no-check-certificate -O \$sysroot/etc/network/tmp_interfaces ${AlpineNetworkConf}
+
+# Config nameservers
+rm -rf \$sysroot/etc/resolv.conf
+wget --no-check-certificate -O \$sysroot/etc/resolv.conf ${AlpineDnsFile}
+
+# Add customized motd
+rm -rf \$sysroot/etc/motd
+wget --no-check-certificate -O \$sysroot/etc/profile.d/motd.sh ${AlpineMotd}
+chmod a+x /etc/profile.d/motd.sh
+
+# Modify initial file.
+
+# To determine main hard drive.
+echo "AllDisks  "${AllDisks} >> \$sysroot/root/alpine.config
+
+# To determine mirror.
+echo "LinuxMirror  "${LinuxMirror} >> \$sysroot/root/alpine.config
+
+# To determine timezone.
+echo "TimeZone  "${TimeZone} >> \$sysroot/root/alpine.config
+
+# To determine root password.
+echo "tmpWORD  "${tmpWORD} >> \$sysroot/root/alpine.config
+
+# To determine ssh port.
+echo "sshPORT  "${sshPORT} >> \$sysroot/root/alpine.config
+
+# To determine testing repository
+echo "AlpineTestRepository  "${AlpineTestRepository} >> \$sysroot/root/alpine.config
+
+# To determine IPv4 static config
+echo "IPv4  "${IPv4} >> \$sysroot/root/alpine.config
+echo "MASK  "${MASK} >> \$sysroot/root/alpine.config
+echo "GATE  "${GATE} >> \$sysroot/root/alpine.config
+
+# To determine Ipv6 static config
+echo "ip6Addr  "${ip6Addr} >> \$sysroot/root/alpine.config
+echo "ip6Mask  "${ip6Mask} >> \$sysroot/root/alpine.config
+echo "ip6Gate  "${ip6Gate} >> \$sysroot/root/alpine.config
+
+# To Determine hostname
+echo "HostName  "$HostName >> \$sysroot/root/alpine.config
+
+# Download initial file.
+wget --no-check-certificate -O \$sysroot/etc/local.d/alpineConf.start ${AlpineInitFile}
+
+# Set initial file execute automatically.
+chmod a+x \$sysroot/etc/local.d/alpineConf.start
+ln -s /etc/init.d/local \$sysroot/etc/runlevels/default/
+EOF
+  fi
 elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
   RedHatUrl=""
   RepoBase=""
@@ -2315,14 +2489,28 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
 # --bootproto="xx" is for IPv4, --bootproto=dhcp is IPv4 DHCP, --bootproto=static is IPv4 Static. 
 # --ipv6="a vaild IPv6 address" is IPv6 Static, --ipv6=auto is IPv6 DHCP.
 # Reference: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/system_design_guide/kickstart-commands-and-options-reference_system-design-guide#network_kickstart-commands-for-network-configuration
-  if [[ "$Network4Config" == "isDHCP" ]] && [[ "$Network6Config" == "isDHCP" ]]; then
-    NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=auto --hostname=$(hostname) --onboot=on"
-  elif [[ "$Network4Config" == "isDHCP" ]] && [[ "$Network6Config" == "isStatic" ]]; then
-    NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=$ip6Addr/$ip6Mask --ipv6gateway=$ip6Gate --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
-  elif [[ "$Network4Config" == "isStatic" ]] && [[ "$Network6Config" == "isDHCP" ]]; then
-    NetConfigManually="network --device=$interface --bootproto=static --ip=$IPv4 --netmask=$MASK --gateway=$GATE --ipv6=auto --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
-  elif [[ "$Network4Config" == "isStatic" ]] && [[ "$Network6Config" == "isStatic" ]]; then
-    NetConfigManually="network --device=$interface --bootproto=static --ip=$IPv4 --netmask=$MASK --gateway=$GATE --ipv6=$ip6Addr/$ip6Mask --ipv6gateway=$ip6Gate --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
+  if [[ "$IPStackType" == "IPv4Stack" ]]; then
+    if [[ "$Network4Config" == "isDHCP" ]]; then
+      NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=auto --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
+    elif [[ "$Network4Config" == "isStatic" ]]; then
+      NetConfigManually="network --device=$interface --bootproto=static --ip=$IPv4 --netmask=$MASK --gateway=$GATE --ipv6=auto --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
+    fi
+  elif [[ "$IPStackType" == "BiStack" ]]; then
+    if [[ "$Network4Config" == "isDHCP" ]] && [[ "$Network6Config" == "isDHCP" ]]; then
+      NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=auto --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
+    elif [[ "$Network4Config" == "isDHCP" ]] && [[ "$Network6Config" == "isStatic" ]]; then
+      NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=$ip6Addr/$ip6Mask --ipv6gateway=$ip6Gate --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
+    elif [[ "$Network4Config" == "isStatic" ]] && [[ "$Network6Config" == "isDHCP" ]]; then
+      NetConfigManually="network --device=$interface --bootproto=static --ip=$IPv4 --netmask=$MASK --gateway=$GATE --ipv6=auto --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
+    elif [[ "$Network4Config" == "isStatic" ]] && [[ "$Network6Config" == "isStatic" ]]; then
+      NetConfigManually="network --device=$interface --bootproto=static --ip=$IPv4 --netmask=$MASK --gateway=$GATE --ipv6=$ip6Addr/$ip6Mask --ipv6gateway=$ip6Gate --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
+    fi
+  elif [[ "$IPStackType" == "IPv6Stack" ]]; then
+    if [[ "$Network6Config" == "isDHCP" ]]; then
+      NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=auto --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
+    elif [[ "$Network6Config" == "isStatic" ]]; then
+      NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=$ip6Addr/$ip6Mask --ipv6gateway=$ip6Gate --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
+    fi
   fi
 if [[ "$setAutoConfig" == "1" ]]; then
   cat >/tmp/boot/ks.cfg<<EOF
@@ -2541,6 +2729,18 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
 # The method for Debian series installer to search network adapter automatically is to set "d-i netcfg/choose_interface select auto" in preseed file.
 # The same behavior for grub2.
       BOOT_OPTION="auto=true $Add_OPTION hostname=$(hostname) domain=$linux_relese quiet"
+    elif [[ "$linux_relese" == 'alpinelinux' ]]; then
+# Reference: https://wiki.alpinelinux.org/wiki/PXE_boot
+# IPv4 dhcp config:
+# ip=dhcp or not assign it.
+# Allow a valid IPv4 static config:
+# ip=client-ip::geteway:mask::adapter::dns:
+# Sample:
+# ip=179.86.100.76::179.86.100.1:255.255.255.0::eth0::1.0.0.1 8.8.8.8:
+# Any of IPv6 address format can't be recognized.
+      [[ "$Network4Config" == "isStatic" ]] && Add_OPTION="ip=$IPv4::$GATE:$MASK::$interfaces::$ipDNS:" || Add_OPTION="ip=dhcp"
+      BOOT_OPTION="alpine_repo=$LinuxMirror/$DIST/main modloop=$LinuxMirror/$DIST/releases/$VER/netboot/modloop-lts $Add_OPTION"
+      # BOOT_OPTION="alpine_repo=$LinuxMirror/$DIST/main modloop=$LinuxMirror/$DIST/releases/$VER/netboot/modloop-lts ip=2001:19f0:000c:05b9:5400:04ff:fe74:7d40::fe80:0000:0000:0000:fc00:04ff:fe74:7d40:ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff::eth0::2606:4700:4700:0000:0000:0000:0000:1001:"
     elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
 # The method for Redhat series installer to search network adapter automatically is to set "ksdevice=link" in grub file of the current system for netboot install file which need to be loaded after restart.
 # The same behavior for grub2.
@@ -2696,7 +2896,10 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
       checkMem || Add_OPTION="$Add_OPTION lowmem=+0"
       [[ "$virtType" =~ "microsoft" && ! "$Add_OPTION" =~ "lowmem=+0" ]] && Add_OPTION="$Add_OPTION lowmem=+0"
       BOOT_OPTION="auto=true $Add_OPTION hostname=$(hostname) domain=$linux_relese quiet"
-    else
+    elif [[ "$linux_relese" == 'alpinelinux' ]]; then
+      [[ "$Network4Config" == "isStatic" ]] && Add_OPTION="ip=$IPv4::$GATE:$MASK::$interfaces::$ipDNS:" || Add_OPTION="ip=dhcp"
+      BOOT_OPTION="alpine_repo=$LinuxMirror/$DIST/main modloop=$LinuxMirror/$DIST/releases/$VER/netboot/modloop-lts $Add_OPTION"
+    elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
       BOOT_OPTION="inst.ks=file://ks.cfg $Add_OPTION inst.nomemcheck quiet"
     fi
     [[ "$setAutoConfig" == "0" ]] && sed -i 's/inst.ks=file:\/\/ks.cfg//' $GRUBDIR/$GRUBFILE
