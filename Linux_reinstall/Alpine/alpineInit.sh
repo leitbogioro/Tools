@@ -105,10 +105,10 @@ setup-timezone -i ${TimeZone}
 setup-ntp chrony
 
 # In arm netboot initramfs init,
-# If rtc hardware is detected, add hwclock for system, otherwise add swclock
-# This settings will be copied to the new system
-# But the new system boot from initramfs chroot can detect rtc hardwa1 correctly
-# So we use hwclock manually to fix it
+# if rtc hardware is detected, add hwclock for system, otherwise add swclock,
+# this settings will be copied to the new system,
+# but the new system boot from initramfs chroot can detect rtc hardwa1 correctly,
+# so we use hwclock manually to fix it.
 rc-update del swclock boot
 rc-update add hwclock boot
 
@@ -119,11 +119,11 @@ sed -ri 's/ash/bash/g' /etc/passwd
 apk update
 apk add axel bind-tools cpio curl e2fsprogs figlet grep grub gzip hdparm lsblk lsof net-tools parted python3 py3-pip udev util-linux virt-what vim wget
 
-# Use kernel "virt" if be executed on virtual machine
+# Use kernel "virt" if be executed on virtual machine.
 cp /etc/apk/world /tmp/world.old
 [[ -n "$(virt-what)" ]] && kernelOpt="-k virt"
 
-# Make a blank motd
+# Make a blank motd to avoid Alpine Linux writes a new one.
 echo "" >> /etc/motd
 
 # Install to hard drive.
