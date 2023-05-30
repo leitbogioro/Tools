@@ -8,6 +8,8 @@ Something about scripts
 
 ![2](2.jpg)
 
+![4](4.jpg)
+
 ## Download:
 <pre><code>wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh</code></pre>
 Servers in mainland of China:
