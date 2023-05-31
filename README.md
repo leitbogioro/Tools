@@ -76,7 +76,7 @@ If you need to add other parameters, version number must be assigned!
 <br />
 <br />
 
-**-fedora 36/37/38**: Fedora 36 and later
+**-fedora 37/38**: Fedora 37 and later
 <br />
 <br />
 
