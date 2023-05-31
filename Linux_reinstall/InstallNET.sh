@@ -1995,7 +1995,7 @@ if [[ -n "$tmpDIST" ]]; then
           exit 1
 # Fedora releases history:
 # https://en.wikipedia.org/wiki/Fedora_Linux_release_history
-        elif [[ "$linux_relese" == 'fedora' ]] && [[ "$RedHatSeries" -le "35" ]]; then
+        elif [[ "$linux_relese" == 'fedora' ]] && [[ "$RedHatSeries" -le "36" ]]; then
           echo -ne "\n${red}Warning:${plain} $Relese $DISTCheck is not supported!\n"
           exit 1
         fi
