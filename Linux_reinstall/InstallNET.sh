@@ -1099,7 +1099,7 @@ function getInterface() {
         if [[ "$IPStackType" == "IPv4Stack" ]]; then
           NetCfgFiles=`grep -wrl 'iface' | grep -wrl "auto\|dhcp\|static\|manual" | grep -wrl 'inet' "$Count""/" 2>/dev/null | grep -v "if-*" | grep -v "state" | grep -v "helper" | grep -v "template"`
         elif [[ "$IPStackType" == "BiStack" ]] || [[ "$IPStackType" == "IPv6Stack" ]]; then
-          NetCfgFiles=`grep -wrl 'iface' | grep -wrl "auto\|dhcp\|static\|manual" | grep -wrl 'inet' | grep -wrl 'inet6' "$Count""/" 2>/dev/null | grep -v "if-*" | grep -v "state" | grep -v "helper" | grep -v "template"`
+          NetCfgFiles=`grep -wrl 'iface' | grep -wrl "auto\|dhcp\|static\|manual" | grep -wrl 'inet' | grep -wrl 'inet6\|ip -6' "$Count""/" 2>/dev/null | grep -v "if-*" | grep -v "state" | grep -v "helper" | grep -v "template"`
         fi
         for Files in $NetCfgFiles; do
           if [[ `grep -w "$interface" "$Files"` != "" ]]; then
