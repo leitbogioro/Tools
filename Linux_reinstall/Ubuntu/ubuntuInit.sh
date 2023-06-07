@@ -26,9 +26,9 @@ AlpineTestRepository=$(grep "AlpineTestRepository" $confFile | awk '{print $2}')
 IPv4=$(grep "IPv4" $confFile | awk '{print $2}')
 MASK=$(grep "MASK" $confFile | awk '{print $2}')
 ipPrefix=$(grep "ipPrefix" $confFile | awk '{print $2}')
+GATE=$(grep "GATE" $confFile | awk '{print $2}')
 ipDNS1=$(grep "ipDNS1" $confFile | awk '{print $2}')
 ipDNS2=$(grep "ipDNS2" $confFile | awk '{print $2}')
-GATE=$(grep "GATE" $confFile | awk '{print $2}')
 ip6Addr=$(grep "ip6Addr" $confFile | awk '{print $2}')
 ip6Mask=$(grep "ip6Mask" $confFile | awk '{print $2}')
 ip6Gate=$(grep "ip6Gate" $confFile | awk '{print $2}')
@@ -79,6 +79,16 @@ sed -ri 's/tmpWORD/'${tmpWORD}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
 sed -ri 's/sshPORT/'${sshPORT}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
 sed -ri 's/TimeZone/'${TimeZone}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
 sed -ri 's/targetLinuxMirror/'${targetLinuxMirror}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+sed -ri 's/IPv4/'${IPv4}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+sed -ri 's/ipPrefix/'${ipPrefix}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+sed -ri 's/GATE/'${GATE}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+sed -ri 's/ipDNS1/'${ipDNS1}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+sed -ri 's/ipDNS2/'${ipDNS2}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+sed -ri 's/ip6Addr/'${ip6Addr}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+sed -ri 's/ip6Mask/'${ip6Mask}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+sed -ri 's/ip6Gate/'${ip6Gate}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+sed -ri 's/ip6DNS1/'${ip6DNS1}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+sed -ri 's/ip6DNS2/'${ip6DNS2}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
 
 # Reboot, the system in the memory will all be written to the hard drive.
 exec reboot
