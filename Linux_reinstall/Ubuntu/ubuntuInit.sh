@@ -48,7 +48,7 @@ apk update
 apk add bash coreutils e2fsprogs hdparm multipath-tools parted sed util-linux wget
 
 # start dd
-wget -qO- 'DDURL' | dd of="$AllDisks"
+wget -qO- "$DDURL" | dd of="$AllDisks"
 
 # get valid loop device
 loopDevice=$(echo $(losetup -f))
