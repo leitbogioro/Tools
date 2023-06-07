@@ -30,6 +30,7 @@ ip6Addr=$(grep "ip6Addr" $confFile | awk '{print $2}')
 ip6Mask=$(grep "ip6Mask" $confFile | awk '{print $2}')
 ip6Gate=$(grep "ip6Gate" $confFile | awk '{print $2}')
 HostName=$(grep "HostName" $confFile | awk '{print $2}')
+DDURL=$(grep "DDURL" $confFile | awk '{print $2}')
 
 # Reset configurations of repositories
 true >/etc/apk/repositories
@@ -47,7 +48,7 @@ apk update
 apk add bash coreutils e2fsprogs hdparm multipath-tools parted sed util-linux wget
 
 # start dd
-wget -qO- 'https://cloud-images.a.disk.re/Ubuntu/jammy-server-cloudimg-amd64.raw' | dd of="$AllDisks"
+wget -qO- 'DDURL' | dd of="$AllDisks"
 
 # get valid loop device
 loopDevice=$(echo $(losetup -f))
