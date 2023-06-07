@@ -71,7 +71,7 @@ mapperDevice=$(kpartx -av $loopDevice | grep "$loopDeviceNum" | head -n 1 | awk 
 mount /dev/mapper/$mapperDevice /mnt
 
 # download cloud init file
-wget --no-check-certificate -O /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg ''$cloudInitUrl''
+wget --no-check-certificate -O /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/CloudInit/dhcp_interfaces.cfg'
 
 # user config
 sed -ri 's/HostName/'${HostName}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
