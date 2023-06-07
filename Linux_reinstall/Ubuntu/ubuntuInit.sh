@@ -31,6 +31,7 @@ ip6Mask=$(grep "ip6Mask" $confFile | awk '{print $2}')
 ip6Gate=$(grep "ip6Gate" $confFile | awk '{print $2}')
 HostName=$(grep "HostName" $confFile | awk '{print $2}')
 DDURL=$(grep "DDURL" $confFile | awk '{print $2}')
+targetLinuxMirror=$(grep "$targetLinuxMirror" $confFile | awk '{print $2}')
 
 # Reset configurations of repositories
 true >/etc/apk/repositories
