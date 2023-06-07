@@ -66,5 +66,11 @@ mount /dev/mapper/$mapperDevice /mnt
 # download cloud init file
 wget --no-check-certificate -O /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/CloudInit/99-fake_cloud.cfg'
 
+# user config
+sed -ri 's/HostName/'${HostName}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+sed -ri 's/tmpWORD/'${tmpWORD}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+sed -ri 's/sshPORT/'${sshPORT}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+sed -ri 's/TimeZone/'${TimeZone}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+
 # Reboot, the system in the memory will all be written to the hard drive.
 exec reboot
