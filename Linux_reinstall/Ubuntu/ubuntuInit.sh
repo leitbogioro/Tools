@@ -35,7 +35,8 @@ ip6DNS1=$(grep "ip6DNS1" $confFile | awk '{print $2}')
 ip6DNS2=$(grep "ip6DNS2" $confFile | awk '{print $2}')
 HostName=$(grep "HostName" $confFile | awk '{print $2}')
 DDURL=$(grep "DDURL" $confFile | awk '{print $2}')
-targetLinuxMirror=$(grep "$targetLinuxMirror" $confFile | awk '{print $2}')
+targetLinuxMirror=$(grep "targetLinuxMirror" $confFile | awk '{print $2}')
+cloudInitUrl=$(grep "cloudInitUrl" $confFile | awk '{print $2}')
 
 # Reset configurations of repositories
 true >/etc/apk/repositories
@@ -69,7 +70,7 @@ mapperDevice=$(kpartx -av $loopDevice | grep "$loopDeviceNum" | head -n 1 | awk 
 mount /dev/mapper/$mapperDevice /mnt
 
 # download cloud init file
-wget --no-check-certificate -O /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/CloudInit/99-fake_cloud.cfg'
+wget --no-check-certificate -O /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg "$cloudInitUrl"
 
 # user config
 sed -ri 's/HostName/'${HostName}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
