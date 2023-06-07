@@ -10,7 +10,7 @@ addCommunityRepo() {
 }
 
 # Delete the initial script itself to prevent to be executed in the new system.
-rm -f /etc/local.d/alpineConf.start
+rm -f /etc/local.d/ubuntuConf.start
 rm -f /etc/runlevels/default/local
 
 # Get Ubuntu Linux configurations.
