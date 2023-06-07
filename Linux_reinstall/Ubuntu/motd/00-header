@@ -1,0 +1,45 @@
+#!/bin/sh
+#
+#    00-header - create the header of the MOTD
+#    Copyright (c) 2013 Nick Charlton
+#    Copyright (c) 2009-2010 Canonical Ltd.
+#
+#    Authors: Nick Charlton &amp;amp;amp;lt;hello@nickcharlton.net&amp;amp;amp;gt;
+#             Dustin Kirkland &amp;amp;amp;lt;kirkland@canonical.com&amp;amp;amp;gt;
+#    Modified by Oitibs: https://oitibs.com/?s=Debian+Dynamic+MOTD
+#    Modified by Leitbogioro: https://github.com/leitbogioro/
+#                             https://www.zhihu.com/column/originaltechnic
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License along
+#    with this program; if not, write to the Free Software Foundation, Inc.,
+#    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+#[ -r /etc/lsb-release ] ; /etc/lsb-release
+
+if [ -z "$DISTRIB_DESCRIPTION" ] ; [ -x /usr/bin/lsb_release ]; then
+  # Fall back to using the very slow lsb_release utility
+  DISTRIB_DESCRIPTION=$(lsb_release -s -d)
+fi
+
+figlet `cat /etc/issue | cut -d " " -f1`
+printf "\n"
+
+printf "Welcome to %s (%s %s)\n" "$DISTRIB_DESCRIPTION" "$(uname -r)" "$(uname -m)"
+printf "\n"
+printf "* Documentation:  https://help.ubuntu.com"
+printf "\n"
+printf "* Management:     https://landscape.canonical.com"
+printf "\n"
+printf "* Support:        https://ubuntu.com/advantage"
+printf "\n"
+printf "\n"
