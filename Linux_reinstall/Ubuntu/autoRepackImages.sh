@@ -7,7 +7,7 @@ loopDevice=$(echo $(losetup -f))
 loopDeviceNum=$(echo $(losetup -f) | cut -d'/' -f 3)
 websiteDir="/www/wwwroot/cloud-images.a.disk.re/Ubuntu"
 
-for distName in "jammy" "focal"; do
+for distName in "jammy" "focal" "bionic"; do
   for archVer in "amd64" "arm64"; do
     fileName="$distName-server-cloudimg-$archVer"
     wget --no-check-certificate -qO /root/$fileName.img "https://cloud-images.ubuntu.com/$distName/current/$fileName.img"
