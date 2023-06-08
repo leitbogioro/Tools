@@ -52,10 +52,10 @@ sed -i '$a\'${AlpineTestRepository}'' /etc/apk/repositories
 
 # Install necessary components.
 apk update
-apk add bash coreutils e2fsprogs hdparm multipath-tools parted sed util-linux wget
+apk add bash ca-certificates coreutils e2fsprogs hdparm multipath-tools parted sed util-linux wget
 
 # start dd
-wget -qO- "$DDURL" | dd of="$AllDisks"
+wget --no-check-certificate -qO- "$DDURL" | dd of="$AllDisks"
 
 # get valid loop device
 loopDevice=$(echo $(losetup -f))
