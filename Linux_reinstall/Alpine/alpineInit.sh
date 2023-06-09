@@ -4,13 +4,6 @@
 
 exec >/dev/tty0 2>&1
 
-addRepo() {
-  rm -rf /etc/apk/repositories
-  echo $LinuxMirror/$alpineVer/main >> /etc/apk/repositories
-  echo $LinuxMirror/$alpineVer/community >> /etc/apk/repositories
-  echo $LinuxMirror/edge/testing >> /etc/apk/repositories
-}
-
 # Delete the initial script itself to prevent to be executed in the new system.
 rm -f /etc/local.d/alpineConf.start
 rm -f /etc/runlevels/default/local
@@ -44,7 +37,10 @@ crond | default
 seedrng | boot
 
 # Config and add community and testing repository
-addRepo
+rm -rf /etc/apk/repositories
+echo $LinuxMirror/$alpineVer/main >> /etc/apk/repositories
+echo $LinuxMirror/$alpineVer/community >> /etc/apk/repositories
+echo $LinuxMirror/edge/testing >> /etc/apk/repositories
 
 # Reset configurations of repositories
 true >/etc/apk/repositories
