@@ -37,6 +37,7 @@ acpid | default
 crond | default
 seedrng | boot
 
+# Add community mirror
 echo $LinuxMirror/$alpineVer/community >>/etc/apk/repositories
 
 # Reset configurations of repositories
