@@ -82,7 +82,7 @@ If you need to add other parameters, version number must be assigned!
 <br />
 <br />
 
-**-ubuntu 20.04/22.04**: Ubuntu from 16.04 to 20.04
+**-ubuntu 20.04/22.04**: Ubuntu from 20.04 and later
 <br />
 <br />
 
