@@ -12,7 +12,7 @@ rm -f /etc/runlevels/default/local
 confFile="/root/alpine.config"
 
 # Read configs from initial file.
-AllDisks=$(grep "AllDisks" $confFile | awk '{print $2}')
+IncDisk=$(grep "IncDisk" $confFile | awk '{print $2}')
 LinuxMirror=$(grep "LinuxMirror" $confFile | awk '{print $2}')
 alpineVer=$(grep "alpineVer" $confFile | awk '{print $2}')
 TimeZone=$(grep "TimeZone" $confFile | awk '{print $2}')
@@ -49,14 +49,14 @@ apk update
 apk add bash ca-certificates coreutils e2fsprogs hdparm multipath-tools parted sed util-linux wget
 
 # start dd
-wget --no-check-certificate -qO- "$DDURL" | dd of="$AllDisks"
+wget --no-check-certificate -qO- "$DDURL" | dd of="$IncDisk"
 
 # get valid loop device
 loopDevice=$(echo $(losetup -f))
 loopDeviceNum=$(echo $(losetup -f) | cut -d'/' -f 3)
 
 # make a soft link between valid loop device and disk
-losetup $loopDevice $AllDisks
+losetup $loopDevice $IncDisk
 
 # get mapper partition
 mapperDevice=$(kpartx -av $loopDevice | grep "$loopDeviceNum" | head -n 1 | awk '{print $3}')
