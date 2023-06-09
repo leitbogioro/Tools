@@ -8,7 +8,7 @@ DISTRIB_DESCRIPTION=`cat /etc/os-release | grep -i "id=" | grep -vi "version\|li
 
 figlet "$DISTRIB_DESCRIPTION"
 printf "\n"
-printf "Welcome to %s %s (%s)!\n" "$DISTRIB_DESCRIPTION" "$(uname -o)" "$(uname -r) $(uname -m)"
+printf "Welcome to %s %s (%s).\n" "$DISTRIB_DESCRIPTION" "$(uname -o)" "$(uname -r) $(uname -m)"
 printf "\n"
 printf "The Alpine Wiki contains a large amount of how-to guides and general"
 printf "\n"
