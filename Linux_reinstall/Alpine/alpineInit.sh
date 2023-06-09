@@ -42,8 +42,8 @@ echo $LinuxMirror/$alpineVer/main >> /etc/apk/repositories
 echo $LinuxMirror/$alpineVer/community >> /etc/apk/repositories
 echo $LinuxMirror/edge/testing >> /etc/apk/repositories
 true >/etc/apk/repositories
-apk update
 setup-apkcache /var/cache/apk
+apk update
 
 # Synchronize time from hardware
 hwclock -s
