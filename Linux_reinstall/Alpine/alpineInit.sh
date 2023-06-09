@@ -36,15 +36,13 @@ acpid | default
 crond | default
 seedrng | boot
 
-# Config and add community and testing repository
+# Reset configurations of repositories and add community and testing repository
 rm -rf /etc/apk/repositories
 echo $LinuxMirror/$alpineVer/main >> /etc/apk/repositories
 echo $LinuxMirror/$alpineVer/community >> /etc/apk/repositories
 echo $LinuxMirror/edge/testing >> /etc/apk/repositories
-
-# Reset configurations of repositories
 true >/etc/apk/repositories
-setup-apkrepos -1
+apk update
 setup-apkcache /var/cache/apk
 
 # Synchronize time from hardware
@@ -108,7 +106,6 @@ rc-update add hwclock boot
 sed -ri 's/ash/bash/g' /etc/passwd
 
 # Insall more components.
-apk update
 apk add axel bind-tools cpio curl e2fsprogs figlet grep grub gzip hdparm lsblk lsof net-tools parted python3 py3-pip udev util-linux virt-what vim wget
 
 # Use kernel "virt" if be executed on virtual machine.
