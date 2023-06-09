@@ -4,11 +4,6 @@
 
 exec >/dev/tty0 2>&1
 
-addCommunityRepo() {
-  alpineVer=$(cut -d. -f1,2 </etc/alpine-release)
-  echo $LinuxMirror/v$alpineVer/community >>/etc/apk/repositories
-}
-
 # Delete the initial script itself to prevent to be executed in the new system.
 rm -f /etc/local.d/ubuntuConf.start
 rm -f /etc/runlevels/default/local
@@ -19,10 +14,10 @@ confFile="/root/alpine.config"
 # Read configs from initial file.
 AllDisks=$(grep "AllDisks" $confFile | awk '{print $2}')
 LinuxMirror=$(grep "LinuxMirror" $confFile | awk '{print $2}')
+alpineVer=$(grep "alpineVer" $confFile | awk '{print $2}')
 TimeZone=$(grep "TimeZone" $confFile | awk '{print $2}')
 tmpWORD=$(grep "tmpWORD" $confFile | awk '{print $2}')
 sshPORT=$(grep "sshPORT" $confFile | awk '{print $2}')
-AlpineTestRepository=$(grep "AlpineTestRepository" $confFile | awk '{print $2}')
 IPv4=$(grep "IPv4" $confFile | awk '{print $2}')
 MASK=$(grep "MASK" $confFile | awk '{print $2}')
 ipPrefix=$(grep "ipPrefix" $confFile | awk '{print $2}')
@@ -41,14 +36,13 @@ cloudInitUrl=$(grep "cloudInitUrl" $confFile | awk '{print $2}')
 
 # Reset configurations of repositories
 true >/etc/apk/repositories
-setup-apkrepos -1
+setup-apkrepos $LinuxMirror/$alpineVer/main
 setup-apkcache /var/cache/apk
 
-# Delete comment in the repositories
-sed -i 's/#//' /etc/apk/repositories
-
+# Add community mirror
+sed -i '$a\'$LinuxMirror'/'$alpineVer'/community' /etc/apk/repositories
 # Add edge testing to the repositories
-sed -i '$a\'${AlpineTestRepository}'' /etc/apk/repositories
+sed -i '$a\'$LinuxMirror'/edge/testing' /etc/apk/repositories
 
 # Install necessary components.
 apk update
