@@ -16,7 +16,7 @@ apk add bash bash bash-doc bash-completion coreutils sed
 confFile="/root/alpine.config"
 
 # Read configs from initial file.
-AllDisks=$(grep "AllDisks" $confFile | awk '{print $2}')
+IncDisk=$(grep "IncDisk" $confFile | awk '{print $2}')
 LinuxMirror=$(grep "LinuxMirror" $confFile | awk '{print $2}')
 alpineVer=$(grep "alpineVer" $confFile | awk '{print $2}')
 TimeZone=$(grep "TimeZone" $confFile | awk '{print $2}')
@@ -120,7 +120,7 @@ echo "" >> /etc/motd
 
 # Install to hard drive.
 export BOOTLOADER="grub"
-printf 'y' | setup-disk -m sys $kernelOpt -s 0 $AllDisks
+printf 'y' | setup-disk -m sys $kernelOpt -s 0 $IncDisk
 
 # Reboot, the system in the memory will all be written to the hard drive.
 exec reboot
