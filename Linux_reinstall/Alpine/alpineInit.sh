@@ -4,9 +4,11 @@
 
 exec >/dev/tty0 2>&1
 
-addCommunityRepo() {
-  alpineVer=$(cut -d. -f1,2 </etc/alpine-release)
-  echo $LinuxMirror/v$alpineVer/community >>/etc/apk/repositories
+addRepo() {
+  rm -rf /etc/apk/repositories
+  echo $LinuxMirror/$alpineVer/main >> /etc/apk/repositories
+  echo $LinuxMirror/$alpineVer/community >> /etc/apk/repositories
+  echo $LinuxMirror/edge/testing >> /etc/apk/repositories
 }
 
 # Delete the initial script itself to prevent to be executed in the new system.
@@ -23,10 +25,10 @@ confFile="/root/alpine.config"
 # Read configs from initial file.
 AllDisks=$(grep "AllDisks" $confFile | awk '{print $2}')
 LinuxMirror=$(grep "LinuxMirror" $confFile | awk '{print $2}')
+alpineVer=$(grep "alpineVer" $confFile | awk '{print $2}')
 TimeZone=$(grep "TimeZone" $confFile | awk '{print $2}')
 tmpWORD=$(grep "tmpWORD" $confFile | awk '{print $2}')
 sshPORT=$(grep "sshPORT" $confFile | awk '{print $2}')
-AlpineTestRepository=$(grep "AlpineTestRepository" $confFile | awk '{print $2}')
 IPv4=$(grep "IPv4" $confFile | awk '{print $2}')
 MASK=$(grep "MASK" $confFile | awk '{print $2}')
 GATE=$(grep "GATE" $confFile | awk '{print $2}')
@@ -41,19 +43,13 @@ acpid | default
 crond | default
 seedrng | boot
 
-# Add virt-what to community repository
-addCommunityRepo
+# Config and add community and testing repository
+addRepo
 
 # Reset configurations of repositories
 true >/etc/apk/repositories
 setup-apkrepos -1
 setup-apkcache /var/cache/apk
-
-# Delete comment in the repositories
-sed -i 's/#//' /etc/apk/repositories
-
-# Add edge testing to the repositories
-sed -i '$a\'${AlpineTestRepository}'' /etc/apk/repositories
 
 # Synchronize time from hardware
 hwclock -s
