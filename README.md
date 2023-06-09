@@ -10,6 +10,8 @@ Something about scripts
 
 ![4](4.jpg)
 
+![5](5.jpg)
+
 ## Download:
 <pre><code>wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh</code></pre>
 Servers in mainland of China:
@@ -45,7 +47,7 @@ If you need to add other parameters, version number must be assigned!
 <pre><code>bash InstallNET.sh -rockylinux</code></pre>
 ### Fedora 38
 <pre><code>bash InstallNET.sh -fedora</code></pre>
-### Ubuntu 20.04
+### Ubuntu 22.04
 <pre><code>bash InstallNET.sh -ubuntu</code></pre>
 
 ## Fully useage sample
@@ -80,7 +82,7 @@ If you need to add other parameters, version number must be assigned!
 <br />
 <br />
 
-**-ubuntu 16.04/18.04/20.04**: Ubuntu from 16.04 to 20.04
+**-ubuntu 20.04/22.04**: Ubuntu from 16.04 to 20.04
 <br />
 <br />
 
