@@ -42,13 +42,11 @@ echo $LinuxMirror/$alpineVer/community >>/etc/apk/repositories
 
 # Reset configurations of repositories
 true >/etc/apk/repositories
-setup-apkrepos -f
+setup-apkrepos $LinuxMirror/$alpineVer/main
 setup-apkcache /var/cache/apk
 
-# Delete comment in the repositories
-sed -i 's/#//' /etc/apk/repositories
-
 # Add edge testing to the repositories
+sed -i '$a\'$LinuxMirror'/'$alpineVer'/community' /etc/apk/repositories
 sed -i '$a\'$LinuxMirror'/edge/testing' /etc/apk/repositories
 
 # Synchronize time from hardware
