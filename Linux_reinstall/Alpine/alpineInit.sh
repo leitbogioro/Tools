@@ -36,15 +36,6 @@ acpid | default
 crond | default
 seedrng | boot
 
-# Reset configurations of repositories and add community and testing repository
-rm -rf /etc/apk/repositories
-echo $LinuxMirror/$alpineVer/main >> /etc/apk/repositories
-echo $LinuxMirror/$alpineVer/community >> /etc/apk/repositories
-echo $LinuxMirror/edge/testing >> /etc/apk/repositories
-true >/etc/apk/repositories
-setup-apkcache /var/cache/apk
-apk update
-
 # Synchronize time from hardware
 hwclock -s
 
@@ -104,6 +95,15 @@ rc-update add hwclock boot
 
 # Replace "ash" to "bash" as the default shell of the Alpine Linux.
 sed -ri 's/ash/bash/g' /etc/passwd
+
+# Reset configurations of repositories and add community and testing repository
+rm -rf /etc/apk/repositories
+echo $LinuxMirror/$alpineVer/main >> /etc/apk/repositories
+echo $LinuxMirror/$alpineVer/community >> /etc/apk/repositories
+echo $LinuxMirror/edge/testing >> /etc/apk/repositories
+true >/etc/apk/repositories
+setup-apkcache /var/cache/apk
+apk update
 
 # Insall more components.
 apk add axel bind-tools cpio curl e2fsprogs figlet grep grub gzip hdparm lsblk lsof net-tools parted python3 py3-pip udev util-linux virt-what vim wget
