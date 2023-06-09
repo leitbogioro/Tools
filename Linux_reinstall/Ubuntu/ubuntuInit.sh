@@ -8,6 +8,10 @@ exec >/dev/tty0 2>&1
 rm -f /etc/local.d/ubuntuConf.start
 rm -f /etc/runlevels/default/local
 
+# Install necessary components.
+apk update
+apk add bash bash bash-doc bash-completion coreutils sed
+
 # Get Ubuntu Linux configurations.
 confFile="/root/alpine.config"
 
@@ -44,9 +48,12 @@ sed -i '$a\'$LinuxMirror'/'$alpineVer'/community' /etc/apk/repositories
 # Add edge testing to the repositories
 sed -i '$a\'$LinuxMirror'/edge/testing' /etc/apk/repositories
 
+# Synchronize time from hardware
+hwclock -s
+
 # Install necessary components.
 apk update
-apk add bash ca-certificates coreutils e2fsprogs hdparm multipath-tools parted sed util-linux wget
+apk add ca-certificates e2fsprogs hdparm multipath-tools parted util-linux wget
 
 # start dd
 wget --no-check-certificate -qO- "$DDURL" | dd of="$IncDisk"
