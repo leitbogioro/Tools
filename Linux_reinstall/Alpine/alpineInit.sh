@@ -36,6 +36,11 @@ acpid | default
 crond | default
 seedrng | boot
 
+# Reset configurations of repositories
+true >/etc/apk/repositories
+setup-apkrepos -1
+setup-apkcache /var/cache/apk
+
 # Synchronize time from hardware
 hwclock -s
 
