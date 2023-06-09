@@ -20,7 +20,7 @@ printf "\n"
 printf "You can setup the system with the command: setup-alpine"
 printf "\n"
 printf "\n"
-printf "You may change this message by editing /etc/profile.d/motd.sh."
+printf "You may change this message by editing /etc/profile.d/motd.sh"
 printf "\n"
 printf "\n"
 
