@@ -4,11 +4,6 @@
 
 exec >/dev/tty0 2>&1
 
-addCommunityRepo() {
-  alpineVer=$(cut -d. -f1,2 </etc/alpine-release)
-  echo $LinuxMirror/v$alpineVer/community >>/etc/apk/repositories
-}
-
 # Delete the initial script itself to prevent to be executed in the new system.
 rm -f /etc/local.d/alpineConf.start
 rm -f /etc/runlevels/default/local
@@ -23,6 +18,7 @@ confFile="/root/alpine.config"
 # Read configs from initial file.
 AllDisks=$(grep "AllDisks" $confFile | awk '{print $2}')
 LinuxMirror=$(grep "LinuxMirror" $confFile | awk '{print $2}')
+alpineVer=$(grep "alpineVer" $confFile | awk '{print $2}')
 TimeZone=$(grep "TimeZone" $confFile | awk '{print $2}')
 tmpWORD=$(grep "tmpWORD" $confFile | awk '{print $2}')
 sshPORT=$(grep "sshPORT" $confFile | awk '{print $2}')
@@ -41,8 +37,7 @@ acpid | default
 crond | default
 seedrng | boot
 
-# Add virt-what to community repository
-addCommunityRepo
+echo $LinuxMirror/$alpineVer/community >>/etc/apk/repositories
 
 # Reset configurations of repositories
 true >/etc/apk/repositories
@@ -53,7 +48,7 @@ setup-apkcache /var/cache/apk
 sed -i 's/#//' /etc/apk/repositories
 
 # Add edge testing to the repositories
-sed -i '$a\'${AlpineTestRepository}'' /etc/apk/repositories
+sed -i '$a\'$LinuxMirror'/edge/testing' /etc/apk/repositories
 
 # Synchronize time from hardware
 hwclock -s
