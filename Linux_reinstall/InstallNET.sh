@@ -31,6 +31,7 @@ export tmpURL=''
 export tmpWORD=''
 export tmpMirror=''
 export tmpDHCP=''
+export targetRelese=''
 export TimeZone=''
 export ipAddr=''
 export ipMask=''
@@ -89,8 +90,9 @@ while [[ $# -ge 1 ]]; do
       ;;
     -ubuntu|-Ubuntu)
       shift
-      Relese='Ubuntu'
-      tmpDIST="$1"
+      ddMode='1'
+      finalDIST="$1"
+      targetRelese='Ubuntu'
       shift
       ;;
     -kali|-Kali)
@@ -310,10 +312,10 @@ function checkCN() {
   if [[ "$IsCN" == "cn" ]]; then
     TimeZone="Asia/Shanghai"
     if [[ "$4" == "BiStack" || "$4" == "IPv6Stack" ]]; then
-      ipDNS="202.38.93.95 101.6.6.6"
-      ip6DNS="2001:da8:8000:1:202:120:2:101 2001:da8::666"
+      ipDNS="119.29.29.29 223.6.6.6"
+      ip6DNS="2402:4e00:: 2400:3200::1"
     else
-      ipDNS="202.38.93.95 101.6.6.6"
+      ipDNS="119.29.29.29 223.6.6.6"
     fi
   fi
 }
@@ -386,9 +388,9 @@ function selectMirror() {
   mirrorStatus=0
   declare -A MirrorBackup
   if [[ "$IsCN" == "cn" ]]; then
-    MirrorBackup=(["debian0"]="" ["debian1"]="http://mirror.nju.edu.cn/debian" ["debian2"]="http://mirrors.hit.edu.cn/debian" ["debian3"]="https://mirrors.aliyun.com/debian-archive/debian" ["ubuntu0"]="" ["ubuntu1"]="https://mirrors.ustc.edu.cn/ubuntu" ["ubuntu2"]="http://mirrors.xjtu.edu.cn/ubuntu" ["kali0"]="" ["kali1"]="https://mirrors.tuna.tsinghua.edu.cn/kali" ["kali2"]="http://mirrors.zju.edu.cn/kali" ["alpinelinux0"]="" ["alpinelinux1"]="http://mirrors.nju.edu.cn/alpine" ["alpinelinux2"]="http://mirrors.tuna.tsinghua.edu.cn/alpine" ["centos0"]="" ["centos1"]="https://mirrors.ustc.edu.cn/centos-stream" ["centos2"]="https://mirrors.tuna.tsinghua.edu.cn/centos" ["centos3"]="http://mirror.nju.edu.cn/centos-altarch" ["centos4"]="https://mirrors.tuna.tsinghua.edu.cn/centos-vault" ["fedora0"]="" ["fedora1"]="https://mirrors.bfsu.edu.cn/fedora" ["fedora2"]="https://mirrors.tuna.tsinghua.edu.cn/fedora" ["rockylinux0"]="" ["rockylinux1"]="http://mirror.nju.edu.cn/rocky" ["rockylinux2"]="http://mirrors.sdu.edu.cn/rocky" ["almalinux0"]="" ["almalinux1"]="https://mirror.sjtu.edu.cn/almalinux" ["almalinux2"]="http://mirrors.neusoft.edu.cn/almalinux")
+    MirrorBackup=(["debian0"]="" ["debian1"]="http://mirror.nju.edu.cn/debian" ["debian2"]="http://mirrors.hit.edu.cn/debian" ["debian3"]="https://mirrors.aliyun.com/debian-archive/debian" ["ubuntu0"]="" ["ubuntu1"]="https://mirrors.ustc.edu.cn/ubuntu" ["ubuntu2"]="http://mirrors.xjtu.edu.cn/ubuntu" ["kali0"]="" ["kali1"]="https://mirrors.tuna.tsinghua.edu.cn/kali" ["kali2"]="http://mirrors.zju.edu.cn/kali" ["alpinelinux0"]="" ["alpinelinux1"]="http://mirror.nju.edu.cn/alpine" ["alpinelinux2"]="http://mirrors.tuna.tsinghua.edu.cn/alpine" ["centos0"]="" ["centos1"]="https://mirrors.ustc.edu.cn/centos-stream" ["centos2"]="https://mirrors.tuna.tsinghua.edu.cn/centos" ["centos3"]="http://mirror.nju.edu.cn/centos-altarch" ["centos4"]="https://mirrors.tuna.tsinghua.edu.cn/centos-vault" ["fedora0"]="" ["fedora1"]="https://mirrors.bfsu.edu.cn/fedora" ["fedora2"]="https://mirrors.tuna.tsinghua.edu.cn/fedora" ["rockylinux0"]="" ["rockylinux1"]="http://mirror.nju.edu.cn/rocky" ["rockylinux2"]="http://mirrors.sdu.edu.cn/rocky" ["almalinux0"]="" ["almalinux1"]="https://mirror.sjtu.edu.cn/almalinux" ["almalinux2"]="http://mirrors.neusoft.edu.cn/almalinux")
   else
-    MirrorBackup=(["debian0"]="" ["debian1"]="http://deb.debian.org/debian" ["debian2"]="http://ftp.yz.yamagata-u.ac.jp/pub/linux/debian" ["debian3"]="http://archive.debian.org/debian" ["ubuntu0"]="" ["ubuntu1"]="http://archive.ubuntu.com/ubuntu" ["ubuntu2"]="http://ports.ubuntu.com" ["kali0"]="" ["kali1"]="https://mirrors.ocf.berkeley.edu/kali" ["kali2"]="http://ftp.jaist.ac.jp/pub/Linux/kali" ["alpinelinux0"]="" ["alpinelinux1"]="http://dl-cdn.alpinelinux.org/alpine" ["alpinelinux2"]="http://ap.edge.kernel.org/alpine" ["centos0"]="" ["centos1"]="http://mirror.centos.org/centos" ["centos2"]="http://mirror.stream.centos.org" ["centos3"]="http://mirror.centos.org/altarch" ["centos4"]="http://vault.centos.org" ["fedora0"]="" ["fedora1"]="https://download-ib01.fedoraproject.org/pub/fedora/linux" ["fedora2"]="https://download-cc-rdu01.fedoraproject.org/pub/fedora/linux" ["rockylinux0"]="" ["rockylinux1"]="http://download.rockylinux.org/pub/rocky" ["rockylinux2"]="http://ftp.udx.icscoe.jp/Linux/rocky" ["almalinux0"]="" ["almalinux1"]="http://repo.almalinux.org/almalinux" ["almalinux2"]="http://ftp.iij.ad.jp/pub/linux/almalinux")
+    MirrorBackup=(["debian0"]="" ["debian1"]="http://deb.debian.org/debian" ["debian2"]="http://ftp.yz.yamagata-u.ac.jp/pub/linux/debian" ["debian3"]="http://archive.debian.org/debian" ["ubuntu0"]="" ["ubuntu1"]="http://archive.ubuntu.com/ubuntu" ["ubuntu2"]="http://ports.ubuntu.com" ["kali0"]="" ["kali1"]="https://mirrors.ocf.berkeley.edu/kali" ["kali2"]="http://ftp.jaist.ac.jp/pub/Linux/kali" ["alpinelinux0"]="" ["alpinelinux1"]="http://dl-cdn.alpinelinux.org/alpine" ["alpinelinux2"]="http://ftp.udx.icscoe.jp/Linux/alpine" ["centos0"]="" ["centos1"]="http://mirror.centos.org/centos" ["centos2"]="http://mirror.stream.centos.org" ["centos3"]="http://mirror.centos.org/altarch" ["centos4"]="http://vault.centos.org" ["fedora0"]="" ["fedora1"]="https://download-ib01.fedoraproject.org/pub/fedora/linux" ["fedora2"]="https://download-cc-rdu01.fedoraproject.org/pub/fedora/linux" ["rockylinux0"]="" ["rockylinux1"]="http://download.rockylinux.org/pub/rocky" ["rockylinux2"]="http://ftp.udx.icscoe.jp/Linux/rocky" ["almalinux0"]="" ["almalinux1"]="http://repo.almalinux.org/almalinux" ["almalinux2"]="http://ftp.iij.ad.jp/pub/linux/almalinux")
   fi
   echo "$New" | grep -q '^http://\|^https://\|^ftp://' && MirrorBackup[${Relese}0]="${New%*/}"
   for mirror in $(echo "${!MirrorBackup[@]}" |sed 's/\ /\n/g' |sort -n |grep "^$Relese"); do
@@ -479,8 +481,8 @@ function getDisk() {
   [[ "$disks" == "" ]] && disks=`lsblk | sed 's/[[:space:]]*$//g' | grep "disk" | grep -i "g\|t\|p\|e\|z\|y" | cut -d' ' -f1 | head -1`
   echo "${disks: -1}" | [[ -n "`sed -n '/^[0-9][0-9]*$/p'`" ]] && disks=`echo "$disks" | sed 's/[0-9]//g'`
   [ -n "$disks" ] || echo ""
-  echo "$disks" > /dev/null | grep -q "/dev"
-  [ $? -eq 0 ] && echo "$disks" > /dev/null || echo "/dev/$disks" > /dev/null
+  echo "$disks" | grep -q "/dev"
+  [ $? -eq 0 ] && IncDisk="$disks" || IncDisk="/dev/$disks"
   AllDisks=""
 # Find all disks on this server.
   for Count in `lsblk | sed 's/[[:space:]]*$//g' | grep "disk$" | cut -d' ' -f1 | grep -v "fd[0-9]*\|sr[0-9]*"`; do
@@ -501,10 +503,12 @@ function diskType() {
 
 # $1 is timezone checkfile direction, $2 $3 $4 are api keys.
 function getUserTimezone() {
-  if [[ "$TimeZone" == "" ]]; then
-    GuestIP=`who am i | awk '{print $5}' | sed 's/(//g' | sed 's/)//g'`
+  if [[ ! "$TimeZone" =~ ^[a-zA-Z] ]]; then
+    loginUser=`who am i | awk '{print $1}' | sed 's/(//g' | sed 's/)//g'`
+    [[ -z "$loginUser" ]] && loginUser="root"
 # Alpine Linux doesn't support "who am i".
-    [[ "$GuestIP" == "" ]] && GuestIP=`netstat -anp | grep -i 'sshd: root' | awk '{print $5}' | head -n 1 | cut -d':' -f'1'`
+    GuestIP=`netstat -anp | grep -i 'sshd: '$loginUser'' | grep -iw 'tcp' | awk '{print $5}' | head -n 1 | cut -d':' -f'1'`
+    [[ "$GuestIP" == "" ]] && GuestIP=`netstat -anpW | grep -i 'sshd: '$loginUser'' | grep -iw 'tcp6' | awk '{print $5}' | head -n 1 | awk -F':' '{for (i=1;i<=NF-1;i++)printf("%s:", $i);print ""}' | sed 's/.$//'`
     for Count in "$2" "$3" "$4"; do
       [[ "$TimeZone" == "Asia/Shanghai" ]] && break
       tmpApi=`echo -n "$Count" | base64 -d`
@@ -571,12 +575,12 @@ function checkGrub() {
   fi
 }
 
-# $1 is $linux_relese, $2 is $RedHatSeries
+# $1 is $linux_relese, $2 is $RedHatSeries, $3 is $targetRelese
 function checkMem() {
   TotalMem1=$(cat /proc/meminfo | grep "^MemTotal:" | sed 's/kb//i' | grep -o "[0-9]*" | awk -F' ' '{print $NF}')
   TotalMem2=$(free -k | grep -wi "mem*" | awk '{printf $2}')
 # In any servers that total memory below 512mb install any OS, the low memory installation will be force enabled.
-  [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ "$linux_relese" == 'kali' ]] && {
+  [[ "$1" == 'debian' ]] || [[ "$1" == 'ubuntu' ]] || [[ "$1" == 'kali' ]] && {
     [[ "$TotalMem1" -le "1008600" || "$TotalMem2" -le "1008600" ]] && return 1 || return 0
   }
 # Without the function of OS re-installation templates in control panel which provided by cloud companies(many companies even have not).
@@ -614,6 +618,12 @@ function checkMem() {
         echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 2GB!\n"
         exit 1
       fi
+    fi
+  }
+  [[ "$1" == 'alpinelinux' || "$3" == 'Ubuntu' ]] && {
+    if [[ "$TotalMem1" -le "923580" || "$TotalMem2" -le "923580" ]]; then
+      echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 1GB!\n"
+      exit 1
     fi
   }
 }
@@ -746,14 +756,14 @@ function checkSys() {
 # Try to remove comments of any valid mirror.
     sed -i 's/#//' /etc/apk/repositories
 # Add community mirror.
-    [[ ! `grep -i "community" /etc/apk/repositories` ]] && sed -i '$a\http://dl-cdn.alpinelinux.org/alpine/v$CurrentAlpineVer/community' /etc/apk/repositories
+    [[ ! `grep -i "community" /etc/apk/repositories` ]] && sed -i '$a\http://ftp.udx.icscoe.jp/Linux/alpine/v'${CurrentAlpineVer}'/community' /etc/apk/repositories
 # Add testing mirror.
-    [[ ! `grep -i "testing" /etc/apk/repositories` ]] && sed -i '$a\http://dl-cdn.alpinelinux.org/alpine/edge/testing' /etc/apk/repositories
+    [[ ! `grep -i "testing" /etc/apk/repositories` ]] && sed -i '$a\http://ftp.udx.icscoe.jp/Linux/alpine/edge/testing' /etc/apk/repositories
 # Alpine Linux use "apk" as package management.
     apk update
     apk add bash bind-tools coreutils cpio curl efibootmgr file grep gzip ipcalc jq lsblk net-tools sed shadow tzdata wget xz
 # Use bash to replace ash.
-    sed -i 's/root:\/bin\/ash/root:\/bin\/bash/g' /root/passwd
+    sed -i 's/root:\/bin\/ash/root:\/bin\/bash/g' /etc/passwd
   }
 }
 
@@ -1509,6 +1519,26 @@ EOF
   fi
 }
 
+alpineInstallOrDdAdditionalFiles() {
+  AlpineInitFile="$1"
+  AlpineDnsFile="$2"
+  AlpineMotd="$3"
+  AlpineInitFileName="alpineConf.start"
+  [[ "$targetRelese" == "Ubuntu" ]] && {
+    if [[ "$ubuntuVER" == "amd64" ]]; then
+      targetLinuxMirror="$4"
+    elif [[ "$ubuntuVER" == "arm64" ]]; then
+      targetLinuxMirror="$5"
+    fi
+    AlpineInitFile="$6"
+    AlpineInitFileName="ubuntuConf.start"
+    ipDNS1=$(echo $ipDNS | cut -d ' ' -f 1)
+    ipDNS2=$(echo $ipDNS | cut -d ' ' -f 2)
+    ip6DNS1=$(echo $ip6DNS | cut -d ' ' -f 1)
+    ip6DNS2=$(echo $ip6DNS | cut -d ' ' -f 2)
+  }
+}
+
 checkSys
 
 # Get the name of network adapter($interface).
@@ -1560,13 +1590,19 @@ fi
 linux_relese=$(echo "$Relese" |sed 's/\ //g' |sed -r 's/(.*)/\L\1/')
 clear && echo -ne "\n${aoiBlue}# Check Dependence${plain}\n\n"
 
-dependence awk,basename,cat,cpio,curl,cut,dig,dirname,file,find,grep,gzip,ip,lsblk,sed,wget,xz;
+dependence awk,basename,cat,cpio,curl,cut,dig,dirname,file,find,grep,gzip,iconv,ip,lsblk,sed,wget,xz;
 
 [[ "$ddMode" == '1' ]] && {
-  dependence iconv
-  linux_relese='debian'
-  tmpDIST='bookworm'
-  tmpVER='amd64'
+  if [[ "$targetRelese" == 'Ubuntu' ]]; then
+    Relese='AlpineLinux'
+    linux_relese='alpinelinux'
+    tmpDIST='edge'
+    VER="$VER"
+  else
+    linux_relese='debian'
+    tmpDIST='bookworm'
+    tmpVER='amd64'
+  fi
 }
 
 ipDNS=$(checkDNS "$ipDNS")
@@ -1675,6 +1711,7 @@ if [[ "$setNet" == "0" ]]; then
     if [[ `echo $ipAddr | cut -d'.' -f 1,2,3` == `echo $ipGate | cut -d'.' -f 1,2,3` ]]; then
       tmpIpMask="24"
     fi
+    ipPrefix="$tmpIpMask"
     ipMask=`netmask "$tmpIpMask"`
   }
 # So in summary of the IPv4 sample in above, we should assign subnet mask "128.0.0.1"(prefix is "1") for it.
@@ -1818,6 +1855,7 @@ echo -ne "\n[${yellow}Server Stack${plain}]  $IPStackType\n"
 [[ "$ip6Addr" && "$IPStackType" != "IPv4Stack" ]] && echo -e "[${yellow}IPv6     DNS${plain}]  ""$ip6DNS" || echo -e "[${yellow}IPv6     DNS${plain}]  ""N/A"
 
 getUserTimezone "/root/timezonelists" "ZGEyMGNhYjhhMWM2NDJlMGE0YmZhMDVmMDZlNzBmN2E=" "ZTNlMjBiN2JjOTE2NGY2YjllNzUzYWU5ZDFjYjdjOTc=" "MWQ2NGViMGQ4ZmNlNGMzYTkxYjNiMTdmZDMxODQwZDc="
+[[ -z "$TimeZone" ]] && TimeZone="Asia/Tokyo"
 echo -ne "\n${aoiBlue}# User Timezone${plain}\n\n"
 echo "$TimeZone"
 
@@ -1829,11 +1867,9 @@ echo -ne "\n${aoiBlue}# SSH Port${plain}\n\n"
 echo "$sshPORT"
 
 getDisk
-tempDisk=`getDisk`
-[ -n "$tempDisk" ] && IncDisk="$tempDisk"
 [[ "$setRaid" == "0" ]] && IncDisk="/dev/sda"
 echo -ne "\n${aoiBlue}# Installing Disks${plain}\n\n"
-echo "$AllDisks"
+[[ "$setDisk" == "all" ]] && echo "$AllDisks" || echo "$IncDisk"
 
 # Get architecture of current os automatically
 ArchName=`uname -m`
@@ -1891,6 +1927,9 @@ fi
   [ "$Relese" == 'AlmaLinux' ] && tmpDIST='9'
   [ "$Relese" == 'Fedora' ] && tmpDIST='38'
 }
+[[ -z "$finalDIST" ]] && {
+  [ "$targetRelese" == 'Ubuntu' ] && finalDIST='22.04'
+}
 
 if [[ -n "$tmpDIST" ]]; then
   if [[ "$Relese" == 'Debian' ]]; then
@@ -1901,8 +1940,8 @@ if [[ -n "$tmpDIST" ]]; then
     [[ $? -eq '0' ]] && {
       isDigital="$(echo "$DIST" |grep -o '[\.0-9]\{1,\}' |sed -n '1h;1!H;$g;s/\n//g;$p' |cut -d'.' -f1)";
       [[ -n $isDigital ]] && {
-        [[ "$isDigital" == '7' ]] && DIST='wheezy'
-        [[ "$isDigital" == '8' ]] && DIST='jessie'
+        # [[ "$isDigital" == '7' ]] && DIST='wheezy'
+        # [[ "$isDigital" == '8' ]] && DIST='jessie'
         [[ "$isDigital" == '9' ]] && DIST='stretch'
         [[ "$isDigital" == '10' ]] && DIST='buster'
         [[ "$isDigital" == '11' ]] && DIST='bullseye'
@@ -1917,33 +1956,6 @@ if [[ -n "$tmpDIST" ]]; then
     SpikCheckDIST='0'
     DIST="$(echo "$tmpDIST" |sed -r 's/(.*)/\L\1/')"
     [[ ! "$DIST" =~ "kali-" ]] && DIST="kali-""$DIST"
-    LinuxMirror=$(selectMirror "$Relese" "$DIST" "$VER" "$tmpMirror")
-  fi
-  if [[ "$Relese" == 'Ubuntu' ]]; then
-    SpikCheckDIST='0'
-    DIST="$(echo "$tmpDIST" |sed -r 's/(.*)/\L\1/')"
-    UbuntuDistNum=`echo "$DIST" | cut -d'.' -f1`
-    echo "$DIST" |grep -q '[0-9]'
-    [[ $? -eq '0' ]] && {
-      isDigital="$(echo "$DIST" |grep -o '[\.0-9]\{1,\}' |sed -n '1h;1!H;$g;s/\n//g;$p')";
-      [[ -n $isDigital ]] && {
-        [[ "$isDigital" == '12.04' ]] && DIST='precise'
-        [[ "$isDigital" == '14.04' ]] && DIST='trusty'
-        [[ "$isDigital" == '16.04' ]] && DIST='xenial'
-        [[ "$isDigital" == '18.04' ]] && DIST='bionic'
-        [[ "$isDigital" == '20.04' ]] && DIST='focal'
-# Ubuntu 22.04 and future versions started to using "Cloud-init" to replace legacy "d-i(Debian installer)" which is designed to support network installation of Debian like system.
-# "Cloud-init" make a high hardware requirements of the server, one requirement must be demanded is CPU virtualization support.
-# Many vps which are virtualizated by a physical machine, despite parent machine support virtualization, but sub-servers don't support.
-# Because Ubuntu 22.04 and future version removed critical file of "initrd.gz" and "linux" which are critical files to implement "d-i".
-# For example, the official of Ubuntu 22.04(jammy) mirror site doesn't provide any related files to download, the following is here:
-# http://archive.ubuntu.com/ubuntu/dists/jammy/main/installer-amd64/current/legacy-images/
-# So we have no possibility to accomplish Ubuntu network installation in future.
-# Canonical.inc is son of a bitch, they change back and forth, pood and pee everywhere.
-# More discussions: https://discourse.ubuntu.com/t/netbooting-the-live-server-installer/14510/18
-        # [[ "$isDigital" == '22.04' ]] && DIST='jammy';
-      }
-    }
     LinuxMirror=$(selectMirror "$Relese" "$DIST" "$VER" "$tmpMirror")
   fi
   if [[ "$Relese" == 'AlpineLinux' ]]; then
@@ -2065,7 +2077,48 @@ if [[ "$SpikCheckDIST" == '0' ]]; then
 fi
 
 if [[ "$ddMode" == '1' ]]; then
-  if [[ -n "$tmpURL" ]]; then
+  if [[ "$targetRelese" == 'Ubuntu' ]]; then
+    ubuntuDIST="$(echo "$finalDIST" |sed -r 's/(.*)/\L\1/')"
+    UbuntuDistNum=`echo "$ubuntuDIST" | cut -d'.' -f1`
+    echo "$ubuntuDIST" |grep -q '[0-9]'
+    [[ $? -eq '0' ]] && {
+      ubuntuDigital="$(echo "$ubuntuDIST" |grep -o '[\.0-9]\{1,\}' |sed -n '1h;1!H;$g;s/\n//g;$p')"
+      ubuntuDigital1=`echo "$ubuntuDigital" | cut -d'.' -f1`
+      ubuntuDigital2=`echo "$ubuntuDigital" | cut -d'.' -f2`
+      if [[ "$ubuntuDigital1" -le "19" || "$ubuntuDigital1" -ge "23" || $((${ubuntuDigital1} % 2)) = 1 ]] || [[ "$ubuntuDigital2" != "04" ]]; then
+        echo -ne "\n${red}Error!${plain} The dists version not found, Please check it! \n\n'"
+        bash $0 error
+        exit 1
+      fi
+      [[ -n $ubuntuDigital ]] && {
+        # [[ "$ubuntuDigital" == '12.04' ]] && finalDIST='precise'
+        # [[ "$ubuntuDigital" == '14.04' ]] && finalDIST='trusty'
+        # [[ "$ubuntuDigital" == '16.04' ]] && finalDIST='xenial'
+        # [[ "$ubuntuDigital" == '18.04' ]] && finalDIST='bionic'
+        [[ "$ubuntuDigital" == '20.04' ]] && finalDIST='focal'
+# Ubuntu 22.04 and future versions started to using "Cloud-init" to replace legacy "d-i(Debian installer)" which is designed to support network installation of Debian like system.
+# "Cloud-init" make a high hardware requirements of the server, one requirement must be demanded is CPU virtualization support.
+# Many vps which are virtualizated by a physical machine, despite parent machine support virtualization, but sub-servers don't support.
+# Because Ubuntu 22.04 and future version removed critical file of "initrd.gz" and "linux" which are critical files to implement "d-i".
+# For example, the official of Ubuntu 22.04(jammy) mirror site doesn't provide any related files to download, the following is here:
+# http://archive.ubuntu.com/ubuntu/dists/jammy/main/installer-amd64/current/legacy-images/
+# So we have no possibility to accomplish Ubuntu network installation in future.
+# Canonical.inc is son of a bitch, they change back and forth, pood and pee everywhere.
+# More discussions: https://discourse.ubuntu.com/t/netbooting-the-live-server-installer/14510/18
+        [[ "$ubuntuDigital" == '22.04' ]] && finalDIST='jammy'
+      }
+    }
+    if [[ "$VER" == "x86_64" ]] || [[ "$VER" == "x86-64" ]]; then
+      ubuntuVER="amd64"
+    elif [[ "$VER" == "aarch64" ]]; then
+      ubuntuVER="arm64"
+    fi
+    if [[ "$tmpURL" == "" ]]; then
+      tmpURL="https://cloud-images.a.disk.re/Ubuntu/$finalDIST-server-cloudimg-$ubuntuVER.raw"
+    fi
+    DDURL="$tmpURL"
+    ReleaseName="$targetRelese $finalDIST $ubuntuVER"
+  elif [[ -n "$tmpURL" ]]; then
     DDURL="$tmpURL"
     echo "$DDURL" | grep -q '^http://\|^ftp://\|^https://';
     [[ $? -ne '0' ]] && echo 'Please input vaild URL, Only support http://, ftp:// and https:// !' && exit 1;
@@ -2080,6 +2133,7 @@ if [[ "$ddMode" == '1' ]]; then
       [[ $(echo "$DDURL" | grep -o ...$) == ".xz" ]] && DEC_CMD="xzcat"
       [[ $(echo "$DDURL" | grep -o ...$) == ".gz" ]] && DEC_CMD="gunzip -dc"
     fi
+    ReleaseName="Windows"
   else
     echo 'Please input a vaild image URL!'
     exit 1
@@ -2088,7 +2142,7 @@ fi
 
 echo -ne "\n${aoiBlue}# Installation Starting${plain}\n"
 
-[[ "$ddMode" == '1' ]] && echo -ne "${blue}Auto Mode${plain} insatll [${yellow}Windows${plain}]\n$DDURL\n"
+[[ "$ddMode" == '1' ]] && echo -ne "${blue}Auto Mode${plain} insatll [${yellow}$ReleaseName${plain}]\n$DDURL\n"
 
 if [ -z "$interfaceSelect" ]; then
   if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ "$linux_relese" == 'kali' ]]; then
@@ -2119,7 +2173,7 @@ fi
 # RAM of RedHat series is 2GB required at least.
 [[ "$setNetbootXyz" == "0" ]] && {
 # "lowmem=+0, 1 or 2" is only for Debian like, 0 is lowest, 1 is medium, 2 is the highest.
-  checkMem "$linux_relese" "$RedHatSeries" || Add_OPTION="$Add_OPTION lowmem=+1"
+  checkMem "$linux_relese" "$RedHatSeries" "$targetRelese" || Add_OPTION="$Add_OPTION lowmem=+1"
 # Microsoft Hyper-V needs "vmlinuz" to boot with parameter "lowmem+=0".
   [[ "$virtType" =~ "microsoft" && ! "$Add_OPTION" =~ "lowmem=+1" ]] && Add_OPTION="$Add_OPTION lowmem=+1"
 }
@@ -2170,7 +2224,7 @@ elif [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [
 elif [[ "$linux_relese" == 'alpinelinux' ]]; then
   InitrdUrl="${LinuxMirror}/${DIST}/releases/${VER}/netboot/initramfs-lts"
   VmLinuzUrl="${LinuxMirror}/${DIST}/releases/${VER}/netboot/vmlinuz-lts"
-  ModLoop="$LinuxMirror/alpine/$DIST/releases/$VER/netboot/modloop-lts"
+  ModLoopUrl="${LinuxMirror}/${DIST}/releases/${VER}/netboot/modloop-lts"
   echo -ne "[${yellow}Mirror${plain}] $InitrdUrl\n\t $VmLinuzUrl\n"
   wget --no-check-certificate -qO '/tmp/initrd.img' "$InitrdUrl"
   [[ $? -ne '0' ]] && echo -ne "${red}Error!${plain} Download 'initramfs-lts' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
@@ -2365,23 +2419,47 @@ elif [[ "$linux_relese" == 'alpinelinux' ]]; then
 # Enable IPv6
   echo "ipv6" >> /tmp/boot/etc/modules
   if [[ "$setAutoConfig" == "1" ]]; then
-    AlpineTestRepository="$LinuxMirror/edge/testing"
     AlpineInitLineNum=$(grep -E -n '^exec (/bin/busybox )?switch_root' /tmp/boot/init | cut -d: -f1)
     AlpineInitLineNum=$((AlpineInitLineNum - 1))
     if [[ "$IsCN" == "cn" ]]; then
-      AlpineInitFile="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/alpineInit.sh"
-      AlpineDnsFile="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/resolv_cn.conf"
-      AlpineMotd="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/motd.sh"
+      alpineInstallOrDdAdditionalFiles "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/alpineInit.sh" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/resolv_cn.conf" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/motd.sh" "mirrors.ustc.edu.cn" "mirrors.tuna.tsinghua.edu.cn" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Ubuntu/ubuntuInit.sh"
     else
-      AlpineInitFile="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/alpineInit.sh"
-      AlpineDnsFile="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/resolv.conf"
-      AlpineMotd="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/motd.sh"
+      alpineInstallOrDdAdditionalFiles "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/alpineInit.sh" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/resolv.conf" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/motd.sh" "archive.ubuntu.com" "ports.ubuntu.com" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/ubuntuInit.sh"
     fi
+# Cloud init configurate documents and resources:
+# Ubuntu cloud images:
+# https://cloud-images.ubuntu.com/daily/server/
+# customize Ubuntu cloud images by our own: 
+# https://bleatingsheep.org/2022/03/14/%E7%94%A8-Ubuntu-Cloud-Images-%E5%88%B6%E4%BD%9C%E8%87%AA%E5%B7%B1%E7%9A%84%E4%BA%91%E9%95%9C%E5%83%8F%EF%BC%88%E9%85%8D%E7%BD%AE-cloud-init-%E7%9A%84-NoCloud-%E6%95%B0%E6%8D%AE%E6%BA%90%EF%BC%89/
+# documents from Redhat:
+# https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/configuring_and_managing_cloud-init_for_rhel_8/configuring-cloud-init_cloud-content
+# network configuration:
+# https://cloudinit.readthedocs.io/en/latest/reference/network-config-format-v2.html
+# valid "*.yaml" format regulations for netplan samples:
+# https://qiita.com/zen3/items/757f96cbe522a9ad397d
+# netplan will deperate the "gateway4" and "gateway6", use "routes" to replace it.
+# https://rohhie.net/ubuntu22-04-netplan-gateway4-has-been-deprecated/
+# enable netplan configuration permanently to prevent to be changed by cloud init during rebooting from the new OS
+# https://askubuntu.com/questions/1051655/convert-etc-network-interfaces-to-netplan
+# disable cloud init service when next restart
+# https://cloudinit.readthedocs.io/en/latest/howto/disable_cloud_init.html
     if [[ "$IPStackType" == "IPv4Stack" ]]; then
       if [[ "$Network4Config" == "isDHCP" ]]; then
-        [[ "$IsCN" == "cn" ]] && AlpineNetworkConf="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/dhcp_interfaces" || AlpineNetworkConf="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/dhcp_interfaces"
+        if [[ "$IsCN" == "cn" ]]; then
+          AlpineNetworkConf="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/dhcp_interfaces"
+          [[ "$targetRelese" == "Ubuntu" ]] && cloudInitUrl="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Ubuntu/CloudInit/dhcp_interfaces.cfg"
+        else
+          AlpineNetworkConf="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/dhcp_interfaces"
+          [[ "$targetRelese" == "Ubuntu" ]] && cloudInitUrl="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/CloudInit/dhcp_interfaces.cfg"
+        fi
       elif [[ "$Network4Config" == "isStatic" ]]; then
-        [[ "$IsCN" == "cn" ]] && AlpineNetworkConf="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/ipv4_static_interfaces" || AlpineNetworkConf="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/ipv4_static_interfaces"
+        if [[ "$IsCN" == "cn" ]]; then
+          AlpineNetworkConf="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/ipv4_static_interfaces"
+          [[ "$targetRelese" == "Ubuntu" ]] && cloudInitUrl="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Ubuntu/CloudInit/ipv4_static_interfaces.cfg"
+        else
+          AlpineNetworkConf="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/ipv4_static_interfaces"
+          [[ "$targetRelese" == "Ubuntu" ]] && cloudInitUrl="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/CloudInit/ipv4_static_interfaces.cfg"
+        fi
       fi
     elif [[ "$IPStackType" == "BiStack" ]]; then
 # Alpine Linux doesn't support IPv6 automatic config, must manually.
@@ -2390,6 +2468,17 @@ elif [[ "$linux_relese" == 'alpinelinux' ]]; then
       elif [[ "$Network4Config" == "isStatic" ]]; then
         [[ "$IsCN" == "cn" ]] && AlpineNetworkConf="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/ipv4_ipv6_static_interfaces" || AlpineNetworkConf="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/ipv4_ipv6_static_interfaces"
       fi
+      [[ "$targetRelese" == "Ubuntu" ]] && {
+        if [[ "$Network4Config" == "isDHCP" ]] && [[ "$Network6Config" == "isDHCP" ]]; then
+          [[ "$IsCN" == "cn" ]] && cloudInitUrl="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Ubuntu/CloudInit/dhcp_interfaces.cfg" || cloudInitUrl="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/CloudInit/dhcp_interfaces.cfg"
+        elif [[ "$Network4Config" == "isDHCP" ]] && [[ "$Network6Config" == "isStatic" ]]; then
+          [[ "$IsCN" == "cn" ]] && cloudInitUrl="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Ubuntu/CloudInit/ipv4_dhcp_ipv6_static_interfaces.cfg" || cloudInitUrl="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/CloudInit/ipv4_dhcp_ipv6_static_interfaces.cfg"
+        elif [[ "$Network4Config" == "isStatic" ]] && [[ "$Network6Config" == "isDHCP" ]]; then
+          [[ "$IsCN" == "cn" ]] && cloudInitUrl="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Ubuntu/CloudInit/ipv4_static_ipv6_dhcp_interfaces.cfg" || cloudInitUrl="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/CloudInit/ipv4_static_ipv6_dhcp_interfaces.cfg"
+        elif [[ "$Network4Config" == "isStatic" ]] && [[ "$Network6Config" == "isStatic" ]]; then
+          [[ "$IsCN" == "cn" ]] && cloudInitUrl="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Ubuntu/CloudInit/ipv4_static_ipv6_static_interfaces.cfg" || cloudInitUrl="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/CloudInit/ipv4_static_ipv6_static_interfaces.cfg"
+        fi
+      }
     fi
 # All the following steps are processed in the temporary Alpine Linux.
     cat <<EOF | sed -i "${AlpineInitLineNum}r /dev/stdin" /tmp/boot/init
@@ -2399,19 +2488,26 @@ wget --no-check-certificate -O \$sysroot/etc/network/tmp_interfaces ${AlpineNetw
 # Config nameservers
 rm -rf \$sysroot/etc/resolv.conf
 wget --no-check-certificate -O \$sysroot/etc/resolv.conf ${AlpineDnsFile}
+chmod a+x \$sysroot/etc/resolv.conf
 
 # Add customized motd
 rm -rf \$sysroot/etc/motd
 wget --no-check-certificate -O \$sysroot/etc/profile.d/motd.sh ${AlpineMotd}
-chmod a+x /etc/profile.d/motd.sh
+chmod a+x \$sysroot/etc/profile.d/motd.sh
 
 # Modify initial file.
 
 # To determine main hard drive.
-echo "AllDisks  "${AllDisks} >> \$sysroot/root/alpine.config
+echo "IncDisk  "${IncDisk} >> \$sysroot/root/alpine.config
 
 # To determine mirror.
 echo "LinuxMirror  "${LinuxMirror} >> \$sysroot/root/alpine.config
+
+# To determine release of Alpine Linux
+echo "alpineVer  "${DIST} >> \$sysroot/root/alpine.config
+
+# To determine target system mirror.
+echo "targetLinuxMirror  "${targetLinuxMirror} >> \$sysroot/root/alpine.config
 
 # To determine timezone.
 echo "TimeZone  "${TimeZone} >> \$sysroot/root/alpine.config
@@ -2422,27 +2518,35 @@ echo "tmpWORD  "${tmpWORD} >> \$sysroot/root/alpine.config
 # To determine ssh port.
 echo "sshPORT  "${sshPORT} >> \$sysroot/root/alpine.config
 
-# To determine testing repository
-echo "AlpineTestRepository  "${AlpineTestRepository} >> \$sysroot/root/alpine.config
-
 # To determine IPv4 static config
 echo "IPv4  "${IPv4} >> \$sysroot/root/alpine.config
 echo "MASK  "${MASK} >> \$sysroot/root/alpine.config
+echo "ipPrefix  "${ipPrefix} >> \$sysroot/root/alpine.config
 echo "GATE  "${GATE} >> \$sysroot/root/alpine.config
+echo "ipDNS1  "${ipDNS1} >> \$sysroot/root/alpine.config
+echo "ipDNS2  "${ipDNS2} >> \$sysroot/root/alpine.config
 
 # To determine Ipv6 static config
 echo "ip6Addr  "${ip6Addr} >> \$sysroot/root/alpine.config
 echo "ip6Mask  "${ip6Mask} >> \$sysroot/root/alpine.config
 echo "ip6Gate  "${ip6Gate} >> \$sysroot/root/alpine.config
+echo "ip6DNS1  "${ip6DNS1} >> \$sysroot/root/alpine.config
+echo "ip6DNS2  "${ip6DNS2} >> \$sysroot/root/alpine.config
 
 # To Determine hostname
-echo "HostName  "$HostName >> \$sysroot/root/alpine.config
+echo "HostName  "${HostName} >> \$sysroot/root/alpine.config
+
+# To Determine dd image url
+echo "DDURL  "${DDURL} >> \$sysroot/root/alpine.config
+
+# To Determine cloud init url
+echo "cloudInitUrl  "${cloudInitUrl} >> \$sysroot/root/alpine.config
 
 # Download initial file.
-wget --no-check-certificate -O \$sysroot/etc/local.d/alpineConf.start ${AlpineInitFile}
+wget --no-check-certificate -O \$sysroot/etc/local.d/${AlpineInitFileName} ${AlpineInitFile}
 
 # Set initial file execute automatically.
-chmod a+x \$sysroot/etc/local.d/alpineConf.start
+chmod a+x \$sysroot/etc/local.d/${AlpineInitFileName}
 ln -s /etc/init.d/local \$sysroot/etc/runlevels/default/
 EOF
   fi
@@ -2736,7 +2840,8 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
 # ip=179.86.100.76::179.86.100.1:255.255.255.0::eth0::1.0.0.1 8.8.8.8:
 # Any of IPv6 address format can't be recognized.
       [[ "$Network4Config" == "isStatic" ]] && Add_OPTION="ip=$IPv4::$GATE:$MASK::$interface::$ipDNS:" || Add_OPTION="ip=dhcp"
-      BOOT_OPTION="alpine_repo=$LinuxMirror/$DIST/main modloop=$LinuxMirror/$DIST/releases/$VER/netboot/modloop-lts $Add_OPTION"
+      BOOT_OPTION="alpine_repo=$LinuxMirror/$DIST/main modloop=$ModLoopUrl $Add_OPTION"
+      # Add_OPTION="ip=[2603:c020:800d:ae3d:6cde:8519:f1e3:a522]::[fe80::200:17ff:fe4c:e267]:[ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff]::eth0::[2606:4700:4700::1001]:"
       # BOOT_OPTION="alpine_repo=$LinuxMirror/$DIST/main modloop=$LinuxMirror/$DIST/releases/$VER/netboot/modloop-lts ip=2001:19f0:000c:05b9:5400:04ff:fe74:7d40::fe80:0000:0000:0000:fc00:04ff:fe74:7d40:ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff::eth0::2606:4700:4700:0000:0000:0000:0000:1001:"
     elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
 # The method for Redhat series installer to search network adapter automatically is to set "ksdevice=link" in grub file of the current system for netboot install file which need to be loaded after restart.
@@ -2784,13 +2889,13 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
 # kernelopts=root=UUID=c21f153f-c0a8-42db-9ba5-8299e3c3d5b9 ro quiet elevator=noop console=ttyS0,115200 console=tty0 vconsole.keymap=us crashkernel=1800M-64G:256M,64G-128G:512M,128G-:768M vconsole.font=latarcyrheb-sun16 net.ifnames=0 biosdevname=0 intel_idle.max_cstate=1 intel_pstate=disable iommu=pt amd_iommu=on 
 # boot_success=0
       if [[ "$LpLength" -le "1" ]] || [[ ! -f "$LpFile" ]]; then
-        LpFile=`ls -Sl /boot/loader/entries/ | grep -wv "rescue*" | awk -F' ' '{print $NF}' | sed -n '2p'`
+        LpFile=`ls -Sl /boot/loader/entries/ | grep -wv "*rescue*" | awk -F' ' '{print $NF}' | sed -n '2p'`
         [[ "$(cat /boot/loader/entries/$LpFile | grep '^linux /boot/')" ]] && BootDIR='/boot' || BootDIR=''
       else
         [[ "$(cat $LpFile | grep '^linux /boot/')" ]] && BootDIR='/boot' || BootDIR=''
       fi
     else
-      [[ -n "$(grep 'linux.*/\|kernel.*/' $GRUBDIR/$GRUBFILE | awk '{print $2}' | tail -n 1 | grep '^/boot/')" ]] && BootDIR='/boot' || BootDIR='';
+      [[ -n "$(grep 'linux.*/\|kernel.*/' $GRUBDIR/$GRUBFILE | awk '{print $2}' | tail -n 1 | grep '^/boot/')" ]] && BootDIR='/boot' || BootDIR=''
     fi
 # Confirm if BIOS or UEFI firmware for architecture of x86_64(AMD64) processors.
     if [[ "$VER" == "x86_64" || "$VER" == "amd64" ]]; then
@@ -2895,7 +3000,7 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
       BOOT_OPTION="auto=true $Add_OPTION hostname=$(hostname) domain=$linux_relese quiet"
     elif [[ "$linux_relese" == 'alpinelinux' ]]; then
       [[ "$Network4Config" == "isStatic" ]] && Add_OPTION="ip=$IPv4::$GATE:$MASK::$interface::$ipDNS:" || Add_OPTION="ip=dhcp"
-      BOOT_OPTION="alpine_repo=$LinuxMirror/$DIST/main modloop=$LinuxMirror/$DIST/releases/$VER/netboot/modloop-lts $Add_OPTION"
+      BOOT_OPTION="alpine_repo=$LinuxMirror/$DIST/main modloop=$ModLoopUrl $Add_OPTION"
     elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
       BOOT_OPTION="inst.ks=file://ks.cfg $Add_OPTION inst.nomemcheck quiet"
     fi
