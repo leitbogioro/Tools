@@ -41,7 +41,7 @@ echo $LinuxMirror/$alpineVer/community >>/etc/apk/repositories
 
 # Reset configurations of repositories
 true >/etc/apk/repositories
-setup-apkrepos -1
+setup-apkrepos -f
 setup-apkcache /var/cache/apk
 
 # Delete comment in the repositories
