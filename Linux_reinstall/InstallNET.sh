@@ -477,8 +477,7 @@ function ipv6SubnetCalc() {
 
 function getDisk() {
 # $disks is definited as the default disk, if server has 2 and more disks, the first disk will be responsible of the grub booting.
-  disks=`lsblk | sed 's/[[:space:]]*$//g' | grep "disk$" | cut -d' ' -f1 | grep -v "fd[0-9]*\|sr[0-9]*" | head -n1`
-  [[ "$disks" == "" ]] && disks=`lsblk | sed 's/[[:space:]]*$//g' | grep "disk" | grep -i "g\|t\|p\|e\|z\|y" | cut -d' ' -f1 | head -1`
+  disks=`lsblk | sed 's/[[:space:]]*$//g' | grep "disk$" | grep -v "fd[0-9]*\|sr[0-9]*" | grep -i "g\|t\|p\|e\|z\|y" | cut -d' ' -f1 | head -n1`
   echo "${disks: -1}" | [[ -n "`sed -n '/^[0-9][0-9]*$/p'`" ]] && disks=`echo "$disks" | sed 's/[0-9]//g'`
   [ -n "$disks" ] || echo ""
   echo "$disks" | grep -q "/dev"
@@ -1464,7 +1463,7 @@ lvremove --select all -ff -y; \
 vgremove --select all -ff -y; \
 pvremove /dev/* -ff -y; \
 [[ -n "\$(blkid -t TYPE='vfat' -o device)" ]] && umount "\$(blkid -t TYPE='vfat' -o device)"; \
-debconf-set partman-auto/disk "\$(list-devices disk | head -n1)"; \
+debconf-set partman-auto/disk "\$(list-devices disk | grep ${IncDisk} | head -n 1)"; \
 wget -qO- '$DDURL' | $DEC_CMD | /bin/dd of=\$(list-devices disk | head -n1); \
 mount.ntfs-3g \$(list-devices partition | head -n1) /mnt; \
 cd '/mnt/ProgramData/Microsoft/Windows/Start Menu/Programs'; \
