@@ -518,7 +518,7 @@ function getUserTimezone() {
     done
   else
     echo `timedatectl list-timezones` >> "$1"
-    [[ `grep -c "$TimeZone" "$1"` == "0" || ! -f "/usr/share/zoneinfo/$1" ]] && TimeZone="Asia/Tokyo"
+    [[ `grep -c "$TimeZone" "$1"` == "0" || ! "/usr/share/zoneinfo/$1" ]] && TimeZone="Asia/Tokyo"
     rm -rf "$1"
   fi
 }
