@@ -41,7 +41,7 @@ export ip6Addr=''
 export ip6Mask=''
 export ip6Gate=''
 export ip6DNS='2606:4700:4700::1001 2001:4860:4860::8844'
-export IncDisk='default'
+export IncDisk=''
 export interface=''
 export interfaceSelect=''
 export setInterfaceName='0'
@@ -1822,7 +1822,7 @@ if [[ "$setNet" == "0" ]]; then
 fi
 
 IPv4="$ipAddr"; MASK="$ipMask"; GATE="$ipGate";
-[[ -z "$IPStackType" ]] && {
+[[ -z "$IPv4DNSLookup" && -z "$IPv6DNSLookup" ]] && {
   echo -ne "\n[${red}Error${plain}] The network of your machine may not be available!\n"
   bash $0 error
   exit 1
