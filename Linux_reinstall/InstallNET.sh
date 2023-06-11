@@ -310,7 +310,6 @@ function checkCN() {
   done
   [[ `echo "$IsCN" | grep "cn"` != "" ]] && IsCN="cn" || IsCN=""
   if [[ "$IsCN" == "cn" ]]; then
-    TimeZone="Asia/Shanghai"
     if [[ "$4" == "BiStack" || "$4" == "IPv6Stack" ]]; then
       ipDNS="119.29.29.29 223.6.6.6"
       ip6DNS="2402:4e00:: 2400:3200::1"
@@ -442,6 +441,22 @@ function ipv4Calc() {
     LastIP="$tmpNetwork"
   }
   echo -e "Network:   $tmpNetwork\nBroadcast: $tmpBroadcast\nFirstIP:   $FirstIP\nLastIP:    $LastIP\n"
+}
+
+# $1 is "$ipAddr", $2 is "$ipGate"
+function ipv4SubnetCertificate() {
+  # If the IP and gateway are not in the same IPv4 A class, the prefix of netmask should be "1", transfer to whole IPv4 address is 128.0.0.1
+# The range of 190.168.23.175/1 is 128.0.0.0 - 255.255.255.255, the gateway 169.254.0.1 can be included.
+  [[ `echo $1 | cut -d'.' -f 1` != `echo $2 | cut -d'.' -f 1` ]] && tmpIpMask="1"
+# If the IP and gateway are in the same IPv4 A class, not in the same IPv4 B class, the prefix of netmask should less equal than "8", transfer to whole IPv4 address is 255.0.0.0
+# The range of 190.168.23.175/8 is 190.0.0.0 - 190.255.255.255, the gateway 169... can't be included.
+  [[ `echo $1 | cut -d'.' -f 1` == `echo $2 | cut -d'.' -f 1` ]] && tmpIpMask="8"
+# If the IP and gateway are in the same IPv4 A B class, not in the same IPv4 C class, the prefix of netmask should less equal than "16", transfer to whole IPv4 address is 255.255.0.0
+# The range of 190.168.23.175/16 is 190.168.0.0 - 190.168.255.255, the gateway 169... can't be included.
+  [[ `echo $1 | cut -d'.' -f 1,2` == `echo $2 | cut -d'.' -f 1,2` ]] && tmpIpMask="16"
+# If the IP and gateway are in the same IPv4 A B C class, not in the same IPv4 D class, the prefix of netmask should less equal than "24", transfer to whole IPv4 address is 255.255.255.0
+# The range of 190.168.23.175/24 is 190.168.23.0 - 190.168.23.255, the gateway 169... can't be included.
+  [[ `echo $1 | cut -d'.' -f 1,2,3` == `echo $2 | cut -d'.' -f 1,2,3` ]] && tmpIpMask="24"
 }
 
 # $1 is $ip6Mask
@@ -708,7 +723,7 @@ function checkSys() {
   fi
 
 # Debian like linux OS necessary components.
-  apt install curl dnsutils efibootmgr file jq net-tools subnetcalc tuned wget xz-utils -y
+  apt install curl dnsutils efibootmgr file jq net-tools openssl subnetcalc tuned wget xz-utils -y
 
 # Redhat like Linux OS prefer to use dnf instead of yum because former has a higher execute efficiency.
   yum install epel-release -y
@@ -718,7 +733,7 @@ function checkSys() {
 # Reference: https://anatolinicolae.com/failed-loading-plugin-osmsplugin-no-module-named-librepo/
     [[ "$CurrentOS" == "CentOS" && "$CurrentOSVer" == "8" ]] && dnf install python3-librepo -y
 # Redhat like linux OS necessary components.
-    dnf install bind-utils curl dnsutils efibootmgr file ipcalc jq net-tools redhat-lsb syslinux tuned wget xz --skip-broken -y
+    dnf install bind-utils curl dnsutils efibootmgr file ipcalc jq net-tools openssl redhat-lsb syslinux tuned wget xz --skip-broken -y
     dnf update -y
   else
     yum install dnf -y > /root/yum_execute.log 2>&1
@@ -738,11 +753,11 @@ function checkSys() {
 # Run dnf update and install components.
 # In official template of AlmaLinux 9 of Linode, "tuned" must be installed otherwise "grub2-mkconfig" can't work formally.
 # Reference: https://phanes.silogroup.org/fips-disa-stig-hardening-on-centos9/
-      dnf install bind-utils curl dnsutils efibootmgr file ipcalc jq net-tools redhat-lsb syslinux tuned wget xz --skip-broken -y
+      dnf install bind-utils curl dnsutils efibootmgr file ipcalc jq net-tools openssl redhat-lsb syslinux tuned wget xz --skip-broken -y
       dnf update -y
 # Oracle Linux 7 doesn't support DNF.
     elif [[ `grep -i "no package" /root/yum_execute.log` ]]; then
-      yum install bind-utils curl dnsutils efibootmgr file ipcalc jq net-tools redhat-lsb syslinux tuned wget xz --skip-broken -y
+      yum install bind-utils curl dnsutils efibootmgr file ipcalc jq net-tools openssl redhat-lsb syslinux tuned wget xz --skip-broken -y
       yum update -y
     fi
     rm -rf /root/yum_execute.log
@@ -760,7 +775,7 @@ function checkSys() {
     [[ ! `grep -i "testing" /etc/apk/repositories` ]] && sed -i '$a\http://ftp.udx.icscoe.jp/Linux/alpine/edge/testing' /etc/apk/repositories
 # Alpine Linux use "apk" as package management.
     apk update
-    apk add bash bind-tools coreutils cpio curl efibootmgr file grep gzip ipcalc jq lsblk net-tools sed shadow tzdata wget xz
+    apk add bash bind-tools coreutils cpio curl efibootmgr file gawk grep gzip ipcalc jq lsblk net-tools openssl sed shadow tzdata wget xz
 # Use bash to replace ash.
     sed -i 's/root:\/bin\/ash/root:\/bin\/bash/g' /etc/passwd
   }
@@ -871,6 +886,38 @@ function ultimateFormatOfIpv6() {
   done
 # Return all elements of array of "$ipv6Hex" which is filled with 4 digits in every hexadecimal block and use colon to stitch with hexes instead of space to achieve the recovery of an abbreviated IPv6 address.
   echo ${ipv6Hex[@]} | sed 's/ /\:/g'
+}
+
+# $1 is "$ip6AddrWhole", $2 is "$$ip6GateWhole".
+function ipv6SubnetCertificate() {
+# If the IP and gateway are in the same IPv6 A class, not in the same IPv6 B class, the prefix of netmask should less equal than "16",
+# transfer to whole IPv6 subnet address is ffff:0000:0000:0000:0000:0000:0000:0000.
+# The range of 2603:c020:8:a19b::ffff:e6da/16 is 2603:0000:0000:0000:0000:0000:0000:0000 - 2603:ffff:ffff:ffff:ffff:ffff:ffff:ffff, the gateway 2603:... can be included.
+  [[ `echo $1 | cut -d':' -f 1` == `echo $2 | cut -d':' -f 1` ]] && tmpIp6Mask="16"
+# If the IP and gateway are in the same IPv6 A B class, not in the same IPv6 C class, the prefix of netmask should less equal than "32",
+# transfer to whole IPv6 subnet address is ffff:ffff:0000:0000:0000:0000:0000:0000.
+# The range of 2603:c020:8:a19b::ffff:e6da/32 is 2603:c020:0000:0000:0000:0000:0000:0000 - 2603:c020:ffff:ffff:ffff:ffff:ffff:ffff, the gateway 2603:... can be included.
+  [[ `echo $1 | cut -d':' -f 1,2` == `echo $2 | cut -d':' -f 1,2` ]] && tmpIp6Mask="32"
+# If the IP and gateway are in the same IPv6 A B C class, not in the same IPv6 D class, the prefix of netmask should less equal than "48",
+# transfer to whole IPv6 subnet address is ffff:ffff:ffff:0000:0000:0000:0000:0000.
+# The range of 2603:c020:8:a19b::ffff:e6da/48 is 2603:c020:0008:0000:0000:0000:0000:0000 - 2603:c020:0008:ffff:ffff:ffff:ffff:ffff, the gateway 2603:... can be included.
+  [[ `echo $1 | cut -d':' -f 1,2,3` == `echo $2 | cut -d':' -f 1,2,3` ]] && tmpIp6Mask="48"
+# If the IP and gateway are in the same IPv6 A B C D class, not in the same IPv6 E class, the prefix of netmask should less equal than "64",
+# transfer to whole IPv6 subnet address is ffff:ffff:ffff:ffff:0000:0000:0000:0000.
+# The range of 2603:c020:8:a19b::ffff:e6da/64 is 2603:c020:0008:a19b:0000:0000:0000:0000 - 2603:c020:0008:a19b:ffff:ffff:ffff:ffff, the gateway 2603:... can be included.
+  [[ `echo $1 | cut -d':' -f 1,2,3,4` == `echo $2 | cut -d':' -f 1,2,3,4` ]] && tmpIp6Mask="64"
+# If the IP and gateway are in the same IPv6 A B C D E class, not in the same IPv6 F class, the prefix of netmask should less equal than "80",
+# transfer to whole IPv6 subnet address is ffff:ffff:ffff:ffff:ffff:0000:0000:0000.
+# The range of 2603:c020:8:a19b::ffff:e6da/80 is 2603:c020:0008:a19b:0000:0000:0000:0000 - 2603:c020:0008:a19b:0000:ffff:ffff:ffff, the gateway 2603:... can be included.
+  [[ `echo $1 | cut -d':' -f 1,2,3,4,5` == `echo $2 | cut -d':' -f 1,2,3,4,5` ]] && tmpIp6Mask="80"
+# If the IP and gateway are in the same IPv6 A B C D E F class, not in the same IPv6 G class, the prefix of netmask should less equal than "96",
+# transfer to whole IPv6 subnet address is ffff:ffff:ffff:ffff:ffff:ffff:0000:0000.
+# The range of 2603:c020:8:a19b::ffff:e6da/96 is 2603:c020:0008:a19b:0000:0000:0000:0000 - 2603:c020:0008:a19b:0000:0000:ffff:ffff, the gateway 2603:... can be included.
+  [[ `echo $1 | cut -d':' -f 1,2,3,4,5,6` == `echo $2 | cut -d':' -f 1,2,3,4,5,6` ]] && tmpIp6Mask="96"
+# If the IP and gateway are in the same IPv6 A B C D E F G class, not in the same IPv6 H class, the prefix of netmask should less equal than "112",
+# transfer to whole IPv6 subnet address is ffff:ffff:ffff:ffff:ffff:ffff:ffff:0000.
+# The range of 2603:c020:8:a19b::ffff:e6da/112 is 2603:c020:0008:a19b:0000:0000:ffff:0000 - 2603:c020:0008:a19b:0000:0000:ffff:ffff, the gateway 2603:c020:0008:a19b:0000:0000:0000:ffff can't be included.
+  [[ `echo $1 | cut -d':' -f 1,2,3,4,5,6,7` == `echo $2 | cut -d':' -f 1,2,3,4,5,6,7` ]] && tmpIp6Mask="112"
 }
 
 # This function help us to sort sizes for different files from different directions.
@@ -1589,7 +1636,7 @@ fi
 linux_relese=$(echo "$Relese" |sed 's/\ //g' |sed -r 's/(.*)/\L\1/')
 clear && echo -ne "\n${aoiBlue}# Check Dependence${plain}\n\n"
 
-dependence awk,basename,cat,cpio,curl,cut,dig,dirname,file,find,grep,gzip,iconv,ip,lsblk,sed,wget,xz;
+dependence awk,basename,cat,cpio,curl,cut,dig,dirname,file,find,grep,gzip,iconv,ip,lsblk,openssl,sed,wget,xz;
 
 [[ "$ddMode" == '1' ]] && {
   if [[ "$targetRelese" == 'Ubuntu' ]]; then
@@ -1692,24 +1739,7 @@ if [[ "$setNet" == "0" ]]; then
 # DHCP IPv4 network(even IPv4 netmask is "32") may not be effected by this situation.
 # The following consulted calculations are calculated by Vultr IPv4 subnet calculator, reference: https://www.vultr.com/resources/subnet-calculator/
   [[ "$Network4Config" == "isStatic" ]] && {
-# If the IP and gateway are not in the same IPv4 A class, the prefix of netmask should be "1", transfer to whole IPv4 address is 128.0.0.1
-# The range of 190.168.23.175/1 is 128.0.0.0 - 255.255.255.255, the gateway 169.254.0.1 can be included.
-    [[ `echo $ipAddr | cut -d'.' -f 1` != `echo $ipGate | cut -d'.' -f 1` ]] && tmpIpMask="1"
-# If the IP and gateway are in the same IPv4 A class, not in the same IPv4 B class, the prefix of netmask should less equal than "8", transfer to whole IPv4 address is 255.0.0.0
-# The range of 190.168.23.175/8 is 190.0.0.0 - 190.255.255.255, the gateway 169... can't be included.
-    if [[ `echo $ipAddr | cut -d'.' -f 1` == `echo $ipGate | cut -d'.' -f 1` ]]; then
-      tmpIpMask="8"
-    fi
-# If the IP and gateway are in the same IPv4 A B class, not in the same IPv4 C class, the prefix of netmask should less equal than "16", transfer to whole IPv4 address is 255.255.0.0
-# The range of 190.168.23.175/16 is 190.168.0.0 - 190.168.255.255, the gateway 169... can't be included.
-    if [[ `echo $ipAddr | cut -d'.' -f 1,2` == `echo $ipGate | cut -d'.' -f 1,2` ]]; then
-      tmpIpMask="16"
-    fi
-# If the IP and gateway are in the same IPv4 A B C class, not in the same IPv4 D class, the prefix of netmask should less equal than "24", transfer to whole IPv4 address is 255.255.255.0
-# The range of 190.168.23.175/24 is 190.168.23.0 - 190.168.23.255, the gateway 169... can't be included.
-    if [[ `echo $ipAddr | cut -d'.' -f 1,2,3` == `echo $ipGate | cut -d'.' -f 1,2,3` ]]; then
-      tmpIpMask="24"
-    fi
+    ipv4SubnetCertificate "$ipAddr" "$ipGate"
     ipPrefix="$tmpIpMask"
     ipMask=`netmask "$tmpIpMask"`
   }
@@ -1747,7 +1777,6 @@ if [[ "$setNet" == "0" ]]; then
       tmpIp6AddrFirst=`echo $ip6AddrWhole | sed 's/\(.\{4\}\).*/\1/' | sed 's/[a-z]/\u&/g'`
       tmpIp6GateFirst=`echo $ip6GateWhole | sed 's/\(.\{4\}\).*/\1/' | sed 's/[a-z]/\u&/g'`
       if [[ "$tmpIp6AddrFirst" != "$tmpIp6GateFirst" ]]; then
-        if [[ "$((16#$tmpIp6GateFirst))" -ge "$((16#FE80))" && "$((16#$tmpIp6GateFirst))" -le "$((16#FEBF))" ]] || [[ "$((16#$tmpIp6GateFirst))" -ge "$((16#FC00))" && "$((16#$tmpIp6GateFirst))" -le "$((16#FDFF))" ]]; then
 # If some brave guys set --network "static" by force, IPv6 address, mask and gateway of IPv6 DHCP configurations like Oracle Cloud etc. are:
 # a public IPv6 address, a "128" mask, a local IPv6 gateway(starts with "fe80" mostly, like "fe80::200:f1e9:dec3:4ab").
 # The value of mask must be set as "128", not "1" which determined by first condition of above because the local IPv6 address is unique in its' network
@@ -1770,55 +1799,16 @@ if [[ "$setNet" == "0" ]]; then
 #            https://www.wdic.org/w/WDIC/%E3%83%A6%E3%83%8B%E3%83%BC%E3%82%AF%E3%83%AD%E3%83%BC%E3%82%AB%E3%83%AB%E3%83%A6%E3%83%8B%E3%82%AD%E3%83%A3%E3%82%B9%E3%83%88%E3%82%A2%E3%83%89%E3%83%AC%E3%82%B9
 #            https://www.ipentec.com/document/network-format-ipv6-local-adddress chapter: IPv6のリンクローカルアドレス(Link local address of IPv6)
 #            https://www.rfc-editor.org/rfc/rfc4291.html#section-2.4 chapter: 2.4. Address Type Identification
-          tmpIp6Mask="128"
+        if [[ "$((16#$tmpIp6GateFirst))" -ge "$((16#FE80))" && "$((16#$tmpIp6GateFirst))" -le "$((16#FEBF))" ]] || [[ "$((16#$tmpIp6GateFirst))" -ge "$((16#FC00))" && "$((16#$tmpIp6GateFirst))" -le "$((16#FDFF))" ]]; then
+          tmpIp6Mask="64"
         else
 # If the IPv6 and IPv6 gateway are not in the same IPv6 A class, the prefix of netmask should be "1",
 # transfer to whole IPv6 subnet address is 8000:0000:0000:0000:0000:0000:0000:0000.
 # The range of 2603:c020:8:a19b::ffff:e6da/1 is 0000:0000:0000:0000:0000:0000:0000:0000 - 7fff:ffff:ffff:ffff:ffff:ffff:ffff:ffff, the gateway 2603:c020:0008:a19b:0000:0000:0000:ffff can be included.
           tmpIp6Mask="1"
         fi
-      fi
-# If the IP and gateway are in the same IPv6 A class, not in the same IPv6 B class, the prefix of netmask should less equal than "16",
-# transfer to whole IPv6 subnet address is ffff:0000:0000:0000:0000:0000:0000:0000.
-# The range of 2603:c020:8:a19b::ffff:e6da/16 is 2603:0000:0000:0000:0000:0000:0000:0000 - 2603:ffff:ffff:ffff:ffff:ffff:ffff:ffff, the gateway 2603:... can be included.
-      if [[ `echo $ip6AddrWhole | cut -d':' -f 1` == `echo $ip6GateWhole | cut -d':' -f 1` ]]; then
-        tmpIp6Mask="16"
-      fi
-# If the IP and gateway are in the same IPv6 A B class, not in the same IPv6 C class, the prefix of netmask should less equal than "32",
-# transfer to whole IPv6 subnet address is ffff:ffff:0000:0000:0000:0000:0000:0000.
-# The range of 2603:c020:8:a19b::ffff:e6da/32 is 2603:c020:0000:0000:0000:0000:0000:0000 - 2603:c020:ffff:ffff:ffff:ffff:ffff:ffff, the gateway 2603:... can be included.
-      if [[ `echo $ip6AddrWhole | cut -d':' -f 1,2` == `echo $ip6GateWhole | cut -d':' -f 1,2` ]]; then
-        tmpIp6Mask="32"
-      fi
-# If the IP and gateway are in the same IPv6 A B C class, not in the same IPv6 D class, the prefix of netmask should less equal than "48",
-# transfer to whole IPv6 subnet address is ffff:ffff:ffff:0000:0000:0000:0000:0000.
-# The range of 2603:c020:8:a19b::ffff:e6da/48 is 2603:c020:0008:0000:0000:0000:0000:0000 - 2603:c020:0008:ffff:ffff:ffff:ffff:ffff, the gateway 2603:... can be included.
-      if [[ `echo $ip6AddrWhole | cut -d':' -f 1,2,3` == `echo $ip6GateWhole | cut -d':' -f 1,2,3` ]]; then
-        tmpIp6Mask="48"
-      fi
-# If the IP and gateway are in the same IPv6 A B C D class, not in the same IPv6 E class, the prefix of netmask should less equal than "64",
-# transfer to whole IPv6 subnet address is ffff:ffff:ffff:ffff:0000:0000:0000:0000.
-# The range of 2603:c020:8:a19b::ffff:e6da/64 is 2603:c020:0008:a19b:0000:0000:0000:0000 - 2603:c020:0008:a19b:ffff:ffff:ffff:ffff, the gateway 2603:... can be included.
-      if [[ `echo $ip6AddrWhole | cut -d':' -f 1,2,3,4` == `echo $ip6GateWhole | cut -d':' -f 1,2,3,4` ]]; then
-        tmpIp6Mask="64"
-      fi
-# If the IP and gateway are in the same IPv6 A B C D E class, not in the same IPv6 F class, the prefix of netmask should less equal than "80",
-# transfer to whole IPv6 subnet address is ffff:ffff:ffff:ffff:ffff:0000:0000:0000.
-# The range of 2603:c020:8:a19b::ffff:e6da/80 is 2603:c020:0008:a19b:0000:0000:0000:0000 - 2603:c020:0008:a19b:0000:ffff:ffff:ffff, the gateway 2603:... can be included.
-      if [[ `echo $ip6AddrWhole | cut -d':' -f 1,2,3,4,5` == `echo $ip6GateWhole | cut -d':' -f 1,2,3,4,5` ]]; then
-        tmpIp6Mask="80"
-      fi
-# If the IP and gateway are in the same IPv6 A B C D E F class, not in the same IPv6 G class, the prefix of netmask should less equal than "96",
-# transfer to whole IPv6 subnet address is ffff:ffff:ffff:ffff:ffff:ffff:0000:0000.
-# The range of 2603:c020:8:a19b::ffff:e6da/96 is 2603:c020:0008:a19b:0000:0000:0000:0000 - 2603:c020:0008:a19b:0000:0000:ffff:ffff, the gateway 2603:... can be included.
-      if [[ `echo $ip6AddrWhole | cut -d':' -f 1,2,3,4,5,6` == `echo $ip6GateWhole | cut -d':' -f 1,2,3,4,5,6` ]]; then
-        tmpIp6Mask="96"
-      fi
-# If the IP and gateway are in the same IPv6 A B C D E F G class, not in the same IPv6 H class, the prefix of netmask should less equal than "112",
-# transfer to whole IPv6 subnet address is ffff:ffff:ffff:ffff:ffff:ffff:ffff:0000.
-# The range of 2603:c020:8:a19b::ffff:e6da/112 is 2603:c020:0008:a19b:0000:0000:ffff:0000 - 2603:c020:0008:a19b:0000:0000:ffff:ffff, the gateway 2603:c020:0008:a19b:0000:0000:0000:ffff can't be included.
-      if [[ `echo $ip6AddrWhole | cut -d':' -f 1,2,3,4,5,6,7` == `echo $ip6GateWhole | cut -d':' -f 1,2,3,4,5,6,7` ]]; then
-        tmpIp6Mask="112"
+      else
+        ipv6SubnetCertificate "$ip6AddrWhole" "$ip6GateWhole"
       fi
       ip6Mask="$tmpIp6Mask"
 # Because of function "ipv6SubnetCalc" includes self-increment,
@@ -1826,8 +1816,8 @@ if [[ "$setNet" == "0" ]]; then
 # gears of IPv6 prefix which meets well with the conditions of above are transformed to whole IPv6 addresses in one variable.
 # The same thought of moving function "netmask" to the last, only need to transform IPv4 prefix to whole IPv4 address for one time.
       ipv6SubnetCalc "$ip6Mask"
-    }    
 # So in summary of the IPv6 sample in above, we should assign subnet mask "ffff:ffff:ffff:ffff:ffff:ffff:0000:0000"(prefix is "96") for it.
+    }
   }
 fi
 
@@ -1858,7 +1848,6 @@ getUserTimezone "/root/timezonelists" "ZGEyMGNhYjhhMWM2NDJlMGE0YmZhMDVmMDZlNzBmN
 echo -ne "\n${aoiBlue}# User Timezone${plain}\n\n"
 echo "$TimeZone"
 
-[ -n "$tmpWORD" ] && dependence openssl
 [[ -z "$tmpWORD" ]] && tmpWORD='LeitboGi0ro'
 myPASSWORD=$(openssl passwd -1 ''$tmpWORD'')
 [[ -z "$myPASSWORD" ]] && myPASSWORD='$1$OCy2O5bt$m2N6XMgFUwCn/2PPP114J/'
@@ -2348,13 +2337,15 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ 
 # Debian 8 and former or Raid 0 mode don't support xfs.
     [[ "$DebianDistNum" -le "8" || "$setRaid" == "0" ]] && sed -i '/d-i\ partman\/default_filesystem string xfs/d' /tmp/boot/preseed.cfg
   fi
-# To avoid to entry into low memory mode, Debian 10 needs at least 1GB memory and more, Debian 11+ and Kali needs at least 1.5GB memory and more. 
-  if [[ "$DebianDistNum" -ge "11" || "$linux_relese" == "kali" ]]; then
-    [[ "$TotalMem1" -ge "1572864" || "$TotalMem2" -ge "1572864" ]] && sed -i '/d-i\ lowmem\/low boolean true/d' /tmp/boot/preseed.cfg
+# To avoid to entry into low memory mode, Debian 11 needs at least 1.5GB memory and more, Debian 12+ and Kali needs at least 2GB memory and more. 
+  if [[ "$DebianDistNum" -ge "12" || "$linux_relese" == "kali" ]]; then
+    [[ "$TotalMem1" -ge "2384872" || "$TotalMem2" -ge "2384872" ]] && sed -i '/d-i\ lowmem\/low boolean true/d' /tmp/boot/preseed.cfg
+  elif [[ "$DebianDistNum" == "11" ]]; then
+    [[ "$TotalMem1" -ge "1788654" || "$TotalMem2" -ge "1788654" ]] && sed -i '/d-i\ lowmem\/low boolean true/d' /tmp/boot/preseed.cfg
   elif [[ "$DebianDistNum" == "10" ]]; then
-    [[ "$TotalMem1" -ge "1048576" || "$TotalMem2" -ge "1048576" ]] && sed -i '/d-i\ lowmem\/low boolean true/d' /tmp/boot/preseed.cfg
+    [[ "$TotalMem1" -ge "1192436" || "$TotalMem2" -ge "1192436" ]] && sed -i '/d-i\ lowmem\/low boolean true/d' /tmp/boot/preseed.cfg
   elif [[ "$DebianDistNum" -le "9" ]]; then
-    [[ "$TotalMem1" -ge "786432" || "$TotalMem2" -ge "786432" ]] && sed -i '/d-i\ lowmem\/low boolean true/d' /tmp/boot/preseed.cfg
+    [[ "$TotalMem1" -ge "894328" || "$TotalMem2" -ge "894328" ]] && sed -i '/d-i\ lowmem\/low boolean true/d' /tmp/boot/preseed.cfg
   fi
 # Ubuntu 20.04 and below does't support xfs, force grub-efi installation to the removable media path may cause grub install failed, low memory mode.
   if [[ "$linux_relese" == 'ubuntu' ]]; then
