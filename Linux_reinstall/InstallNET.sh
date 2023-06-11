@@ -593,9 +593,9 @@ function checkGrub() {
 function checkMem() {
   TotalMem1=$(cat /proc/meminfo | grep "^MemTotal:" | sed 's/kb//i' | grep -o "[0-9]*" | awk -F' ' '{print $NF}')
   TotalMem2=$(free -k | grep -wi "mem*" | awk '{printf $2}')
-# In any servers that total memory below 512mb install any OS, the low memory installation will be force enabled.
+# In any servers that total memory below 2.5GB to install debian, the low memory installation will be force enabled, "lowmem=+0, 1 or 2" is only for Debian like, 0 is lowest, 1 is medium, 2 is the highest.
   [[ "$1" == 'debian' ]] || [[ "$1" == 'ubuntu' ]] || [[ "$1" == 'kali' ]] && {
-    [[ "$TotalMem1" -le "1008600" || "$TotalMem2" -le "1008600" ]] && return 1 || return 0
+    [[ "$TotalMem1" -ge "2558072" || "$TotalMem2" -ge "2558072" ]] && lowmemLevel="" || lowmemLevel="lowmem=+1"
   }
 # Without the function of OS re-installation templates in control panel which provided by cloud companies(many companies even have not).
 # A independent VPS with only one hard drive is lack of the secondary hard drive to format and copy new OS file to main hard drive.
@@ -2160,10 +2160,8 @@ fi
 
 # RAM of RedHat series is 2GB required at least.
 [[ "$setNetbootXyz" == "0" ]] && {
-# "lowmem=+0, 1 or 2" is only for Debian like, 0 is lowest, 1 is medium, 2 is the highest.
-  checkMem "$linux_relese" "$RedHatSeries" "$targetRelese" || Add_OPTION="$Add_OPTION lowmem=+1"
-# Microsoft Hyper-V needs "vmlinuz" to boot with parameter "lowmem+=0".
-  [[ "$virtType" =~ "microsoft" && ! "$Add_OPTION" =~ "lowmem=+1" ]] && Add_OPTION="$Add_OPTION lowmem=+1"
+  checkMem "$linux_relese" "$RedHatSeries" "$targetRelese"
+  Add_OPTION="$Add_OPTION $lowmemLevel"
 }
 
 if [[ "$setNetbootXyz" == "1" ]]; then
@@ -2337,16 +2335,8 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ 
 # Debian 8 and former or Raid 0 mode don't support xfs.
     [[ "$DebianDistNum" -le "8" || "$setRaid" == "0" ]] && sed -i '/d-i\ partman\/default_filesystem string xfs/d' /tmp/boot/preseed.cfg
   fi
-# To avoid to entry into low memory mode, Debian 11 needs at least 1.5GB memory and more, Debian 12+ and Kali needs at least 2GB memory and more. 
-  if [[ "$DebianDistNum" -ge "12" || "$linux_relese" == "kali" ]]; then
-    [[ "$TotalMem1" -ge "2384872" || "$TotalMem2" -ge "2384872" ]] && sed -i '/d-i\ lowmem\/low boolean true/d' /tmp/boot/preseed.cfg
-  elif [[ "$DebianDistNum" == "11" ]]; then
-    [[ "$TotalMem1" -ge "1788654" || "$TotalMem2" -ge "1788654" ]] && sed -i '/d-i\ lowmem\/low boolean true/d' /tmp/boot/preseed.cfg
-  elif [[ "$DebianDistNum" == "10" ]]; then
-    [[ "$TotalMem1" -ge "1192436" || "$TotalMem2" -ge "1192436" ]] && sed -i '/d-i\ lowmem\/low boolean true/d' /tmp/boot/preseed.cfg
-  elif [[ "$DebianDistNum" -le "9" ]]; then
-    [[ "$TotalMem1" -ge "894328" || "$TotalMem2" -ge "894328" ]] && sed -i '/d-i\ lowmem\/low boolean true/d' /tmp/boot/preseed.cfg
-  fi
+# To avoid to entry into low memory mode.
+  [[ "$TotalMem1" -ge "2558072" || "$TotalMem2" -ge "2558072" ]] && sed -i '/d-i\ lowmem\/low boolean true/d' /tmp/boot/preseed.cfg
 # Ubuntu 20.04 and below does't support xfs, force grub-efi installation to the removable media path may cause grub install failed, low memory mode.
   if [[ "$linux_relese" == 'ubuntu' ]]; then
     sed -i '/d-i\ partman\/default_filesystem string xfs/d' /tmp/boot/preseed.cfg
@@ -2977,8 +2967,6 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
     [[ "$setIPv6" == "0" ]] && Add_OPTION="$Add_OPTION ipv6.disable=1" || Add_OPTION="$Add_OPTION"
 # Write menuentry to grub
     if [[ "$linux_relese" == 'ubuntu'  || "$linux_relese" == 'debian' || "$linux_relese" == 'kali' ]]; then
-      checkMem || Add_OPTION="$Add_OPTION lowmem=+1"
-      [[ "$virtType" =~ "microsoft" && ! "$Add_OPTION" =~ "lowmem=+1" ]] && Add_OPTION="$Add_OPTION lowmem=+1"
       BOOT_OPTION="auto=true $Add_OPTION hostname=$(hostname) domain=$linux_relese quiet"
     elif [[ "$linux_relese" == 'alpinelinux' ]]; then
       [[ "$Network4Config" == "isStatic" ]] && Add_OPTION="ip=$IPv4::$GATE:$MASK::$interface::$ipDNS:" || Add_OPTION="ip=dhcp"
