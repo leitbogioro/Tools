@@ -2553,11 +2553,7 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
       RedHatUrl="${LinuxMirror}/${DIST}/BaseOS/${VER}/os/"	  
       RepoBase="repo --name=base --baseurl=${LinuxMirror}/${DIST}/BaseOS/${VER}/os/"
       RepoAppStream="repo --name=appstream --baseurl=${LinuxMirror}/${DIST}/AppStream/${VER}/os/"
-      if [[ "$IsCN" == "cn" ]]; then
-        RepoEpel="repo --name=epel --baseurl=http://mirror.nju.edu.cn/epel/$RedHatSeries/Everything/${VER}/"
-      else
-        RepoEpel="repo --name=epel --baseurl=https://archives.fedoraproject.org/pub/epel/$RedHatSeries/Everything/${VER}/"
-      fi
+      [[ "$IsCN" == "cn" ]] && RepoEpel="repo --name=epel --baseurl=http://mirror.nju.edu.cn/epel/$RedHatSeries/Everything/${VER}/" || RepoEpel="repo --name=epel --baseurl=https://archives.fedoraproject.org/pub/epel/$RedHatSeries/Everything/${VER}/"
     elif [[ "$linux_relese" == 'centos' ]] && [[ "$RedHatSeries" -le "7" ]]; then
       RedHatUrl="${LinuxMirror}/${DIST}/os/${VER}/"
       AuthMethod="auth --useshadow --passalgo=sha512"
@@ -2565,11 +2561,7 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
       RepoBase="repo --name=base --baseurl=${LinuxMirror}/${DIST}/os/${VER}/"
       RepoAppStream="repo --name=updates --baseurl=${LinuxMirror}/${DIST}/updates/${VER}/"
       [[ "$IsCN" == "cn" ]] && FirewallRule="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/RedHat/RHEL7Public.xml" || FirewallRule="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/RedHat/RHEL7Public.xml"
-      if [[ "$IsCN" == "cn" ]]; then
-        RepoEpel="repo --name=epel --baseurl=http://mirror.nju.edu.cn/epel/$RedHatSeries/${VER}/"
-      else
-        RepoEpel="repo --name=epel --baseurl=https://archives.fedoraproject.org/pub/archive/epel/$RedHatSeries/${VER}/"
-      fi
+      [[ "$IsCN" == "cn" ]] && RepoEpel="repo --name=epel --baseurl=http://mirror.nju.edu.cn/epel/$RedHatSeries/${VER}/" || RepoEpel="repo --name=epel --baseurl=https://archives.fedoraproject.org/pub/archive/epel/$RedHatSeries/${VER}/"
     fi
   elif [[ "$linux_relese" == 'fedora' ]]; then
     RedHatUrl="${LinuxMirror}/releases/${DIST}/Server/${VER}/os/"
