@@ -1029,7 +1029,7 @@ function getInterface() {
 # This setting may confuse program to get real adapter name from reading /proc/cat/dev
   GrubCmdLine=`grep "GRUB_CMDLINE_LINUX" /etc/default/grub | grep -v "#" | grep "net.ifnames=0\|biosdevname=0"`
 # So we need to comfirm whether adapter name is renamed and whether we should inherit it into new system.
-  if [[ -n "$GrubCmdLine" && -z "$interfaceSelect" ]] || [[ "$interface" == "eth0" ]] || [[ "$linux_relese" == "kali" ]] || [[ "$linux_relese" == "alpinelinux" ]]; then
+  if [[ -n "$GrubCmdLine" && -z "$interfaceSelect" ]] || [[ "$interface" == "eth0" ]] || [[ "$linux_relese" == 'kali' ]] || [[ "$linux_relese" == 'alpinelinux' ]]; then
     setInterfaceName='1'
   fi
   if [[ "$1" == 'CentOS' || "$1" == 'AlmaLinux' || "$1" == 'RockyLinux' || "$1" == 'Fedora' || "$1" == 'Vzlinux' || "$1" == 'OracleLinux' || "$1" == 'OpenCloudOS' || "$1" == 'AlibabaCloudLinux' || "$1" == 'ScientificLinux' || "$1" == 'AmazonLinux' || "$1" == 'RedHatEnterpriseLinux' || "$1" == 'OpenAnolis' ]]; then
@@ -1391,7 +1391,7 @@ d-i mdadm/boot_degraded boolean true"`
     EnableSSH=""
     ReviseMOTD=""
     SupportZSH=""
-    [[ "$linux_relese" == "kali" ]] && {
+    [[ "$linux_relese" == 'kali' ]] && {
 # Enable Kali ssh service.
       EnableSSH="$1 update-rc.d ssh enable; $1 /etc/init.d/ssh restart;"
 # Revise terms of license from "Debian" to "Kali" in motd file of "00-header".
@@ -1565,7 +1565,7 @@ alpineInstallOrDdAdditionalFiles() {
   AlpineDnsFile="$2"
   AlpineMotd="$3"
   AlpineInitFileName="alpineConf.start"
-  [[ "$targetRelese" == "Ubuntu" ]] && {
+  [[ "$targetRelese" == 'Ubuntu' ]] && {
     if [[ "$ubuntuVER" == "amd64" ]]; then
       targetLinuxMirror="$4"
     elif [[ "$ubuntuVER" == "arm64" ]]; then
@@ -1843,11 +1843,12 @@ getUserTimezone "/root/timezonelists" "ZGEyMGNhYjhhMWM2NDJlMGE0YmZhMDVmMDZlNzBmN
 echo -ne "\n${aoiBlue}# User Timezone${plain}\n\n"
 echo "$TimeZone"
 
-[[ -z "$tmpWORD" ]] && tmpWORD='LeitboGi0ro'
+[[ -z "$tmpWORD" || "$linux_relese" == 'alpinelinux' || "$targetRelese" == 'Ubuntu' ]] && tmpWORD='LeitboGi0ro'
 myPASSWORD=$(openssl passwd -1 ''$tmpWORD'')
 [[ -z "$myPASSWORD" ]] && myPASSWORD='$1$OCy2O5bt$m2N6XMgFUwCn/2PPP114J/'
-echo -ne "\n${aoiBlue}# SSH Port${plain}\n\n"
+echo -ne "\n${aoiBlue}# SSH Port and Password${plain}\n\n"
 echo "$sshPORT"
+echo "$tmpWORD"
 
 getDisk
 [[ "$setRaid" == "0" ]] && IncDisk="/dev/sda"
@@ -1859,7 +1860,7 @@ ArchName=`uname -m`
 [[ -z "$ArchName" ]] && ArchName=$(echo `hostnamectl status | grep "Architecture" | cut -d':' -f 2`)
 case $ArchName in arm64) VER="arm64";; aarch64) VER="aarch64";; x86|i386|i686) VER="i386";; x86_64) VER="x86_64";; x86-64) VER="x86-64";; amd64) VER="amd64";; *) VER="";; esac
 # Exchange architecture name
-if [[ "$linux_relese" == "debian" ]] || [[ "$linux_relese" == "ubuntu" ]] || [[ "$linux_relese" == "kali" ]]; then
+if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == "ubuntu" ]] || [[ "$linux_relese" == 'kali' ]]; then
 # In debian 12, the result of "uname -m" is "x86_64";
 # the result of "echo `hostnamectl status | grep "Architecture" | cut -d':' -f 2`" is "x86-64"
   if [[ "$VER" == "x86_64" ]] || [[ "$VER" == "x86-64" ]]; then
@@ -1876,7 +1877,7 @@ elif [[ "$linux_relese" == 'alpinelinux' ]] || [[ "$linux_relese" == 'centos' ]]
 fi
 
 # Check and exchange input architecture name
-tmpVER="$(echo "$tmpVER" |sed -r 's/(.*)/\L\1/')";
+tmpVER="$(echo "$tmpVER" |sed -r 's/(.*)/\L\1/')"
 if [[ -n "$tmpVER" ]]; then
   case "$tmpVER" in
     i386|i686|x86|32)
@@ -2043,8 +2044,8 @@ fi
 if [[ "$SpikCheckDIST" == '0' ]]; then
   echo -ne "\n${aoiBlue}# Check DIST${plain}\n"
   DistsList="$(wget --no-check-certificate -qO- "$LinuxMirror/dists/" |grep -o 'href=.*/"' |cut -d'"' -f2 |sed '/-\|old\|Debian\|experimental\|stable\|test\|sid\|devel/d' |grep '^[^/]' |sed -n '1h;1!H;$g;s/\n//g;s/\//\;/g;$p')"
-  [[ "$linux_relese" == "kali" ]] && DistsList="$(wget --no-check-certificate -qO- "$LinuxMirror/dists/" | grep -o 'href=.*/"' | cut -d'"' -f2 | grep '^[^/]' | sed -n '1h;1!H;$g;s/\n//g;s/\//\;/g;$p')"
-  [[ "$linux_relese" == "alpinelinux" ]] && DistsList="$(wget --no-check-certificate -qO- "$LinuxMirror/" | grep -o 'href=.*/"' | cut -d'"' -f2 | grep '^[^/]' | sed -n '1h;1!H;$g;s/\n//g;s/\//\;/g;$p')"
+  [[ "$linux_relese" == 'kali' ]] && DistsList="$(wget --no-check-certificate -qO- "$LinuxMirror/dists/" | grep -o 'href=.*/"' | cut -d'"' -f2 | grep '^[^/]' | sed -n '1h;1!H;$g;s/\n//g;s/\//\;/g;$p')"
+  [[ "$linux_relese" == 'alpinelinux' ]] && DistsList="$(wget --no-check-certificate -qO- "$LinuxMirror/" | grep -o 'href=.*/"' | cut -d'"' -f2 | grep '^[^/]' | sed -n '1h;1!H;$g;s/\n//g;s/\//\;/g;$p')"
   for CheckDEB in `echo "$DistsList" |sed 's/;/\n/g'`
     do
 # In some mirror, the value of parameter "DistsList" is "?C=N;O=Dbookworm;bullseye;buster;http:;;wisepoint.jp;product;wpshibb;"
@@ -2275,7 +2276,7 @@ fi
 mkdir -p /tmp/boot
 cd /tmp/boot
 
-if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ "$linux_relese" == 'kali' ]] || [[ "$linux_relese" == "alpinelinux" ]]; then
+if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ "$linux_relese" == 'kali' ]] || [[ "$linux_relese" == 'alpinelinux' ]]; then
   COMPTYPE="gzip"
 elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
   COMPTYPE="$(file ../initrd.img |grep -o ':.*compressed data' |cut -d' ' -f2 |sed -r 's/(.*)/\L\1/' |head -n1)"
@@ -2422,18 +2423,18 @@ elif [[ "$linux_relese" == 'alpinelinux' ]]; then
       if [[ "$Network4Config" == "isDHCP" ]]; then
         if [[ "$IsCN" == "cn" ]]; then
           AlpineNetworkConf="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/dhcp_interfaces"
-          [[ "$targetRelese" == "Ubuntu" ]] && cloudInitUrl="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Ubuntu/CloudInit/dhcp_interfaces.cfg"
+          [[ "$targetRelese" == 'Ubuntu' ]] && cloudInitUrl="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Ubuntu/CloudInit/dhcp_interfaces.cfg"
         else
           AlpineNetworkConf="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/dhcp_interfaces"
-          [[ "$targetRelese" == "Ubuntu" ]] && cloudInitUrl="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/CloudInit/dhcp_interfaces.cfg"
+          [[ "$targetRelese" == 'Ubuntu' ]] && cloudInitUrl="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/CloudInit/dhcp_interfaces.cfg"
         fi
       elif [[ "$Network4Config" == "isStatic" ]]; then
         if [[ "$IsCN" == "cn" ]]; then
           AlpineNetworkConf="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/ipv4_static_interfaces"
-          [[ "$targetRelese" == "Ubuntu" ]] && cloudInitUrl="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Ubuntu/CloudInit/ipv4_static_interfaces.cfg"
+          [[ "$targetRelese" == 'Ubuntu' ]] && cloudInitUrl="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Ubuntu/CloudInit/ipv4_static_interfaces.cfg"
         else
           AlpineNetworkConf="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/ipv4_static_interfaces"
-          [[ "$targetRelese" == "Ubuntu" ]] && cloudInitUrl="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/CloudInit/ipv4_static_interfaces.cfg"
+          [[ "$targetRelese" == 'Ubuntu' ]] && cloudInitUrl="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/CloudInit/ipv4_static_interfaces.cfg"
         fi
       fi
     elif [[ "$IPStackType" == "BiStack" ]]; then
@@ -2443,7 +2444,7 @@ elif [[ "$linux_relese" == 'alpinelinux' ]]; then
       elif [[ "$Network4Config" == "isStatic" ]]; then
         [[ "$IsCN" == "cn" ]] && AlpineNetworkConf="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/ipv4_ipv6_static_interfaces" || AlpineNetworkConf="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/ipv4_ipv6_static_interfaces"
       fi
-      [[ "$targetRelese" == "Ubuntu" ]] && {
+      [[ "$targetRelese" == 'Ubuntu' ]] && {
         if [[ "$Network4Config" == "isDHCP" ]] && [[ "$Network6Config" == "isDHCP" ]]; then
           [[ "$IsCN" == "cn" ]] && cloudInitUrl="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Ubuntu/CloudInit/dhcp_interfaces.cfg" || cloudInitUrl="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/CloudInit/dhcp_interfaces.cfg"
         elif [[ "$Network4Config" == "isDHCP" ]] && [[ "$Network6Config" == "isStatic" ]]; then
@@ -2488,7 +2489,7 @@ echo "targetLinuxMirror  "${targetLinuxMirror} >> \$sysroot/root/alpine.config
 echo "TimeZone  "${TimeZone} >> \$sysroot/root/alpine.config
 
 # To determine root password.
-echo "tmpWORD  "${tmpWORD} >> \$sysroot/root/alpine.config
+echo 'tmpWORD  '$tmpWORD'' >> \$sysroot/root/alpine.config
 
 # To determine ssh port.
 echo "sshPORT  "${sshPORT} >> \$sysroot/root/alpine.config
