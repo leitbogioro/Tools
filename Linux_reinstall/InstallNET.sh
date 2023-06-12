@@ -1860,7 +1860,7 @@ ArchName=`uname -m`
 [[ -z "$ArchName" ]] && ArchName=$(echo `hostnamectl status | grep "Architecture" | cut -d':' -f 2`)
 case $ArchName in arm64) VER="arm64";; aarch64) VER="aarch64";; x86|i386|i686) VER="i386";; x86_64) VER="x86_64";; x86-64) VER="x86-64";; amd64) VER="amd64";; *) VER="";; esac
 # Exchange architecture name
-if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == "ubuntu" ]] || [[ "$linux_relese" == 'kali' ]]; then
+if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ "$linux_relese" == 'kali' ]]; then
 # In debian 12, the result of "uname -m" is "x86_64";
 # the result of "echo `hostnamectl status | grep "Architecture" | cut -d':' -f 2`" is "x86-64"
   if [[ "$VER" == "x86_64" ]] || [[ "$VER" == "x86-64" ]]; then
