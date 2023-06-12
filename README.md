@@ -66,7 +66,7 @@ If you need to add other parameters, version number must be assigned!
 <br />
 <br />
 
-**-alpine edge**: Alpine Linux 3.16 and later, to keep updating to newest version, "edge" is most recommend obviously.
+**-alpine 3.18/edge**: Alpine Linux 3.18 and later, to keep updating to newest version, "edge" is most recommend obviously.
 <br />
 <br />
 
