@@ -493,6 +493,7 @@ function ipv6SubnetCalc() {
 function getDisk() {
 # $disks is definited as the default disk, if server has 2 and more disks, the first disk will be responsible of the grub booting.
   disks=`lsblk -ip | grep -v "fd[0-9]*\|sr[0-9]*\|ram[0-9]*\|loop[0-9]*" | sed 's/[[:space:]]*$//g' | grep -w "part /\|part /boot" | head -n 1 | cut -d' ' -f1 | sed 's/..//' | sed 's/[0-9]//g'`
+  [[ -z "$disks" ]] && disks=`lsblk -ip | grep -v "fd[0-9]*\|sr[0-9]*\|ram[0-9]*\|loop[0-9]*" | sed 's/[[:space:]]*$//g' | grep -w "disk /\|disk /boot" | head -n 1 | cut -d' ' -f1`
   echo "${disks: -1}" | [[ -n "`sed -n '/^[0-9][0-9]*$/p'`" ]] && disks=`echo "$disks" | sed 's/[0-9]//g'`
   [ -n "$disks" ] || echo ""
   echo "$disks" | grep -q "/dev"
@@ -718,7 +719,7 @@ function checkSys() {
   fi
 
 # Debian like linux OS necessary components.
-  apt install curl dnsutils efibootmgr file jq net-tools openssl subnetcalc tuned wget xz-utils -y
+  apt install cpio curl dnsutils efibootmgr fdisk file gzip jq net-tools openssl subnetcalc tuned wget xz-utils -y
 
 # Redhat like Linux OS prefer to use dnf instead of yum because former has a higher execute efficiency.
   yum install epel-release -y
@@ -728,8 +729,8 @@ function checkSys() {
 # Reference: https://anatolinicolae.com/failed-loading-plugin-osmsplugin-no-module-named-librepo/
     [[ "$CurrentOS" == "CentOS" && "$CurrentOSVer" == "8" ]] && dnf install python3-librepo -y
 # Redhat like linux OS necessary components.
-    dnf install bind-utils curl dnsutils efibootmgr file ipcalc jq net-tools openssl redhat-lsb syslinux tuned wget xz --skip-broken -y
-    dnf update -y
+    dnf install bind-utils cpio curl dnsutils efibootmgr file gzip ipcalc jq net-tools openssl redhat-lsb syslinux tuned util-linux wget xz --skip-broken -y
+    # dnf update -y
   else
     yum install dnf -y > /root/yum_execute.log 2>&1
 # In some versions of CentOS 8 which are not subsumed into CentOS-stream are end of supporting by CentOS official, so the source is failure.
@@ -748,12 +749,12 @@ function checkSys() {
 # Run dnf update and install components.
 # In official template of AlmaLinux 9 of Linode, "tuned" must be installed otherwise "grub2-mkconfig" can't work formally.
 # Reference: https://phanes.silogroup.org/fips-disa-stig-hardening-on-centos9/
-      dnf install bind-utils curl dnsutils efibootmgr file ipcalc jq net-tools openssl redhat-lsb syslinux tuned wget xz --skip-broken -y
-      dnf update -y
+      dnf install bind-utils cpio curl dnsutils efibootmgr file gzip ipcalc jq net-tools openssl redhat-lsb syslinux tuned util-linux wget xz --skip-broken -y
+      # dnf update -y
 # Oracle Linux 7 doesn't support DNF.
     elif [[ `grep -i "no package" /root/yum_execute.log` ]]; then
-      yum install bind-utils curl dnsutils efibootmgr file ipcalc jq net-tools openssl redhat-lsb syslinux tuned wget xz --skip-broken -y
-      yum update -y
+      yum install bind-utils cpio curl dnsutils efibootmgr file gzip ipcalc jq net-tools openssl redhat-lsb syslinux tuned util-linux wget xz --skip-broken -y
+      # yum update -y
     fi
     rm -rf /root/yum_execute.log
   fi
@@ -767,10 +768,10 @@ function checkSys() {
 # Add community mirror.
     [[ ! `grep -i "community" /etc/apk/repositories` ]] && sed -i '$a\http://ftp.udx.icscoe.jp/Linux/alpine/v'${CurrentAlpineVer}'/community' /etc/apk/repositories
 # Add testing mirror.
-    [[ ! `grep -i "testing" /etc/apk/repositories` ]] && sed -i '$a\http://ftp.udx.icscoe.jp/Linux/alpine/edge/testing' /etc/apk/repositories
+    # [[ ! `grep -i "testing" /etc/apk/repositories` ]] && sed -i '$a\http://ftp.udx.icscoe.jp/Linux/alpine/edge/testing' /etc/apk/repositories
 # Alpine Linux use "apk" as package management.
     apk update
-    apk add bash bind-tools coreutils cpio curl efibootmgr file gawk grep gzip ipcalc jq lsblk net-tools openssl sed shadow tzdata wget xz
+    apk add bash bind-tools coreutils cpio curl efibootmgr file gawk grep gzip ipcalc jq net-tools openssl sed shadow tzdata util-linux wget xz
 # Use bash to replace ash.
     sed -i 's/root:\/bin\/ash/root:\/bin\/bash/g' /etc/passwd
   }
@@ -1150,7 +1151,7 @@ function getInterface() {
         if [[ "$IPStackType" == "IPv4Stack" ]]; then
           NetCfgFiles=`grep -wrl 'iface' | grep -wrl "auto\|dhcp\|static\|manual" | grep -wrl 'inet' "$Count""/" 2>/dev/null | grep -v "if-*" | grep -v "state" | grep -v "helper" | grep -v "template"`
         elif [[ "$IPStackType" == "BiStack" ]] || [[ "$IPStackType" == "IPv6Stack" ]]; then
-          NetCfgFiles=`grep -wrl 'iface' | grep -wrl "auto\|dhcp\|static\|manual" | grep -wrl 'inet' | grep -wrl 'inet6\|ip -6' "$Count""/" 2>/dev/null | grep -v "if-*" | grep -v "state" | grep -v "helper" | grep -v "template"`
+          NetCfgFiles=`grep -wrl 'iface' | grep -wrl "auto\|dhcp\|static\|manual" | grep -wrl -wrl 'inet\|inet6\|ip -6' "$Count""/" 2>/dev/null | grep -v "if-*" | grep -v "state" | grep -v "helper" | grep -v "template"`
         fi
         for Files in $NetCfgFiles; do
           if [[ `grep -w "$interface" "$Files"` != "" ]]; then
@@ -2704,7 +2705,8 @@ fi
   [[ "$(echo "$DIST" |grep -o '^[0-9]\{1\}')" == '5' ]] && sed -i '0,/^%end/s//#%end/' /tmp/boot/ks.cfg
 fi
 
-find . | cpio -H newc --create --verbose | gzip -1 > /tmp/initrd.img
+# find . | cpio -H newc --create --verbose | gzip -1 > /tmp/initrd.img
+find . | cpio -o -H newc | gzip -1 > /tmp/initrd.img
 cp -f /tmp/initrd.img /boot/initrd.img || sudo cp -f /tmp/initrd.img /boot/initrd.img
 cp -f /tmp/vmlinuz /boot/vmlinuz || sudo cp -f /tmp/vmlinuz /boot/vmlinuz
 
@@ -3000,7 +3002,9 @@ chown root:root $GRUBDIR/$GRUBFILE
 chmod 444 $GRUBDIR/$GRUBFILE
 
 if [[ "$loaderMode" == "0" ]]; then
-  sleep 5 && reboot || sudo reboot >/dev/null 2>&1
+  # sleep 5 && reboot || sudo reboot >/dev/null 2>&1
+  echo -ne "\n[${green}finished!${plain}] Input '${yellow}reboot${plain}' to continue the subsequential installation.\n"
+  exit 1
 else
   rm -rf "$HOME/loader"
   mkdir -p "$HOME/loader"
