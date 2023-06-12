@@ -30,7 +30,7 @@ root_usage=`df -h / | awk '/\// {print $(NF-1)}'`
 memory_usage=`free -m | awk '/Mem:/ { total=$2; used=$3 } END { printf("%3.1f%%", used/total*100)}'`
 
 [[ `free -m | awk '/Swap/ {print $2}'` == "0" ]] && swap_usage="0.0%" || swap_usage=`free -m | awk '/Swap/ { printf("%3.1f%%", $3/$2*100) }'`
-users=`users | wc -w`
+usersnum=$(expr $(users | wc -w) + 1)
 time=`uptime | grep -ohe 'up .*' | sed 's/,/\ hours/g' | awk '{ printf $2" "$3 }'`
 processes=`ps aux | wc -l`
 localip=`ip -4 addr show | grep -wA 5 "eth0" | grep -wv "lo\|host" | grep -w "inet" | grep -w "scope global*\|link*" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}' | cut -d'/' -f1`
@@ -87,7 +87,7 @@ printf "%-30s%-15s\n" " Public IPv6 Address:" "$IPv6"
 printf "%-30s%-15s\n" " Memory Usage:" "$memory_usage"
 printf "%-30s%-15s\n" " Usage On /:" "$root_usage"
 printf "%-30s%-15s\n" " Swap Usage:" "$swap_usage"
-printf "%-30s%-15s\n" " Local Users:" "$users"
+printf "%-30s%-15s\n" " Local Users:" "$usersnum"
 printf "%-30s%-15s\n" " Processes:" "$processes"
 printf "%-30s%-15s\n" " System Uptime:" "$time"
 echo
