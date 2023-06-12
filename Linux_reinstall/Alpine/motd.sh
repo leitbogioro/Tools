@@ -30,7 +30,7 @@ root_usage=`df -h / | awk '/\// {print $(NF-1)}'`
 memory_usage=`free -m | awk '/Mem:/ { total=$2; used=$3 } END { printf("%3.1f%%", used/total*100)}'`
 
 [[ `free -m | awk '/Swap/ {print $2}'` == "0" ]] && swap_usage="0.0%" || swap_usage=`free -m | awk '/Swap/ { printf("%3.1f%%", $3/$2*100) }'`
-usersnum=$(expr $(users | wc -w) + 1)
+usersnum=`netstat -anp | grep -i "sshd: [a-z]" | grep -i "established" | grep -iw 'tcp\|tcp6' | wc -l`
 time=`uptime | grep -ohe 'up .*' | sed 's/,/\ hours/g' | awk '{ printf $2" "$3 }'`
 processes=`ps aux | wc -l`
 localip=`ip -4 addr show | grep -wA 5 "eth0" | grep -wv "lo\|host" | grep -w "inet" | grep -w "scope global*\|link*" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}' | cut -d'/' -f1`
