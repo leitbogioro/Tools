@@ -1948,7 +1948,7 @@ if [[ -n "$tmpDIST" ]]; then
 # Recommend "edge" version of Alpine Linux to make sure to keep updating always and 3.15 or former versions were deperated.
     AlpineVer1=`echo "$DIST" | sed 's/[a-z][A-Z]*//g' | cut -d"." -f 1`
     AlpineVer2=`echo "$DIST" | sed 's/[a-z][A-Z]*//g' | cut -d"." -f 2`
-    if [[ "$AlpineVer1" -lt "3" || "$AlpineVer2" -le "15" ]] && [[ "$DIST" != "edge" ]]; then
+    if [[ "$AlpineVer1" -lt "3" || "$AlpineVer2" -le "17" ]] && [[ "$DIST" != "edge" ]]; then
       echo -ne "\n${red}Warning:${plain} $Relese $DIST is not supported!\n"
       exit 1
     fi
@@ -2704,7 +2704,7 @@ fi
   [[ "$(echo "$DIST" |grep -o '^[0-9]\{1\}')" == '5' ]] && sed -i '0,/^%end/s//#%end/' /tmp/boot/ks.cfg
 fi
 
-find . | cpio -H newc --create --verbose | gzip -9 > /tmp/initrd.img
+find . | cpio -H newc --create --verbose | gzip -1 > /tmp/initrd.img
 cp -f /tmp/initrd.img /boot/initrd.img || sudo cp -f /tmp/initrd.img /boot/initrd.img
 cp -f /tmp/vmlinuz /boot/vmlinuz || sudo cp -f /tmp/vmlinuz /boot/vmlinuz
 
