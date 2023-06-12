@@ -86,7 +86,7 @@ printf "%-30s%-15s\n" " Public IPv6 Address:" "$IPv6"
 printf "%-30s%-15s\n" " Memory Usage:" "$memory_usage"
 printf "%-30s%-15s\n" " Usage On /:" "$root_usage"
 printf "%-30s%-15s\n" " Swap Usage:" "$swap_usage"
-printf "%-30s%-15s\n" " Login Users:" "$usersnum"
+printf "%-30s%-15s\n" " Users Logged In:" "$usersnum"
 printf "%-30s%-15s\n" " Processes:" "$processes"
 printf "%-30s%-15s\n" " System Uptime:" "$time"
 echo
