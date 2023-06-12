@@ -3004,7 +3004,7 @@ chmod 444 $GRUBDIR/$GRUBFILE
 
 if [[ "$loaderMode" == "0" ]]; then
   # sleep 5 && reboot || sudo reboot >/dev/null 2>&1
-  echo -ne "\n[${green}finished!${plain}] Input '${yellow}reboot${plain}' to continue the subsequential installation.\n"
+  echo -ne "\n[${green}Finish${plain}] Input '${yellow}reboot${plain}' to continue the subsequential installation.\n"
   exit 1
 else
   rm -rf "$HOME/loader"
