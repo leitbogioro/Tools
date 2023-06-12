@@ -1817,11 +1817,11 @@ if [[ "$setNet" == "0" ]]; then
 fi
 
 IPv4="$ipAddr"; MASK="$ipMask"; GATE="$ipGate";
-[[ -z "$IPv4DNSLookup" && -z "$IPv6DNSLookup" ]] && {
+if [[ -z "$IPv4" && -z "$MASK" && -z "$GATE" ]] && [[ -z "$ip6Addr" && -z "$ip6Mask" && -z "$ip6Gate" ]]; then
   echo -ne "\n[${red}Error${plain}] The network of your machine may not be available!\n"
   bash $0 error
   exit 1
-}
+fi
 
 echo -ne "\n${aoiBlue}# Network Details${plain}\n"
 echo -ne "\n[${yellow}Adapter Name${plain}]  $interface"
