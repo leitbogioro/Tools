@@ -27,7 +27,7 @@ or:
 <pre><code>dnf install wget -y</code></pre>
 Alpine Linux:
 <pre><code>apk update</code></pre>
-<pre><code>apk add wget</code></pre>
+<pre><code>apk add bash wget</code></pre>
 
 ## Quickly start
 If you need to add other parameters, version number must be assigned!
