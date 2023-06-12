@@ -46,7 +46,7 @@ setup-apkcache /var/cache/apk
 # Add community mirror
 sed -i '$a\'$LinuxMirror'/'$alpineVer'/community' /etc/apk/repositories
 # Add edge testing to the repositories
-# sed -i '$a\'$LinuxMirror'/edge/testing' /etc/apk/repositories
+sed -i '$a\'$LinuxMirror'/edge/testing' /etc/apk/repositories
 
 # Synchronize time from hardware
 hwclock -s
