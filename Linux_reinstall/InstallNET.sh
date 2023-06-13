@@ -1508,8 +1508,8 @@ vgremove --select all -ff -y; \
 pvremove /dev/* -ff -y; \
 [[ -n "\$(blkid -t TYPE='vfat' -o device)" ]] && umount "\$(blkid -t TYPE='vfat' -o device)"; \
 debconf-set partman-auto/disk "\$(list-devices disk | grep ${IncDisk} | head -n 1)"; \
-wget -qO- '$DDURL' | $DEC_CMD | /bin/dd of=\$(list-devices disk | head -n1); \
-mount.ntfs-3g \$(list-devices partition | head -n1) /mnt; \
+wget -qO- '$DDURL' | $DEC_CMD | /bin/dd of=\$(list-devices disk | grep ${IncDisk} | head -n 1); \
+mount.ntfs-3g \$(list-devices partition | grep ${IncDisk} | head -n1) /mnt; \
 cd '/mnt/ProgramData/Microsoft/Windows/Start Menu/Programs'; \
 cd Start* || cd start*; \
 cp -f '/net.bat' './net.bat'; \
@@ -2100,11 +2100,11 @@ if [[ "$ddMode" == '1' ]]; then
       ubuntuVER="arm64"
     fi
     if [[ "$tmpURL" == "" ]]; then
-      tmpURL="https://cloud-images.a.disk.re/Ubuntu/$finalDIST-server-cloudimg-$ubuntuVER.raw"
+      tmpURL="https://cloud-images.a.disk.re/Ubuntu/"
     fi
-    DDURL="$tmpURL"
+    DDURL="$tmpURL$finalDIST-server-cloudimg-$ubuntuVER.raw"
     ReleaseName="$targetRelese $finalDIST $ubuntuVER"
-  elif [[ -n "$tmpURL" ]]; then
+  elif [[ "$tmpURL" != "" ]]; then
     DDURL="$tmpURL"
     echo "$DDURL" | grep -q '^http://\|^ftp://\|^https://';
     [[ $? -ne '0' ]] && echo 'Please input vaild URL, Only support http://, ftp:// and https:// !' && exit 1;
@@ -2254,7 +2254,7 @@ if [[ "$IncFirmware" == '1' ]]; then
     fi
     if [[ "$ddMode" == '1' ]]; then
       vKernel_udeb=$(wget --no-check-certificate -qO- "http://$LinuxMirror/dists/$DIST/main/installer-$VER/current/images/udeb.list" |grep '^acpi-modules' |head -n1 |grep -o '[0-9]\{1,2\}.[0-9]\{1,2\}.[0-9]\{1,2\}-[0-9]\{1,2\}' |head -n1)
-      [[ -z "vKernel_udeb" ]] && vKernel_udeb="5.10.0-22"
+      [[ -z "vKernel_udeb" ]] && vKernel_udeb="6.1.0-9"
     fi
   elif [[ "$linux_relese" == 'kali' ]]; then
     if [[ "$IsCN" == "cn" ]]; then
