@@ -94,4 +94,4 @@ sed -ri 's/ip6DNS1/'${ip6DNS1}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
 sed -ri 's/ip6DNS2/'${ip6DNS2}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
 
 # Reboot, the system in the memory will all be written to the hard drive.
-# exec reboot
+exec reboot
