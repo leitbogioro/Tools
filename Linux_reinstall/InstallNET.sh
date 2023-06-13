@@ -1509,7 +1509,7 @@ pvremove /dev/* -ff -y; \
 [[ -n "\$(blkid -t TYPE='vfat' -o device)" ]] && umount "\$(blkid -t TYPE='vfat' -o device)"; \
 debconf-set partman-auto/disk "\$(list-devices disk | grep ${IncDisk} | head -n 1)"; \
 wget -qO- '$DDURL' | $DEC_CMD | /bin/dd of=\$(list-devices disk | grep ${IncDisk} | head -n 1); \
-mount.ntfs-3g \$(list-devices partition | grep ${IncDisk} | head -n1) /mnt; \
+mount.ntfs-3g \$(list-devices partition | grep ${IncDisk} | head -n 1) /mnt; \
 cd '/mnt/ProgramData/Microsoft/Windows/Start Menu/Programs'; \
 cd Start* || cd start*; \
 cp -f '/net.bat' './net.bat'; \
