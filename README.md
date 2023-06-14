@@ -237,7 +237,7 @@ Singapore:
 <pre><code>bash InstallNET.sh -debian 12 -mirror "http://ftp.sg.debian.org/debian/"</code></pre>
 South Korea:
 <br />
-<pre><code>bash InstallNET.sh -debian 12 -mirror "http://ftp.kddilabs.jp/pub/debian/"</code></pre>
+<pre><code>bash InstallNET.sh -debian 12 -mirror "http://ftp.kaist.ac.kr/debian/"</code></pre>
 Taiwan:
 <br />
 <pre><code>bash InstallNET.sh -debian 12 -mirror "http://ftp.tw.debian.org/debian/"</code></pre>
