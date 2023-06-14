@@ -163,15 +163,15 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**--ip-addr "IPv4 address"**: It must be added with --ip-gate and --ip-mask together, if you have added --network "static/manual", don't assign it again!
+**--ip-addr "IPv4 address"**: It must be added with --ip-gate and --ip-mask together, in this situation, --network "static/manual" is necessary.
 <br />
 <br />
 
-**--ip-gate "IPv4 gateway"**: It must be added with --ip-addr and --ip-mask together, if you have added --network "static/manual", don't assign it again!
+**--ip-gate "IPv4 gateway"**: It must be added with --ip-addr and --ip-mask together, in this situation, --network "static/manual" is necessary.
 <br />
 <br />
 
-**--ip-mask "IPv4 subnet musk"**: It must be added with --ip-addr and --ip-gate together, if you have added --network "static/manual", don't assign it again!
+**--ip-mask "IPv4 subnet musk"**: It must be added with --ip-addr and --ip-gate together, in this situation, --network "static/manual" is necessary.
 <br />
 <br />
 
@@ -179,15 +179,15 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**--ip6-addr "IPv6 address"**: It must be added with --ip6-gate and --ip6-mask together, if you have added --network "static/manual", don't assign it again!
+**--ip6-addr "IPv6 address"**: It must be added with --ip6-gate and --ip6-mask together, in this situation, --network "static/manual" is necessary.
 <br />
 <br />
 
-**--ip6-gate "IPv6 gateway"**: It must be added with --ip6-addr and --ip6-mask together, if you have added --network "static/manual", don't assign it again!
+**--ip6-gate "IPv6 gateway"**: It must be added with --ip6-addr and --ip6-mask together, in this situation, --network "static/manual" is necessary.
 <br />
 <br />
 
-**--ip6-mask "IPv6 subnet musk"**: It must be added with --ip6-addr and --ip6-gate together, if you have added --network "static/manual", don't assign it again!
+**--ip6-mask "IPv6 subnet musk"**: It must be added with --ip6-addr and --ip6-gate together, in this situation, --network "static/manual" is necessary.
 <br />
 <br />
 
