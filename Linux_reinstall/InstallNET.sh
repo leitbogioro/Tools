@@ -1327,6 +1327,9 @@ function DebianModifiedPreseed() {
     fi
 # Set parameter "mouse-=a" in /usr/share/vim/vim-version/defaults.vim to support copy text from terminal to client.
     VimSupportCopy="$1 sed -i 's/set mouse=a/set mouse-=a/g' /usr/share/vim/${DebianVimVer}/defaults.vim;"
+# Enable cursor edit backspace freely in insert mode.
+# Reference: https://wonderwall.hatenablog.com/entry/2016/03/23/232634
+    VimIndentEolStart="$1 sed -i 's/set compatible/set nocompatible/g' /etc/vim/vimrc.tiny; $1 sed -i '/set nocompatible/a\set backspace=2' /etc/vim/vimrc.tiny;"
 # If the network config type of server is DHCP and it have both public IPv4 and IPv6 address,
 # Debian install program even get nerwork config with DHCP, but after log into new system,
 # only the IPv4 of the server has been configurated.
@@ -1400,7 +1403,7 @@ d-i mdadm/boot_degraded boolean true"`
       ReviseMOTD="$1 sed -ri 's/Debian/Kali/g' /etc/update-motd.d/00-header;"
       SupportZSH="$1 apt install zsh -y; $1 chsh -s /bin/zsh; $1 rm -rf /root/.bashrc.original;"
     }
-    export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${DnsChangePermanently} ${ModifyMOTD} ${SupportIPv6orIPv4} ${EnableSSH} ${ReviseMOTD} ${SupportZSH}"
+    export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${VimIndentEolStart} ${DnsChangePermanently} ${ModifyMOTD} ${SupportIPv6orIPv4} ${EnableSSH} ${ReviseMOTD} ${SupportZSH}"
   fi
 }
 
