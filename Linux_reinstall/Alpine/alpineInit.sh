@@ -109,7 +109,7 @@ sed -ri 's/ash/bash/g' /etc/passwd
 
 # Insall more components.
 apk update
-apk add axel bind-tools cpio curl e2fsprogs figlet grep grub gzip hdparm lsblk lsof net-tools parted python3 py3-pip udev util-linux virt-what vim wget
+apk add axel bind-tools cpio curl e2fsprogs figlet grep grub gzip hdparm lsblk lsof net-tools parted udev util-linux virt-what vim wget
 
 # Use kernel "virt" if be executed on virtual machine.
 cp /etc/apk/world /tmp/world.old
