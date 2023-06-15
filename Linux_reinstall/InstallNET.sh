@@ -778,12 +778,14 @@ function checkSys() {
   }
 }
 
+# $1 is "$ipAddr", $2 is "$ip6Addr"
 function checkIpv4OrIpv6() {
   IPv4DNSLookup=`timeout 3s dig -4 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
   [[ "$IPv4DNSLookup" == "" ]] && IPv4DNSLookup=`timeout 3s dig -4 TXT CH +short whoami.cloudflare @1.0.0.1 | sed 's/\"//g'`
   IPv6DNSLookup=`timeout 3s dig -6 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
   [[ "$IPv6DNSLookup" == "" ]] && IPv6DNSLookup=`timeout 3s dig -6 TXT CH +short whoami.cloudflare @2606:4700:4700::1001 | sed 's/\"//g'`
-  IP_Check="$IPv4DNSLookup"
+  
+  [[ -n "$1" ]] && IP_Check="$1" || IP_Check="$IPv4DNSLookup"
   if expr "$IP_Check" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; then
     for i in 1 2 3 4; do
       if [ $(echo "$IP_Check" | cut -d. -f$i) -gt 255 ]; then
@@ -794,7 +796,7 @@ function checkIpv4OrIpv6() {
     IP_Check="isIPv4"
   fi
 
-  IPv6_Check="$IPv6DNSLookup"
+  [[ -n "$2" ]] && IPv6_Check="$2" || IPv6_Check="$IPv6DNSLookup"
 # If the last two strings of IPv6 is "::", we should replace ":" to "0" for the last string to make sure it's a valid IPv6(can't end with ":").
   [[ ${IPv6DNSLookup: -1} == ":" ]] && IPv6_Check=$(echo "$IPv6DNSLookup" | sed 's/.$/0/')
 # If the first two strings of IPv6 is "::", we should replace ":" to "0" for the first string to make sure it's a valid IPv6(can't start with ":").
@@ -1594,7 +1596,7 @@ checkSys
 # Try to enable IPv6 by DHCP
 # timeout 5 dhclient -6 $interface
 
-checkIpv4OrIpv6
+checkIpv4OrIpv6 "$ipAddr" "$ip6Addr"
 
 # Youtube, Instagram and Wikipedia all have public IPv4 and IPv6 address and are also banned in mainland China.
 checkCN "www.youtube.com" "www.instagram.com" "www.wikipedia.org" "$IPStackType"
@@ -1654,21 +1656,32 @@ dependence awk,basename,cat,cpio,curl,cut,dig,dirname,file,find,grep,gzip,iconv,
 ipDNS=$(checkDNS "$ipDNS")
 ip6DNS=$(checkDNS "$ip6DNS")
 
-if [[ "$IPStackType" == "IPv4Stack" ]]; then
-  [[ -n "$ipAddr" && -n "$ipMask" && -n "$ipGate" ]] && setNet='1'
-elif [[ "$IPStackType" == "BiStack" ]]; then
-  [[ -n "$ipAddr" && -n "$ipMask" && -n "$ipGate" && -n "$ip6Addr" && -n "$ip6Mask" && -n "$ip6Gate" ]] && setNet='1'
-elif [[ "$IPStackType" == "IPv6Stack" ]]; then
-  [[ -n "$ip6Addr" && -n "$ip6Mask" && -n "$ip6Gate" ]] && setNet='1'
-fi
-
 if [ -z "$interface" ]; then
   [ -n "$interface" ] || interface=`getInterface "$CurrentOS"`
 fi
 
-checkDHCP "$CurrentOS" "$CurrentOSVer" "$IPStackType"
+if [[ "$IPStackType" == "IPv4Stack" ]]; then
+  [[ -n "$ipAddr" && -n "$ipMask" && -n "$ipGate" ]] && {
+    setNet='1'
+    Network4Config="isStatic"
+    Network6Config="isDHCP"
+  }
+elif [[ "$IPStackType" == "BiStack" ]]; then
+  [[ -n "$ipAddr" && -n "$ipMask" && -n "$ipGate" ]] && [[ -n "$ip6Addr" && -n "$ip6Mask" && -n "$ip6Gate" ]] && {
+    setNet='1'
+    Network4Config="isStatic"
+    Network6Config="isStatic"
+  }
+elif [[ "$IPStackType" == "IPv6Stack" ]]; then
+  [[ -n "$ip6Addr" && -n "$ip6Mask" && -n "$ip6Gate" ]] && {
+    setNet='1'
+    Network4Config="isDHCP"
+    Network6Config="isStatic"
+  }
+fi
 
 if [[ "$setNet" == "0" ]]; then
+  checkDHCP "$CurrentOS" "$CurrentOSVer" "$IPStackType"
   [[ -n "$interface" ]] || interface=`getInterface "$CurrentOS"`
 # Differences from scope link, scope host and scope global of IPv4, reference: https://qiita.com/testnin2/items/7490ff01a4fe1c7ad61f
   iAddr=`ip -4 addr show | grep -wA 5 "$interface" | grep -wv "lo\|host" | grep -w "inet" | grep -w "scope global*\|link*" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
