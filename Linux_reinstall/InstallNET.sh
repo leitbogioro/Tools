@@ -593,11 +593,12 @@ function checkEfi() {
   fi
 }
 
+# "/boot/grub/" "/boot/grub2/" "/etc/" "grub.cfg" "grub.conf" "/boot/efi/EFI/"
 function checkGrub() {
   GRUBDIR=""
   GRUBFILE=""
   for Count in "$1" "$2" "$3"; do
-# don't support grub1
+# Don't support grub1 of CentOS/Redhat Enterprise Linux/Oracle Linux 6.x
     if [[ -f "$Count""$4" ]] && [[ `grep -c "insmod*" $Count$4` -ge "1" ]]; then
       GRUBDIR="$Count"
       GRUBFILE="$4"
