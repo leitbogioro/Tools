@@ -34,6 +34,7 @@ ip6Mask=$(grep "ip6Mask" $confFile | awk '{print $2}')
 ip6Gate=$(grep "ip6Gate" $confFile | awk '{print $2}')
 ip6DNS1=$(grep "ip6DNS1" $confFile | awk '{print $2}')
 ip6DNS2=$(grep "ip6DNS2" $confFile | awk '{print $2}')
+setIPv6==$(grep "setIPv6" $confFile | awk '{print $2}')
 HostName=$(grep "HostName" $confFile | awk '{print $2}')
 DDURL=$(grep "DDURL" $confFile | awk '{print $2}')
 targetLinuxMirror=$(grep "targetLinuxMirror" $confFile | awk '{print $2}')
@@ -92,6 +93,12 @@ sed -ri 's/ip6Mask/'${ip6Mask}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
 sed -ri 's/ip6Gate/'${ip6Gate}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
 sed -ri 's/ip6DNS1/'${ip6DNS1}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
 sed -ri 's/ip6DNS2/'${ip6DNS2}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+
+# disable IPv6
+[[ "$setIPv6" == "0" ]] && {
+  sed -ri 's/GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0"/GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0 ipv6.disable=1"/g' /mnt/etc/default/grub
+  sed -ri 's/ro net.ifnames=0 biosdevname=0/ro net.ifnames=0 biosdevname=0 ipv6.disable=1/g' /mnt/boot/grub/grub.cfg
+}
 
 # Reboot, the system in the memory will all be written to the hard drive.
 exec reboot
