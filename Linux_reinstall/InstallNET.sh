@@ -1734,6 +1734,7 @@ alpineInstallOrDdAdditionalFiles() {
     ipDNS2=$(echo $ipDNS | cut -d ' ' -f 2)
     ip6DNS1=$(echo $ip6DNS | cut -d ' ' -f 1)
     ip6DNS2=$(echo $ip6DNS | cut -d ' ' -f 2)
+    [[ "$setIPv6" == "0" ]] && setIPv6="0" || setIPv6="1"
   }
 }
 
@@ -2528,6 +2529,9 @@ echo "ip6Mask  "${ip6Mask} >> \$sysroot/root/alpine.config
 echo "ip6Gate  "${ip6Gate} >> \$sysroot/root/alpine.config
 echo "ip6DNS1  "${ip6DNS1} >> \$sysroot/root/alpine.config
 echo "ip6DNS2  "${ip6DNS2} >> \$sysroot/root/alpine.config
+
+# To determine whether to disable IPv6 modules
+echo "setIPv6  "${setIPv6} >> \$sysroot/root/alpine.config
 
 # To Determine hostname
 echo "HostName  "${HostName} >> \$sysroot/root/alpine.config
