@@ -1944,7 +1944,7 @@ if [[ -n "$tmpDIST" ]]; then
     [[ $? -eq '0' ]] && {
       isDigital="$(echo "$DIST" |grep -o '[\.0-9]\{1,\}' |sed -n '1h;1!H;$g;s/\n//g;$p' |cut -d'.' -f1)";
       [[ -n $isDigital ]] && {
-        # [[ "$isDigital" == '7' ]] && DIST='wheezy'
+        [[ "$isDigital" == '7' ]] && DIST='wheezy'
         [[ "$isDigital" == '8' ]] && DIST='jessie'
         [[ "$isDigital" == '9' ]] && DIST='stretch'
         [[ "$isDigital" == '10' ]] && DIST='buster'
