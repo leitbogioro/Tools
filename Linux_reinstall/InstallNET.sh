@@ -310,12 +310,8 @@ function checkCN() {
   done
   [[ `echo "$IsCN" | grep "cn"` != "" ]] && IsCN="cn" || IsCN=""
   if [[ "$IsCN" == "cn" ]]; then
-    if [[ "$4" == "BiStack" || "$4" == "IPv6Stack" ]]; then
-      ipDNS="119.29.29.29 223.6.6.6"
-      ip6DNS="2402:4e00:: 2400:3200::1"
-    else
-      ipDNS="119.29.29.29 223.6.6.6"
-    fi
+    ipDNS="119.29.29.29 223.6.6.6"
+    ip6DNS="2402:4e00:: 2400:3200::1"
   fi
 }
 
@@ -402,6 +398,83 @@ function selectMirror() {
   [ $mirrorStatus -eq 1 ] && echo "$Current" || exit 1
 }
 
+function getIPv4Address() {
+  # Differences from scope link, scope host and scope global of IPv4, reference: https://qiita.com/testnin2/items/7490ff01a4fe1c7ad61f
+  iAddr=`ip -4 addr show | grep -wA 5 "$interface" | grep -wv "lo\|host" | grep -w "inet" | grep -w "scope global*\|link*" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+  ipAddr=`echo ${iAddr} | cut -d'/' -f1`
+  ipPrefix=`echo ${iAddr} | cut -d'/' -f2`
+  ipMask=`netmask "$ipPrefix"`
+# In most situation, at least 99.9% probability, the first hop of the network should be the same as the available gateway. 
+# But in 0.1%, they are actually different. 
+# Because one of the first hop of a tested machine is 5.45.72.1, I told Debian installer this router as a gateway 
+# But installer said the correct gateway should be 5.45.76.1, in a typical network, for example, your home, 
+# the default gateway is the same as the first route hop of the machine, it may be 192.168.0.1.
+# If possible, we should configure out the real available gateway of the network.
+  FirstRoute=`ip route show default | grep -w "via" | grep -w "dev $interface*" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+# We should find it in ARP, the first hop IP and gateway IP is managed by the same device, use device mac address to configure it out.
+  RouterMac=`arp -n | grep "$FirstRoute" | awk '{print$3}'`
+  FrFirst=`echo "$FirstRoute" | cut -d'.' -f 1,2`
+  FrThird=`echo "$FirstRoute" | cut -d'.' -f 3`
+# Print all matched available gateway.
+  ipGates=`ip route show | grep -v "via" | grep -w "dev $interface*" | grep -w "proto*" | grep -w "scope global\|link src $ipAddr*" | awk '{print$1}'`
+# Figure out the line of this list.
+  ipGateLine=`echo "$ipGates" | wc -l`
+# The line determines the cycling times.
+  for ((i=1; i<="$ipGateLine"; i++)) do
+# Current one gateway of the ip gateways. the formart is as of 10.0.0.0/22
+    tmpIpGate=`echo "$ipGates" | sed -n ''$i'p'`
+# Intercept a standard IPv4 address.
+    tmpIgAddr=`echo $tmpIpGate | cut -d'/' -f1`
+# Intercept the prefix of the gateway.
+    tmpIgPrefix=`echo $tmpIpGate | cut -d'/' -f2`
+# Calculate the first ip in all network segment, it should be the the same range with gateway in this network.
+    minIpGate=`ipv4Calc "$tmpIgAddr" "$tmpIgPrefix" | grep "FirstIP:" | awk '{print$2}'`
+# Intercept the A and B class of the current ip address of gateway.
+    tmpIpGateFirst=`echo "$minIpGate" | cut -d'.' -f 1,2`
+    tmpIpGateThird=`echo "$minIpGate" | cut -d'.' -f 3`
+# If the class A and B class of the current local ip address is as same as current gateway, this gateway may a valid one.
+    [[ "$FrFirst" == "$tmpIpGateFirst" ]] && {
+      if [[ "$FrThird" == "$tmpIpGateThird" ]]; then
+        ipGate="$FirstRoute"
+        break
+      elif [[ "$FrThird" != "$tmpIpGateThird" ]]; then
+# The A, B and C class address of min ip gate. 
+        tmpMigFirst=`echo $minIpGate | cut -d'.' -f 1,2,3`
+# Search it in ARP, it's belonged to the same network device which has been distinguished by mac address of first hop of the IP.
+        ipGate=`arp -n | grep "$tmpMigFirst" | grep "$RouterMac" | awk '{print$1}'`
+        break
+      fi	  
+    }
+  done
+# If there is no one of other gateway in this current network, use if access the public internet, the first hop route of this machine as the gateway.
+  [[ "$ipGates" == "" || "$ipGate" == "" ]] && ipGate="$FirstRoute"
+ 
+# Some cloud providers like Godaddy, Arkecx, Hetzner(include DHCP) etc, the subnet mask of IPv4 static network configuration of their original template OS is incorrect.
+# The following is the sample:
+#
+# auto eth0
+#   iface eth0 inet static
+#     address 190.168.23.175
+#     netmask 255.255.255.240
+#     dns-nameservers 8.8.8.8 8.8.4.4
+#     up ip -4 route add default via 169.254.0.1 dev eth0 onlink
+#
+# The netmask tells the total number of IP in the network is only 15(240 - 255),
+# but we obsessed that there are more than 15 IPv4 addresses between 169.254.0.1 and 190.168.23.175 clearly.
+# So if netmask is 255.255.255.240(prefix is 28), the computer only find IP between 190.168.23.160 and 190.168.23.175,
+# the gateway 169.254.0.1 is obviously not be included in this range.
+# So we need to expand the range of the netmask(reduce the value number of the prefix) to make sure the IPv4 gateway can be contained.
+# If this mistake has not be repaired, Debian installer will return error "untouchable gateway".
+# DHCP IPv4 network(even IPv4 netmask is "32") may not be effected by this situation.
+# The following consulted calculations are calculated by Vultr IPv4 subnet calculator, reference: https://www.vultr.com/resources/subnet-calculator/
+  [[ "$Network4Config" == "isStatic" ]] && {
+    ipv4SubnetCertificate "$ipAddr" "$ipGate"
+    ipPrefix="$tmpIpMask"
+    ipMask=`netmask "$tmpIpMask"`
+  }
+# So in summary of the IPv4 sample in above, we should assign subnet mask "128.0.0.1"(prefix is "1") for it.
+}
+
 function netmask() {
   n="${1:-32}"
   b=""
@@ -457,37 +530,6 @@ function ipv4SubnetCertificate() {
 # If the IP and gateway are in the same IPv4 A B C class, not in the same IPv4 D class, the prefix of netmask should less equal than "24", transfer to whole IPv4 address is 255.255.255.0
 # The range of 190.168.23.175/24 is 190.168.23.0 - 190.168.23.255, the gateway 169... can't be included.
   [[ `echo $1 | cut -d'.' -f 1,2,3` == `echo $2 | cut -d'.' -f 1,2,3` ]] && tmpIpMask="24"
-}
-
-# $1 is $ip6Mask
-function ipv6SubnetCalc() {
-  tmpIp6Subnet=""
-  ip6Subnet=""
-  ip6SubnetEleNum=`expr $1 / 4`
-  ip6SubnetEleNumRemain=`expr $1 - $ip6SubnetEleNum \* 4`
-  if [[ "$ip6SubnetEleNumRemain" == 0 ]]; then
-    ip6SubnetHex="0"
-  elif [[ "$ip6SubnetEleNumRemain" == 1 ]]; then
-    ip6SubnetHex="8"
-  elif [[ "$ip6SubnetEleNumRemain" == 2 ]]; then
-    ip6SubnetHex="c"
-  elif [[ "$ip6SubnetEleNumRemain" == 3 ]]; then
-    ip6SubnetHex="e"
-  fi
-  for ((i=1; i<="$ip6SubnetEleNum"; i++)); do
-    tmpIp6Subnet+="f"
-  done
-  tmpIp6Subnet=$tmpIp6Subnet$ip6SubnetHex
-  for ((j=1; j<=`expr 32 - $ip6SubnetEleNum`; j++)); do
-    tmpIp6Subnet+="0"
-  done
-  if [[ `echo $tmpIp6Subnet | wc -c` -ge "33" ]]; then
-    tmpIp6Subnet=`echo $tmpIp6Subnet | sed 's/.$//'`
-  fi
-  for ((k=0; k<=7; k++)); do
-    ip6Subnet+=$(echo ${tmpIp6Subnet:`expr $k \* 4`:4})":"
-  done
-  ip6Subnet=`echo ${ip6Subnet%?}`
 }
 
 function getDisk() {
@@ -839,6 +881,81 @@ function checkIpv4OrIpv6() {
   [[ "$tmpSetIPv6" == "0" ]] && setIPv6="0" || setIPv6="1"
 }
 
+function getIPv6Address() {
+# Differences from scope link, scope host and scope global of IPv6, reference: https://qiita.com/_dakc_/items/4eefa443306860bdcfde
+  i6Addr=`ip -6 addr show | grep -wA 5 "$interface" | grep -wv "lo\|host" | grep -wv "link" | grep -w "inet6" | grep "scope" | grep "global" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+  ip6Addr=`echo ${i6Addr} |cut -d'/' -f1`
+  ip6Mask=`echo ${i6Addr} |cut -d'/' -f2`
+  ip6Gate=`ip -6 route show default | grep -w "$interface" | grep -w "via" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+# IPv6 expansion algorithm code reference: https://blog.caoyu.info/expand-ipv6-by-shell.html
+  ip6AddrWhole=`ultimateFormatOfIpv6 "$ip6Addr"`
+  ip6GateWhole=`ultimateFormatOfIpv6 "$ip6Gate"`
+# In some original template OS of cloud provider like Akile.io etc,
+# if prefix of IPv6 mask is 128 in static network configuration, it means there is only one IPv6(current server itself) in the network.
+# The following is the sample:
+#
+# auto eth0
+#   iface eth0 inet6 static
+#     address 2603:c020:8:a19b::ffff:e6da
+#     gateway 2603:c020:8:a19b::ffff
+#     netmask 128
+#     dns-nameservers 2001:4860:4860::8888
+#
+# In this condition, if IPv6 gateway has a different address with IPv6 address, the Debian installer couldn't find the correct gateway.
+# The installation will fail in the end. The reason is mostly the upstream wrongly configurated the current network of this system.
+# So we try to revise this value for 8 levels to expand the range of the IPv6 network and help installer to find the correct gateway.
+# DHCP IPv6 network(even IPv6 netmask is "128") may not be effected by this situation.
+# The result of function ' ipv6SubnetCalc "$ip6Mask" ' is "$ip6Subnet"
+# The following consulted calculations are calculated by Vultr IPv6 subnet calculator and IPv6 subnet range calculator which is provided by iP Jisuanqi.
+# Reference: https://www.vultr.com/resources/subnet-calculator-ipv6/
+#            https://ipjisuanqi.com/ipv6.html
+  [[ "$Network6Config" == "isStatic" ]] && {
+    tmpIp6AddrFirst=`echo $ip6AddrWhole | sed 's/\(.\{4\}\).*/\1/' | sed 's/[a-z]/\u&/g'`
+    tmpIp6GateFirst=`echo $ip6GateWhole | sed 's/\(.\{4\}\).*/\1/' | sed 's/[a-z]/\u&/g'`
+    if [[ "$tmpIp6AddrFirst" != "$tmpIp6GateFirst" ]]; then
+# If some brave guys set --network "static" by force, IPv6 address, mask and gateway of IPv6 DHCP configurations like Oracle Cloud etc. are:
+# a public IPv6 address, a "128" mask, a local IPv6 gateway(starts with "fe80" mostly, like "fe80::200:f1e9:dec3:4ab").
+# The value of mask must be set as "128", not "1" which determined by first condition of above because the local IPv6 address is unique in its' network
+# and plays the role of IPv6 network discovery and identical authentication to ensure that authenticated device is certificated by upstream. 
+# Explanation of using local IPv6 address as gateway quoted from Scott Hogg:
+#
+# Link-local IPv6 addresses are on every interface of every IPv6-enabled host and router. They are essential for LAN-based Neighbor Discovery communication.
+# After the host has gone through the Duplicate Address Detection (DAD) process ensuring that its link-local address (and associated IID) is unique on the LAN segment,
+# it then proceeds to sending an ICMPv6 Router Solicitation (RS) message sourced from that address.
+#
+# There are total three IPv6 address ranges divided into local address: fe80::/10, fec0::/10, fc00::/7.
+# "fe80::/10" is similar with "169.254.0.0/16" of IPv4 of February, 2006 according to RFC 4291, ranges from fe80:0000:0000:0000:0000:0000:0000:0000 to febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff.
+# "fec0::/10" is similar with "192.168.0.0/16" of IPv4 which was deprecated and returned to public IPv6 address again of September, 2004 according to RFC 3879.
+# The function of "fec0::/10" was replaced by "fc00::/7" of October, 2005 according to RFC 4193, ranges from fc00:0000:0000:0000:0000:0000:0000:0000 to fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff.
+# So we need to calculate ranges of "fe80::/10" and "fc00::/7", if IPv6 address is public and IPv6 gateway belongs to local IPv6 address.
+# English strings in hexadecimal must be converted as capital alphabets that comparison operations can be processed by shell.
+# Reference: https://blogs.infoblox.com/ipv6-coe/fe80-1-is-a-perfectly-valid-ipv6-default-gateway-address/ chapter: Link-Local Address as Default Gateway
+#            https://www.wdic.org/w/WDIC/IPv6%E3%82%A2%E3%83%89%E3%83%AC%E3%82%B9 chapter: アドレスの種類(Types of address) → エニキャストアドレス(Anycast address)
+#            https://www.wdic.org/w/WDIC/IPv6%E3%82%A2%E3%83%89%E3%83%AC%E3%82%B9 chapter: サイトローカルアドレス(Site local address)
+#            https://www.wdic.org/w/WDIC/%E3%83%A6%E3%83%8B%E3%83%BC%E3%82%AF%E3%83%AD%E3%83%BC%E3%82%AB%E3%83%AB%E3%83%A6%E3%83%8B%E3%82%AD%E3%83%A3%E3%82%B9%E3%83%88%E3%82%A2%E3%83%89%E3%83%AC%E3%82%B9
+#            https://www.ipentec.com/document/network-format-ipv6-local-adddress chapter: IPv6のリンクローカルアドレス(Link local address of IPv6)
+#            https://www.rfc-editor.org/rfc/rfc4291.html#section-2.4 chapter: 2.4. Address Type Identification
+      if [[ "$((16#$tmpIp6GateFirst))" -ge "$((16#FE80))" && "$((16#$tmpIp6GateFirst))" -le "$((16#FEBF))" ]] || [[ "$((16#$tmpIp6GateFirst))" -ge "$((16#FC00))" && "$((16#$tmpIp6GateFirst))" -le "$((16#FDFF))" ]]; then
+        tmpIp6Mask="64"
+      else
+# If the IPv6 and IPv6 gateway are not in the same IPv6 A class, the prefix of netmask should be "1",
+# transfer to whole IPv6 subnet address is 8000:0000:0000:0000:0000:0000:0000:0000.
+# The range of 2603:c020:8:a19b::ffff:e6da/1 is 0000:0000:0000:0000:0000:0000:0000:0000 - 7fff:ffff:ffff:ffff:ffff:ffff:ffff:ffff, the gateway 2603:c020:0008:a19b:0000:0000:0000:ffff can be included.
+        tmpIp6Mask="1"
+      fi
+    else
+      ipv6SubnetCertificate "$ip6AddrWhole" "$ip6GateWhole"
+    fi
+    ip6Mask="$tmpIp6Mask"
+# Because of function "ipv6SubnetCalc" includes self-increment,
+# so we need to confirm the goal of IPv6 prefix and make function to operate only one time in the last to save performance and avoid all
+# gears of IPv6 prefix which meets well with the conditions of above are transformed to whole IPv6 addresses in one variable.
+# The same thought of moving function "netmask" to the last, only need to transform IPv4 prefix to whole IPv4 address for one time.
+    ipv6SubnetCalc "$ip6Mask"
+# So in summary of the IPv6 sample in above, we should assign subnet mask "ffff:ffff:ffff:ffff:ffff:ffff:0000:0000"(prefix is "96") for it.
+  }
+}
+
 # Examples:
 # input:    ::
 # output:   0:0:0:0:0:0:0:0
@@ -917,6 +1034,37 @@ function ipv6SubnetCertificate() {
 # transfer to whole IPv6 subnet address is ffff:ffff:ffff:ffff:ffff:ffff:ffff:0000.
 # The range of 2603:c020:8:a19b::ffff:e6da/112 is 2603:c020:0008:a19b:0000:0000:ffff:0000 - 2603:c020:0008:a19b:0000:0000:ffff:ffff, the gateway 2603:c020:0008:a19b:0000:0000:0000:ffff can't be included.
   [[ `echo $1 | cut -d':' -f 1,2,3,4,5,6,7` == `echo $2 | cut -d':' -f 1,2,3,4,5,6,7` ]] && tmpIp6Mask="112"
+}
+
+# $1 is $ip6Mask
+function ipv6SubnetCalc() {
+  tmpIp6Subnet=""
+  ip6Subnet=""
+  ip6SubnetEleNum=`expr $1 / 4`
+  ip6SubnetEleNumRemain=`expr $1 - $ip6SubnetEleNum \* 4`
+  if [[ "$ip6SubnetEleNumRemain" == 0 ]]; then
+    ip6SubnetHex="0"
+  elif [[ "$ip6SubnetEleNumRemain" == 1 ]]; then
+    ip6SubnetHex="8"
+  elif [[ "$ip6SubnetEleNumRemain" == 2 ]]; then
+    ip6SubnetHex="c"
+  elif [[ "$ip6SubnetEleNumRemain" == 3 ]]; then
+    ip6SubnetHex="e"
+  fi
+  for ((i=1; i<="$ip6SubnetEleNum"; i++)); do
+    tmpIp6Subnet+="f"
+  done
+  tmpIp6Subnet=$tmpIp6Subnet$ip6SubnetHex
+  for ((j=1; j<=`expr 32 - $ip6SubnetEleNum`; j++)); do
+    tmpIp6Subnet+="0"
+  done
+  if [[ `echo $tmpIp6Subnet | wc -c` -ge "33" ]]; then
+    tmpIp6Subnet=`echo $tmpIp6Subnet | sed 's/.$//'`
+  fi
+  for ((k=0; k<=7; k++)); do
+    ip6Subnet+=$(echo ${tmpIp6Subnet:`expr $k \* 4`:4})":"
+  done
+  ip6Subnet=`echo ${ip6Subnet%?}`
 }
 
 # This function help us to sort sizes for different files from different directions.
@@ -1052,7 +1200,7 @@ function getInterface() {
 # There are 3 files named "ifcfg-ens18  ifcfg-eth0  ifcfg-eth1" in dir "/etc/sysconfig/network-scripts/" of Almalinux 8 of Bandwagonhosts template.
 # We should select the correct one by adjust whether includes interface name and file size.
 # Files in "/etc/sysconfig/network-scripts/", reference: https://zetawiki.com/wiki/%EB%B6%84%EB%A5%98:/etc/sysconfig/network-scripts
-      NetCfgFiles=`ls -Sl $NetCfgDir 2>/dev/null | awk -F' ' '{print $NF}' | grep -iv 'readme\|ifcfg-lo\|ifcfg-bond0\|ifup\|ifdown\|vpn\|init.ipv6-global\|network-functions' | grep -s "ifcfg\|nmconnection"`
+      NetCfgFiles=`ls -Sl $NetCfgDir 2>/dev/null | awk -F' ' '{print $NF}' | grep -iv 'readme\|ifcfg-lo\|ifcfg-bond\|ifup\|ifdown\|vpn\|init.ipv6-global\|network-functions' | grep -s "ifcfg\|nmconnection"`
       for Files in $NetCfgFiles; do
         if [[ `grep -w "$interface" "$NetCfgDir$Files"` != "" ]]; then
           tmpNetCfgFiles+=$(echo -e "\n""$NetCfgDir$Files")
@@ -1660,178 +1808,30 @@ if [ -z "$interface" ]; then
   [ -n "$interface" ] || interface=`getInterface "$CurrentOS"`
 fi
 
-if [[ "$IPStackType" == "IPv4Stack" ]]; then
-  [[ -n "$ipAddr" && -n "$ipMask" && -n "$ipGate" ]] && {
-    setNet='1'
-    Network4Config="isStatic"
-    Network6Config="isDHCP"
-  }
-elif [[ "$IPStackType" == "BiStack" ]]; then
-  [[ -n "$ipAddr" && -n "$ipMask" && -n "$ipGate" ]] && [[ -n "$ip6Addr" && -n "$ip6Mask" && -n "$ip6Gate" ]] && {
-    setNet='1'
-    Network4Config="isStatic"
-    Network6Config="isStatic"
-  }
-elif [[ "$IPStackType" == "IPv6Stack" ]]; then
-  [[ -n "$ip6Addr" && -n "$ip6Mask" && -n "$ip6Gate" ]] && {
-    setNet='1'
-    Network4Config="isDHCP"
-    Network6Config="isStatic"
-  }
+if [[ -n "$ipAddr" && -n "$ipMask" && -n "$ipGate" ]] && [[ -z "$ip6Addr" && -z "$ip6Mask" && -z "$ip6Gate" ]]; then
+  setNet='1'
+  checkDHCP "$CurrentOS" "$CurrentOSVer" "$IPStackType"
+  [[ -n "$interface" ]] || interface=`getInterface "$CurrentOS"`
+  Network4Config="isStatic"
+  [[ "$IPStackType" != "IPv4Stack" ]] && getIPv6Address
+elif [[ -n "$ipAddr" && -n "$ipMask" && -n "$ipGate" ]] && [[ -n "$ip6Addr" && -n "$ip6Mask" && -n "$ip6Gate" ]]; then
+  setNet='1'
+  [[ -n "$interface" ]] || interface=`getInterface "$CurrentOS"`
+  Network4Config="isStatic"
+  Network6Config="isStatic"
+elif [[ -z "$ipAddr" && -z "$ipMask" && -z "$ipGate" ]] && [[ -n "$ip6Addr" && -n "$ip6Mask" && -n "$ip6Gate" ]]; then
+  setNet='1'
+  checkDHCP "$CurrentOS" "$CurrentOSVer" "$IPStackType"
+  [[ -n "$interface" ]] || interface=`getInterface "$CurrentOS"`
+  Network6Config="isStatic"
+  getIPv4Address
 fi
 
 if [[ "$setNet" == "0" ]]; then
   checkDHCP "$CurrentOS" "$CurrentOSVer" "$IPStackType"
   [[ -n "$interface" ]] || interface=`getInterface "$CurrentOS"`
-# Differences from scope link, scope host and scope global of IPv4, reference: https://qiita.com/testnin2/items/7490ff01a4fe1c7ad61f
-  iAddr=`ip -4 addr show | grep -wA 5 "$interface" | grep -wv "lo\|host" | grep -w "inet" | grep -w "scope global*\|link*" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
-  ipAddr=`echo ${iAddr} | cut -d'/' -f1`
-  ipPrefix=`echo ${iAddr} | cut -d'/' -f2`
-  ipMask=`netmask "$ipPrefix"`
-# In most situation, at least 99.9% probability, the first hop of the network should be the same as the available gateway. 
-# But in 0.1%, they are actually different. 
-# Because one of the first hop of a tested machine is 5.45.72.1, I told Debian installer this router as a gateway 
-# But installer said the correct gateway should be 5.45.76.1, in a typical network, for example, your home, 
-# the default gateway is the same as the first route hop of the machine, it may be 192.168.0.1.
-# If possible, we should configure out the real available gateway of the network.
-  FirstRoute=`ip route show default | grep -w "via" | grep -w "dev $interface*" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
-# We should find it in ARP, the first hop IP and gateway IP is managed by the same device, use device mac address to configure it out.
-  RouterMac=`arp -n | grep "$FirstRoute" | awk '{print$3}'`
-  FrFirst=`echo "$FirstRoute" | cut -d'.' -f 1,2`
-  FrThird=`echo "$FirstRoute" | cut -d'.' -f 3`
-# Print all matched available gateway.
-  ipGates=`ip route show | grep -v "via" | grep -w "dev $interface*" | grep -w "proto*" | grep -w "scope global\|link src $ipAddr*" | awk '{print$1}'`
-# Figure out the line of this list.
-  ipGateLine=`echo "$ipGates" | wc -l`
-# The line determines the cycling times.
-  for ((i=1; i<="$ipGateLine"; i++)) do
-# Current one gateway of the ip gateways. the formart is as of 10.0.0.0/22
-    tmpIpGate=`echo "$ipGates" | sed -n ''$i'p'`
-# Intercept a standard IPv4 address.
-    tmpIgAddr=`echo $tmpIpGate | cut -d'/' -f1`
-# Intercept the prefix of the gateway.
-    tmpIgPrefix=`echo $tmpIpGate | cut -d'/' -f2`
-# Calculate the first ip in all network segment, it should be the the same range with gateway in this network.
-    minIpGate=`ipv4Calc "$tmpIgAddr" "$tmpIgPrefix" | grep "FirstIP:" | awk '{print$2}'`
-# Intercept the A and B class of the current ip address of gateway.
-    tmpIpGateFirst=`echo "$minIpGate" | cut -d'.' -f 1,2`
-    tmpIpGateThird=`echo "$minIpGate" | cut -d'.' -f 3`
-# If the class A and B class of the current local ip address is as same as current gateway, this gateway may a valid one.
-    [[ "$FrFirst" == "$tmpIpGateFirst" ]] && {
-      if [[ "$FrThird" == "$tmpIpGateThird" ]]; then
-        ipGate="$FirstRoute"
-        break
-      elif [[ "$FrThird" != "$tmpIpGateThird" ]]; then
-# The A, B and C class address of min ip gate. 
-        tmpMigFirst=`echo $minIpGate | cut -d'.' -f 1,2,3`
-# Search it in ARP, it's belonged to the same network device which has been distinguished by mac address of first hop of the IP.
-        ipGate=`arp -n | grep "$tmpMigFirst" | grep "$RouterMac" | awk '{print$1}'`
-        break
-      fi	  
-    }
-  done
-# If there is no one of other gateway in this current network, use if access the public internet, the first hop route of this machine as the gateway.
-  [[ "$ipGates" == "" || "$ipGate" == "" ]] && ipGate="$FirstRoute"
- 
-# Some cloud providers like Godaddy, Arkecx, Hetzner(include DHCP) etc, the subnet mask of IPv4 static network configuration of their original template OS is incorrect.
-# The following is the sample:
-#
-# auto eth0
-#   iface eth0 inet static
-#     address 190.168.23.175
-#     netmask 255.255.255.240
-#     dns-nameservers 8.8.8.8 8.8.4.4
-#     up ip -4 route add default via 169.254.0.1 dev eth0 onlink
-#
-# The netmask tells the total number of IP in the network is only 15(240 - 255),
-# but we obsessed that there are more than 15 IPv4 addresses between 169.254.0.1 and 190.168.23.175 clearly.
-# So if netmask is 255.255.255.240(prefix is 28), the computer only find IP between 190.168.23.160 and 190.168.23.175,
-# the gateway 169.254.0.1 is obviously not be included in this range.
-# So we need to expand the range of the netmask(reduce the value number of the prefix) to make sure the IPv4 gateway can be contained.
-# If this mistake has not be repaired, Debian installer will return error "untouchable gateway".
-# DHCP IPv4 network(even IPv4 netmask is "32") may not be effected by this situation.
-# The following consulted calculations are calculated by Vultr IPv4 subnet calculator, reference: https://www.vultr.com/resources/subnet-calculator/
-  [[ "$Network4Config" == "isStatic" ]] && {
-    ipv4SubnetCertificate "$ipAddr" "$ipGate"
-    ipPrefix="$tmpIpMask"
-    ipMask=`netmask "$tmpIpMask"`
-  }
-# So in summary of the IPv4 sample in above, we should assign subnet mask "128.0.0.1"(prefix is "1") for it.
-
-  [[ "$IPStackType" != "IPv4Stack" ]] && {
-# Differences from scope link, scope host and scope global of IPv6, reference: https://qiita.com/_dakc_/items/4eefa443306860bdcfde
-    i6Addr=`ip -6 addr show | grep -wA 5 "$interface" | grep -wv "lo\|host" | grep -wv "link" | grep -w "inet6" | grep "scope" | grep "global" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
-    ip6Addr=`echo ${i6Addr} |cut -d'/' -f1`
-    ip6Mask=`echo ${i6Addr} |cut -d'/' -f2`
-    ip6Gate=`ip -6 route show default | grep -w "$interface" | grep -w "via" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
-# IPv6 expansion algorithm code reference: https://blog.caoyu.info/expand-ipv6-by-shell.html
-    ip6AddrWhole=`ultimateFormatOfIpv6 "$ip6Addr"`
-    ip6GateWhole=`ultimateFormatOfIpv6 "$ip6Gate"`
-# In some original template OS of cloud provider like Akile.io etc,
-# if prefix of IPv6 mask is 128 in static network configuration, it means there is only one IPv6(current server itself) in the network.
-# The following is the sample:
-#
-# auto eth0
-#   iface eth0 inet6 static
-#     address 2603:c020:8:a19b::ffff:e6da
-#     gateway 2603:c020:8:a19b::ffff
-#     netmask 128
-#     dns-nameservers 2001:4860:4860::8888
-#
-# In this condition, if IPv6 gateway has a different address with IPv6 address, the Debian installer couldn't find the correct gateway.
-# The installation will fail in the end. The reason is mostly the upstream wrongly configurated the current network of this system.
-# So we try to revise this value for 8 levels to expand the range of the IPv6 network and help installer to find the correct gateway.
-# DHCP IPv6 network(even IPv6 netmask is "128") may not be effected by this situation.
-# The result of function ' ipv6SubnetCalc "$ip6Mask" ' is "$ip6Subnet"
-# The following consulted calculations are calculated by Vultr IPv6 subnet calculator and IPv6 subnet range calculator which is provided by iP Jisuanqi.
-# Reference: https://www.vultr.com/resources/subnet-calculator-ipv6/
-#            https://ipjisuanqi.com/ipv6.html
-    [[ "$Network6Config" == "isStatic" ]] && {
-      tmpIp6AddrFirst=`echo $ip6AddrWhole | sed 's/\(.\{4\}\).*/\1/' | sed 's/[a-z]/\u&/g'`
-      tmpIp6GateFirst=`echo $ip6GateWhole | sed 's/\(.\{4\}\).*/\1/' | sed 's/[a-z]/\u&/g'`
-      if [[ "$tmpIp6AddrFirst" != "$tmpIp6GateFirst" ]]; then
-# If some brave guys set --network "static" by force, IPv6 address, mask and gateway of IPv6 DHCP configurations like Oracle Cloud etc. are:
-# a public IPv6 address, a "128" mask, a local IPv6 gateway(starts with "fe80" mostly, like "fe80::200:f1e9:dec3:4ab").
-# The value of mask must be set as "128", not "1" which determined by first condition of above because the local IPv6 address is unique in its' network
-# and plays the role of IPv6 network discovery and identical authentication to ensure that authenticated device is certificated by upstream. 
-# Explanation of using local IPv6 address as gateway quoted from Scott Hogg:
-#
-# Link-local IPv6 addresses are on every interface of every IPv6-enabled host and router. They are essential for LAN-based Neighbor Discovery communication.
-# After the host has gone through the Duplicate Address Detection (DAD) process ensuring that its link-local address (and associated IID) is unique on the LAN segment,
-# it then proceeds to sending an ICMPv6 Router Solicitation (RS) message sourced from that address.
-#
-# There are total three IPv6 address ranges divided into local address: fe80::/10, fec0::/10, fc00::/7.
-# "fe80::/10" is similar with "169.254.0.0/16" of IPv4 of February, 2006 according to RFC 4291, ranges from fe80:0000:0000:0000:0000:0000:0000:0000 to febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff.
-# "fec0::/10" is similar with "192.168.0.0/16" of IPv4 which was deprecated and returned to public IPv6 address again of September, 2004 according to RFC 3879.
-# The function of "fec0::/10" was replaced by "fc00::/7" of October, 2005 according to RFC 4193, ranges from fc00:0000:0000:0000:0000:0000:0000:0000 to fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff.
-# So we need to calculate ranges of "fe80::/10" and "fc00::/7", if IPv6 address is public and IPv6 gateway belongs to local IPv6 address.
-# English strings in hexadecimal must be converted as capital alphabets that comparison operations can be processed by shell.
-# Reference: https://blogs.infoblox.com/ipv6-coe/fe80-1-is-a-perfectly-valid-ipv6-default-gateway-address/ chapter: Link-Local Address as Default Gateway
-#            https://www.wdic.org/w/WDIC/IPv6%E3%82%A2%E3%83%89%E3%83%AC%E3%82%B9 chapter: アドレスの種類(Types of address) → エニキャストアドレス(Anycast address)
-#            https://www.wdic.org/w/WDIC/IPv6%E3%82%A2%E3%83%89%E3%83%AC%E3%82%B9 chapter: サイトローカルアドレス(Site local address)
-#            https://www.wdic.org/w/WDIC/%E3%83%A6%E3%83%8B%E3%83%BC%E3%82%AF%E3%83%AD%E3%83%BC%E3%82%AB%E3%83%AB%E3%83%A6%E3%83%8B%E3%82%AD%E3%83%A3%E3%82%B9%E3%83%88%E3%82%A2%E3%83%89%E3%83%AC%E3%82%B9
-#            https://www.ipentec.com/document/network-format-ipv6-local-adddress chapter: IPv6のリンクローカルアドレス(Link local address of IPv6)
-#            https://www.rfc-editor.org/rfc/rfc4291.html#section-2.4 chapter: 2.4. Address Type Identification
-        if [[ "$((16#$tmpIp6GateFirst))" -ge "$((16#FE80))" && "$((16#$tmpIp6GateFirst))" -le "$((16#FEBF))" ]] || [[ "$((16#$tmpIp6GateFirst))" -ge "$((16#FC00))" && "$((16#$tmpIp6GateFirst))" -le "$((16#FDFF))" ]]; then
-          tmpIp6Mask="64"
-        else
-# If the IPv6 and IPv6 gateway are not in the same IPv6 A class, the prefix of netmask should be "1",
-# transfer to whole IPv6 subnet address is 8000:0000:0000:0000:0000:0000:0000:0000.
-# The range of 2603:c020:8:a19b::ffff:e6da/1 is 0000:0000:0000:0000:0000:0000:0000:0000 - 7fff:ffff:ffff:ffff:ffff:ffff:ffff:ffff, the gateway 2603:c020:0008:a19b:0000:0000:0000:ffff can be included.
-          tmpIp6Mask="1"
-        fi
-      else
-        ipv6SubnetCertificate "$ip6AddrWhole" "$ip6GateWhole"
-      fi
-      ip6Mask="$tmpIp6Mask"
-# Because of function "ipv6SubnetCalc" includes self-increment,
-# so we need to confirm the goal of IPv6 prefix and make function to operate only one time in the last to save performance and avoid all
-# gears of IPv6 prefix which meets well with the conditions of above are transformed to whole IPv6 addresses in one variable.
-# The same thought of moving function "netmask" to the last, only need to transform IPv4 prefix to whole IPv4 address for one time.
-      ipv6SubnetCalc "$ip6Mask"
-# So in summary of the IPv6 sample in above, we should assign subnet mask "ffff:ffff:ffff:ffff:ffff:ffff:0000:0000"(prefix is "96") for it.
-    }
-  }
+  getIPv4Address
+  [[ "$IPStackType" != "IPv4Stack" ]] && getIPv6Address
 fi
 
 IPv4="$ipAddr"; MASK="$ipMask"; GATE="$ipGate";
