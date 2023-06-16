@@ -6,8 +6,6 @@ sed -ri 's/set mouse=a/set mouse-=a/g' /usr/share/vim/vim90/defaults.vim
 
 DISTRIB_DESCRIPTION=`cat /etc/os-release | grep -i "id=" | grep -vi "version\|like\|platform" | cut -d "=" -f2 | sed 's/\"//g' | tr 'A-Z' 'a-z' | sed 's/\b[a-z]/\u&/g'`
 
-figlet "$DISTRIB_DESCRIPTION"
-printf "\n"
 printf "Welcome to %s %s (%s).\n" "$DISTRIB_DESCRIPTION" "$(uname -o)" "$(uname -r) $(uname -m)"
 printf "\n"
 printf "The Alpine Wiki contains a large amount of how-to guides and general"
