@@ -31,7 +31,7 @@ if [ -z "$DISTRIB_DESCRIPTION" ] ; [ -x /usr/bin/lsb_release ]; then
   DISTRIB_DESCRIPTION=$(lsb_release -s -d)
 fi
 
-printf "Welcome to %s (%s).\n" "$DISTRIB_DESCRIPTION" "$(uname -r)"
+printf "Welcome to %s (%s)\n" "$DISTRIB_DESCRIPTION" "$(uname -r)"
 printf "\n"
 printf "The programs included with the Debian GNU/Linux system are free software;"
 printf "\n"
