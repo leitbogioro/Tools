@@ -116,7 +116,8 @@ cp /etc/apk/world /tmp/world.old
 [[ -n "$(virt-what)" ]] && kernelOpt="-k virt"
 
 # Make a blank motd to avoid Alpine Linux writes a new one.
-echo "" >> /etc/motd
+rm -rf /etc/motd
+touch /etc/motd
 
 # Install to hard drive.
 export BOOTLOADER="grub"
