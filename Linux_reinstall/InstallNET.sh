@@ -1951,7 +1951,7 @@ if [[ -n "$tmpDIST" ]]; then
         [[ "$isDigital" == '10' ]] && DIST='buster'
         [[ "$isDigital" == '11' ]] && DIST='bullseye'
         [[ "$isDigital" == '12' ]] && DIST='bookworm'
-        # [[ "$isDigital" == '13' ]] && DIST='trixie'
+        [[ "$isDigital" == '13' ]] && DIST='trixie'
         # [[ "$isDigital" == '14' ]] && DIST='forky'
       }
     }
@@ -2605,6 +2605,18 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
       NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=$ip6Addr/$ip6Mask --ipv6gateway=$ip6Gate --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
     fi
   fi
+# Part disk manually.
+# Reference: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/installation_guide/sect-kickstart-syntax
+#            https://blog.adachin.me/archives/3621
+#            https://www.cnblogs.com/hukey/p/14919346.html
+  IncDisk=`echo $IncDisk | cut -d'/' -f 3`
+  if [[ "$disksNum" -le "1" || "$setDisk" != "all" ]]; then
+    clearPart="clearpart --drives=${IncDisk} --all --initlabel"
+    [[ "$EfiSupport" == "enabled" ]] && FormatDisk=`echo -e "part / --fstype="xfs" --ondisk="$IncDisk" --grow --size="0"\npart swap --ondisk="$IncDisk" --size="1024"\npart /boot --fstype="xfs" --ondisk="$IncDisk" --size="512"\npart /boot/efi --fstype="efi" --ondisk="$IncDisk" --size="512""` || FormatDisk=`echo -e "part / --fstype="xfs" --ondisk="$IncDisk" --grow --size="0"\npart swap --ondisk="$IncDisk" --size="1024"\npart /boot --fstype="xfs" --ondisk="$IncDisk" --size="512""`
+  elif [[ "$setDisk" == "all" ]]; then
+    clearPart="clearpart --all --initlabel"
+    FormatDisk="autopart"
+  fi
 if [[ "$setAutoConfig" == "1" ]]; then
   cat >/tmp/boot/ks.cfg<<EOF
 # platform x86, AMD64, or Intel EM64T, or ARM aarch64
@@ -2650,14 +2662,14 @@ ${SetTimeZone}
 ${NetConfigManually}
 
 # System bootloader configuration
-bootloader --location=mbr --append="rhgb quiet crashkernel=auto net.ifnames=0 biosdevname=0"
+bootloader --location=mbr --boot-drive=${IncDisk} --append="rhgb quiet crashkernel=auto net.ifnames=0 biosdevname=0 ipv6.disable=1"
 
 # Clear the Master Boot Record
 zerombr
-clearpart --all --initlabel
+${clearPart}
 
 # Disk partitioning information
-autopart
+${FormatDisk}
 
 # Reboot after installation
 reboot
@@ -2665,6 +2677,7 @@ reboot
 %packages --ignoremissing
 @^minimal-environment
 bind-utils
+curl
 epel-release
 fail2ban
 file
@@ -2717,6 +2730,8 @@ EOF
 fi
 # If network adapter is not redirected, delete this setting to new system.
   [[ "$setInterfaceName" == "0" ]] && sed -i 's/ net.ifnames=0 biosdevname=0//g' /tmp/boot/ks.cfg
+# Support to add --setipv6 "0" to disable IPv6 modules permanently.
+  [[ "$setIPv6" == "1" ]] && sed -i 's/ipv6.disable=1//g' /tmp/boot/ks.cfg
   
   [[ "$UNKNOWHW" == '1' ]] && sed -i 's/^unsupported_hardware/#unsupported_hardware/g' /tmp/boot/ks.cfg
   [[ "$(echo "$DIST" |grep -o '^[0-9]\{1\}')" == '5' ]] && sed -i '0,/^%end/s//#%end/' /tmp/boot/ks.cfg
