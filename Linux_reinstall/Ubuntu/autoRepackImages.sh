@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # kpartx and qumu-utils are required
-apt install cron kpartx qemu-utils -y
+apt install cron kpartx mount qemu-utils -y
 # get valid loop device
 loopDevice=$(echo $(losetup -f))
 loopDeviceNum=$(echo $(losetup -f) | cut -d'/' -f 3)
