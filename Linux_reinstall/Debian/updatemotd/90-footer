@@ -1,0 +1,33 @@
+#!/bin/sh
+#
+#    Authors:Leitbogioro
+#    https://github.com/leitbogioro/
+#    https://www.zhihu.com/column/originaltechnic
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License along
+#    with this program; if not, write to the Free Software Foundation, Inc.,
+#    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+UpdateLog="/var/log/packagesupdatefile.log"
+if [ -f "$UpdateLog" ]; then
+  rm -rf $UpdateLog
+fi
+
+apt list --upgradable | awk 'END{print NR}' | tee -a "$UpdateLog" > /dev/null 2>&1
+UpdateRemind=`cat $UpdateLog | tail -n 1`
+UpdateNum=`expr $UpdateRemind - 1`
+if [ "$UpdateNum" -ge "1" ]; then
+  printf "$UpdateNum packages can be upgraded. Run 'apt list --upgradable' to see them.\n"
+fi
+
+rm -rf $UpdateLog
