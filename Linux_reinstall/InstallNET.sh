@@ -401,6 +401,7 @@ function selectMirror() {
 function getIPv4Address() {
   # Differences from scope link, scope host and scope global of IPv4, reference: https://qiita.com/testnin2/items/7490ff01a4fe1c7ad61f
   iAddr=`ip -4 addr show | grep -wA 5 "$interface" | grep -wv "lo\|host" | grep -w "inet" | grep -w "scope global*\|link*" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+  [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && iAddr=`ip -4 addr show | grep -wA 5 "$interface4" | grep -wv "lo\|host" | grep -w "inet" | grep -w "scope global*\|link*" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
   ipAddr=`echo ${iAddr} | cut -d'/' -f1`
   ipPrefix=`echo ${iAddr} | cut -d'/' -f2`
   ipMask=`netmask "$ipPrefix"`
@@ -410,13 +411,13 @@ function getIPv4Address() {
 # But installer said the correct gateway should be 5.45.76.1, in a typical network, for example, your home, 
 # the default gateway is the same as the first route hop of the machine, it may be 192.168.0.1.
 # If possible, we should configure out the real available gateway of the network.
-  FirstRoute=`ip route show default | grep -w "via" | grep -w "dev $interface*" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+  FirstRoute=`ip -4 route show default | grep -w "via" | grep -w "dev $interface4*" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
 # We should find it in ARP, the first hop IP and gateway IP is managed by the same device, use device mac address to configure it out.
   RouterMac=`arp -n | grep "$FirstRoute" | awk '{print$3}'`
   FrFirst=`echo "$FirstRoute" | cut -d'.' -f 1,2`
   FrThird=`echo "$FirstRoute" | cut -d'.' -f 3`
 # Print all matched available gateway.
-  ipGates=`ip route show | grep -v "via" | grep -w "dev $interface*" | grep -w "proto*" | grep -w "scope global\|link src $ipAddr*" | awk '{print$1}'`
+  ipGates=`ip -4 route show | grep -v "via" | grep -w "dev $interface4*" | grep -w "proto*" | grep -w "scope global\|link src $ipAddr*" | awk '{print$1}'`
 # Figure out the line of this list.
   ipGateLine=`echo "$ipGates" | wc -l`
 # The line determines the cycling times.
@@ -636,6 +637,10 @@ function checkMem() {
 # In any servers that total memory below 2.5GB to install debian, the low memory installation will be force enabled, "lowmem=+0, 1 or 2" is only for Debian like, 0 is lowest, 1 is medium, 2 is the highest.
   [[ "$1" == 'debian' ]] || [[ "$1" == 'ubuntu' ]] || [[ "$1" == 'kali' ]] && {
     [[ "$TotalMem1" -ge "2558072" || "$TotalMem2" -ge "2558072" ]] && lowmemLevel="" || lowmemLevel="lowmem=+1"
+    [[ "$TotalMem1" -le "329760" || "$TotalMem2" -le "329760" ]] && {
+      echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 384MB!\n"
+      exit 1
+    }
   }
 # Without the function of OS re-installation templates in control panel which provided by cloud companies(many companies even have not).
 # A independent VPS with only one hard drive is lack of the secondary hard drive to format and copy new OS file to main hard drive.
@@ -651,18 +656,18 @@ function checkMem() {
 # They never optimize or improve it, just tell users they need to pay more to expand their hardware performance and adjust to the endless demand of them. it's not a correct decision. 
   [[ "$1" == 'fedora' || "$1" == 'rockylinux' || "$1" == 'almalinux' || "$1" == 'centos' ]] && {
     if [[ "$1" == 'rockylinux' || "$1" == 'almalinux' || "$1" == 'centos' ]]; then
-      if [[ "$TotalMem1" -le "2406400" || "$TotalMem2" -le "2406400" ]]; then
-        if [[ "$2" == "8" ]] || [[ "$1" == 'centos' && "$2" == "9" ]]; then
+      if [[ "$2" == "8" ]] || [[ "$1" == 'centos' && "$2" -ge "9" ]]; then
+        [[ "$TotalMem1" -le "2198342" || "$TotalMem2" -le "2198342" ]] && {
           echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 2.5GB!\n"
           exit 1
-        fi
-      elif [[ "$TotalMem1" -le "1740800" || "$TotalMem2" -le "1740800" ]]; then
-        [[ "$2" -ge "9" ]] && {
+        }
+      elif [[ "$2" -ge "9" ]]; then
+        [[ "$TotalMem1" -le "1740800" || "$TotalMem2" -le "1740800" ]] && {
           echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 2GB!\n"
           exit 1
         }
-      elif [[ "$TotalMem1" -le "1384200" || "$TotalMem2" -le "1384200" ]]; then
-        [[ "$2" == "7" ]] && {
+      elif [[ "$2" == "7" ]]; then
+        [[ "$TotalMem1" -le "1319006" || "$TotalMem2" -le "1319006" ]] && {
           echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 1.5GB!\n"
           exit 1
         }
@@ -675,7 +680,7 @@ function checkMem() {
     fi
   }
   [[ "$1" == 'alpinelinux' || "$3" == 'Ubuntu' ]] && {
-    if [[ "$TotalMem1" -le "923580" || "$TotalMem2" -le "923580" ]]; then
+    if [[ "$TotalMem1" -le "895328" || "$TotalMem2" -le "895328" ]]; then
       echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 1GB!\n"
       exit 1
     fi
@@ -823,11 +828,23 @@ function checkSys() {
 
 # $1 is "$ipAddr", $2 is "$ip6Addr"
 function checkIpv4OrIpv6() {
-  IPv4DNSLookup=`timeout 3s dig -4 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
-  [[ "$IPv4DNSLookup" == "" ]] && IPv4DNSLookup=`timeout 3s dig -4 TXT CH +short whoami.cloudflare @1.0.0.1 | sed 's/\"//g'`
-  IPv6DNSLookup=`timeout 3s dig -6 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
-  [[ "$IPv6DNSLookup" == "" ]] && IPv6DNSLookup=`timeout 3s dig -6 TXT CH +short whoami.cloudflare @2606:4700:4700::1001 | sed 's/\"//g'`
-  
+  for ((w=1; w<=2; w++)); do
+    IPv4DNSLookup=`timeout 0.3s dig -4 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
+    [[ "$IPv4DNSLookup" == "" ]] && IPv4DNSLookup=`timeout 0.3s dig -4 TXT CH +short whoami.cloudflare @1.0.0.1 | sed 's/\"//g'`
+    [[ "$IPv4DNSLookup" != "" ]] && break
+  done
+  for ((x=1; x<=2; x++)); do
+    IPv6DNSLookup=`timeout 0.3s dig -6 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
+    [[ "$IPv6DNSLookup" == "" ]] && IPv6DNSLookup=`timeout 0.3s dig -6 TXT CH +short whoami.cloudflare @2606:4700:4700::1001 | sed 's/\"//g'`
+    [[ "$IPv6DNSLookup" != "" ]] && break
+  done
+  for y in "$3" "$4" "$5"; do
+    IPv4PingDNS=`timeout 0.5s ping -4 -c 1 "$y" | grep "rtt\|round-trip" | cut -d'/' -f6 | awk -F'.' '{print $NF}' | sed -E '/^[0-9]\+\(\.[0-9]\+\)\?$/p'`"$IPv4PingDNS"
+  done
+  for z in "$6" "$7" "$8"; do
+    IPv6PingDNS=`timeout 0.5s ping -6 -c 1 "$z" | grep "rtt\|round-trip" | cut -d'/' -f6 | awk -F'.' '{print $NF}' | sed -E '/^[0-9]\+\(\.[0-9]\+\)\?$/p'`"$IPv6PingDNS"
+  done
+
   [[ -n "$1" ]] && IP_Check="$1" || IP_Check="$IPv4DNSLookup"
   if expr "$IP_Check" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; then
     for i in 1 2 3 4; do
@@ -874,10 +891,17 @@ function checkIpv4OrIpv6() {
     }
     IP6_Check="isIPv6"
   fi
-
-  [[ "$IP_Check" == "isIPv4" && "$IP6_Check" == "isIPv6" ]] && IPStackType="BiStack"
-  [[ "$IP_Check" == "isIPv4" && "$IP6_Check" != "isIPv6" ]] && IPStackType="IPv4Stack"
-  [[ "$IP_Check" != "isIPv4" && "$IP6_Check" == "isIPv6" ]] && IPStackType="IPv6Stack"
+  
+  [[ -z "$ipAddr" && -z "$ip6Addr" ]] && {
+    [[ "$IPv4PingDNS" =~ ^[0-9] && "$IPv6PingDNS" =~ ^[0-9] ]] && IPStackType="BiStack"
+    [[ "$IPv4PingDNS" =~ ^[0-9] && ! "$IPv6PingDNS" =~ ^[0-9] ]] && IPStackType="IPv4Stack"
+    [[ ! "$IPv4PingDNS" =~ ^[0-9] && "$IPv6PingDNS" =~ ^[0-9] ]] && IPStackType="IPv6Stack"
+  }
+  [[ -n "$ipAddr" || -n "$ip6Addr" ]] && {
+    [[ "$IP_Check" == "isIPv4" && "$IP6_Check" == "isIPv6" ]] && IPStackType="BiStack"
+    [[ "$IP_Check" == "isIPv4" && "$IP6_Check" != "isIPv6" ]] && IPStackType="IPv4Stack"
+    [[ "$IP_Check" != "isIPv4" && "$IP6_Check" == "isIPv6" ]] && IPStackType="IPv6Stack"
+  }
   # [[ "$IPStackType" == "IPv4Stack" ]] && setIPv6="0" || setIPv6="1"
   [[ "$tmpSetIPv6" == "0" ]] && setIPv6="0" || setIPv6="1"
 }
@@ -885,9 +909,11 @@ function checkIpv4OrIpv6() {
 function getIPv6Address() {
 # Differences from scope link, scope host and scope global of IPv6, reference: https://qiita.com/_dakc_/items/4eefa443306860bdcfde
   i6Addr=`ip -6 addr show | grep -wA 5 "$interface" | grep -wv "lo\|host" | grep -wv "link" | grep -w "inet6" | grep "scope" | grep "global" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+  [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && i6Addr=`ip -6 addr show | grep -wA 5 "$interface6" | grep -wv "lo\|host" | grep -wv "link" | grep -w "inet6" | grep "scope" | grep "global" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
   ip6Addr=`echo ${i6Addr} |cut -d'/' -f1`
   ip6Mask=`echo ${i6Addr} |cut -d'/' -f2`
   ip6Gate=`ip -6 route show default | grep -w "$interface" | grep -w "via" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+  [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && ip6Gate=`ip -6 route show default | grep -w "$interface6" | grep -w "via" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
 # IPv6 expansion algorithm code reference: https://blog.caoyu.info/expand-ipv6-by-shell.html
   ip6AddrWhole=`ultimateFormatOfIpv6 "$ip6Addr"`
   ip6GateWhole=`ultimateFormatOfIpv6 "$ip6Gate"`
@@ -1167,22 +1193,30 @@ function getInterface() {
 # Debian all version included the latest Debian 11 is deposited in /etc/network/interfaces, they managed by "ifupdown".
 # Ubuntu 18.04 and later version, using netplan to replace legacy ifupdown, the network config file is in /etc/netplan/
   interface=""
-  Interfaces=`cat /proc/net/dev |grep ':' |cut -d':' -f1 |sed 's/\s//g' |grep -iv '^lo\|^sit\|^stf\|^gif\|^dummy\|^vmnet\|^vir\|^gre\|^ipip\|^ppp\|^bond\|^tun\|^tap\|^ip6gre\|^ip6tnl\|^teql\|^ocserv\|^vpn'`
-  defaultRoute=`ip route show default | grep "^default"`
+  Interfaces=`cat /proc/net/dev |grep ':' | cut -d':' -f1 | sed 's/\s//g' | grep -iv '^lo\|^sit\|^stf\|^gif\|^dummy\|^vmnet\|^vir\|^gre\|^ipip\|^ppp\|^bond\|^tun\|^tap\|^ip6gre\|^ip6tnl\|^teql\|^ocserv\|^vpn'`
+  default4Route=`ip -4 route show default | grep "^default"`
 # In Vultr server of 2.5$/mo plan, it has only IPv6 address, so the default route is via IPv6. 
-  [[ "$defaultRoute" == "" ]] && defaultRoute=`ip -6 route show default | grep "^default"`
+  default6Route=`ip -6 route show default | grep "^default"`
   for item in `echo "$Interfaces"`; do
     [ -n "$item" ] || continue
-    echo "$defaultRoute" | grep -q "$item"
-    [ $? -eq 0 ] && interface="$item" && break
+    echo "$default4Route" | grep -q "$item"
+    [ $? -eq 0 ] && interface4="$item" && break
   done
+  for item in `echo "$Interfaces"`; do
+    [ -n "$item" ] || continue
+    echo "$default6Route" | grep -q "$item"
+    [ $? -eq 0 ] && interface6="$item" && break
+  done
+  interface="$interface4 $interface6"
+  [[ "$interface4" == "$interface6" ]] && interface=`echo "$interface" | cut -d' ' -f 1`
+  [[ -z "$interface4" || -z "$interface6" ]] && interface=`echo "$interface" | sed 's/[[:space:]]//g'`
   echo "$interface" > /dev/null
 # Some templates of cloud provider like Bandwagonhosts, Ubuntu 22.04, may modify parameters in " GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0" " in /etc/default/grub
 # to make Linux kernel redirect names of network adapters from real name like ens18, ens3, enp0s4 to eth0, eth1, eth2...
 # This setting may confuse program to get real adapter name from reading /proc/cat/dev
   GrubCmdLine=`grep "GRUB_CMDLINE_LINUX" /etc/default/grub | grep -v "#" | grep "net.ifnames=0\|biosdevname=0"`
 # So we need to comfirm whether adapter name is renamed and whether we should inherit it into new system.
-  if [[ -n "$GrubCmdLine" && -z "$interfaceSelect" ]] || [[ "$interface" == "eth0" ]] || [[ "$linux_relese" == 'kali' ]] || [[ "$linux_relese" == 'alpinelinux' ]]; then
+  if [[ -n "$GrubCmdLine" && -z "$interfaceSelect" ]] || [[ "$interface4" == "eth0" ]] || [[ "$interface6" == "eth0" ]]|| [[ "$linux_relese" == 'kali' ]] || [[ "$linux_relese" == 'alpinelinux' ]]; then
     setInterfaceName='1'
   fi
   if [[ "$1" == 'CentOS' || "$1" == 'AlmaLinux' || "$1" == 'RockyLinux' || "$1" == 'Fedora' || "$1" == 'Vzlinux' || "$1" == 'OracleLinux' || "$1" == 'OpenCloudOS' || "$1" == 'AlibabaCloudLinux' || "$1" == 'ScientificLinux' || "$1" == 'AmazonLinux' || "$1" == 'RedHatEnterpriseLinux' || "$1" == 'OpenAnolis' ]]; then
@@ -1203,7 +1237,7 @@ function getInterface() {
 # Files in "/etc/sysconfig/network-scripts/", reference: https://zetawiki.com/wiki/%EB%B6%84%EB%A5%98:/etc/sysconfig/network-scripts
       NetCfgFiles=`ls -Sl $NetCfgDir 2>/dev/null | awk -F' ' '{print $NF}' | grep -iv 'readme\|ifcfg-lo\|ifcfg-bond\|ifup\|ifdown\|vpn\|init.ipv6-global\|network-functions' | grep -s "ifcfg\|nmconnection"`
       for Files in $NetCfgFiles; do
-        if [[ `grep -w "$interface" "$NetCfgDir$Files"` != "" ]]; then
+        if [[ `grep -w "$interface4\|$interface6" "$NetCfgDir$Files"` != "" ]]; then
           tmpNetCfgFiles+=$(echo -e "\n""$NetCfgDir$Files")
         fi
       done
@@ -1246,7 +1280,7 @@ function getInterface() {
         fi
       fi
 # The following conditions must appeared at least 3 times in a vaild network config file.
-      [[ `grep -wcs "$interface\|BOOTPROTO=*\|DEVICE=*\|ONBOOT=*\|TYPE=*\|HWADDR=*\|id=*\|\[connection\]\|interface-name=*\|type=*\|method=*" $NetCfgDir$NetCfgFile` -ge "3" ]] && {
+      [[ `grep -wcs "$interface4\|$interface6\|BOOTPROTO=*\|DEVICE=*\|ONBOOT=*\|TYPE=*\|HWADDR=*\|id=*\|\[connection\]\|interface-name=*\|type=*\|method=*" $NetCfgDir$NetCfgFile` -ge "3" ]] && {
 # In AlmaLinux 9 template of DigitalOcean, network adapter name is "eth0", there are two network config files in the OS, and they all belong to "eth0".
 # /etc/sysconfig/network-scripts/ifcfg-eth0
 # /etc/NetworkManager/system-connections/eth0.nmconnection
@@ -1285,7 +1319,7 @@ function getInterface() {
       networkManagerType="netplan"
       tmpNetCfgFiles=""
       for Count in $readNetplan; do
-        tmpNetCfgFiles+=$(echo -e "\n"`grep -wrl "network" | grep -wrl "ethernets" | grep -wrl "$interface" | grep -wrl "version" "$Count" 2>/dev/null`)
+        tmpNetCfgFiles+=$(echo -e "\n"`grep -wrl "network" | grep -wrl "ethernets" | grep -wrl "$interface4\|$interface6" | grep -wrl "version" "$Count" 2>/dev/null`)
       done
       getLargestOrSmallestFile "$tmpNetCfgFiles" "sort -hr"
       NetCfgFile="$FileName"
@@ -1306,7 +1340,7 @@ function getInterface() {
           NetCfgFiles=`grep -wrl 'iface' | grep -wrl "auto\|dhcp\|static\|manual" | grep -wrl -wrl 'inet\|inet6\|ip -6' "$Count""/" 2>/dev/null | grep -v "if-*" | grep -v "state" | grep -v "helper" | grep -v "template"`
         fi
         for Files in $NetCfgFiles; do
-          if [[ `grep -w "$interface" "$Files"` != "" ]]; then
+          if [[ `grep -w "$interface4\|$interface6" "$Files"` != "" ]]; then
             tmpNetCfgFiles+=$(echo -e "\n""$Files")
           fi
         done
@@ -1393,13 +1427,13 @@ function checkDHCP() {
       NetCfg6LineNum="$NetCfgLineNum"
       if [[ "$3" == "IPv4Stack" ]]; then
         Network6Config="isDHCP"
-        [[ `sed -n "$NetCfg4LineNum"p $NetCfgWhole` == "method=manual" ]] && Network4Config="isStatic" || Network4Config="isDHCP"
+        [[ `sed -n "$NetCfg4LineNum"p $NetCfgWhole` == "method=auto" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
       elif [[ "$3" == "BiStack" ]]; then
-        [[ `sed -n "$NetCfg4LineNum"p $NetCfgWhole` == "method=manual" ]] && Network4Config="isStatic" || Network4Config="isDHCP"
-        [[ `sed -n "$NetCfg6LineNum"p $NetCfgWhole` == "method=manual" ]] && Network6Config="isStatic" || Network6Config="isDHCP"
+        [[ `sed -n "$NetCfg4LineNum"p $NetCfgWhole` == "method=auto" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
+        [[ `sed -n "$NetCfg6LineNum"p $NetCfgWhole` == "method=auto" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
       elif [[ "$3" == "IPv6Stack" ]]; then
         Network4Config="isDHCP"
-        [[ `sed -n "$NetCfg4LineNum"p $NetCfgWhole` == "method=manual" ]] && Network4Config="isStatic" || Network4Config="isDHCP"
+        [[ `sed -n "$NetCfg4LineNum"p $NetCfgWhole` == "method=auto" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
       fi
     fi
   elif [[ "$1" == 'Debian' ]] || [[ "$1" == 'Kali' ]] || [[ "$1" == 'Ubuntu' && "$networkManagerType" == "ifupdown" ]] || [[ "$1" == 'AlpineLinux' ]]; then
@@ -1407,13 +1441,13 @@ function checkDHCP() {
 # /etc/network/interfaces or /etc/network/interfaces.d/interface or /run/network/interfaces.d/interface
     if [[ "$3" == "IPv4Stack" ]]; then
       Network6Config="isDHCP"
-      [[ `grep -iw "iface" $NetCfgWhole | grep -iw "$interface" | grep -iw "inet" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
+      [[ `grep -iw "iface" $NetCfgWhole | grep -iw "$interface4" | grep -iw "inet" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
     elif [[ "$3" == "BiStack" ]]; then
-      [[ `grep -iw "iface" $NetCfgWhole | grep -iw "$interface" | grep -iw "inet" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
-      [[ `grep -iw "iface" $NetCfgWhole | grep -iw "$interface" | grep -iw "inet6" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
+      [[ `grep -iw "iface" $NetCfgWhole | grep -iw "$interface4" | grep -iw "inet" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
+      [[ `grep -iw "iface" $NetCfgWhole | grep -iw "$interface6" | grep -iw "inet6" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
     elif [[ "$3" == "IPv6Stack" ]]; then
       Network4Config="isDHCP"
-      [[ `grep -iw "iface" $NetCfgWhole | grep -iw "$interface" | grep -iw "inet6" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
+      [[ `grep -iw "iface" $NetCfgWhole | grep -iw "$interface6" | grep -iw "inet6" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
     fi
   elif [[ "$1" == 'Ubuntu' && "$networkManagerType" == "netplan" ]]; then
 # For netplan(Ubuntu 18 and later), if network configuration is Static whether IPv4 or IPv6
@@ -1496,8 +1530,10 @@ function DebianModifiedPreseed() {
       if [[ "$Network6Config" == "isDHCP" ]]; then
 # Enable IPv6 dhcp and set prefer IPv6 access for BiStack or IPv6Stack machine: add "label 2002::/16", "label 2001:0::/32" in last line of the "/etc/gai.conf"
         SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
+        [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && SupportIPv6orIPv4="$1 sed -i '\$a\ ' /etc/network/interfaces; $1 sed -i '\$aallow-hotplug $interface6' /etc/network/interfaces; $1 sed -i '\$aiface $interface6 inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
       elif [[ "$Network6Config" == "isStatic" ]]; then
         SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet6 static' /etc/network/interfaces; $1 sed -i '\$a\\\taddress $ip6Addr' /etc/network/interfaces; $1 sed -i '\$a\\\tnetmask $ip6Mask' /etc/network/interfaces; $1 sed -i '\$a\\\tgateway $ip6Gate' /etc/network/interfaces; $1 sed -i '\$a\\\tdns-nameservers $ip6DNS' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
+        [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && SupportIPv6orIPv4="$1 sed -i '\$a\ ' /etc/network/interfaces; $1 sed -i '\$aallow-hotplug $interface6' /etc/network/interfaces; $1 sed -i '\$aiface $interface6 inet6 static' /etc/network/interfaces; $1 sed -i '\$a\\\taddress $ip6Addr' /etc/network/interfaces; $1 sed -i '\$a\\\tnetmask $ip6Mask' /etc/network/interfaces; $1 sed -i '\$a\\\tgateway $ip6Gate' /etc/network/interfaces; $1 sed -i '\$a\\\tdns-nameservers $ip6DNS' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
       fi
     elif [[ "$IPStackType" == "IPv6Stack" ]]; then
 # This IPv6Stack Static machine can access IPv4 network in the future, maybe.
@@ -1747,7 +1783,7 @@ checkSys
 # Try to enable IPv6 by DHCP
 # timeout 5 dhclient -6 $interface
 
-checkIpv4OrIpv6 "$ipAddr" "$ip6Addr"
+checkIpv4OrIpv6 "$ipAddr" "$ip6Addr" "208.67.220.220" "9.9.9.9" "64.6.65.6" "2620:119:35::35" "2620:fe::9" "2620:74:1b::1:1"
 
 # Youtube, Instagram and Wikipedia all have public IPv4 and IPv6 address and are also banned in mainland China.
 checkCN "www.youtube.com" "www.instagram.com" "www.wikipedia.org" "$IPStackType"
