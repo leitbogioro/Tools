@@ -673,17 +673,17 @@ function checkMem() {
         }
       fi
     elif [[ "$1" == 'fedora' ]]; then
-      if [[ "$TotalMem1" -le "1740800" || "$TotalMem2" -le "1740800" ]]; then
+      [[ "$TotalMem1" -le "1740800" || "$TotalMem2" -le "1740800" ]] && {
         echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 2GB!\n"
         exit 1
-      fi
+      }
     fi
   }
   [[ "$1" == 'alpinelinux' || "$3" == 'Ubuntu' ]] && {
-    if [[ "$TotalMem1" -le "895328" || "$TotalMem2" -le "895328" ]]; then
+    [[ "$TotalMem1" -le "895328" || "$TotalMem2" -le "895328" ]] && {
       echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 1GB!\n"
       exit 1
-    fi
+    }
   }
 }
 
