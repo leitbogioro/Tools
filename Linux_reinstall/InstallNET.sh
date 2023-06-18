@@ -839,10 +839,10 @@ function checkIpv4OrIpv6() {
     [[ "$IPv6DNSLookup" != "" ]] && break
   done
   for y in "$3" "$4" "$5"; do
-    IPv4PingDNS=`timeout 0.5s ping -4 -c 1 "$y" | grep "rtt\|round-trip" | cut -d'/' -f6 | awk -F'.' '{print $NF}' | sed -E '/^[0-9]\+\(\.[0-9]\+\)\?$/p'`"$IPv4PingDNS"
+    IPv4PingDNS=`timeout 0.5s ping -4 -c 1 "$y" | grep "rtt\|round-trip" | cut -d'/' -f5 | awk -F'.' '{print $NF}' | sed -E '/^[0-9]\+\(\.[0-9]\+\)\?$/p'`"$IPv4PingDNS"
   done
   for z in "$6" "$7" "$8"; do
-    IPv6PingDNS=`timeout 0.5s ping -6 -c 1 "$z" | grep "rtt\|round-trip" | cut -d'/' -f6 | awk -F'.' '{print $NF}' | sed -E '/^[0-9]\+\(\.[0-9]\+\)\?$/p'`"$IPv6PingDNS"
+    IPv6PingDNS=`timeout 0.5s ping -6 -c 1 "$z" | grep "rtt\|round-trip" | cut -d'/' -f5 | awk -F'.' '{print $NF}' | sed -E '/^[0-9]\+\(\.[0-9]\+\)\?$/p'`"$IPv6PingDNS"
   done
 
   [[ -n "$1" ]] && IP_Check="$1" || IP_Check="$IPv4DNSLookup"
@@ -1326,7 +1326,7 @@ function getInterface() {
       NetCfgDir="$FileDirection"
       NetCfgWhole="$NetCfgDir$NetCfgFile"
     elif [[ ! -z "$readIfupdown" ]]; then
-# Debian/Kali network configuration
+# Debian/Kali/AlpineLinux network configuration
 # Some versions of Ubuntu 18 like virmach template use ifupdown not netplan.
       networkManagerType="ifupdown"
 # Collect all eligible config files by the several parent directions names "network".
@@ -1337,7 +1337,7 @@ function getInterface() {
         if [[ "$IPStackType" == "IPv4Stack" ]]; then
           NetCfgFiles=`grep -wrl 'iface' | grep -wrl "auto\|dhcp\|static\|manual" | grep -wrl 'inet' "$Count""/" 2>/dev/null | grep -v "if-*" | grep -v "state" | grep -v "helper" | grep -v "template"`
         elif [[ "$IPStackType" == "BiStack" ]] || [[ "$IPStackType" == "IPv6Stack" ]]; then
-          NetCfgFiles=`grep -wrl 'iface' | grep -wrl "auto\|dhcp\|static\|manual" | grep -wrl -wrl 'inet\|inet6\|ip -6' "$Count""/" 2>/dev/null | grep -v "if-*" | grep -v "state" | grep -v "helper" | grep -v "template"`
+          NetCfgFiles=`grep -wrl 'iface' | grep -wrl "auto\|dhcp\|static\|manual" | grep -wrl 'inet\|inet6\|ip -6' "$Count""/" 2>/dev/null | grep -v "if-*" | grep -v "state" | grep -v "helper" | grep -v "template"`
         fi
         for Files in $NetCfgFiles; do
           if [[ `grep -w "$interface4\|$interface6" "$Files"` != "" ]]; then
