@@ -1209,7 +1209,11 @@ function getInterface() {
   done
   interface="$interface4 $interface6"
   [[ "$interface4" == "$interface6" ]] && interface=`echo "$interface" | cut -d' ' -f 1`
-  [[ -z "$interface4" || -z "$interface6" ]] && interface=`echo "$interface" | sed 's/[[:space:]]//g'`
+  [[ -z "$interface4" || -z "$interface6" ]] && {
+    interface=`echo "$interface" | sed 's/[[:space:]]//g'`
+    [[ -z "$interface4" ]] && interface4="$interface"
+    [[ -z "$interface6" ]] && interface6="$interface"
+  }
   echo "$interface" > /dev/null
 # Some templates of cloud provider like Bandwagonhosts, Ubuntu 22.04, may modify parameters in " GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0" " in /etc/default/grub
 # to make Linux kernel redirect names of network adapters from real name like ens18, ens3, enp0s4 to eth0, eth1, eth2...
