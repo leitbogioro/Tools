@@ -697,6 +697,11 @@ function checkVirt() {
 function checkSys() {
   apt update -y
   apt install lsb-release -y
+# Delete mirrors from elrepo.org because it will causes dnf/yum checking updates continuously(maybe some of the server mirror lists are in the downtime?)
+  [[ `grep -wri "elrepo.org" /etc/yum.repos.d/` != "" ]] && {
+    elrepoFile=`grep -wri "elrepo.org" /etc/yum.repos.d/ | head -n 1 | cut -d':' -f 1`
+    mv "$elrepoFile" "$elrepoFile.bak"
+  }
   yum install redhat-lsb -y
   apk update
   OsLsb=`lsb_release -d | awk '{print$2}'`
@@ -1194,6 +1199,7 @@ function getInterface() {
 # Ubuntu 18.04 and later version, using netplan to replace legacy ifupdown, the network config file is in /etc/netplan/
   interface=""
   Interfaces=`cat /proc/net/dev |grep ':' | cut -d':' -f1 | sed 's/\s//g' | grep -iv '^lo\|^sit\|^stf\|^gif\|^dummy\|^vmnet\|^vir\|^gre\|^ipip\|^ppp\|^bond\|^tun\|^tap\|^ip6gre\|^ip6tnl\|^teql\|^ocserv\|^vpn'`
+# Some server has two different network adapters and for example: eth0 is for IPv4, eth1 is for IPv6, so we need to distinguish whether they are the same.
   default4Route=`ip -4 route show default | grep "^default"`
 # In Vultr server of 2.5$/mo plan, it has only IPv6 address, so the default route is via IPv6. 
   default6Route=`ip -6 route show default | grep "^default"`
