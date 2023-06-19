@@ -60,6 +60,7 @@ export isMirror='0'
 export FindDists='0'
 export setFileType=''
 export loaderMode='0'
+export LANG="en_US.UTF-8"
 export IncFirmware='0'
 export SpikCheckDIST='0'
 export UNKNOWHW='0'
@@ -2626,6 +2627,7 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
   elif [[ "$linux_relese" == 'fedora' ]]; then
     RedHatUrl="${LinuxMirror}/releases/${DIST}/Server/${VER}/os/"
     RepoBase="repo --name=base --baseurl=${LinuxMirror}/releases/${DIST}/Server/${VER}/os/"
+    RepoAppStream="repo --name=updates --mirrorlist=https://mirrors.fedoraproject.org/mirrorlist?repo=updates-released-f${DIST}&arch=${VER}"
     RepoEpel="repo --name=epel --baseurl=${LinuxMirror}/releases/${DIST}/Everything/${VER}/os/"
   fi
 # If network adapter is redirected, the "eth0" is default.
@@ -2662,7 +2664,7 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
   IncDisk=`echo $IncDisk | cut -d'/' -f 3`
   if [[ "$disksNum" -le "1" || "$setDisk" != "all" ]]; then
     clearPart="clearpart --drives=${IncDisk} --all --initlabel"
-    [[ "$EfiSupport" == "enabled" ]] && FormatDisk=`echo -e "part / --fstype="xfs" --ondisk="$IncDisk" --grow --size="0"\npart swap --ondisk="$IncDisk" --size="1024"\npart /boot --fstype="xfs" --ondisk="$IncDisk" --size="512"\npart /boot/efi --fstype="efi" --ondisk="$IncDisk" --size="512""` || FormatDisk=`echo -e "part / --fstype="xfs" --ondisk="$IncDisk" --grow --size="0"\npart swap --ondisk="$IncDisk" --size="1024"\npart /boot --fstype="xfs" --ondisk="$IncDisk" --size="512""`
+    [[ "$EfiSupport" == "enabled" ]] && FormatDisk=`echo -e "part / --fstype="xfs" --ondisk="$IncDisk" --grow --size="0"\npart swap --ondisk="$IncDisk" --size="1024"\npart /boot --fstype="xfs" --ondisk="$IncDisk" --size="512"\npart /boot/efi --fstype="efi" --ondisk="$IncDisk" --size="512""` || FormatDisk=`echo -e "part / --fstype="xfs" --ondisk="$IncDisk" --grow --size="0"\npart swap --ondisk="$IncDisk" --size="1024"\npart /boot --fstype="xfs" --ondisk="$IncDisk" --size="512"\npart biosboot --fstype=biosboot --size=1"`
   elif [[ "$setDisk" == "all" ]]; then
     clearPart="clearpart --all --initlabel"
     FormatDisk="autopart"
