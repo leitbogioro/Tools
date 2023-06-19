@@ -1251,7 +1251,7 @@ function getInterface() {
 # Files in "/etc/sysconfig/network-scripts/", reference: https://zetawiki.com/wiki/%EB%B6%84%EB%A5%98:/etc/sysconfig/network-scripts
       NetCfgFiles=`ls -Sl $NetCfgDir 2>/dev/null | awk -F' ' '{print $NF}' | grep -iv 'readme\|ifcfg-lo\|ifcfg-bond\|ifup\|ifdown\|vpn\|init.ipv6-global\|network-functions' | grep -s "ifcfg\|nmconnection"`
       for Files in $NetCfgFiles; do
-        if [[ `grep -w "$interface4\|$interface6" "$NetCfgDir$Files"` != "" ]] && [[ "$Files" =~ "$interface4" || "$Files" =~ "$interface6" ]]; then
+        if [[ `grep -w "$interface4\|$interface6" "$NetCfgDir$Files"` != "" ]]; then
           tmpNetCfgFiles+=$(echo -e "\n""$NetCfgDir$Files")
         fi
       done
