@@ -843,11 +843,13 @@ function checkIpv4OrIpv6() {
     [[ "$IPv6DNSLookup" == "" ]] && IPv6DNSLookup=`timeout 0.3s dig -6 TXT CH +short whoami.cloudflare @2606:4700:4700::1001 | sed 's/\"//g'`
     [[ "$IPv6DNSLookup" != "" ]] && break
   done
-  for y in "$3" "$4" "$5"; do
-    IPv4PingDNS=`timeout 0.5s ping -4 -c 1 "$y" | grep "rtt\|round-trip" | cut -d'/' -f5 | awk -F'.' '{print $NF}' | sed -E '/^[0-9]\+\(\.[0-9]\+\)\?$/p'`"$IPv4PingDNS"
+  for y in "$3" "$4" "$5" "$6"; do
+    IPv4PingDNS=`timeout 0.3s ping -4 -c 1 "$y" | grep "rtt\|round-trip" | cut -d'/' -f5 | awk -F'.' '{print $NF}' | sed -E '/^[0-9]\+\(\.[0-9]\+\)\?$/p'`"$IPv4PingDNS"
+    [[ "$IPv4PingDNS" != "" ]] && break
   done
-  for z in "$6" "$7" "$8"; do
-    IPv6PingDNS=`timeout 0.5s ping -6 -c 1 "$z" | grep "rtt\|round-trip" | cut -d'/' -f5 | awk -F'.' '{print $NF}' | sed -E '/^[0-9]\+\(\.[0-9]\+\)\?$/p'`"$IPv6PingDNS"
+  for z in "$7" "$8" "$9" "$10"; do
+    IPv6PingDNS=`timeout 0.3s ping -6 -c 1 "$z" | grep "rtt\|round-trip" | cut -d'/' -f5 | awk -F'.' '{print $NF}' | sed -E '/^[0-9]\+\(\.[0-9]\+\)\?$/p'`"$IPv6PingDNS"
+    [[ "$IPv6PingDNS" != "" ]] && break
   done
 
   [[ -n "$1" ]] && IP_Check="$1" || IP_Check="$IPv4DNSLookup"
@@ -896,7 +898,8 @@ function checkIpv4OrIpv6() {
     }
     IP6_Check="isIPv6"
   fi
-  
+
+# Use ping -4/-6 to replace dig -4/-6 because some IPv4 network will callback IPv6 address from DNS even if we use "dig -4" to get DNS result.
   [[ -z "$ipAddr" && -z "$ip6Addr" ]] && {
     [[ "$IPv4PingDNS" =~ ^[0-9] && "$IPv6PingDNS" =~ ^[0-9] ]] && IPStackType="BiStack"
     [[ "$IPv4PingDNS" =~ ^[0-9] && ! "$IPv6PingDNS" =~ ^[0-9] ]] && IPStackType="IPv4Stack"
@@ -1793,9 +1796,10 @@ checkSys
 # Try to enable IPv6 by DHCP
 # timeout 5 dhclient -6 $interface
 
-checkIpv4OrIpv6 "$ipAddr" "$ip6Addr" "208.67.220.220" "9.9.9.9" "64.6.65.6" "2620:119:35::35" "2620:fe::9" "2620:74:1b::1:1"
+# IPv4 and IPv6 DNS check servers from OpenDNS, Quad9, Verisign and TWNIC.
+checkIpv4OrIpv6 "$ipAddr" "$ip6Addr" "208.67.220.220" "9.9.9.9" "64.6.65.6" "101.102.103.104" "2620:0:ccc::2" "2620:fe::9" "2620:74:1b::1:1" "2001:de4::101"
 
-# Youtube, Instagram and Wikipedia all have public IPv4 and IPv6 address and are also banned in mainland China.
+# Youtube, Instagram and Wikipedia all have public IPv4 and IPv6 address and are also banned in mainland of China.
 checkCN "www.youtube.com" "www.instagram.com" "www.wikipedia.org" "$IPStackType"
 
 checkEfi "/sys/firmware/efi/vars/" "/sys/firmware/efi/efivars/" "/sys/firmware/efi/runtime-map/" "/sys/firmware/efi/mok-variables/"
