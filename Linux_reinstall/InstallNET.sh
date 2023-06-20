@@ -2662,7 +2662,7 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
   IncDisk=`echo $IncDisk | cut -d'/' -f 3`
   if [[ "$disksNum" -le "1" || "$setDisk" != "all" ]]; then
     clearPart="clearpart --drives=${IncDisk} --all --initlabel"
-    [[ "$EfiSupport" == "enabled" ]] && FormatDisk=`echo -e "part / --fstype="xfs" --ondisk="$IncDisk" --grow --size="0"\npart swap --ondisk="$IncDisk" --size="1024"\npart /boot --fstype="xfs" --ondisk="$IncDisk" --size="512"\npart /boot/efi --fstype="efi" --ondisk="$IncDisk" --size="512""` || FormatDisk=`echo -e "part / --fstype="xfs" --ondisk="$IncDisk" --grow --size="0"\npart swap --ondisk="$IncDisk" --size="1024"\npart /boot --fstype="xfs" --ondisk="$IncDisk" --size="512"\npart biosboot --fstype=biosboot --size=1"`
+    [[ "$EfiSupport" == "enabled" ]] && FormatDisk=`echo -e "part / --fstype="xfs" --ondisk="$IncDisk" --grow --size="0"\npart swap --ondisk="$IncDisk" --size="1024"\npart /boot --fstype="xfs" --ondisk="$IncDisk" --size="512"\npart /boot/efi --fstype="efi" --ondisk="$IncDisk" --size="512""` || FormatDisk=`echo -e "part / --fstype="xfs" --ondisk="$IncDisk" --grow --size="0"\npart swap --ondisk="$IncDisk" --size="1024"\npart /boot --fstype="xfs" --ondisk="$IncDisk" --size="512"\npart biosboot --fstype=biosboot --ondisk="$IncDisk" --size=1"`
   elif [[ "$setDisk" == "all" ]]; then
     clearPart="clearpart --all --initlabel"
     FormatDisk="autopart"
