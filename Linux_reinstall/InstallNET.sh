@@ -2605,7 +2605,7 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
   RedHatUrl=""
   RepoBase=""
   RepoAppStream=""
-  RepoEpel="repo --name=epel --mirrorlist=https://mirrors.fedoraproject.org/mirrorlist?repo=epel-${DIST}&arch=${VER}"
+  RepoEpel="repo --name=epel --mirrorlist=https://mirrors.fedoraproject.org/mirrorlist?repo=epel-${RedHatSeries}&arch=${VER}"
   AuthMethod="authselect --useshadow --passalgo sha512"
   SetTimeZone="timezone --utc ${TimeZone}"
   [[ "$IsCN" == "cn" ]] && FirewallRule="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/RedHat/RHEL9Public.xml" || FirewallRule="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/RedHat/RHEL9Public.xml"
