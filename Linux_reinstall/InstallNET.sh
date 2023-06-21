@@ -56,6 +56,7 @@ export tmpSetIPv6=''
 export setIPv6='1'
 export setRaid=''
 export setDisk='0'
+export setMemCheck='1'
 export isMirror='0'
 export FindDists='0'
 export setFileType=''
@@ -261,6 +262,10 @@ while [[ $# -ge 1 ]]; do
     --allbymyself)
       shift
       setAutoConfig='0'
+      ;;
+    --nomemcheck)
+      shift
+      setMemCheck='0'
       ;;
     -netbootxyz)
       shift
@@ -536,10 +541,12 @@ function ipv4SubnetCertificate() {
 
 function getDisk() {
 # $disks is definited as the default disk, if server has 2 and more disks, the first disk will be responsible of the grub booting.
-  disks=`lsblk -ip | grep -v "fd[0-9]*\|sr[0-9]*\|ram[0-9]*\|loop[0-9]*" | sed 's/[[:space:]]*$//g' | grep -w "part /\|part /boot" | head -n 1 | cut -d' ' -f1 | sed 's/..//' | sed 's/[0-9]//g'`
+  rootPart=`lsblk -ip | grep -v "fd[0-9]*\|sr[0-9]*\|ram[0-9]*\|loop[0-9]*" | sed 's/[[:space:]]*$//g' | grep -w "part /\|part /boot" | head -n 1 | cut -d' ' -f1 | sed 's/..//'`
+  majorMin=`lsblk -ip | grep -w "$rootPart" | head -n 1 | awk '{print $2}' | sed -r 's/:(.*)/:0/g'`
+  disks=`lsblk -ip | grep -w "$majorMin" | head -n 1 | awk '{print $1}'`
   [[ -z "$disks" ]] && disks=`lsblk -ip | grep -v "fd[0-9]*\|sr[0-9]*\|ram[0-9]*\|loop[0-9]*" | sed 's/[[:space:]]*$//g' | grep -w "disk /\|disk /boot" | head -n 1 | cut -d' ' -f1`
   [[ -z "$disks" ]] && disks=`lsblk -ip | grep -v "fd[0-9]*\|sr[0-9]*\|ram[0-9]*\|loop[0-9]*" | sed 's/[[:space:]]*$//g' | grep -w "disk" | grep -i "[0-9]g\|[0-9]t\|[0-9]p\|[0-9]e\|[0-9]z\|[0-9]y" | head -n 1 | cut -d' ' -f1`
-  echo "${disks: -1}" | [[ -n "`sed -n '/^[0-9][0-9]*$/p'`" ]] && disks=`echo "$disks" | sed 's/[0-9]//g'`
+  # echo "${disks: -1}" | [[ -n "`sed -n '/^[0-9][0-9]*$/p'`" ]] && disks=`echo "$disks" | sed 's/[0-9]//g'`
   [ -n "$disks" ] || echo ""
   echo "$disks" | grep -q "/dev"
   [ $? -eq 0 ] && IncDisk="$disks" || IncDisk="/dev/$disks"
@@ -638,9 +645,11 @@ function checkMem() {
 # In any servers that total memory below 2.5GB to install debian, the low memory installation will be force enabled, "lowmem=+0, 1 or 2" is only for Debian like, 0 is lowest, 1 is medium, 2 is the highest.
   [[ "$1" == 'debian' ]] || [[ "$1" == 'ubuntu' ]] || [[ "$1" == 'kali' ]] && {
     [[ "$TotalMem1" -ge "2558072" || "$TotalMem2" -ge "2558072" ]] && lowmemLevel="" || lowmemLevel="lowmem=+1"
-    [[ "$TotalMem1" -le "329760" || "$TotalMem2" -le "329760" ]] && {
-      echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 384MB!\n"
-      exit 1
+    [[ "$setMemCheck" == '1' ]] && {
+      [[ "$TotalMem1" -le "329760" || "$TotalMem2" -le "329760" ]] && {
+        echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 384MB!\n"
+        exit 1
+      }
     }
   }
 # Without the function of OS re-installation templates in control panel which provided by cloud companies(many companies even have not).
@@ -655,35 +664,37 @@ function checkMem() {
 # Redhat 9 slightly improved the huge occupy of the memory, 2GB RAM machine can run it successfully, but CentOS 9-stream needs 2.5GB RAM more.
 # Technology companies usually add useless functions and redundant code in new version of software increasingly.
 # They never optimize or improve it, just tell users they need to pay more to expand their hardware performance and adjust to the endless demand of them. it's not a correct decision. 
-  [[ "$1" == 'fedora' || "$1" == 'rockylinux' || "$1" == 'almalinux' || "$1" == 'centos' ]] && {
-    if [[ "$1" == 'rockylinux' || "$1" == 'almalinux' || "$1" == 'centos' ]]; then
-      if [[ "$2" == "8" ]] || [[ "$1" == 'centos' && "$2" -ge "9" ]]; then
-        [[ "$TotalMem1" -le "2198342" || "$TotalMem2" -le "2198342" ]] && {
-          echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 2.5GB!\n"
-          exit 1
-        }
-      elif [[ "$2" -ge "9" ]]; then
+  [[ "$setMemCheck" == '1' ]] && {
+    [[ "$1" == 'fedora' || "$1" == 'rockylinux' || "$1" == 'almalinux' || "$1" == 'centos' ]] && {
+      if [[ "$1" == 'rockylinux' || "$1" == 'almalinux' || "$1" == 'centos' ]]; then
+        if [[ "$2" == "8" ]] || [[ "$1" == 'centos' && "$2" -ge "9" ]]; then
+          [[ "$TotalMem1" -le "2198342" || "$TotalMem2" -le "2198342" ]] && {
+            echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 2.5GB!\n"
+            exit 1
+          }
+        elif [[ "$2" -ge "9" ]]; then
+          [[ "$TotalMem1" -le "1740800" || "$TotalMem2" -le "1740800" ]] && {
+            echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 2GB!\n"
+            exit 1
+          }
+        elif [[ "$2" == "7" ]]; then
+          [[ "$TotalMem1" -le "1319006" || "$TotalMem2" -le "1319006" ]] && {
+            echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 1.5GB!\n"
+            exit 1
+          }
+        fi
+      elif [[ "$1" == 'fedora' ]]; then
         [[ "$TotalMem1" -le "1740800" || "$TotalMem2" -le "1740800" ]] && {
           echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 2GB!\n"
           exit 1
         }
-      elif [[ "$2" == "7" ]]; then
-        [[ "$TotalMem1" -le "1319006" || "$TotalMem2" -le "1319006" ]] && {
-          echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 1.5GB!\n"
-          exit 1
-        }
       fi
-    elif [[ "$1" == 'fedora' ]]; then
-      [[ "$TotalMem1" -le "1740800" || "$TotalMem2" -le "1740800" ]] && {
-        echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 2GB!\n"
+    }
+    [[ "$1" == 'alpinelinux' || "$3" == 'Ubuntu' ]] && {
+      [[ "$TotalMem1" -le "895328" || "$TotalMem2" -le "895328" ]] && {
+        echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 1GB!\n"
         exit 1
       }
-    fi
-  }
-  [[ "$1" == 'alpinelinux' || "$3" == 'Ubuntu' ]] && {
-    [[ "$TotalMem1" -le "895328" || "$TotalMem2" -le "895328" ]] && {
-      echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 1GB!\n"
-      exit 1
     }
   }
 }
@@ -1326,7 +1337,7 @@ function getInterface() {
     NetCfgFile="$FileName"
     NetCfgDir="$FileDirection"
   else
-    readNetplan=$(find $(echo `find / -maxdepth 5 -path /*netplan`) -maxdepth 1 -name "*.yaml" -print)
+    readNetplan=$(find $(echo `find / -maxdepth 4 -path /*netplan`) -maxdepth 1 -name "*.yaml" -print)
     readIfupdown=$(find / -maxdepth 5 -path /*network -type d -print | grep -v "lib\|systemd")
     if [[ ! -z "$readNetplan" ]]; then
 # Ubuntu 18+ network configuration
@@ -1567,20 +1578,30 @@ function DebianModifiedPreseed() {
 #         netmask 128
 #         gateway fe80::200:17ff:fe9e:f9d0
 #         dns-nameservers 2606:4700:4700::1001 2001:4860:4860::8844
-    [[ "$setRaid" == "0" ]] && FormatDisk=`echo -e "d-i partman-md/confirm boolean true
+    [[ "$setRaid" == "0" ]] && {
+      [[ "$disksNum" -le "1" ]] && {
+        echo -ne "\n${red}Error!${plain} Raid 0 partition recipe is not suitable on this machine!\n"
+        exit 1
+      }
+      AllDisks1=`echo "$AllDisks" | cut -d ' ' -f1`
+      AllDisks2=`echo "$AllDisks" | cut -d ' ' -f2`
+      AllDisks="$AllDisks1 $AllDisks2"
+      FormatDisk=`echo -e "d-i partman-md/confirm boolean true
 d-i partman-md/confirm_nooverwrite boolean true
 d-i partman-basicfilesystems/no_swap boolean false
 d-i partman/mount_style select label
 d-i partman-auto/method string raid
-d-i partman-auto/disk string "$IncDisk" /dev/sdb
+d-i partman-auto/disk string $AllDisks
 d-i partman-auto-raid/recipe string          \
-    1 2 0 ext4 /boot "$IncDisk"1#/dev/sdb1 . \
-    0 2 0 ext4 /     "$IncDisk"2#/dev/sdb2 .
+    1 2 0 ext4 /boot "$AllDisks1""1"#"$AllDisks2""1" . \
+    1 2 0 vfat /boot/efi "$AllDisks1""2"#"$AllDisks2""2" . \
+    0 2 0 ext4 /     "$AllDisks1""3"#"$AllDisks2""3" .
 d-i partman-auto/expert_recipe string multiraid ::                 \
-    400 100 400 raid \\$bootable{ } \\$primary{ } method{ raid } . \
+    512 100 512 raid \\$bootable{ } \\$primary{ } method{ raid } . \
     100 200  -1 raid                \\$primary{ } method{ raid } .
 d-i mdadm/boot_degraded boolean true"`
-# Raid 0 partition recipe:
+    }
+# Raid 0 partition recipe sample:
 # d-i partman-md/confirm boolean true
 # d-i partman-md/confirm_nooverwrite boolean true
 # d-i partman-basicfilesystems/no_swap boolean false
@@ -1589,12 +1610,14 @@ d-i mdadm/boot_degraded boolean true"`
 # d-i partman-auto/disk string /dev/sda /dev/sdb
 # d-i partman-auto-raid/recipe string        \
 #     1 2 0 ext4 /boot /dev/sda1#/dev/sdb1 . \
-#     0 2 0 ext4 /     /dev/sda2#/dev/sdb2 .
+#     1 2 0 vfat /boot/efi /dev/sda2#/dev/sdb2 . \
+#     0 2 0 ext4 /     /dev/sda3#/dev/sdb3 .
 # d-i partman-auto/expert_recipe string multiraid ::               \
 #     400 100 400 raid \$bootable{ } \$primary{ } method{ raid } . \
 #     100 200  -1 raid               \$primary{ } method{ raid } .
 # d-i mdadm/boot_degraded boolean true
 #
+# Reference: https://github.com/airium/Linux-Reinstall/blob/master/install-raid0.sh
     EnableSSH=""
     ReviseMOTD=""
     SupportZSH=""
@@ -1923,7 +1946,6 @@ echo "$sshPORT"
 echo "$tmpWORD"
 
 getDisk
-[[ "$setRaid" == "0" ]] && IncDisk="/dev/sda"
 echo -ne "\n${aoiBlue}# Installing Disks${plain}\n\n"
 [[ "$setDisk" == "all" ]] && echo "$AllDisks" || echo "$IncDisk"
 
