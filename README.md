@@ -159,6 +159,8 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
+**--nomemcheck**: Disable memory check by force so that you can install any OS on any size of the memory in target machine, whether installation will succeed is not guaranteed.
+
 **--network "dhcp/auto" or "static/manual"**: Default to use DHCP to finish network configuration. If your cloud provider is a small or middle merchant, the network of your machine may be static so you need to add it. it is equal with add --ip-addr "" --ip-mask "" --ip-gate "", if you add this, don't distribute the following three items again! It must be added in the last of the command.
 <br />
 <br />
@@ -241,6 +243,7 @@ South Korea:
 Taiwan:
 <br />
 <pre><code>bash InstallNET.sh -debian 12 -mirror "http://ftp.tw.debian.org/debian/"</code></pre>
+
 America:
 <br />
 <pre><code>bash InstallNET.sh -debian 12 -mirror "https://mirrors.ocf.berkeley.edu/debian/"</code></pre>
