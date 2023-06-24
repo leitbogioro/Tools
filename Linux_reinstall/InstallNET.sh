@@ -1245,13 +1245,13 @@ function getInterface() {
     setInterfaceName='1'
   fi
   if [[ "$1" == 'CentOS' || "$1" == 'AlmaLinux' || "$1" == 'RockyLinux' || "$1" == 'Fedora' || "$1" == 'Vzlinux' || "$1" == 'OracleLinux' || "$1" == 'OpenCloudOS' || "$1" == 'AlibabaCloudLinux' || "$1" == 'ScientificLinux' || "$1" == 'AmazonLinux' || "$1" == 'RedHatEnterpriseLinux' || "$1" == 'OpenAnolis' ]]; then
-    [[ ! $(find / -maxdepth 6 -path /*network-scripts -type d -print -or -path /*system-connections -type d -print) ]] && {
+    [[ ! $(find / -maxdepth 5 -path /*network-scripts -type d -print -or -path /*system-connections -type d -print) ]] && {
       echo -ne "\n[${red}Error${plain}] Invalid network configuration!\n"
       exit 1
     }
     NetCfgWhole=()
     tmpNetCfgFiles=""
-    for Count in $(find / -maxdepth 6 -path /*network-scripts -type d -print -or -path /*system-connections -type d -print); do
+    for Count in $(find / -maxdepth 5 -path /*network-scripts -type d -print -or -path /*system-connections -type d -print); do
       NetCfgDir="$Count""/"
 # If "NetworkManager" replaced "network-scripts", there is a file called "readme-ifcfg-rh.txt" in dir: /etc/sysconfig/network-scripts/
       # NetCfgFile=`ls -Sl $NetCfgDir 2>/dev/null | awk -F' ' '{print $NF}' | grep -iv 'lo\|sit\|stf\|gif\|dummy\|vmnet\|vir\|gre\|ipip\|ppp\|bond\|tun\|tap\|ip6gre\|ip6tnl\|teql\|ocserv\|vpn\|readme' | grep -s "$interface" | head -n 1`
