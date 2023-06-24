@@ -135,6 +135,8 @@ For Ubuntu, official recommend mirror lists are here:
 <pre><code>https://launchpad.net/ubuntu/+cdmirrors</code></pre>
 <br />
 
+**Recommended terminal client is Xshell or Putty**
+
 **-port ""**: you can pre-specify ssh port of system, range is 1~65535, both Redhat series or Debian series could be supported, **default is '22'**.
 <br />
 <br />
