@@ -546,7 +546,6 @@ function getDisk() {
   disks=`lsblk -ip | grep -w "$majorMin" | head -n 1 | awk '{print $1}'`
   [[ -z "$disks" ]] && disks=`lsblk -ip | grep -v "fd[0-9]*\|sr[0-9]*\|ram[0-9]*\|loop[0-9]*" | sed 's/[[:space:]]*$//g' | grep -w "disk /\|disk /boot" | head -n 1 | cut -d' ' -f1`
   [[ -z "$disks" ]] && disks=`lsblk -ip | grep -v "fd[0-9]*\|sr[0-9]*\|ram[0-9]*\|loop[0-9]*" | sed 's/[[:space:]]*$//g' | grep -w "disk" | grep -i "[0-9]g\|[0-9]t\|[0-9]p\|[0-9]e\|[0-9]z\|[0-9]y" | head -n 1 | cut -d' ' -f1`
-  # echo "${disks: -1}" | [[ -n "`sed -n '/^[0-9][0-9]*$/p'`" ]] && disks=`echo "$disks" | sed 's/[0-9]//g'`
   [ -n "$disks" ] || echo ""
   echo "$disks" | grep -q "/dev"
   [ $? -eq 0 ] && IncDisk="$disks" || IncDisk="/dev/$disks"
@@ -1578,50 +1577,8 @@ function DebianModifiedPreseed() {
 #         netmask 128
 #         gateway fe80::200:17ff:fe9e:f9d0
 #         dns-nameservers 2606:4700:4700::1001 2001:4860:4860::8844
-    [[ "$setRaid" == "0" ]] && {
-      [[ "$disksNum" -le "1" ]] && {
-        echo -ne "\n${red}Error!${plain} Raid 0 partition recipe is not suitable on this machine!\n"
-        exit 1
-      }
-      AllDisks1=`echo "$AllDisks" | cut -d ' ' -f1`
-      AllDisks2=`echo "$AllDisks" | cut -d ' ' -f2`
-      AllDisks="$AllDisks1 $AllDisks2"
-      FormatDisk=`echo -e "d-i partman-md/confirm boolean true
-d-i partman-md/confirm_nooverwrite boolean true
-d-i partman-basicfilesystems/no_swap boolean false
-d-i partman/mount_style select label
-d-i partman-auto/method string raid
-d-i partman-auto/disk string $AllDisks
-d-i partman-auto-raid/recipe string          \
-    1 2 0 ext4 /boot "$AllDisks1""1"#"$AllDisks2""1" . \
-    1 2 0 vfat /boot/efi "$AllDisks1""2"#"$AllDisks2""2" . \
-    0 2 0 ext4 /     "$AllDisks1""3"#"$AllDisks2""3" .
-d-i partman-auto/expert_recipe string multiraid ::                 \
-    512 100 512 raid \\$bootable{ } \\$primary{ } method{ raid } . \
-    100 200  -1 raid                \\$primary{ } method{ raid } .
-d-i mdadm/boot_degraded boolean true"`
-    }
-# Raid 0 partition recipe sample:
-# d-i partman-md/confirm boolean true
-# d-i partman-md/confirm_nooverwrite boolean true
-# d-i partman-basicfilesystems/no_swap boolean false
-# d-i partman/mount_style select label
-# d-i partman-auto/method string raid
-# d-i partman-auto/disk string /dev/sda /dev/sdb
-# d-i partman-auto-raid/recipe string        \
-#     1 2 0 ext4 /boot /dev/sda1#/dev/sdb1 . \
-#     1 2 0 vfat /boot/efi /dev/sda2#/dev/sdb2 . \
-#     0 2 0 ext4 /     /dev/sda3#/dev/sdb3 .
-# d-i partman-auto/expert_recipe string multiraid ::               \
-#     400 100 400 raid \$bootable{ } \$primary{ } method{ raid } . \
-#     100 200  -1 raid               \$primary{ } method{ raid } .
-# d-i mdadm/boot_degraded boolean true
-#
-# Reference: https://github.com/airium/Linux-Reinstall/blob/master/install-raid0.sh
-    EnableSSH=""
-    ReviseMOTD=""
-    SupportZSH=""
     [[ "$linux_relese" == 'kali' ]] && {
+      ChangeBashrc=""
 # Enable Kali ssh service.
       EnableSSH="$1 update-rc.d ssh enable; $1 /etc/init.d/ssh restart;"
 # Revise terms of license from "Debian" to "Kali" in motd file of "00-header".
@@ -1656,6 +1613,55 @@ function DebianPreseedProcess() {
 # d-i partman-partitioning/default_label string gpt
 # d-i partman/choose_label string gpt
 # d-i partman/default_label string gpt
+    [[ "$setRaid" == "0" ]] && {
+      [[ "$disksNum" -le "1" || "$disksNum" -ge "3" ]] && {
+        echo -ne "\n${red}Error!${plain} Raid 0 partition recipe is not suitable on this machine!\n"
+        exit 1
+      }
+      AllDisks1=`echo "$AllDisks" | cut -d ' ' -f1`
+      AllDisks2=`echo "$AllDisks" | cut -d ' ' -f2`
+      echo "${AllDisks1: -1}" | [[ -n "`sed -n '/^[0-9][0-9]*$/p'`" ]] && AllDisksPart1="$AllDisks1""p" || AllDisksPart1="$AllDisks1"
+      echo "${AllDisks2: -1}" | [[ -n "`sed -n '/^[0-9][0-9]*$/p'`" ]] && AllDisksPart2="$AllDisks2""p" || AllDisksPart2="$AllDisks2"
+      if [[ "$EfiSupport" == "enabled" ]]; then
+        FormatDisk=`echo -e "d-i partman-md/confirm boolean true
+d-i partman-md/confirm_nooverwrite boolean true
+d-i partman-md/confirm_nochanges boolean false
+d-i partman-basicfilesystems/no_swap boolean false
+d-i partman/mount_style select label
+d-i partman-partitioning/choose_label select gpt
+d-i partman-partitioning/default_label string gpt
+d-i partman-auto/method string raid
+d-i partman-auto/disk string $AllDisks
+d-i partman-auto-raid/recipe string                        \
+    0 2 0 ext4 / "$AllDisksPart1""2"#"$AllDisksPart2""2" .
+d-i partman-auto/expert_recipe string multiraid ::                                                               \
+    538 100 1075 free \\$primary{ } method{ efi } \\$iflabel{ gpt } \\$bootable{ } \\$reusemethod{ } format{ } . \
+    100 200   -1 raid \\$primary{ } method{ raid } .
+d-i mdadm/boot_degraded boolean true
+d-i partman-efi/non_efi_system boolean true"`
+      else
+        FormatDisk=`echo -e "d-i partman-md/confirm boolean true
+d-i partman-md/confirm_nooverwrite boolean true
+d-i partman-md/confirm_nochanges boolean false
+d-i partman-basicfilesystems/no_swap boolean false
+d-i partman/mount_style select label
+d-i partman-auto/method string raid
+d-i partman-auto/disk string $AllDisks
+d-i partman-auto-raid/recipe string                            \
+    1 2 0 ext4 /boot "$AllDisksPart1""1"#"$AllDisksPart2""1" . \
+    0 2 0 ext4 /     "$AllDisksPart1""2"#"$AllDisksPart2""2" .
+d-i partman-auto/expert_recipe string multiraid ::                  \
+    538 100 1075 raid \\$bootable{ } \\$primary{ } method{ raid } . \
+    100 200   -1 raid                \\$primary{ } method{ raid } .
+d-i mdadm/boot_degraded boolean true"`
+      fi
+    }
+# Reference: https://github.com/airium/Linux-Reinstall/blob/master/install-raid0.sh
+#            https://www.debian.org/releases/bookworm/example-preseed.txt
+#            https://www.cnblogs.com/zhangshan-log/articles/14542166.html
+#            https://gist.github.com/jnerius/6573343
+#            https://gist.github.com/bearice/331a954d86d890d9dbeacdd7de3aabe8
+#            https://lala.im/7911.html
 #
 # Prefer to use IPv4 to config networking.
     if [[ "$IPStackType" == "IPv4Stack" ]] || [[ "$IPStackType" == "BiStack" ]]; then
@@ -1703,6 +1709,11 @@ d-i apt-setup/enable-source-repositories boolean false
 ### Enable contrib and non-free
 d-i apt-setup/non-free boolean true
 d-i apt-setup/contrib boolean true
+
+### Disable CD-rom automatic scan
+d-i apt-setup/cdrom/set-first boolean false
+d-i apt-setup/cdrom/set-next boolean false   
+d-i apt-setup/cdrom/set-failed boolean false
 
 ### Network configuration
 d-i netcfg/choose_interface select $interfaceSelect
@@ -1769,6 +1780,7 @@ popularity-contest popularity-contest/participate boolean false
 
 ### Grub
 d-i grub-installer/only_debian boolean true
+d-i grub-installer/with_other_os boolean true
 d-i grub-installer/bootdev string ${IncDisk}
 d-i grub-installer/force-efi-extra-removable boolean true
 d-i debian-installer/add-kernel-opts string net.ifnames=0 biosdevname=0 ipv6.disable=1
@@ -1826,7 +1838,7 @@ checkIpv4OrIpv6 "$ipAddr" "$ip6Addr" "208.67.220.220" "9.9.9.9" "64.6.65.6" "101
 # Youtube, Instagram and Wikipedia all have public IPv4 and IPv6 address and are also banned in mainland of China.
 checkCN "www.youtube.com" "www.instagram.com" "www.wikipedia.org" "$IPStackType"
 
-checkEfi "/sys/firmware/efi/vars/" "/sys/firmware/efi/efivars/" "/sys/firmware/efi/runtime-map/" "/sys/firmware/efi/mok-variables/"
+checkEfi "/sys/firmware/efi/efivars/" "/sys/firmware/efi/vars/" "/sys/firmware/efi/runtime-map/" "/sys/firmware/efi/mok-variables/"
 
 checkVirt
 
@@ -1947,7 +1959,10 @@ echo "$tmpWORD"
 
 getDisk
 echo -ne "\n${aoiBlue}# Installing Disks${plain}\n\n"
-[[ "$setDisk" == "all" ]] && echo "$AllDisks" || echo "$IncDisk"
+[[ "$setDisk" == "all" || "$setRaid" == "0" ]] && echo "$AllDisks" || echo "$IncDisk"
+
+echo -ne "\n${aoiBlue}# Motherboard Firmware${plain}\n\n"
+[[ "$EfiSupport" == "enabled" ]] && echo "UEFI" || echo "BIOS"
 
 # Get architecture of current os automatically
 ArchName=`uname -m`
@@ -2409,6 +2424,12 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ 
     sed -i 's/lvremove --select all -ff -y;//g' /tmp/boot/preseed.cfg
     sed -i 's/vgremove --select all -ff -y;//g' /tmp/boot/preseed.cfg
     sed -i 's/pvremove \/dev\/\* -ff -y;//g' /tmp/boot/preseed.cfg
+  fi
+  if [[ "$disksNum" -gt "1" && "$setRaid" == "0" ]]; then
+    sed -i 's/d-i partman\/early_command.*//g' /tmp/boot/preseed.cfg
+    if [[ "$EfiSupport" == "enabled" ]]; then
+      sed -ri 's/d-i grub-installer\/bootdev.*/d-i grub-installer\/bootdev string default/g' /tmp/boot/preseed.cfg
+    fi
   fi
   if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]]; then
     sed -i '/user-setup\/allow-password-weak/d' /tmp/boot/preseed.cfg
