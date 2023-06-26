@@ -2463,6 +2463,7 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ 
     sed -i 's/first multiselect minimal/first multiselect standard/g' /tmp/boot/preseed.cfg
     sed -i 's/upgrade select none/upgrade select full-upgrade/g' /tmp/boot/preseed.cfg
     sed -i 's/include string openssh-server/include string kali-linux-core openssh-server/g' /tmp/boot/preseed.cfg
+    sed -i 's/d-i grub-installer\/with_other_os boolean true//g' /tmp/boot/preseed.cfg
   fi
   if [[ "$linux_relese" != 'kali' ]]; then
     sed -i '/d-i\ apt-setup\/services-select multiselect/d' /tmp/boot/preseed.cfg
