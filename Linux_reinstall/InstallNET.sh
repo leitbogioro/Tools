@@ -1712,7 +1712,7 @@ d-i apt-setup/contrib boolean true
 
 ### Disable CD-rom automatic scan
 d-i apt-setup/cdrom/set-first boolean false
-d-i apt-setup/cdrom/set-next boolean false   
+d-i apt-setup/cdrom/set-next boolean false
 d-i apt-setup/cdrom/set-failed boolean false
 
 ### Network configuration
