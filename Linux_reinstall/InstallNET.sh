@@ -1657,7 +1657,7 @@ d-i partman-auto/expert_recipe string multiraid ::                  \
 d-i mdadm/boot_degraded boolean true"`
         fi
       else
-        echo -ne "\n${red}Error!${plain} Raid $setRaid partition recipe is not suitable!\n"
+        echo -ne "\n${red}Error!${plain} Raid $setRaid partition recipe is not suitable! only support Raid 0 or 1 currently.\n"
         exit 1
       fi
     }
