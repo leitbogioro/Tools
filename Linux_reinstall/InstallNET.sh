@@ -1613,17 +1613,18 @@ function DebianPreseedProcess() {
 # d-i partman-partitioning/default_label string gpt
 # d-i partman/choose_label string gpt
 # d-i partman/default_label string gpt
-    [[ "$setRaid" == "0" ]] && {
-      [[ "$disksNum" -le "1" || "$disksNum" -ge "3" ]] && {
-        echo -ne "\n${red}Error!${plain} Raid 0 partition recipe is not suitable on this machine!\n"
-        exit 1
-      }
-      AllDisks1=`echo "$AllDisks" | cut -d ' ' -f1`
-      AllDisks2=`echo "$AllDisks" | cut -d ' ' -f2`
-      echo "${AllDisks1: -1}" | [[ -n "`sed -n '/^[0-9][0-9]*$/p'`" ]] && AllDisksPart1="$AllDisks1""p" || AllDisksPart1="$AllDisks1"
-      echo "${AllDisks2: -1}" | [[ -n "`sed -n '/^[0-9][0-9]*$/p'`" ]] && AllDisksPart2="$AllDisks2""p" || AllDisksPart2="$AllDisks2"
-      if [[ "$EfiSupport" == "enabled" ]]; then
-        FormatDisk=`echo -e "d-i partman-md/confirm boolean true
+    [[ -n "$setRaid" ]] && {
+      if [[ "$setRaid" == "0" || "$setRaid" == "1" ]]; then
+        [[ "$disksNum" -le "1" || "$disksNum" -ge "3" ]] && {
+          echo -ne "\n${red}Error!${plain} There are $disksNum drives on your machine, Raid $setRaid partition recipe only supports dual drives!\n"
+          exit 1
+        }
+        AllDisks1=`echo "$AllDisks" | cut -d ' ' -f1`
+        AllDisks2=`echo "$AllDisks" | cut -d ' ' -f2`
+        echo "${AllDisks1: -1}" | [[ -n "`sed -n '/^[0-9][0-9]*$/p'`" ]] && AllDisksPart1="$AllDisks1""p" || AllDisksPart1="$AllDisks1"
+        echo "${AllDisks2: -1}" | [[ -n "`sed -n '/^[0-9][0-9]*$/p'`" ]] && AllDisksPart2="$AllDisks2""p" || AllDisksPart2="$AllDisks2"
+        if [[ "$EfiSupport" == "enabled" ]]; then
+          FormatDisk=`echo -e "d-i partman-md/confirm boolean true
 d-i partman-md/confirm_nooverwrite boolean true
 d-i partman-md/confirm_nochanges boolean false
 d-i partman-basicfilesystems/no_swap boolean false
@@ -1632,28 +1633,32 @@ d-i partman-partitioning/choose_label select gpt
 d-i partman-partitioning/default_label string gpt
 d-i partman-auto/method string raid
 d-i partman-auto/disk string $AllDisks
-d-i partman-auto-raid/recipe string                        \
-    0 2 0 ext4 / "$AllDisksPart1""2"#"$AllDisksPart2""2" .
+d-i partman-auto-raid/recipe string                              \
+    $setRaid 2 0 ext4 / "$AllDisksPart1""2"#"$AllDisksPart2""2" .
 d-i partman-auto/expert_recipe string multiraid ::                                                               \
     538 100 1075 free \\$primary{ } method{ efi } \\$iflabel{ gpt } \\$bootable{ } \\$reusemethod{ } format{ } . \
-    100 200   -1 raid \\$primary{ } method{ raid } .
+    100 200 -1   raid \\$primary{ } method{ raid } .
 d-i mdadm/boot_degraded boolean true
 d-i partman-efi/non_efi_system boolean true"`
-      else
-        FormatDisk=`echo -e "d-i partman-md/confirm boolean true
+        else
+          FormatDisk=`echo -e "d-i partman-md/confirm boolean true
 d-i partman-md/confirm_nooverwrite boolean true
 d-i partman-md/confirm_nochanges boolean false
 d-i partman-basicfilesystems/no_swap boolean false
 d-i partman/mount_style select label
 d-i partman-auto/method string raid
 d-i partman-auto/disk string $AllDisks
-d-i partman-auto-raid/recipe string                            \
-    1 2 0 ext4 /boot "$AllDisksPart1""1"#"$AllDisksPart2""1" . \
-    0 2 0 ext4 /     "$AllDisksPart1""2"#"$AllDisksPart2""2" .
+d-i partman-auto-raid/recipe string                                   \
+    1        2 0 ext4 /boot "$AllDisksPart1""1"#"$AllDisksPart2""1" . \
+    $setRaid 2 0 ext4 /     "$AllDisksPart1""2"#"$AllDisksPart2""2" .
 d-i partman-auto/expert_recipe string multiraid ::                  \
     538 100 1075 raid \\$bootable{ } \\$primary{ } method{ raid } . \
-    100 200   -1 raid                \\$primary{ } method{ raid } .
+    100 200 -1   raid                \\$primary{ } method{ raid } .
 d-i mdadm/boot_degraded boolean true"`
+        fi
+      else
+        echo -ne "\n${red}Error!${plain} Raid $setRaid partition recipe is not suitable!\n"
+        exit 1
       fi
     }
 # Reference: https://github.com/airium/Linux-Reinstall/blob/master/install-raid0.sh
@@ -1959,7 +1964,7 @@ echo "$tmpWORD"
 
 getDisk
 echo -ne "\n${aoiBlue}# Installing Disks${plain}\n\n"
-[[ "$setDisk" == "all" || "$setRaid" == "0" ]] && echo "$AllDisks" || echo "$IncDisk"
+[[ "$setDisk" == "all" || "$setRaid" == "0" || "$setRaid" == "1" ]] && echo "$AllDisks" || echo "$IncDisk"
 
 echo -ne "\n${aoiBlue}# Motherboard Firmware${plain}\n\n"
 [[ "$EfiSupport" == "enabled" ]] && echo "UEFI" || echo "BIOS"
@@ -2425,12 +2430,12 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ 
     sed -i 's/vgremove --select all -ff -y;//g' /tmp/boot/preseed.cfg
     sed -i 's/pvremove \/dev\/\* -ff -y;//g' /tmp/boot/preseed.cfg
   fi
-  if [[ "$disksNum" -gt "1" && "$setRaid" == "0" ]]; then
+  if [[ "$disksNum" -gt "1" ]] && [[ "$setRaid" == "0" || "$setRaid" == "1" ]]; then
     sed -i 's/d-i partman\/early_command.*//g' /tmp/boot/preseed.cfg
-    if [[ "$EfiSupport" == "enabled" ]]; then
-      sed -ri 's/d-i grub-installer\/bootdev.*/d-i grub-installer\/bootdev string default/g' /tmp/boot/preseed.cfg
-    fi
+    sed -ri "/d-i grub-installer\/bootdev.*/c\d-i grub-installer\/bootdev string $AllDisks" /tmp/boot/preseed.cfg
   fi
+# Debian 8 and former or Raid mode don't support xfs.
+  [[ "$DebianDistNum" -le "8" || "$setRaid" == "0" || "$setRaid" == "1" ]] && sed -i '/d-i\ partman\/default_filesystem string xfs/d' /tmp/boot/preseed.cfg
   if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]]; then
     sed -i '/user-setup\/allow-password-weak/d' /tmp/boot/preseed.cfg
     sed -i '/user-setup\/encrypt-home/d' /tmp/boot/preseed.cfg
@@ -2443,8 +2448,6 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ 
       tar -Jxvf '/tmp/kali_firmware.tar.xz' -C /tmp/
       mv /tmp/$decompressedKaliFirmwareDir/* '/tmp/boot/lib/firmware/'
     }
-# Debian 8 and former or Raid 0 mode don't support xfs.
-    [[ "$DebianDistNum" -le "8" || "$setRaid" == "0" ]] && sed -i '/d-i\ partman\/default_filesystem string xfs/d' /tmp/boot/preseed.cfg
   fi
 # To avoid to entry into low memory mode.
   [[ "$TotalMem1" -ge "2558072" || "$TotalMem2" -ge "2558072" ]] && sed -i '/d-i\ lowmem\/low boolean true/d' /tmp/boot/preseed.cfg
