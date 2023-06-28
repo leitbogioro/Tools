@@ -1597,12 +1597,11 @@ function DebianPreseedProcess() {
 # To part all disks:
 # https://unix.stackexchange.com/questions/341253/using-d-i-partman-recipe-strings
     if [[ "$setDisk" == "all" ]]; then
-      FormatDisk=`echo -e "d-i partman/mount_style select uuid\nd-i partman-auto/disk string $AllDisks\nd-i partman-auto/method string regular\nd-i partman-auto/init_automatically_partition select Guided - use entire disk\nd-i partman-auto/choose_recipe select All files in one partition (recommended for new users)\nd-i partman-basicfilesystems/choose_label string gpt\nd-i partman-basicfilesystems/default_label string gpt\nd-i partman-partitioning/choose_label string gpt\nd-i partman-partitioning/default_label string gpt\nd-i partman/choose_label string gpt\nd-i partman/default_label string gpt"`
+      FormatDisk=`echo -e "d-i partman-auto/disk string $AllDisks\nd-i partman-auto/method string regular\nd-i partman-auto/init_automatically_partition select Guided - use entire disk\nd-i partman-auto/choose_recipe select All files in one partition (recommended for new users)\nd-i partman-basicfilesystems/choose_label string gpt\nd-i partman-basicfilesystems/default_label string gpt\nd-i partman-partitioning/choose_label string gpt\nd-i partman-partitioning/default_label string gpt\nd-i partman/choose_label string gpt\nd-i partman/default_label string gpt"`
     else
-      FormatDisk=`echo -e "d-i partman/mount_style select uuid\nd-i partman-auto/disk string $IncDisk\nd-i partman-auto/method string regular\nd-i partman-auto/init_automatically_partition select Guided - use entire disk\nd-i partman-auto/choose_recipe select All files in one partition (recommended for new users)\nd-i partman-basicfilesystems/choose_label string gpt\nd-i partman-basicfilesystems/default_label string gpt\nd-i partman-partitioning/choose_label string gpt\nd-i partman-partitioning/default_label string gpt\nd-i partman/choose_label string gpt\nd-i partman/default_label string gpt"`
+      FormatDisk=`echo -e "d-i partman-auto/disk string $IncDisk\nd-i partman-auto/method string regular\nd-i partman-auto/init_automatically_partition select Guided - use entire disk\nd-i partman-auto/choose_recipe select All files in one partition (recommended for new users)\nd-i partman-basicfilesystems/choose_label string gpt\nd-i partman-basicfilesystems/default_label string gpt\nd-i partman-partitioning/choose_label string gpt\nd-i partman-partitioning/default_label string gpt\nd-i partman/choose_label string gpt\nd-i partman/default_label string gpt"`
     fi
-# Default disk format recipe:
-# d-i partman/mount_style select uuid
+# Default single disk format recipe:
 # d-i partman-auto/disk string $AllDisks/$IncDisk
 # d-i partman-auto/method string regular
 # d-i partman-auto/init_automatically_partition select Guided - use entire disk
@@ -1614,50 +1613,79 @@ function DebianPreseedProcess() {
 # d-i partman/choose_label string gpt
 # d-i partman/default_label string gpt
     [[ -n "$setRaid" ]] && {
-      if [[ "$setRaid" == "0" || "$setRaid" == "1" ]]; then
-        [[ "$disksNum" -le "1" || "$disksNum" -ge "3" ]] && {
-          echo -ne "\n${red}Error!${plain} There are $disksNum drives on your machine, Raid $setRaid partition recipe only supports dual drives!\n"
+# Soft Raid 0, 1, 5, 6 and 10 methods are supported by Debian, only one disk can't be as a component for any Raid method. 
+# Raid 0 needs at least two disks, all space of the disks will be exploited, and it's the most dangerous for the safety of the data.
+# Raid 1 needs at least two disks, the space can be exploited is always equal one disk, it's safest for the date but a bit wasteful.
+# Raid 5 needs at least three disks, it storages data on two disks and storages parity checking data on one disk, it's not save on any single disk over 4TB.
+# Raid 6 needs at least four disks, it's an enhanced version of Raid 5, it uses two parity stripes by practicing of dividing data across the set of drives, 
+# it allows for two disk failures within the RAID set before any data is lost.
+# Raid 10 needs at least four disks, it's a combination of Raid 0 and Raid 1, the disk 0 and disk 1 as a set of Raid 0, the same as disk 2 and disk 3,
+# and then the sets of disk 0,1 and disk 2,3 are composed as one Raid 1.
+# These Raid recipes are also applicable to Kali, fuck Canonical again! you deperated the compatibility of "preseed.cfg" installation procession from Ubuntu 22.04 and later.
+      if [[ "$setRaid" == "0" || "$setRaid" == "1" || "$setRaid" == "5" || "$setRaid" == "6" || "$setRaid" == "10" ]]; then
+        [[ "$setRaid" == "0" || "$setRaid" == "1" ]] && [[ "$disksNum" -lt "2" ]] && {
+          echo -ne "\n${red}Error!${plain} There are $disksNum drives on your machine, Raid $setRaid partition recipe only supports a basic set of dual drive or more!\n"
           exit 1
         }
-        AllDisks1=`echo "$AllDisks" | cut -d ' ' -f1`
-        AllDisks2=`echo "$AllDisks" | cut -d ' ' -f2`
-        echo "${AllDisks1: -1}" | [[ -n "`sed -n '/^[0-9][0-9]*$/p'`" ]] && AllDisksPart1="$AllDisks1""p" || AllDisksPart1="$AllDisks1"
-        echo "${AllDisks2: -1}" | [[ -n "`sed -n '/^[0-9][0-9]*$/p'`" ]] && AllDisksPart2="$AllDisks2""p" || AllDisksPart2="$AllDisks2"
-        if [[ "$EfiSupport" == "enabled" ]]; then
-          FormatDisk=`echo -e "d-i partman-md/confirm boolean true
+        [[ "$setRaid" == "5" ]] && [[ "$disksNum" -lt "3" ]] && {
+          echo -ne "\n${red}Error!${plain} There are $disksNum drives on your machine, Raid $setRaid partition recipe only supports a basic set of triple drive or more!\n"
+          exit 1
+        }
+        [[ "$setRaid" == "6" || "$setRaid" == "10" ]] && [[ "$disksNum" -lt "4" ]] && {
+          echo -ne "\n${red}Error!${plain} There are $disksNum drives on your machine, Raid $setRaid partition recipe only supports a basic set of quad drive or more!\n"
+          exit 1
+        }
+        for (( r=1;r<="$disksNum";r++ )); do
+          tmpAllDisksPart=`echo "$AllDisks" | cut -d ' ' -f"$r"`
+# Some NVME controller hard drives like "/dev/nvme0n1" etc are end of a number in there names must add "p" with partition numbers for "d-i partman-auto-raid/recipe string",
+# SCSI controller or Virtual controller drives like "/dev/sda" or "/dev/vda" are not effected by this situation.
+# Drives and their partitions must be connected with "#" like "/dev/nvme0n1p2#/dev/nvme0n2p2".
+          echo "${tmpAllDisksPart: -1}" | [[ -n "`sed -n '/^[0-9][0-9]*$/p'`" ]] && tmpAllDisksPart="$tmpAllDisksPart""p" || tmpAllDisksPart="$tmpAllDisksPart"
+          AllDisksPart1+="$tmpAllDisksPart""1#"
+          AllDisksPart2+="$tmpAllDisksPart""2#"
+          AllDisksPart3+="$tmpAllDisksPart""3#"
+        done
+        AllDisksPart1=`echo "$AllDisksPart1" | sed 's/.$//'`
+        AllDisksPart2=`echo "$AllDisksPart2" | sed 's/.$//'`
+        AllDisksPart3=`echo "$AllDisksPart3" | sed 's/.$//'`
+# Raid recipe should include GPT table partition by force for not only UEFI but also BIOS servers to ensure any drive that above 4TB size can be taken advantage of all spaces.
+        RaidRecipes=`echo -e "d-i partman-md/confirm boolean true
 d-i partman-md/confirm_nooverwrite boolean true
 d-i partman-md/confirm_nochanges boolean false
 d-i partman-basicfilesystems/no_swap boolean false
-d-i partman/mount_style select label
 d-i partman-partitioning/choose_label select gpt
 d-i partman-partitioning/default_label string gpt
 d-i partman-auto/method string raid
 d-i partman-auto/disk string $AllDisks
-d-i partman-auto-raid/recipe string                              \
-    $setRaid 2 0 ext4 / "$AllDisksPart1""2"#"$AllDisksPart2""2" .
+d-i mdadm/boot_degraded boolean true"`
+# In environment of UEFI firmware motherboard computers, it's not suggested to creat any Raid recipe for "/boot/efi" partition,
+# in any virtual machine which created by VMware Workstation Pro, version up to the current 17.0.2(2023/6), host OS is Windows 10 Enterprise x64,
+# we must assign an additional Raid 1 recipe for "/boot" partition to prevent the case of following to happen：
+# otherwise except of the first reboot of the Debian 12 installed soon, the next time hard reboot the system, it will failed into "GNU GRUB version 2.0x"
+# and we must type "exit" to fallback to "Boot Manager", select and enter the default opinion of "Boot normally" and then find that Debian can be booted by grub.
+# This is a particularly fatal for those servers which has no permission to access VNC in website back-end management and impossible to manipulate UEFI boot manager to boot the system normally.
+        if [[ "$EfiSupport" == "enabled" ]]; then
+          FormatDisk=`echo -e "$RaidRecipes
+d-i partman-auto-raid/recipe string                  \
+    1        $disksNum 0 ext4 /boot $AllDisksPart2 . \
+    $setRaid $disksNum 0 ext4 /     $AllDisksPart3 .
 d-i partman-auto/expert_recipe string multiraid ::                                                               \
-    538 100 1075 free \\$primary{ } method{ efi } \\$iflabel{ gpt } \\$bootable{ } \\$reusemethod{ } format{ } . \
-    100 200 -1   raid \\$primary{ } method{ raid } .
-d-i mdadm/boot_degraded boolean true
+    538 100 1075 free \\$bootable{ } \\$primary{ } method{ efi } \\$iflabel{ gpt } \\$reusemethod{ } format{ } . \
+    269 150 538  raid                \\$primary{ } method{ raid } .                                              \
+    100 200 -1   raid                \\$primary{ } method{ raid } .
 d-i partman-efi/non_efi_system boolean true"`
         else
-          FormatDisk=`echo -e "d-i partman-md/confirm boolean true
-d-i partman-md/confirm_nooverwrite boolean true
-d-i partman-md/confirm_nochanges boolean false
-d-i partman-basicfilesystems/no_swap boolean false
-d-i partman/mount_style select label
-d-i partman-auto/method string raid
-d-i partman-auto/disk string $AllDisks
-d-i partman-auto-raid/recipe string                                   \
-    1        2 0 ext4 /boot "$AllDisksPart1""1"#"$AllDisksPart2""1" . \
-    $setRaid 2 0 ext4 /     "$AllDisksPart1""2"#"$AllDisksPart2""2" .
+          FormatDisk=`echo -e "$RaidRecipes
+d-i partman-auto-raid/recipe string                  \
+    1        $disksNum 0 ext4 /boot $AllDisksPart1 . \
+    $setRaid $disksNum 0 ext4 /     $AllDisksPart2 .
 d-i partman-auto/expert_recipe string multiraid ::                  \
     538 100 1075 raid \\$bootable{ } \\$primary{ } method{ raid } . \
     100 200 -1   raid                \\$primary{ } method{ raid } .
-d-i mdadm/boot_degraded boolean true"`
+"`
         fi
       else
-        echo -ne "\n${red}Error!${plain} Raid $setRaid partition recipe is not suitable! only support Raid 0 or 1 currently.\n"
+        echo -ne "\n${red}Error!${plain} Raid $setRaid partition recipe is not suitable, only Raid 0, 1, 5, 6 or 10 is supported!\n"
         exit 1
       fi
     }
@@ -1667,6 +1695,7 @@ d-i mdadm/boot_degraded boolean true"`
 #            https://gist.github.com/jnerius/6573343
 #            https://gist.github.com/bearice/331a954d86d890d9dbeacdd7de3aabe8
 #            https://lala.im/7911.html
+#            https://github.com/office-itou/Linux/blob/master/installer/source/preseed_debian.cfg
 #
 # Prefer to use IPv4 to config networking.
     if [[ "$IPStackType" == "IPv4Stack" ]] || [[ "$IPStackType" == "BiStack" ]]; then
@@ -1762,6 +1791,7 @@ umount /media || true; \
 
 ### Partitioning
 d-i partman-lvm/device_remove_lvm boolean true
+d-i partman-lvm/device_remove_lvm_span boolean true
 d-i partman-lvm/confirm boolean true
 d-i partman-lvm/confirm_nooverwrite boolean true
 d-i partman-partitioning/confirm_write_new_label boolean true
@@ -1770,6 +1800,7 @@ d-i partman/confirm boolean true
 d-i partman/confirm_nooverwrite boolean true
 d-i partman/default_filesystem string xfs
 d-i partman-md/device_remove_md boolean true
+d-i partman/mount_style select uuid
 ${FormatDisk}
 
 ### Package selection
@@ -1964,7 +1995,7 @@ echo "$tmpWORD"
 
 getDisk
 echo -ne "\n${aoiBlue}# Installing Disks${plain}\n\n"
-[[ "$setDisk" == "all" || "$setRaid" == "0" || "$setRaid" == "1" ]] && echo "$AllDisks" || echo "$IncDisk"
+[[ "$setDisk" == "all" || "$setRaid" == "0" || "$setRaid" == "1" || "$setRaid" == "5" || "$setRaid" == "6" || "$setRaid" == "10" ]] && echo "$AllDisks" || echo "$IncDisk"
 
 echo -ne "\n${aoiBlue}# Motherboard Firmware${plain}\n\n"
 [[ "$EfiSupport" == "enabled" ]] && echo "UEFI" || echo "BIOS"
@@ -2430,12 +2461,12 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ 
     sed -i 's/vgremove --select all -ff -y;//g' /tmp/boot/preseed.cfg
     sed -i 's/pvremove \/dev\/\* -ff -y;//g' /tmp/boot/preseed.cfg
   fi
-  if [[ "$disksNum" -gt "1" ]] && [[ "$setRaid" == "0" || "$setRaid" == "1" ]]; then
+  if [[ "$disksNum" -gt "1" ]] && [[ "$setRaid" == "0" || "$setRaid" == "1" || "$setRaid" == "5" || "$setRaid" == "6" || "$setRaid" == "10" ]]; then
     sed -i 's/d-i partman\/early_command.*//g' /tmp/boot/preseed.cfg
     sed -ri "/d-i grub-installer\/bootdev.*/c\d-i grub-installer\/bootdev string $AllDisks" /tmp/boot/preseed.cfg
   fi
 # Debian 8 and former or Raid mode don't support xfs.
-  [[ "$DebianDistNum" -le "8" || "$setRaid" == "0" || "$setRaid" == "1" ]] && sed -i '/d-i\ partman\/default_filesystem string xfs/d' /tmp/boot/preseed.cfg
+  [[ "$DebianDistNum" -le "8" || "$setRaid" == "0" || "$setRaid" == "1" || "$setRaid" == "5" || "$setRaid" == "6" || "$setRaid" == "10" ]] && sed -i '/d-i\ partman\/default_filesystem string xfs/d' /tmp/boot/preseed.cfg
   if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]]; then
     sed -i '/user-setup\/allow-password-weak/d' /tmp/boot/preseed.cfg
     sed -i '/user-setup\/encrypt-home/d' /tmp/boot/preseed.cfg
