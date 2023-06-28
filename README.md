@@ -157,7 +157,7 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**-raid "0, 1, 5, 6 or 10"**: Only for Debian 10+ raid 0, 1, 5, 6 or 10 disks raid partition recipes, raid 0 or 1 needs at least 2 disks, raid 5 needs at least 3 disks, raid 6 or 10 needs at least 4 disks, if your machine has only one hard drive, don't assign it!
+**-raid "0, 1, 5, 6 or 10"**: Only for Debian 10+ and Kali rolling raid 0, 1, 5, 6 or 10 disks raid partition recipes, raid 0 or 1 needs at least 2 disks, raid 5 needs at least 3 disks, raid 6 or 10 needs at least 4 disks, if your machine has only one hard drive, don't assign it!
 <br />
 <br />
 
