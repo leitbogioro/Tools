@@ -358,7 +358,7 @@ function dependence() {
       fi
     done
   if [ "$Full" == '1' ]; then
-    echo -ne "\n[${red}Error${plain}] Please use '${yellow}apt-get${plain}' or '${yellow}yum / dnf${plain}' install it.\n\n\n"
+    echo -ne "\n[${red}Error${plain}] Please use '${yellow}apt-get${plain}' or '${yellow}yum / dnf${plain}' install it. \n\n"
     exit 1;
   fi
 }
