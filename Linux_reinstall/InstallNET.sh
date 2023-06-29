@@ -478,8 +478,23 @@ function getIPv4Address() {
     ipv4SubnetCertificate "$ipAddr" "$ipGate"
     ipPrefix="$tmpIpMask"
     ipMask=`netmask "$tmpIpMask"`
+# Some servers' provided by Hetzner are so confused because the IPv4 configurations of them are static but they are not fitted with standard, here is a sample:
+# address: 89.163.208.5
+# gateway: 169.254.0.1
+# netmask: 255.255.255.0
+#
+# The A class of address and gateway are entirely different, although we should make sure the value of the suggested subnet mask is "128.0.0.1"(prefix "1")
+# to expand IPv4 range as large as possible, but in above situation, the largest IPv4 range is from 0.0.0.0 to 127.255.255.255, the IPv4 gate "169.254.0.1"
+# can't be included, so the reserve approach is to assign dhcp method for Linux net-boot installer to inherit these weird settings from upstream network router.
+# IPv4 network from Hetzner support dhcp even though it's configurated by static in "/etc/network/interfaces".
+    ip4RangeFirst=`ipv4Calc "$ipAddr" "$ipPrefix" | grep "FirstIP:" | awk '{print$2}' | cut -d'.' -f1`
+    ip4RangeLast=`ipv4Calc "$ipAddr" "$ipPrefix" | grep "LastIP:" | awk '{print$2}' | cut -d'.' -f1`
+    ip4GateFirst=`echo $ipGate | cut -d'.' -f1`
+    [[ "$ip4GateFirst" -gt "$ip4RangeLast" || "$ip4GateFirst" -lt "$ip4RangeFirst" ]] && {
+      Network4Config="isDHCP"
+    }
   }
-# So in summary of the IPv4 sample in above, we should assign subnet mask "128.0.0.1"(prefix is "1") for it.
+# So in summary of the IPv4 sample in above, we should assign subnet mask "128.0.0.1"(prefix "1") for it.
 }
 
 function netmask() {
