@@ -281,7 +281,7 @@ while [[ $# -ge 1 ]]; do
   done
 
 # Check Root
-[[ "$EUID" -ne '0' || $(id -u) != '0' ]] && echo -ne "\n[${red}Error!${plain}] This script must be executed as root!\n\nTry to type:\n${yellow}sudo -s\n${plain}\nAfter entering the password, switch to root dir to execute this script:\n${yellow}cd ~${plain}\n\n" && exit 1
+[[ "$EUID" -ne '0' || $(id -u) != '0' ]] && echo -ne "\n[${red}Error${plain}] This script must be executed as root!\n\nTry to type:\n${yellow}sudo -s\n${plain}\nAfter entering the password, switch to root dir to execute this script:\n${yellow}cd ~${plain}\n\n" && exit 1
 
 # Ping delay to YouTube($1) and Instagram($2) and Twitter($3), support both ipv4 and ipv6, $4 is $IPStackType
 function checkCN() {
@@ -358,7 +358,7 @@ function dependence() {
       fi
     done
   if [ "$Full" == '1' ]; then
-    echo -ne "\n${red}Error!${plain} Please use '${yellow}apt-get${plain}' or '${yellow}yum / dnf${plain}' install it.\n\n\n"
+    echo -ne "\n[${red}Error${plain}] Please use '${yellow}apt-get${plain}' or '${yellow}yum / dnf${plain}' install it.\n\n\n"
     exit 1;
   fi
 }
@@ -1624,15 +1624,15 @@ function DebianPreseedProcess() {
 # These Raid recipes are also applicable to Kali, fuck Canonical again! you deperated the compatibility of "preseed.cfg" installation procession from Ubuntu 22.04 and later.
       if [[ "$setRaid" == "0" || "$setRaid" == "1" || "$setRaid" == "5" || "$setRaid" == "6" || "$setRaid" == "10" ]]; then
         [[ "$setRaid" == "0" || "$setRaid" == "1" ]] && [[ "$disksNum" -lt "2" ]] && {
-          echo -ne "\n${red}Error!${plain} There are $disksNum drives on your machine, Raid $setRaid partition recipe only supports a basic set of dual drive or more!\n"
+          echo -ne "\n[${red}Error${plain}] There are $disksNum drives on your machine, Raid $setRaid partition recipe only supports a basic set of dual drive or more!\n"
           exit 1
         }
         [[ "$setRaid" == "5" ]] && [[ "$disksNum" -lt "3" ]] && {
-          echo -ne "\n${red}Error!${plain} There are $disksNum drives on your machine, Raid $setRaid partition recipe only supports a basic set of triple drive or more!\n"
+          echo -ne "\n[${red}Error${plain}] There are $disksNum drives on your machine, Raid $setRaid partition recipe only supports a basic set of triple drive or more!\n"
           exit 1
         }
         [[ "$setRaid" == "6" || "$setRaid" == "10" ]] && [[ "$disksNum" -lt "4" ]] && {
-          echo -ne "\n${red}Error!${plain} There are $disksNum drives on your machine, Raid $setRaid partition recipe only supports a basic set of quad drive or more!\n"
+          echo -ne "\n[${red}Error${plain}] There are $disksNum drives on your machine, Raid $setRaid partition recipe only supports a basic set of quad drive or more!\n"
           exit 1
         }
         for (( r=1;r<="$disksNum";r++ )); do
@@ -1685,7 +1685,7 @@ d-i partman-auto/expert_recipe string multiraid ::                  \
 "`
         fi
       else
-        echo -ne "\n${red}Error!${plain} Raid $setRaid partition recipe is not suitable, only Raid 0, 1, 5, 6 or 10 is supported!\n"
+        echo -ne "\n[${red}Error${plain}] Raid $setRaid partition recipe is not suitable, only Raid 0, 1, 5, 6 or 10 is supported!\n"
         exit 1
       fi
     }
@@ -1902,7 +1902,7 @@ fi
 if [[ "$loaderMode" == "0" ]]; then
   checkGrub "/boot/grub/" "/boot/grub2/" "/etc/" "grub.cfg" "grub.conf" "/boot/efi/EFI/"
   if [[ -z "$GRUBTYPE" ]]; then
-    echo -ne "\n${red}Error!${plain} Not Found grub.\n"
+    echo -ne "\n[${red}Error${plain}] Not Found grub.\n"
     exit 1
   fi
 fi
@@ -2041,7 +2041,7 @@ if [[ -n "$tmpVER" ]]; then
 fi
 
 [[ ! -n "$VER" ]] && {
-  echo -ne "\n${red}Error!${plain} Unknown architecture.\n"
+  echo -ne "\n[${red}Error${plain}] Unknown architecture.\n"
   bash $0 error
   exit 1
 }
@@ -2077,6 +2077,8 @@ if [[ -n "$tmpDIST" ]]; then
         [[ "$isDigital" == '12' ]] && DIST='bookworm'
         [[ "$isDigital" == '13' ]] && DIST='trixie'
         # [[ "$isDigital" == '14' ]] && DIST='forky'
+# Debian releases TBA reference: https://wiki.debian.org/DebianReleases
+#                                https://en.wikipedia.org/wiki/Debian_version_history#Release_table
       }
     }
     LinuxMirror=$(selectMirror "$Relese" "$DIST" "$VER" "$tmpMirror")
@@ -2085,6 +2087,7 @@ if [[ -n "$tmpDIST" ]]; then
     SpikCheckDIST='0'
     DIST="$(echo "$tmpDIST" |sed -r 's/(.*)/\L\1/')"
     [[ ! "$DIST" =~ "kali-" ]] && DIST="kali-""$DIST"
+# Kali Linux releases reference: https://www.kali.org/releases/
     LinuxMirror=$(selectMirror "$Relese" "$DIST" "$VER" "$tmpMirror")
   fi
   if [[ "$Relese" == 'AlpineLinux' ]]; then
@@ -2094,10 +2097,11 @@ if [[ -n "$tmpDIST" ]]; then
     AlpineVer1=`echo "$DIST" | sed 's/[a-z][A-Z]*//g' | cut -d"." -f 1`
     AlpineVer2=`echo "$DIST" | sed 's/[a-z][A-Z]*//g' | cut -d"." -f 2`
     if [[ "$AlpineVer1" -lt "3" || "$AlpineVer2" -le "17" ]] && [[ "$DIST" != "edge" ]]; then
-      echo -ne "\n${red}Warning:${plain} $Relese $DIST is not supported!\n"
+      echo -ne "\n[${red}Warning${plain}] $Relese $DIST is not supported!\n"
       exit 1
     fi
     [[ "$DIST" != "edge" && ! "$DIST" =~ "v" ]] && DIST="v""$DIST"
+# Alpine Linux releases reference: https://alpinelinux.org/releases/
     LinuxMirror=$(selectMirror "$Relese" "$DIST" "$VER" "$tmpMirror")
   fi
   if [[ "$Relese" == 'CentOS' ]] || [[ "$Relese" == 'RockyLinux' ]] || [[ "$Relese" == 'AlmaLinux' ]] || [[ "$Relese" == 'Fedora' ]]; then
@@ -2110,16 +2114,16 @@ if [[ -n "$tmpDIST" ]]; then
       [[ "$RedHatSeries" =~ [0-9]{${#1}} ]] && {
         if [[ "$RedHatSeries" == "6" ]]; then
           DISTCheck="6.10"
-          echo -ne "\n${red}Warning:${plain} $Relese $DISTCheck is not supported!\n"
+          echo -ne "\n[${red}Warning${plain}] $Relese $DISTCheck is not supported!\n"
           exit 1
         elif [[ "$RedHatSeries" == "7" ]]; then
           DISTCheck="7.9.2009"
         elif [[ "$RedHatSeries" -ge "8" ]] && [[ ! "$RedHatSeries" =~ "-stream" ]]; then
           DISTCheck="$RedHatSeries""-stream"
         elif [[ "$RedHatSeries" -le "5" ]]; then
-          echo -ne "\n${red}Warning:${plain} $Relese $DISTCheck is not supported!\n"
+          echo -ne "\n[${red}Warning${plain}] $Relese $DISTCheck is not supported!\n"
         else
-          echo -ne "\n${red}Error!${plain} Invaild $DIST! version!\n"
+          echo -ne "\n[${red}Error${plain}] Invaild $DIST! version!\n"
         fi
       }
       LinuxMirror=$(selectMirror "$Relese" "$DISTCheck" "$VER" "$tmpMirror")
@@ -2132,12 +2136,12 @@ if [[ -n "$tmpDIST" ]]; then
 # AlmaLinux releases history:
 # https://wiki.almalinux.org/release-notes/
         if [[ "$linux_relese" == 'rockylinux' || "$linux_relese" == 'almalinux' ]] && [[ "$RedHatSeries" -le "7" ]]; then
-          echo -ne "\n${red}Warning:${plain} $Relese $DISTCheck is not supported!\n"
+          echo -ne "\n[${red}Warning${plain}] $Relese $DISTCheck is not supported!\n"
           exit 1
 # Fedora releases history:
 # https://en.wikipedia.org/wiki/Fedora_Linux_release_history
         elif [[ "$linux_relese" == 'fedora' ]] && [[ "$RedHatSeries" -le "36" ]]; then
-          echo -ne "\n${red}Warning:${plain} $Relese $DISTCheck is not supported!\n"
+          echo -ne "\n[${red}Warning${plain}] $Relese $DISTCheck is not supported!\n"
           exit 1
         fi
       }
@@ -2152,19 +2156,19 @@ if [[ -n "$tmpDIST" ]]; then
     if [[ "$linux_relese" == 'centos' ]] && [[ "$RedHatSeries" -le "7" ]]; then
       wget --no-check-certificate -qO- "$LinuxMirror/$DIST/os/$VER/.treeinfo" | grep -q 'general'
       [[ $? != '0' ]] && {
-        echo -ne "\n${red}Warning:${plain} $Relese $DISTCheck was not found in this mirror, Please change mirror try again!\n"
+        echo -ne "\n[${red}Warning${plain}] $Relese $DISTCheck was not found in this mirror, Please change mirror try again!\n"
         exit 1
       }
     elif [[ "$linux_relese" == 'centos' && "$RedHatSeries" -ge "8" ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]]; then
       wget --no-check-certificate -qO- "$LinuxMirror/$DIST/BaseOS/$VER/os/media.repo" | grep -q 'mediaid'
       [[ $? != '0' ]] && {
-        echo -ne "\n${red}Warning:${plain} $Relese $DISTCheck was not found in this mirror, Please change mirror try again!\n"
+        echo -ne "\n[${red}Warning${plain}] $Relese $DISTCheck was not found in this mirror, Please change mirror try again!\n"
         exit 1
       }
     elif [[ "$linux_relese" == 'fedora' ]]; then
       wget --no-check-certificate -qO- "$LinuxMirror/releases/$DIST/Server/$VER/os/media.repo" | grep -q 'mediaid'
       [[ $? != '0' ]] && {
-        echo -ne "\n${red}Warning:${plain} $Relese $DISTCheck was not found in this mirror, Please change mirror try again!\n"
+        echo -ne "\n[${red}Warning${plain}] $Relese $DISTCheck was not found in this mirror, Please change mirror try again!\n"
         exit 1
       }
     fi    
@@ -2172,7 +2176,7 @@ if [[ -n "$tmpDIST" ]]; then
 fi
 
 [[ -z "$LinuxMirror" ]] && {
-  echo -ne "${red}Error! ${plain}Invaild mirror! \n"
+  echo -ne "\n[${red}Error${plain}] Invaild mirror! \n"
   [ "$Relese" == 'Debian' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://www.debian.org/mirror/list\n\n"
   [ "$Relese" == 'Ubuntu' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://launchpad.net/ubuntu/+archivemirrors\n\n"
   [ "$Relese" == 'Kali' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://http.kali.org/README.mirrorlist\n\n"
@@ -2199,7 +2203,7 @@ if [[ "$SpikCheckDIST" == '0' ]]; then
       [[ "$CheckDEB" =~ "$DIST" ]] && FindDists='1' && break;
     done
   [[ "$FindDists" == '0' ]] && {
-    echo -ne '\n${red}Error!${plain} The dists version not found, Please check it! \n\n'
+    echo -ne '\n[${red}Error${plain}] The dists version not found, Please check it! \n\n'
     exit 1
   }
   echo -e "\nSuccess"
@@ -2215,8 +2219,7 @@ if [[ "$ddMode" == '1' ]]; then
       ubuntuDigital1=`echo "$ubuntuDigital" | cut -d'.' -f1`
       ubuntuDigital2=`echo "$ubuntuDigital" | cut -d'.' -f2`
       if [[ "$ubuntuDigital1" -le "19" || "$ubuntuDigital1" -ge "23" || $((${ubuntuDigital1} % 2)) = 1 ]] || [[ "$ubuntuDigital2" != "04" ]]; then
-        echo -ne "\n${red}Error!${plain} The dists version not found, Please check it! \n\n'"
-        bash $0 error
+        echo -ne "\n[${red}Error${plain}] The dists version not found, Please check it! \n'"
         exit 1
       fi
       [[ -n $ubuntuDigital ]] && {
@@ -2235,6 +2238,7 @@ if [[ "$ddMode" == '1' ]]; then
 # Canonical.inc is son of a bitch, they change back and forth, pood and pee everywhere.
 # More discussions: https://discourse.ubuntu.com/t/netbooting-the-live-server-installer/14510/18
         [[ "$ubuntuDigital" == '22.04' ]] && finalDIST='jammy'
+# Ubuntu releases reference: https://releases.ubuntu.com/
       }
     }
     if [[ "$VER" == "x86_64" ]] || [[ "$VER" == "x86-64" ]]; then
@@ -2245,12 +2249,17 @@ if [[ "$ddMode" == '1' ]]; then
     if [[ "$tmpURL" == "" ]]; then
       tmpURL="https://cloud-images.a.disk.re/Ubuntu/"
     fi
+    tmpURLCheck=`curl -I -X GET $tmpURL 2>&1 | grep -wi "http/[0-9]*" | awk '{print $2}'`
+    [[ -z "$tmpURLCheck" || ! "$tmpURLCheck" =~ ^[0-9]+$ ]] && {
+      echo -ne "\n[${red}Error${plain}] The mirror of DD images is temporarily unavailable!\n"
+      exit 1
+    }
     DDURL="$tmpURL$finalDIST-server-cloudimg-$ubuntuVER.raw"
     ReleaseName="$targetRelese $finalDIST $ubuntuVER"
   elif [[ "$tmpURL" != "" ]]; then
     DDURL="$tmpURL"
     echo "$DDURL" | grep -q '^http://\|^ftp://\|^https://';
-    [[ $? -ne '0' ]] && echo 'Please input vaild URL, Only support http://, ftp:// and https:// !' && exit 1;
+    [[ $? -ne '0' ]] && echo -ne "\n[${red}Error${plain}] Please input a vaild URL, only support http://, ftp:// and https:// ! \n" && exit 1;
     # Decompress command selection
     if [[ "$setFileType" == "gz" ]]; then
       DEC_CMD="gunzip -dc"
@@ -2264,7 +2273,7 @@ if [[ "$ddMode" == '1' ]]; then
     fi
     ReleaseName="Windows"
   else
-    echo 'Please input a vaild image URL!'
+    echo -ne "\n[${red}Warning${plain}] Please input a vaild image URL!\n"
     exit 1
   fi
 fi
@@ -2308,7 +2317,7 @@ fi
 if [[ "$setNetbootXyz" == "1" ]]; then
   [[ "$VER" == "x86_64" || "$VER" == "amd64" ]] && apt install grub-imageboot -y
   if [[ "$EfiSupport" == "enabled" ]] || [[ "$VER" == "aarch64" || "$VER" == "arm64" ]]; then
-    echo -ne "\n${red}Error!${plain} Netbootxyz doesn't support $VER architecture!\n"
+    echo -ne "\n[${red}Error${plain}] Netbootxyz doesn't support $VER architecture!\n"
     bash $0 error
     exit 1
   fi
@@ -2342,9 +2351,9 @@ elif [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [
   }
   echo -ne "[${yellow}Mirror${plain}] $InitrdUrl\n\t $VmLinuzUrl\n"
   wget --no-check-certificate -qO '/tmp/initrd.img' "$InitrdUrl"
-  [[ $? -ne '0' ]] && echo -ne "${red}Error!${plain} Download 'initrd.img' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
+  [[ $? -ne '0' ]] && echo -ne "\n[${red}Error${plain}] Download 'initrd.img' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
   wget --no-check-certificate -qO '/tmp/vmlinuz' "$VmLinuzUrl"
-  [[ $? -ne '0' ]] && echo -ne "${red}Error!${plain} Download 'vmlinuz' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
+  [[ $? -ne '0' ]] && echo -ne "\n[${red}Error${plain}] Download 'vmlinuz' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
   MirrorHost="$(echo "$LinuxMirror" |awk -F'://|/' '{print $2}')"
   MirrorFolder="$(echo "$LinuxMirror" |awk -F''${MirrorHost}'' '{print $2}')"
   [ -n "$MirrorFolder" ] || MirrorFolder="/"
@@ -2354,33 +2363,33 @@ elif [[ "$linux_relese" == 'alpinelinux' ]]; then
   ModLoopUrl="${LinuxMirror}/${DIST}/releases/${VER}/netboot/modloop-lts"
   echo -ne "[${yellow}Mirror${plain}] $InitrdUrl\n\t $VmLinuzUrl\n"
   wget --no-check-certificate -qO '/tmp/initrd.img' "$InitrdUrl"
-  [[ $? -ne '0' ]] && echo -ne "${red}Error!${plain} Download 'initramfs-lts' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
+  [[ $? -ne '0' ]] && echo -ne "\n[${red}Error${plain}] Download 'initramfs-lts' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
   wget --no-check-certificate -qO '/tmp/vmlinuz' "$VmLinuzUrl"
-  [[ $? -ne '0' ]] && echo -ne "${red}Error!${plain} Download 'vmlinuz-lts' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
+  [[ $? -ne '0' ]] && echo -ne "\n[${red}Error${plain}] Download 'vmlinuz-lts' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
 elif [[ "$linux_relese" == 'centos' ]] && [[ "$RedHatSeries" -le "7" ]]; then
   InitrdUrl="${LinuxMirror}/${DIST}/os/${VER}/images/pxeboot/initrd.img"
   VmLinuzUrl="${LinuxMirror}/${DIST}/os/${VER}/images/pxeboot/vmlinuz"
   echo -ne "[${yellow}Mirror${plain}] $InitrdUrl\n\t $VmLinuzUrl\n"
   wget --no-check-certificate -qO '/tmp/initrd.img' "$InitrdUrl"
-  [[ $? -ne '0' ]] && echo -ne "${red}Error!${plain} Download 'initrd.img' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
+  [[ $? -ne '0' ]] && echo -ne "\n[${red}Error${plain}] Download 'initrd.img' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
   wget --no-check-certificate -qO '/tmp/vmlinuz' "$VmLinuzUrl"
-  [[ $? -ne '0' ]] && echo -ne "${red}Error!${plain} Download 'vmlinuz' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
+  [[ $? -ne '0' ]] && echo -ne "\n[${red}Error${plain}] Download 'vmlinuz' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
 elif [[ "$linux_relese" == 'centos' && "$RedHatSeries" -ge "8" ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]]; then
   InitrdUrl="${LinuxMirror}/${DIST}/BaseOS/${VER}/os/images/pxeboot/initrd.img"
   VmLinuzUrl="${LinuxMirror}/${DIST}/BaseOS/${VER}/os/images/pxeboot/vmlinuz"
   echo -ne "[${yellow}Mirror${plain}] $InitrdUrl\n\t $VmLinuzUrl\n"
   wget --no-check-certificate -qO '/tmp/initrd.img' "$InitrdUrl"
-  [[ $? -ne '0' ]] && echo -ne "${red}Error!${plain} Download 'initrd.img' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
+  [[ $? -ne '0' ]] && echo -ne "\n[${red}Error${plain}] Download 'initrd.img' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
   wget --no-check-certificate -qO '/tmp/vmlinuz' "$VmLinuzUrl"
-  [[ $? -ne '0' ]] && echo -ne "${red}Error!${plain} Download 'vmlinuz' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
+  [[ $? -ne '0' ]] && echo -ne "\n[${red}Error${plain}] Download 'vmlinuz' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
 elif [[ "$linux_relese" == 'fedora' ]]; then
   InitrdUrl="${LinuxMirror}/releases/${DIST}/Server/${VER}/os/images/pxeboot/initrd.img"
   VmLinuzUrl="${LinuxMirror}/releases/${DIST}/Server/${VER}/os/images/pxeboot/vmlinuz"
   echo -ne "[${yellow}Mirror${plain}] $InitrdUrl\n\t $VmLinuzUrl\n"
   wget --no-check-certificate -qO '/tmp/initrd.img' "$InitrdUrl"
-  [[ $? -ne '0' ]] && echo -ne "${red}Error!${plain} Download 'initrd.img' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
+  [[ $? -ne '0' ]] && echo -ne "\n[${red}Error${plain}] Download 'initrd.img' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
   wget --no-check-certificate -qO '/tmp/vmlinuz' "$VmLinuzUrl"
-  [[ $? -ne '0' ]] && echo -ne "${red}Error!${plain} Download 'vmlinuz' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
+  [[ $? -ne '0' ]] && echo -ne "\n[${red}Error${plain}] Download 'vmlinuz' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
 else
   bash $0 error
   exit 1
@@ -2931,16 +2940,16 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
         [ "$tmpCFG" -gt "$CFG0" -a "$tmpCFG" -lt "$CFG2" ] && CFG1="$tmpCFG";
       done
       [[ -z "$CFG1" ]] && {
-        echo -ne "\n${red}Error!${plain} read $GRUBFILE.\n";
+        echo -ne "\n[${red}Error${plain}] Read $GRUBFILE.\n";
         exit 1;
       }
       sed -n "$CFG0,$CFG1"p $READGRUB >/tmp/grub.new;
       [[ -f /tmp/grub.new ]] && [[ "$(grep -c '{' /tmp/grub.new)" -eq "$(grep -c '}' /tmp/grub.new)" ]] || {
-        echo -ne "\n${red}Error!${plain} Not configure $GRUBFILE.\n";
+        echo -ne "\n[${red}Error${plain}] Not configure $GRUBFILE.\n";
         exit 1;
       }
     fi  
-    [ ! -f /tmp/grub.new ] && echo -ne "\n${red}Error!${plain} $GRUBFILE. " && exit 1;
+    [ ! -f /tmp/grub.new ] && echo -ne "\n[${red}Error${plain}] $GRUBFILE. " && exit 1;
     sed -i "/menuentry.*/c\menuentry\ \'Install OS \[$Relese\ $DIST\ $VER\]\'\ --class debian\ --class\ gnu-linux\ --class\ gnu\ --class\ os\ \{" /tmp/grub.new
     sed -i "/echo.*Loading/d" /tmp/grub.new;
     INSERTGRUB="$(awk '/menuentry /{print NR}' $GRUBDIR/$GRUBFILE|head -n 1)"
@@ -2948,7 +2957,7 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
     [[ -n "$(grep 'linux.*/\|kernel.*/' /tmp/grub.new |awk '{print $2}' |tail -n 1 |grep '^/boot/')" ]] && Type='InBoot' || Type='NoBoot';
   
     LinuxKernel="$(grep 'linux.*/\|kernel.*/' /tmp/grub.new |awk '{print $1}' |head -n 1)";
-    [[ -z "$LinuxKernel" ]] && echo -ne "\n${red}Error!${plain} read grub config!\n" && exit 1;
+    [[ -z "$LinuxKernel" ]] && echo -ne "\n${red}Error${plain} read grub config!\n" && exit 1;
     LinuxIMG="$(grep 'initrd.*/' /tmp/grub.new |awk '{print $1}' |tail -n 1)";
     [ -z "$LinuxIMG" ] && sed -i "/$LinuxKernel.*\//a\\\tinitrd\ \/" /tmp/grub.new && LinuxIMG='initrd';
 # If network adapter need to redirect eth0, eth1... in new system, add this setting in grub file of the current system for netboot install file which need to be loaded after restart.
@@ -3110,16 +3119,16 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
       CFG1="$SetRootCfg"
     fi
     [[ -z "$CFG0" || -z "$CFG1" ]] && {
-      echo -ne "\n${red}Error!${plain} read $GRUBFILE.\n"
+      echo -ne "\n[${red}Error${plain}] Read $GRUBFILE.\n"
       exit 1
     }
     sed -n "$CFG0,$CFG1"p $GRUBDIR/$GRUBFILE >/tmp/grub.new
     sed -i -e 's/^/  /' /tmp/grub.new
     [[ -f /tmp/grub.new ]] && [[ "$(grep -c '{' /tmp/grub.new)" -eq "$(grep -c '}' /tmp/grub.new)" ]] || {
-      echo -ne "\n${red}Error!${plain} Not configure $GRUBFILE. \n"
+      echo -ne "\n[${red}Error${plain}] Not configure $GRUBFILE. \n"
       exit 1
     }
-    [ ! -f /tmp/grub.new ] && echo -ne "\n${red}Error!${plain} $GRUBFILE.\n" && exit 1
+    [ ! -f /tmp/grub.new ] && echo -ne "\n[${red}Error${plain}] $GRUBFILE.\n" && exit 1
 # Set IPv6 or distribute unite network adapter interface
     [[ "$setInterfaceName" == "1" ]] && Add_OPTION="net.ifnames=0 biosdevname=0" || Add_OPTION=""
     [[ "$setIPv6" == "0" ]] && Add_OPTION="$Add_OPTION ipv6.disable=1" || Add_OPTION="$Add_OPTION"
