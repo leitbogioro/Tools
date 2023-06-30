@@ -479,22 +479,30 @@ function getIPv4Address() {
     ipPrefix="$tmpIpMask"
     ipMask=`netmask "$tmpIpMask"`
 # Some servers' provided by Hetzner are so confused because the IPv4 configurations of them are static but they are not fitted with standard, here is a sample:
-# address: 89.163.208.5
-# gateway: 169.254.0.1
-# netmask: 255.255.255.0
+#
+# auto ens3
+# iface ens3 inet static
+#     address: 89.163.208.5
+#     netmask: 255.255.255.0
+#     broadcast +
+#     up ip -f inet route add 169.254.0.1 dev ens3
+#     up ip -f inet route add default via 169.254.0.1 dev ens3
 #
 # The A class of address and gateway are entirely different, although we should make sure the value of the suggested subnet mask is "128.0.0.1"(prefix "1")
 # to expand IPv4 range as large as possible, but in above situation, the largest IPv4 range is from 0.0.0.0 to 127.255.255.255, the IPv4 gate "169.254.0.1"
-# can't be included, so the reserve approach is to assign dhcp method for Linux net-boot installer to inherit these weird settings from upstream network router.
+# can't be included, so the reserve approach is to get the result of "ip -4 route show scope link"(89.163.208.0/24) to ensure the correct subnet and gateway,
+# then we can fix these weird settings from incorrect network router.
 # IPv4 network from Hetzner support dhcp even though it's configurated by static in "/etc/network/interfaces".
     ip4RangeFirst=`ipv4Calc "$ipAddr" "$ipPrefix" | grep "FirstIP:" | awk '{print$2}' | cut -d'.' -f1`
     ip4RangeLast=`ipv4Calc "$ipAddr" "$ipPrefix" | grep "LastIP:" | awk '{print$2}' | cut -d'.' -f1`
     ip4GateFirst=`echo $ipGate | cut -d'.' -f1`
     [[ "$ip4GateFirst" -gt "$ip4RangeLast" || "$ip4GateFirst" -lt "$ip4RangeFirst" ]] && {
-      Network4Config="isDHCP"
+      ip4RouteScopeLink=`ip -4 route show scope link | grep -w "$interface4" | grep -m1 -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | head -n 1`
+      ipPrefix=`ip -4 route show scope link | grep -w "$interface4" | grep -w "$ip4RouteScopeLink" | head -n 1 | awk '{print $1}' | cut -d'/' -f2`
+      ipMask=`netmask "$ipPrefix"`
+      ipGate=`ipv4Calc "$ip4RouteScopeLink" "$ipPrefix" | grep "FirstIP:" | awk '{print$2}'`
     }
   }
-# So in summary of the IPv4 sample in above, we should assign subnet mask "128.0.0.1"(prefix "1") for it.
 }
 
 function netmask() {
@@ -552,6 +560,7 @@ function ipv4SubnetCertificate() {
 # If the IP and gateway are in the same IPv4 A B C class, not in the same IPv4 D class, the prefix of netmask should less equal than "24", transfer to whole IPv4 address is 255.255.255.0
 # The range of 190.168.23.175/24 is 190.168.23.0 - 190.168.23.255, the gateway 169... can't be included.
   [[ `echo $1 | cut -d'.' -f 1,2,3` == `echo $2 | cut -d'.' -f 1,2,3` ]] && tmpIpMask="24"
+# So in summary of the IPv4 sample in above, we should assign subnet mask "128.0.0.1"(prefix "1") for it.
 }
 
 function getDisk() {
