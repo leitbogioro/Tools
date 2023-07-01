@@ -25,9 +25,11 @@ sshPORT=$(grep "sshPORT" $confFile | awk '{print $2}')
 AlpineTestRepository=$(grep "AlpineTestRepository" $confFile | awk '{print $2}')
 IPv4=$(grep "IPv4" $confFile | awk '{print $2}')
 MASK=$(grep "MASK" $confFile | awk '{print $2}')
+actualIp4Subnet=$(grep "actualIp4Subnet" $confFile | awk '{print $2}')
 GATE=$(grep "GATE" $confFile | awk '{print $2}')
 ip6Addr=$(grep "ip6Addr" $confFile | awk '{print $2}')
 ip6Mask=$(grep "ip6Mask" $confFile | awk '{print $2}')
+actualIp6Prefix=$(grep "actualIp6Prefix" $confFile | awk '{print $2}')
 ip6Gate=$(grep "ip6Gate" $confFile | awk '{print $2}')
 HostName=$(grep "HostName" $confFile | awk '{print $2}')
 
@@ -67,9 +69,11 @@ mv /etc/network/tmp_interfaces /etc/network/interfaces
 # Static network configurating
 sed -ri 's/IPv4/'${IPv4}'/g' /etc/network/interfaces
 sed -ri 's/MASK/'${MASK}'/g' /etc/network/interfaces
+sed -ri 's/netmask '${MASK}'/netmask '${actualIp4Subnet}'/g' /etc/network/interfaces
 sed -ri 's/GATE/'${GATE}'/g' /etc/network/interfaces
 sed -ri 's/ip6Addr/'${ip6Addr}'/g' /etc/network/interfaces
 sed -ri 's/ip6Mask/'${ip6Mask}'/g' /etc/network/interfaces
+sed -ri 's/netmask '${ip6Mask}'/netmask '${actualIp6Prefix}'/g' /etc/network/interfaces
 sed -ri 's/ip6Gate/'${ip6Gate}'/g' /etc/network/interfaces
 # Restoring access permission.
 chmod a+x /etc/network/interfaces
