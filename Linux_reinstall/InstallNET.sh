@@ -410,6 +410,7 @@ function getIPv4Address() {
   [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && iAddr=`ip -4 addr show | grep -wA 5 "$interface4" | grep -wv "lo\|host" | grep -w "inet" | grep -w "scope global*\|link*" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
   ipAddr=`echo ${iAddr} | cut -d'/' -f1`
   ipPrefix=`echo ${iAddr} | cut -d'/' -f2`
+  ip4RouteScopeLink=`ip -4 route show scope link | grep -w "$interface4" | grep -w "$ipAddr" | grep -m1 -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | head -n 1`
   ipMask=`netmask "$ipPrefix"`
 # In most situation, at least 99.9% probability, the first hop of the network should be the same as the available gateway. 
 # But in 0.1%, they are actually different. 
@@ -496,13 +497,16 @@ function getIPv4Address() {
     ip4RangeFirst=`ipv4Calc "$ipAddr" "$ipPrefix" | grep "FirstIP:" | awk '{print$2}' | cut -d'.' -f1`
     ip4RangeLast=`ipv4Calc "$ipAddr" "$ipPrefix" | grep "LastIP:" | awk '{print$2}' | cut -d'.' -f1`
     ip4GateFirst=`echo $ipGate | cut -d'.' -f1`
-    [[ "$ip4GateFirst" -gt "$ip4RangeLast" || "$ip4GateFirst" -lt "$ip4RangeFirst" ]] && {
-      ip4RouteScopeLink=`ip -4 route show scope link | grep -w "$interface4" | grep -m1 -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | head -n 1`
+    ip4GateSecond=`echo $ipGate | cut -d'.' -f2`
+    [[ "$ip4GateFirst" -gt "$ip4RangeLast" || "$ip4GateFirst" -lt "$ip4RangeFirst" ]] && [[ "$ip4GateFirst.$ip4GateSecond" == "169.254" || "$ip4GateFirst.$ip4GateSecond" == "10.0" || "$ip4GateFirst.$ip4GateSecond" == "172.16" || "$ip4GateFirst.$ip4GateSecond" == "192.168" || "$ip4GateFirst.$ip4GateSecond" == "100.64" ]] && {
       ipPrefix=`ip -4 route show scope link | grep -w "$interface4" | grep -w "$ip4RouteScopeLink" | head -n 1 | awk '{print $1}' | cut -d'/' -f2`
       ipMask=`netmask "$ipPrefix"`
       ipGate=`ipv4Calc "$ip4RouteScopeLink" "$ipPrefix" | grep "FirstIP:" | awk '{print$2}'`
     }
   }
+  actualIp4Prefix=`ip -4 route show scope link | grep -w "$interface4" | grep -w "$ip4RouteScopeLink" | head -n 1 | awk '{print $1}' | cut -d'/' -f2`
+  [[ -z "$ipPrefix" ]] && actualIp4Prefix="$ipPrefix"
+  actualIp4Subnet=`netmask "$actualIp4Prefix"`
 }
 
 function netmask() {
@@ -1024,6 +1028,8 @@ function getIPv6Address() {
     ipv6SubnetCalc "$ip6Mask"
 # So in summary of the IPv6 sample in above, we should assign subnet mask "ffff:ffff:ffff:ffff:ffff:ffff:0000:0000"(prefix is "96") for it.
   }
+  actualIp6Prefix=`ip -6 route show | grep -w "$interface6" | grep -v "default" | grep -v "multicast" | grep -P '../[0-9]{1,3}' | head -n 1 | awk '{print $1}' | cut -d'/' -f2`
+  [[ -z "$actualIp6Prefix" ]] && actualIp6Prefix="$ip6Mask"
 }
 
 # Examples:
@@ -1570,23 +1576,28 @@ function DebianModifiedPreseed() {
 # so need to write "iface interface inet6 dhcp" to /etc/network/interfaces in preseeding process,
 # to avoid config IPv6 manually after log into new system.
     SupportIPv6orIPv4=""
+    ReplaceActualIpPrefix=""
     if [[ "$IPStackType" == "IPv4Stack" ]]; then
 # This IPv4Stack DHCP machine can access IPv6 network in the future, maybe.
 # But it should be setting as IPv4 network priority.
       SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel ::ffff:0:0/96' /etc/gai.conf;"
+      ReplaceActualIpPrefix="$1 sed -ri \"s/address $ipAddr\/$ipPrefix/address $ipAddr\/$actualIp4Prefix/g\" /etc/network/interfaces;"
     elif [[ "$IPStackType" == "BiStack" ]]; then
       if [[ "$Network6Config" == "isDHCP" ]]; then
 # Enable IPv6 dhcp and set prefer IPv6 access for BiStack or IPv6Stack machine: add "label 2002::/16", "label 2001:0::/32" in last line of the "/etc/gai.conf"
         SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
         [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && SupportIPv6orIPv4="$1 sed -i '\$a\ ' /etc/network/interfaces; $1 sed -i '\$aallow-hotplug $interface6' /etc/network/interfaces; $1 sed -i '\$aiface $interface6 inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
+        ReplaceActualIpPrefix="$1 sed -ri \"s/address $ipAddr\/$ipPrefix/address $ipAddr\/$actualIp4Prefix/g\" /etc/network/interfaces;"
       elif [[ "$Network6Config" == "isStatic" ]]; then
         SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet6 static' /etc/network/interfaces; $1 sed -i '\$a\\\taddress $ip6Addr' /etc/network/interfaces; $1 sed -i '\$a\\\tnetmask $ip6Mask' /etc/network/interfaces; $1 sed -i '\$a\\\tgateway $ip6Gate' /etc/network/interfaces; $1 sed -i '\$a\\\tdns-nameservers $ip6DNS' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
         [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && SupportIPv6orIPv4="$1 sed -i '\$a\ ' /etc/network/interfaces; $1 sed -i '\$aallow-hotplug $interface6' /etc/network/interfaces; $1 sed -i '\$aiface $interface6 inet6 static' /etc/network/interfaces; $1 sed -i '\$a\\\taddress $ip6Addr' /etc/network/interfaces; $1 sed -i '\$a\\\tnetmask $ip6Mask' /etc/network/interfaces; $1 sed -i '\$a\\\tgateway $ip6Gate' /etc/network/interfaces; $1 sed -i '\$a\\\tdns-nameservers $ip6DNS' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
+        ReplaceActualIpPrefix="$1 sed -ri \"s/address $ipAddr\/$ipPrefix/address $ipAddr\/$actualIp4Prefix/g\" /etc/network/interfaces; $1 sed -ri \"s/netmask $ip6Mask/netmask $actualIp6Prefix/g\" /etc/network/interfaces;"
       fi
     elif [[ "$IPStackType" == "IPv6Stack" ]]; then
 # This IPv6Stack Static machine can access IPv4 network in the future, maybe.
 # But it should be setting as IPv6 network priority.
       [[ ! "$IPv4" || "$Network6Config" == "isStatic" ]] && SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;" || SupportIPv6orIPv4="$1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
+      ReplaceActualIpPrefix="$1 sed -ri \"s/address $ip6Addr\/$ip6Mask/address $ip6Addr\/$actualIp6Prefix/g\" /etc/network/interfaces;"
     fi
 # a typical network configuration sample of IPv6 static for Debian:
 # iface eth0 inet static
@@ -1609,7 +1620,7 @@ function DebianModifiedPreseed() {
       ReviseMOTD="$1 sed -ri 's/Debian/Kali/g' /etc/update-motd.d/00-header;"
       SupportZSH="$1 apt install zsh -y; $1 chsh -s /bin/zsh; $1 rm -rf /root/.bashrc.original;"
     }
-    export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${VimIndentEolStart} ${DnsChangePermanently} ${ModifyMOTD} ${SupportIPv6orIPv4} ${EnableSSH} ${ReviseMOTD} ${SupportZSH}"
+    export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${VimIndentEolStart} ${DnsChangePermanently} ${ModifyMOTD} ${SupportIPv6orIPv4} ${ReplaceActualIpPrefix} ${EnableSSH} ${ReviseMOTD} ${SupportZSH}"
   fi
 }
 
@@ -1996,12 +2007,12 @@ echo -ne "\n[${yellow}Network File${plain}]  $NetCfgWhole"
 echo -ne "\n[${yellow}Server Stack${plain}]  $IPStackType\n"
 [[ "$IPStackType" != "IPv6Stack" ]] && echo -ne "\n[${yellow}IPv4  Method${plain}]  $Network4Config\n" || echo -ne "\n[${yellow}IPv4  Method${plain}]  N/A\n"
 [[ "$IPv4" && "$IPStackType" != "IPv6Stack" ]] && echo -e "[${yellow}IPv4 Address${plain}]  ""$IPv4" || echo -e "[${yellow}IPv4 Address${plain}]  ""N/A"
-[[ "$IPv4" && "$IPStackType" != "IPv6Stack" ]] && echo -e "[${yellow}IPv4  Subnet${plain}]  ""$MASK" || echo -e "[${yellow}IPv4  Subnet${plain}]  ""N/A"
+[[ "$IPv4" && "$IPStackType" != "IPv6Stack" ]] && echo -e "[${yellow}IPv4  Subnet${plain}]  ""$actualIp4Subnet" || echo -e "[${yellow}IPv4  Subnet${plain}]  ""N/A"
 [[ "$IPv4" && "$IPStackType" != "IPv6Stack" ]] && echo -e "[${yellow}IPv4 Gateway${plain}]  ""$GATE" || echo -e "[${yellow}IPv4 Gateway${plain}]  ""N/A"
 [[ "$IPv4" && "$IPStackType" != "IPv6Stack" ]] && echo -e "[${yellow}IPv4     DNS${plain}]  ""$ipDNS" || echo -e "[${yellow}IPv4     DNS${plain}]  ""N/A"
 [[ "$IPStackType" != "IPv4Stack" ]] && echo -ne "\n[${yellow}IPv6  Method${plain}]  $Network6Config\n" || echo -ne "\n[${yellow}IPv6  Method${plain}]  N/A\n"
 [[ "$ip6Addr" && "$IPStackType" != "IPv4Stack" ]] && echo -e "[${yellow}IPv6 Address${plain}]  ""$ip6Addr" || echo -e "[${yellow}IPv6 Address${plain}]  ""N/A"
-[[ "$ip6Addr" && "$IPStackType" != "IPv4Stack" ]] && echo -e "[${yellow}IPv6  Subnet${plain}]  ""$ip6Mask" || echo -e "[${yellow}IPv6  Subnet${plain}]  ""N/A"
+[[ "$ip6Addr" && "$IPStackType" != "IPv4Stack" ]] && echo -e "[${yellow}IPv6  Subnet${plain}]  ""$actualIp6Prefix" || echo -e "[${yellow}IPv6  Subnet${plain}]  ""N/A"
 [[ "$ip6Addr" && "$IPStackType" != "IPv4Stack" ]] && echo -e "[${yellow}IPv6 Gateway${plain}]  ""$ip6Gate" || echo -e "[${yellow}IPv6 Gateway${plain}]  ""N/A"
 [[ "$ip6Addr" && "$IPStackType" != "IPv4Stack" ]] && echo -e "[${yellow}IPv6     DNS${plain}]  ""$ip6DNS" || echo -e "[${yellow}IPv6     DNS${plain}]  ""N/A"
 
@@ -2273,7 +2284,7 @@ if [[ "$ddMode" == '1' ]]; then
     if [[ "$tmpURL" == "" ]]; then
       tmpURL="https://cloud-images.a.disk.re/Ubuntu/"
     fi
-    tmpURLCheck=`curl -I -X GET $tmpURL 2>&1 | grep -wi "http/[0-9]*" | awk '{print $2}'`
+    tmpURLCheck=$(echo $(curl -s -I -X GET $tmpURL) | grep -wi "http/[0-9]*" | awk '{print $2}')
     [[ -z "$tmpURLCheck" || ! "$tmpURLCheck" =~ ^[0-9]+$ ]] && {
       echo -ne "\n[${red}Error${plain}] The mirror of DD images is temporarily unavailable!\n"
       exit 1
@@ -2681,6 +2692,8 @@ echo "sshPORT  "${sshPORT} >> \$sysroot/root/alpine.config
 echo "IPv4  "${IPv4} >> \$sysroot/root/alpine.config
 echo "MASK  "${MASK} >> \$sysroot/root/alpine.config
 echo "ipPrefix  "${ipPrefix} >> \$sysroot/root/alpine.config
+echo "actualIp4Prefix  "${actualIp4Prefix} >> \$sysroot/root/alpine.config
+echo "actualIp4Subnet  "${actualIp4Subnet} >> \$sysroot/root/alpine.config
 echo "GATE  "${GATE} >> \$sysroot/root/alpine.config
 echo "ipDNS1  "${ipDNS1} >> \$sysroot/root/alpine.config
 echo "ipDNS2  "${ipDNS2} >> \$sysroot/root/alpine.config
@@ -2688,6 +2701,7 @@ echo "ipDNS2  "${ipDNS2} >> \$sysroot/root/alpine.config
 # To determine Ipv6 static config
 echo "ip6Addr  "${ip6Addr} >> \$sysroot/root/alpine.config
 echo "ip6Mask  "${ip6Mask} >> \$sysroot/root/alpine.config
+echo "actualIp6Prefix  "${actualIp6Prefix} >> \$sysroot/root/alpine.config
 echo "ip6Gate  "${ip6Gate} >> \$sysroot/root/alpine.config
 echo "ip6DNS1  "${ip6DNS1} >> \$sysroot/root/alpine.config
 echo "ip6DNS2  "${ip6DNS2} >> \$sysroot/root/alpine.config
@@ -2747,23 +2761,23 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
     if [[ "$Network4Config" == "isDHCP" ]]; then
       NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=auto --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
     elif [[ "$Network4Config" == "isStatic" ]]; then
-      NetConfigManually="network --device=$interface --bootproto=static --ip=$IPv4 --netmask=$MASK --gateway=$GATE --ipv6=auto --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
+      NetConfigManually="network --device=$interface --bootproto=static --ip=$IPv4 --netmask=$actualIp4Subnet --gateway=$GATE --ipv6=auto --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
     fi
   elif [[ "$IPStackType" == "BiStack" ]]; then
     if [[ "$Network4Config" == "isDHCP" ]] && [[ "$Network6Config" == "isDHCP" ]]; then
       NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=auto --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
     elif [[ "$Network4Config" == "isDHCP" ]] && [[ "$Network6Config" == "isStatic" ]]; then
-      NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=$ip6Addr/$ip6Mask --ipv6gateway=$ip6Gate --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
+      NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=$ip6Addr/$actualIp6Prefix --ipv6gateway=$ip6Gate --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
     elif [[ "$Network4Config" == "isStatic" ]] && [[ "$Network6Config" == "isDHCP" ]]; then
-      NetConfigManually="network --device=$interface --bootproto=static --ip=$IPv4 --netmask=$MASK --gateway=$GATE --ipv6=auto --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
+      NetConfigManually="network --device=$interface --bootproto=static --ip=$IPv4 --netmask=$actualIp4Subnet --gateway=$GATE --ipv6=auto --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
     elif [[ "$Network4Config" == "isStatic" ]] && [[ "$Network6Config" == "isStatic" ]]; then
-      NetConfigManually="network --device=$interface --bootproto=static --ip=$IPv4 --netmask=$MASK --gateway=$GATE --ipv6=$ip6Addr/$ip6Mask --ipv6gateway=$ip6Gate --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
+      NetConfigManually="network --device=$interface --bootproto=static --ip=$IPv4 --netmask=$actualIp4Subnet --gateway=$GATE --ipv6=$ip6Addr/$actualIp6Prefix --ipv6gateway=$ip6Gate --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
     fi
   elif [[ "$IPStackType" == "IPv6Stack" ]]; then
     if [[ "$Network6Config" == "isDHCP" ]]; then
       NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=auto --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
     elif [[ "$Network6Config" == "isStatic" ]]; then
-      NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=$ip6Addr/$ip6Mask --ipv6gateway=$ip6Gate --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
+      NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=$ip6Addr/$actualIp6Prefix --ipv6gateway=$ip6Gate --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
     fi
   fi
 # Part disk manually.
@@ -2881,9 +2895,10 @@ touch /var/log/fail2ban.log
 sed -i -E 's/^(logtarget =).*/\1 \/var\/log\/fail2ban.log/' /etc/fail2ban/fail2ban.conf
 systemctl enable fail2ban
 
-# Clean logs
+# Clean logs and kickstart files
 rm -rf /root/anaconda-ks.cfg
 rm -rf /root/install.*log
+rm -rf /root/original-ks.cfg
 
 %end
 
