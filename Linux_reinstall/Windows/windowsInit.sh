@@ -21,8 +21,7 @@ LinuxMirror=$(grep -w "LinuxMirror" $confFile | awk '{print $2}')
 alpineVer=$(grep "alpineVer" $confFile | awk '{print $2}')
 IPv4=$(grep "IPv4" $confFile | awk '{print $2}')
 MASK=$(grep "MASK" $confFile | awk '{print $2}')
-ipPrefix=$(grep "ipPrefix" $confFile | awk '{print $2}')
-actualIp4Prefix=$(grep "actualIp4Prefix" $confFile | awk '{print $2}')
+actualIp4Subnet=$(grep "actualIp4Subnet" $confFile | awk '{print $2}')
 GATE=$(grep "GATE" $confFile | awk '{print $2}')
 ipDNS1=$(grep "ipDNS1" $confFile | awk '{print $2}')
 ipDNS2=$(grep "ipDNS2" $confFile | awk '{print $2}')
@@ -74,9 +73,9 @@ ntfs-3g /dev/mapper/$mapperDevice /mnt
 [[ "$Network4Config" == "isStatic" ]] && {
   mkdir -p '/mnt/Windows/Setup/Scripts/'
   wget --no-check-certificate -qO /mnt/Windows/Setup/Scripts/SetupComplete.cmd ''$windowsStaticConfigCmd''
-  sed -ri "s/ipAddr/$ipAddr/g" /mnt/Windows/Setup/Scripts/SetupComplete.cmd
+  sed -ri "s/IPv4/$IPv4/g" /mnt/Windows/Setup/Scripts/SetupComplete.cmd
   sed -ri "s/actualIp4Subnet/$actualIp4Subnet/g" /mnt/Windows/Setup/Scripts/SetupComplete.cmd
-  sed -ri "s/ipGate/$ipGate/g" /mnt/Windows/Setup/Scripts/SetupComplete.cmd
+  sed -ri "s/GATE/$GATE/g" /mnt/Windows/Setup/Scripts/SetupComplete.cmd
   sed -ri "s/ipDNS1/$ipDNS1/g" /mnt/Windows/Setup/Scripts/SetupComplete.cmd
   sed -ri "s/ipDNS2/$ipDNS2/g" /mnt/Windows/Setup/Scripts/SetupComplete.cmd
 }
