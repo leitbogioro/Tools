@@ -72,12 +72,12 @@ ntfs-3g /dev/mapper/$mapperDevice /mnt
 # write static config script to setup step
 [[ "$Network4Config" == "isStatic" ]] && {
   setupCompleteFile='/mnt/Users/Administrator/AppData/Roaming/Microsoft/Windows/Start Menu/Programs/Startup/SetupComplete.bat'
-  wget --no-check-certificate -qO $setupCompleteFile ''$windowsStaticConfigCmd''
-  sed -ri "s/IPv4/$IPv4/g" $setupCompleteFile
-  sed -ri "s/actualIp4Subnet/$actualIp4Subnet/g" $setupCompleteFile
-  sed -ri "s/GATE/$GATE/g" $setupCompleteFile
-  sed -ri "s/ipDNS1/$ipDNS1/g" $setupCompleteFile
-  sed -ri "s/ipDNS2/$ipDNS2/g" $setupCompleteFile
+  wget --no-check-certificate -qO "$setupCompleteFile" ''$windowsStaticConfigCmd''
+  sed -ri "s/IPv4/$IPv4/g" "$setupCompleteFile"
+  sed -ri "s/actualIp4Subnet/$actualIp4Subnet/g" "$setupCompleteFile"
+  sed -ri "s/GATE/$GATE/g" "$setupCompleteFile"
+  sed -ri "s/ipDNS1/$ipDNS1/g" "$setupCompleteFile"
+  sed -ri "s/ipDNS2/$ipDNS2/g" "$setupCompleteFile"
 }
 
 # Reboot, the system in the memory will all be written to the hard drive.
