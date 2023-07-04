@@ -69,3 +69,17 @@ mapperDevice=$(kpartx -av $loopDevice | grep "$loopDeviceNum" | head -n 1 | awk 
 
 # mount Windows dd partition to /mnt
 ntfs-3g /dev/mapper/$mapperDevice /mnt
+
+# write static config script to setup step
+[[ "$Network4Config" == "isStatic" ]] && {
+  mkdir -p '/mnt/Windows/Setup/Scripts/'
+  wget --no-check-certificate -qO /mnt/Windows/Setup/Scripts/SetupComplete.cmd ''$windowsStaticConfigCmd''
+  sed -ri "s/ipAddr/$ipAddr/g" /mnt/Windows/Setup/Scripts/SetupComplete.cmd
+  sed -ri "s/actualIp4Subnet/$actualIp4Subnet/g" /mnt/Windows/Setup/Scripts/SetupComplete.cmd
+  sed -ri "s/ipGate/$ipGate/g" /mnt/Windows/Setup/Scripts/SetupComplete.cmd
+  sed -ri "s/ipDNS1/$ipDNS1/g" /mnt/Windows/Setup/Scripts/SetupComplete.cmd
+  sed -ri "s/ipDNS2/$ipDNS2/g" /mnt/Windows/Setup/Scripts/SetupComplete.cmd
+}
+
+# Reboot, the system in the memory will all be written to the hard drive.
+exec reboot
