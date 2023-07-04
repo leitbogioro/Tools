@@ -16,4 +16,5 @@ echo;%setmode%|find "on"&&goto:enable||goto:disable
 wmic nicconfig where ipenabled=true call enablestatic(%staticip%),(%subnetmask%)
 wmic nicconfig where ipenabled=true call setgateways(%gateways%)
 wmic nicconfig where ipenabled=true call setdnsserversearchorder(%dnsserver1%,%dnsserver2%)
+del %0
 :disable
