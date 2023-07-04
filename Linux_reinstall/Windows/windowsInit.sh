@@ -67,3 +67,5 @@ losetup $loopDevice $IncDisk
 # get mapper partition
 mapperDevice=$(kpartx -av $loopDevice | grep "$loopDeviceNum" | head -n 1 | awk '{print $3}')
 
+# mount Windows dd partition to /mnt
+ntfs-3g /dev/mapper/$mapperDevice /mnt
