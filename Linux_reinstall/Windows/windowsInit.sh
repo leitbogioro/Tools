@@ -82,4 +82,4 @@ ntfs-3g /dev/mapper/$mapperDevice /mnt
 }
 
 # Reboot, the system in the memory will all be written to the hard drive.
-exec reboot
+# exec reboot
