@@ -2,11 +2,11 @@
 
 set setmode=on
 ::Static IP
-set staticip=ipAddr
+set staticip=IPv4
 ::Subnet
 set subnetmask=actualIp4Subnet
 ::Gateway
-set gateways=ipGate
+set gateways=GATE
 ::Dns
 set dnsserver1=ipDNS1
 set dnsserver2=ipDNS2
