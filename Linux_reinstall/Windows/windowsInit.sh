@@ -72,6 +72,7 @@ ntfs-3g /dev/mapper/$mapperDevice /mnt
 # write static config script to setup step
 [[ "$Network4Config" == "isStatic" ]] && {
   setupCompleteFile='/mnt/ProgramData/Microsoft/Windows/Start Menu/Programs/Startup/SetupComplete.bat'
+  [[ ! -d '/mnt/ProgramData/Microsoft/Windows/Start Menu/Programs/Startup/' ]] && setupCompleteFile='/mnt/ProgramData/Microsoft/Windows/Start Menu/Programs/StartUp/SetupComplete.bat'
   wget --no-check-certificate -qO $setupCompleteFile ''$windowsStaticConfigCmd''
   sed -ri "s/IPv4/$IPv4/g" $setupCompleteFile
   sed -ri "s/actualIp4Subnet/$actualIp4Subnet/g" $setupCompleteFile
