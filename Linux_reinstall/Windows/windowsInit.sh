@@ -19,7 +19,6 @@ confFile="/root/alpine.config"
 IncDisk=$(grep "IncDisk" $confFile | awk '{print $2}')
 LinuxMirror=$(grep -w "LinuxMirror" $confFile | awk '{print $2}')
 alpineVer=$(grep "alpineVer" $confFile | awk '{print $2}')
-sshPORT=$(grep "sshPORT" $confFile | awk '{print $2}')
 IPv4=$(grep "IPv4" $confFile | awk '{print $2}')
 MASK=$(grep "MASK" $confFile | awk '{print $2}')
 ipPrefix=$(grep "ipPrefix" $confFile | awk '{print $2}')
