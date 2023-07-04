@@ -51,7 +51,7 @@ hwclock -s
 
 # Install necessary components.
 apk update
-apk add ca-certificates e2fsprogs fuse hdparm multipath-tools musl ntfs-3g parted util-linux wget xz
+apk add ca-certificates e2fsprogs fuse gzip hdparm multipath-tools musl ntfs-3g parted util-linux wget xz
 
 # start dd
 wget --no-check-certificate -qO- "$DDURL"  | $DEC_CMD | dd of="$IncDisk"
