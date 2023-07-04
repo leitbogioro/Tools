@@ -13,6 +13,8 @@
 ## Blog: https://github.com/airium
 ## Modified By 王煎饼
 ## Github: https://github.com/bin456789/
+## Modified By nat.ee
+## Forum: https://hostloc.com/space-uid-49984.html
 ## Modified By Leitbogioro
 ## Blog: https://www.zhihu.com/column/originaltechnic
 
@@ -32,6 +34,7 @@ export tmpWORD=''
 export tmpMirror=''
 export tmpDHCP=''
 export targetRelese=''
+export targetLang='cn'
 export TimeZone=''
 export ipAddr=''
 export ipMask=''
@@ -131,6 +134,18 @@ while [[ $# -ge 1 ]]; do
       shift
       Relese='AlpineLinux'
       tmpDIST="$1"
+      shift
+      ;;
+    -win|-windows)
+      shift
+      ddMode='1'
+      finalDIST="$1"
+      targetRelese='Windows'
+      shift
+      ;;
+    -lang|-language)
+      shift
+      targetLang="$1"
       shift
       ;;
     -dd|--image)
@@ -498,10 +513,13 @@ function getIPv4Address() {
     ip4RangeLast=`ipv4Calc "$ipAddr" "$ipPrefix" | grep "LastIP:" | awk '{print$2}' | cut -d'.' -f1`
     ip4GateFirst=`echo $ipGate | cut -d'.' -f1`
     ip4GateSecond=`echo $ipGate | cut -d'.' -f2`
-    [[ "$ip4GateFirst" -gt "$ip4RangeLast" || "$ip4GateFirst" -lt "$ip4RangeFirst" ]] && [[ "$ip4GateFirst.$ip4GateSecond" == "169.254" || "$ip4GateFirst.$ip4GateSecond" == "10.0" || "$ip4GateFirst.$ip4GateSecond" == "172.16" || "$ip4GateFirst.$ip4GateSecond" == "192.168" || "$ip4GateFirst.$ip4GateSecond" == "100.64" ]] && {
-      ipPrefix=`ip -4 route show scope link | grep -w "$interface4" | grep -w "$ip4RouteScopeLink" | head -n 1 | awk '{print $1}' | cut -d'/' -f2`
-      ipMask=`netmask "$ipPrefix"`
-      ipGate=`ipv4Calc "$ip4RouteScopeLink" "$ipPrefix" | grep "FirstIP:" | awk '{print$2}'`
+# Reference: https://hczhang.cn/network/reserved-ip-addresses.html
+    [[ "$ip4GateFirst" -gt "$ip4RangeLast" || "$ip4GateFirst" -lt "$ip4RangeFirst" ]] && {
+      [[ "$ip4GateFirst" == "169" && "$ip4GateSecond" == "254" ]] || [[ "$ip4GateFirst" == "172" && "$ip4GateSecond" -ge "16" && "$ip4GateSecond" -le "31" ]] || [[ "$ip4GateFirst" == "10" && "$ip4GateSecond" -ge "0" && "$ip4GateSecond" -le "255" ]] || [[ "$ip4GateFirst" == "192" && "$ip4GateSecond" == "168" ]] || [[ "$ip4GateFirst" == "127" && "$ip4GateSecond" -ge "0" && "$ip4GateSecond" -le "255" ]] || [[ "$ip4GateFirst" == "198" && "$ip4GateSecond" -ge "18" && "$ip4GateSecond" -le "19" ]] || [[ "$ip4GateFirst" == "100" && "$ip4GateSecond" -ge "64" && "$ip4GateSecond" -le "127" ]] && {
+        ipPrefix=`ip -4 route show scope link | grep -w "$interface4" | grep -w "$ip4RouteScopeLink" | head -n 1 | awk '{print $1}' | cut -d'/' -f2`
+        ipMask=`netmask "$ipPrefix"`
+        ipGate=`ipv4Calc "$ip4RouteScopeLink" "$ipPrefix" | grep "FirstIP:" | awk '{print$2}'`
+      }
     }
   }
   actualIp4Prefix=`ip -4 route show scope link | grep -w "$interface4" | grep -w "$ip4RouteScopeLink" | head -n 1 | awk '{print $1}' | cut -d'/' -f2`
@@ -1809,7 +1827,7 @@ d-i clock-setup/ntp boolean true
 d-i clock-setup/ntp-server string ntp.nict.jp
 
 ### Get harddisk name and Windows DD installation set up
-d-i preseed/early_command string anna-install libfuse2-udeb fuse-udeb ntfs-3g-udeb libcrypto3-udeb libpcre2-8-0-udeb libssl3-udeb libuuid1-udeb zlib1g-udeb wget-udeb
+d-i preseed/early_command string anna-install libc6-udeb libfuse3-3-udeb fuse3-udeb ntfs-3g-udeb libcrypto3-udeb libpcre2-8-0-udeb libssl3-udeb libuuid1-udeb zlib1g-udeb wget-udeb
 d-i partman/early_command string \
 lvremove --select all -ff -y; \
 vgremove --select all -ff -y; \
@@ -1817,7 +1835,7 @@ pvremove /dev/* -ff -y; \
 [[ -n "\$(blkid -t TYPE='vfat' -o device)" ]] && umount "\$(blkid -t TYPE='vfat' -o device)"; \
 debconf-set partman-auto/disk "\$(list-devices disk | grep ${IncDisk} | head -n 1)"; \
 wget -qO- '$DDURL' | $DEC_CMD | /bin/dd of=\$(list-devices disk | grep ${IncDisk} | head -n 1); \
-mount.ntfs-3g \$(list-devices partition | grep ${IncDisk} | head -n 1) /mnt; \
+/bin/ntfs-3g \$(list-devices partition | grep ${IncDisk} | head -n 1) /mnt; \
 cd '/mnt/ProgramData/Microsoft/Windows/Start Menu/Programs'; \
 cd Start* || cd start*; \
 cp -f '/net.bat' './net.bat'; \
@@ -1878,7 +1896,7 @@ alpineInstallOrDdAdditionalFiles() {
   AlpineDnsFile="$2"
   AlpineMotd="$3"
   AlpineInitFileName="alpineConf.start"
-  [[ "$targetRelese" == 'Ubuntu' ]] && {
+  if [[ "$targetRelese" == 'Ubuntu' ]]; then
     if [[ "$ubuntuVER" == "amd64" ]]; then
       targetLinuxMirror="$4"
     elif [[ "$ubuntuVER" == "arm64" ]]; then
@@ -1886,12 +1904,12 @@ alpineInstallOrDdAdditionalFiles() {
     fi
     AlpineInitFile="$6"
     AlpineInitFileName="ubuntuConf.start"
-    ipDNS1=$(echo $ipDNS | cut -d ' ' -f 1)
-    ipDNS2=$(echo $ipDNS | cut -d ' ' -f 2)
-    ip6DNS1=$(echo $ip6DNS | cut -d ' ' -f 1)
-    ip6DNS2=$(echo $ip6DNS | cut -d ' ' -f 2)
     [[ "$setIPv6" == "0" ]] && setIPv6="0" || setIPv6="1"
-  }
+  elif [[ "$targetRelese" == 'Windows' ]]; then
+    AlpineInitFile="$7"
+    AlpineInitFileName="windowsConf.start"
+    windowsStaticConfigCmd="$8"
+  fi
 }
 
 checkSys
@@ -1943,24 +1961,32 @@ if [[ "$loaderMode" == "0" ]]; then
 fi
 
 [ -n "$Relese" ] || Relese='Debian'
+
+[[ "$ddMode" == '1' ]] && {
+  if [[ "$targetRelese" == 'Ubuntu' ]] || [[ "$targetRelese" == 'Windows' ]]; then
+    Relese='AlpineLinux'
+    tmpDIST='edge'
+    if [[ "$targetRelese" == 'Windows' ]]; then
+      [[ "$VER" == "aarch64" || "$VER" == "arm64" ]] && {
+        echo -ne "\n[${red}Error${plain}] ${targetRelese} doesn't support ${VER} architecture.\n"
+        exit 1
+      }
+    fi
+  else
+    linux_relese='debian'
+    tmpDIST='bookworm'
+  fi
+}
+
 linux_relese=$(echo "$Relese" |sed 's/\ //g' |sed -r 's/(.*)/\L\1/')
 clear && echo -ne "\n${aoiBlue}# Check Dependence${plain}\n\n"
 
 dependence awk,basename,cat,cpio,curl,cut,dig,dirname,file,find,grep,gzip,iconv,ip,lsblk,openssl,sed,wget,xz;
 
-[[ "$ddMode" == '1' ]] && {
-  if [[ "$targetRelese" == 'Ubuntu' ]]; then
-    Relese='AlpineLinux'
-    linux_relese='alpinelinux'
-    tmpDIST='edge'
-    VER="$VER"
-  else
-    linux_relese='debian'
-    tmpDIST='bookworm'
-    tmpVER='amd64'
-  fi
-}
-
+ipDNS1=$(echo $ipDNS | cut -d ' ' -f 1)
+ipDNS2=$(echo $ipDNS | cut -d ' ' -f 2)
+ip6DNS1=$(echo $ip6DNS | cut -d ' ' -f 1)
+ip6DNS2=$(echo $ip6DNS | cut -d ' ' -f 2)
 ipDNS=$(checkDNS "$ipDNS")
 ip6DNS=$(checkDNS "$ip6DNS")
 
@@ -2024,9 +2050,10 @@ echo "$TimeZone"
 [[ -z "$tmpWORD" || "$linux_relese" == 'alpinelinux' || "$targetRelese" == 'Ubuntu' ]] && tmpWORD='LeitboGi0ro'
 myPASSWORD=$(openssl passwd -1 ''$tmpWORD'')
 [[ -z "$myPASSWORD" ]] && myPASSWORD='$1$OCy2O5bt$m2N6XMgFUwCn/2PPP114J/'
-echo -ne "\n${aoiBlue}# SSH Port and Password${plain}\n\n"
-echo "$sshPORT"
-echo "$tmpWORD"
+echo -ne "\n${aoiBlue}# SSH or RDP Port, Username and Password${plain}\n\n"
+[[ "$targetRelese" == 'Windows' ]] && echo "3389" || echo "$sshPORT"
+[[ "$targetRelese" == 'Windows' ]] && echo "Administrator" || echo "root"
+[[ "$targetRelese" == 'Windows' && "$tmpURL" == "" || "$tmpURL" =~ "dl.lamp.sh" ]] && echo "Teddysun.com" || echo "$tmpWORD"
 
 getDisk
 echo -ne "\n${aoiBlue}# Installing Disks${plain}\n\n"
@@ -2034,6 +2061,9 @@ echo -ne "\n${aoiBlue}# Installing Disks${plain}\n\n"
 
 echo -ne "\n${aoiBlue}# Motherboard Firmware${plain}\n\n"
 [[ "$EfiSupport" == "enabled" ]] && echo "UEFI" || echo "BIOS"
+
+[ -n "$Relese" ] || Relese='Debian'
+linux_relese=$(echo "$Relese" |sed 's/\ //g' |sed -r 's/(.*)/\L\1/')
 
 # Get architecture of current os automatically
 ArchName=`uname -m`
@@ -2084,7 +2114,6 @@ fi
 [[ -z "$tmpDIST" ]] && {
   [ "$Relese" == 'Debian' ] && tmpDIST='12'
   [ "$Relese" == 'Kali' ] && tmpDIST='rolling'
-  [ "$Relese" == 'Ubuntu' ] && tmpDIST='20.04'
   [ "$Relese" == 'AlpineLinux' ] && tmpDIST='edge'
   [ "$Relese" == 'CentOS' ] && tmpDIST='9'
   [ "$Relese" == 'RockyLinux' ] && tmpDIST='9'
@@ -2093,6 +2122,7 @@ fi
 }
 [[ -z "$finalDIST" ]] && {
   [ "$targetRelese" == 'Ubuntu' ] && finalDIST='22.04'
+  [ "$targetRelese" == 'Windows' ] && finalDIST='server 2022'
 }
 
 if [[ -n "$tmpDIST" ]]; then
@@ -2284,6 +2314,8 @@ if [[ "$ddMode" == '1' ]]; then
     if [[ "$tmpURL" == "" ]]; then
       tmpURL="https://cloud-images.a.disk.re/Ubuntu/"
     fi
+    echo "$tmpURL" | grep -q '^http://\|^ftp://\|^https://'
+    [[ $? -ne '0' ]] && echo -ne "\n[${red}Error${plain}] Please input a vaild URL, only support http://, ftp:// and https:// ! \n" && exit 1
     tmpURLCheck=$(echo $(curl -s -I -X GET $tmpURL) | grep -wi "http/[0-9]*" | awk '{print $2}')
     [[ -z "$tmpURLCheck" || ! "$tmpURLCheck" =~ ^[0-9]+$ ]] && {
       echo -ne "\n[${red}Error${plain}] The mirror of DD images is temporarily unavailable!\n"
@@ -2291,10 +2323,46 @@ if [[ "$ddMode" == '1' ]]; then
     }
     DDURL="$tmpURL$finalDIST-server-cloudimg-$ubuntuVER.raw"
     ReleaseName="$targetRelese $finalDIST $ubuntuVER"
-  elif [[ "$tmpURL" != "" ]]; then
+  elif [[ "$targetRelese" == 'Windows' ]]; then
+    if [[ -z "$tmpURL" ]]; then
+      tmpURL="https://dl.lamp.sh/vhd"
+      [[ `echo "$finalDIST" | grep -i "server"` ]] && tmpFinalDIST=`echo $finalDIST | awk -F ' |-|_' '{print $2}'`
+      [[ `echo "$finalDIST" | grep -i "pro"` || `echo "$finalDIST" | grep -i "ltsc"` ]] && tmpFinalDIST=`echo $finalDIST | awk -F ' |-|_' '{print $1}'`
+      [[ "$finalDIST" =~ ^[0-9]+$ ]] && tmpFinalDIST="$finalDIST"
+      if [[ "$tmpFinalDIST" -ge "2012" && "$tmpFinalDIST" -le "2019" ]]; then
+        tmpTargetLang="$targetLang"
+      else
+        [[ "$targetLang" == 'cn' ]] && tmpTargetLang="zh-""$targetLang"
+        [[ "$targetLang" == 'en' ]] && tmpTargetLang="$targetLang""-us"
+        [[ "$targetLang" == 'ja' ]] && tmpTargetLang="ja-""$targetLang"
+      fi
+      if [[ "$tmpFinalDIST" == "2012" ]]; then
+        tmpURL="$tmpURL/"${tmpTargetLang}"_win"${tmpFinalDIST}"r2.xz"
+        showFinalDIST="Server $tmpFinalDIST R2"
+      elif [[ "$tmpFinalDIST" -ge "2016" && "$tmpFinalDIST" -le "2022" ]]; then
+        tmpURL="$tmpURL/"${tmpTargetLang}"_win"${tmpFinalDIST}".xz"
+        showFinalDIST="Server $tmpFinalDIST"
+      elif [[ "$tmpFinalDIST" -ge "10" && "$tmpFinalDIST" -le "11" ]]; then
+        [[ "$tmpFinalDIST" == "10" ]] && { tmpURL="$tmpURL/"${tmpTargetLang}"_windows"${tmpFinalDIST}"_ltsc.xz"; showFinalDIST="$tmpFinalDIST Enterprise LTSC"; }
+        [[ "$tmpFinalDIST" == "11" ]] && { tmpURL="$tmpURL/"${tmpTargetLang}"_windows"${tmpFinalDIST}"_22h2.xz"; showFinalDIST="$tmpFinalDIST Pro for Workstations 22H2"; }
+      fi
+      if [[ "$EfiSupport" == "enabled" ]]; then
+        [[ "$tmpFinalDIST" == "10" ]] && tmpURL=`echo $tmpURL | sed 's/windows/win/g'`
+        tmpURL=`echo $tmpURL | sed 's/...$/_uefi.xz/g'`
+      fi
+      ReleaseName="$targetRelese $showFinalDIST"
+    else
+      showFinalDIST=""
+      ReleaseName="$targetRelese"
+    fi
+    echo "$tmpURL" | grep -q '^http://\|^ftp://\|^https://'
+    [[ $? -ne '0' ]] && echo -ne "\n[${red}Error${plain}] Please input a vaild URL, only support http://, ftp:// and https:// ! \n" && exit 1
+    tmpURLCheck=$(echo $(curl -s -I -X GET $tmpURL) | grep -wi "http/[0-9]*" | awk '{print $2}')
+    [[ -z "$tmpURLCheck" || ! "$tmpURLCheck" =~ ^[0-9]+$ ]] && {
+      echo -ne "\n[${red}Error${plain}] The mirror of DD images is temporarily unavailable!\n"
+      exit 1
+    }
     DDURL="$tmpURL"
-    echo "$DDURL" | grep -q '^http://\|^ftp://\|^https://';
-    [[ $? -ne '0' ]] && echo -ne "\n[${red}Error${plain}] Please input a vaild URL, only support http://, ftp:// and https:// ! \n" && exit 1;
     # Decompress command selection
     if [[ "$setFileType" == "gz" ]]; then
       DEC_CMD="gunzip -dc"
@@ -2306,8 +2374,7 @@ if [[ "$ddMode" == '1' ]]; then
       [[ $(echo "$DDURL" | grep -o ...$) == ".xz" ]] && DEC_CMD="xzcat"
       [[ $(echo "$DDURL" | grep -o ...$) == ".gz" ]] && DEC_CMD="gunzip -dc"
     fi
-    ReleaseName="Windows"
-  else
+  elif [[ "$tmpURL" != "" ]]; then
     echo -ne "\n[${red}Warning${plain}] Please input a vaild image URL!\n"
     exit 1
   fi
@@ -2592,9 +2659,9 @@ elif [[ "$linux_relese" == 'alpinelinux' ]]; then
     AlpineInitLineNum=$(grep -E -n '^exec (/bin/busybox )?switch_root' /tmp/boot/init | cut -d: -f1)
     AlpineInitLineNum=$((AlpineInitLineNum - 1))
     if [[ "$IsCN" == "cn" ]]; then
-      alpineInstallOrDdAdditionalFiles "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/alpineInit.sh" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/resolv_cn.conf" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/motd.sh" "mirrors.ustc.edu.cn" "mirrors.tuna.tsinghua.edu.cn" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Ubuntu/ubuntuInit.sh"
+      alpineInstallOrDdAdditionalFiles "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/alpineInit.sh" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/resolv_cn.conf" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/motd.sh" "mirrors.ustc.edu.cn" "mirrors.tuna.tsinghua.edu.cn" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Ubuntu/ubuntuInit.sh" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Windows/windowsInit.sh" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Windows/SetupComplete.bat"
     else
-      alpineInstallOrDdAdditionalFiles "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/alpineInit.sh" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/resolv.conf" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/motd.sh" "archive.ubuntu.com" "ports.ubuntu.com" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/ubuntuInit.sh"
+      alpineInstallOrDdAdditionalFiles "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/alpineInit.sh" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/resolv.conf" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/motd.sh" "archive.ubuntu.com" "ports.ubuntu.com" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/ubuntuInit.sh" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Windows/windowsInit.sh" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Windows/SetupComplete.bat"
     fi
 # Cloud init configurate documents and resources:
 # Ubuntu cloud images:
@@ -2678,6 +2745,15 @@ echo "alpineVer  "${DIST} >> \$sysroot/root/alpine.config
 
 # To determine target system mirror.
 echo "targetLinuxMirror  "${targetLinuxMirror} >> \$sysroot/root/alpine.config
+
+# To determine Windows network static config file.
+echo "windowsStaticConfigCmd  "${windowsStaticConfigCmd} >> \$sysroot/root/alpine.config
+
+# To determine Windows network IPv4 static or dhcp.
+echo "Network4Config  "${Network4Config} >> \$sysroot/root/alpine.config
+
+# Tod determine Windows dd package decompress method.
+echo "DEC_CMD  "${DEC_CMD} >> \$sysroot/root/alpine.config
 
 # To determine timezone.
 echo "TimeZone  "${TimeZone} >> \$sysroot/root/alpine.config
