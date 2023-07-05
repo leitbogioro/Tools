@@ -612,13 +612,13 @@ function diskType() {
 }
 
 # $1 is timezone checkfile direction, $2 $3 $4 are api keys.
-function getUserTimezone() {
+function getUserTimeZone() {
   if [[ ! "$TimeZone" =~ ^[a-zA-Z] ]]; then
     loginUser=`who am i | awk '{print $1}' | sed 's/(//g' | sed 's/)//g'`
     [[ -z "$loginUser" ]] && loginUser="root"
 # Alpine Linux doesn't support "who am i".
-    GuestIP=`netstat -anp | grep -i 'sshd: '$loginUser'' | grep -iw 'tcp' | awk '{print $5}' | head -n 1 | cut -d':' -f'1'`
-    [[ "$GuestIP" == "" ]] && GuestIP=`netstat -anpW | grep -i 'sshd: '$loginUser'' | grep -iw 'tcp6' | awk '{print $5}' | head -n 1 | awk -F':' '{for (i=1;i<=NF-1;i++)printf("%s:", $i);print ""}' | sed 's/.$//'`
+    GuestIP=`netstat -anpW | grep -i 'sshd: '$loginUser''@'' | grep -iw 'tcp' | awk '{print $5}' | head -n 1 | cut -d':' -f'1'`
+    [[ "$GuestIP" == "" ]] && GuestIP=`netstat -anpW | grep -i 'sshd: '$loginUser''@'' | grep -iw 'tcp6' | awk '{print $5}' | head -n 1 | awk -F':' '{for (i=1;i<=NF-1;i++)printf("%s:", $i);print ""}' | sed 's/.$//'`
     for Count in "$2" "$3" "$4"; do
       [[ "$TimeZone" == "Asia/Shanghai" ]] && break
       tmpApi=`echo -n "$Count" | base64 -d`
@@ -2046,7 +2046,7 @@ echo -ne "\n[${yellow}Server Stack${plain}]  $IPStackType\n"
 [[ "$ip6Addr" && "$IPStackType" != "IPv4Stack" ]] && echo -e "[${yellow}IPv6 Gateway${plain}]  ""$ip6Gate" || echo -e "[${yellow}IPv6 Gateway${plain}]  ""N/A"
 [[ "$ip6Addr" && "$IPStackType" != "IPv4Stack" ]] && echo -e "[${yellow}IPv6     DNS${plain}]  ""$ip6DNS" || echo -e "[${yellow}IPv6     DNS${plain}]  ""N/A"
 
-getUserTimezone "/root/timezonelists" "ZGEyMGNhYjhhMWM2NDJlMGE0YmZhMDVmMDZlNzBmN2E=" "ZTNlMjBiN2JjOTE2NGY2YjllNzUzYWU5ZDFjYjdjOTc=" "MWQ2NGViMGQ4ZmNlNGMzYTkxYjNiMTdmZDMxODQwZDc="
+getUserTimeZone "/root/timezonelists" "ZGEyMGNhYjhhMWM2NDJlMGE0YmZhMDVmMDZlNzBmN2E=" "ZTNlMjBiN2JjOTE2NGY2YjllNzUzYWU5ZDFjYjdjOTc=" "MWQ2NGViMGQ4ZmNlNGMzYTkxYjNiMTdmZDMxODQwZDc="
 [[ -z "$TimeZone" ]] && TimeZone="Asia/Tokyo"
 echo -ne "\n${aoiBlue}# User Timezone${plain}\n\n"
 echo "$TimeZone"
