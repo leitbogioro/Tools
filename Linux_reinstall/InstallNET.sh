@@ -420,13 +420,17 @@ function selectMirror() {
 }
 
 function getIPv4Address() {
-  # Differences from scope link, scope host and scope global of IPv4, reference: https://qiita.com/testnin2/items/7490ff01a4fe1c7ad61f
+# Differences from scope link, scope host and scope global of IPv4, reference: https://qiita.com/testnin2/items/7490ff01a4fe1c7ad61f
   iAddr=`ip -4 addr show | grep -wA 5 "$interface" | grep -wv "lo\|host" | grep -w "inet" | grep -w "scope global*\|link*" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
   [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && iAddr=`ip -4 addr show | grep -wA 5 "$interface4" | grep -wv "lo\|host" | grep -w "inet" | grep -w "scope global*\|link*" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
   ipAddr=`echo ${iAddr} | cut -d'/' -f1`
   ipPrefix=`echo ${iAddr} | cut -d'/' -f2`
-  ip4RouteScopeLink=`ip -4 route show scope link | grep -w "$interface4" | grep -w "$ipAddr" | grep -m1 -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | head -n 1`
   ipMask=`netmask "$ipPrefix"`
+# Get real IPv4 subnet of current System
+  ip4RouteScopeLink=`ip -4 route show scope link | grep -w "$interface4" | grep -w "$ipAddr" | grep -m1 -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | head -n 1`
+  actualIp4Prefix=`ip -4 route show scope link | grep -w "$interface4" | grep -w "$ip4RouteScopeLink" | head -n 1 | awk '{print $1}' | cut -d'/' -f2`
+  [[ -z "$actualIp4Prefix" ]] && actualIp4Prefix="$ipPrefix"
+  actualIp4Subnet=`netmask "$actualIp4Prefix"`
 # In most situation, at least 99.9% probability, the first hop of the network should be the same as the available gateway. 
 # But in 0.1%, they are actually different. 
 # Because one of the first hop of a tested machine is 5.45.72.1, I told Debian installer this router as a gateway 
@@ -509,22 +513,21 @@ function getIPv4Address() {
 # can't be included, so the reserve approach is to get the result of "ip -4 route show scope link"(89.163.208.0/24) to ensure the correct subnet and gateway,
 # then we can fix these weird settings from incorrect network router.
 # IPv4 network from Hetzner support dhcp even though it's configurated by static in "/etc/network/interfaces".
-    ip4RangeFirst=`ipv4Calc "$ipAddr" "$ipPrefix" | grep "FirstIP:" | awk '{print$2}' | cut -d'.' -f1`
-    ip4RangeLast=`ipv4Calc "$ipAddr" "$ipPrefix" | grep "LastIP:" | awk '{print$2}' | cut -d'.' -f1`
+    ip4RangeFirst=`ipv4Calc "$ipAddr" "$actualIp4Prefix" | grep "FirstIP:" | awk '{print$2}' | cut -d'.' -f1`
+    ip4RangeLast=`ipv4Calc "$ipAddr" "$actualIp4Prefix" | grep "LastIP:" | awk '{print$2}' | cut -d'.' -f1`
     ip4GateFirst=`echo $ipGate | cut -d'.' -f1`
     ip4GateSecond=`echo $ipGate | cut -d'.' -f2`
+# Common ranges of IPv4 intranet:
 # Reference: https://hczhang.cn/network/reserved-ip-addresses.html
     [[ "$ip4GateFirst" -gt "$ip4RangeLast" || "$ip4GateFirst" -lt "$ip4RangeFirst" ]] && {
       [[ "$ip4GateFirst" == "169" && "$ip4GateSecond" == "254" ]] || [[ "$ip4GateFirst" == "172" && "$ip4GateSecond" -ge "16" && "$ip4GateSecond" -le "31" ]] || [[ "$ip4GateFirst" == "10" && "$ip4GateSecond" -ge "0" && "$ip4GateSecond" -le "255" ]] || [[ "$ip4GateFirst" == "192" && "$ip4GateSecond" == "168" ]] || [[ "$ip4GateFirst" == "127" && "$ip4GateSecond" -ge "0" && "$ip4GateSecond" -le "255" ]] || [[ "$ip4GateFirst" == "198" && "$ip4GateSecond" -ge "18" && "$ip4GateSecond" -le "19" ]] || [[ "$ip4GateFirst" == "100" && "$ip4GateSecond" -ge "64" && "$ip4GateSecond" -le "127" ]] && {
-        ipPrefix=`ip -4 route show scope link | grep -w "$interface4" | grep -w "$ip4RouteScopeLink" | head -n 1 | awk '{print $1}' | cut -d'/' -f2`
-        ipMask=`netmask "$ipPrefix"`
-        ipGate=`ipv4Calc "$ip4RouteScopeLink" "$ipPrefix" | grep "FirstIP:" | awk '{print$2}'`
+        ipPrefix="$actualIp4Prefix"
+        ipMask="$actualIp4Subnet"
+# When IPv4 is public, IPv4 gateway is private, subnet prefix is 32, the result of "ip -4 route show scope link" is empty, the actual gateway maybe itself.
+        [[ -z "$ip4RouteScopeLink" ]] && ipGate=`ipv4Calc "$ipAddr" "$ipPrefix" | grep "FirstIP:" | awk '{print$2}'` || ipGate=`ipv4Calc "$ip4RouteScopeLink" "$ipPrefix" | grep "FirstIP:" | awk '{print$2}'`
       }
     }
   }
-  actualIp4Prefix=`ip -4 route show scope link | grep -w "$interface4" | grep -w "$ip4RouteScopeLink" | head -n 1 | awk '{print $1}' | cut -d'/' -f2`
-  [[ -z "$ipPrefix" ]] && actualIp4Prefix="$ipPrefix"
-  actualIp4Subnet=`netmask "$actualIp4Prefix"`
 }
 
 function netmask() {
@@ -977,6 +980,9 @@ function getIPv6Address() {
   [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && i6Addr=`ip -6 addr show | grep -wA 5 "$interface6" | grep -wv "lo\|host" | grep -wv "link" | grep -w "inet6" | grep "scope" | grep "global" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
   ip6Addr=`echo ${i6Addr} |cut -d'/' -f1`
   ip6Mask=`echo ${i6Addr} |cut -d'/' -f2`
+# Get real IPv6 subnet of current System
+  actualIp6Prefix=`ip -6 route show | grep -w "$interface6" | grep -v "default" | grep -v "multicast" | grep -P '../[0-9]{1,3}' | head -n 1 | awk '{print $1}' | cut -d'/' -f2`
+  [[ -z "$actualIp6Prefix" ]] && actualIp6Prefix="$ip6Mask"
   ip6Gate=`ip -6 route show default | grep -w "$interface" | grep -w "via" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
   [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && ip6Gate=`ip -6 route show default | grep -w "$interface6" | grep -w "via" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
 # IPv6 expansion algorithm code reference: https://blog.caoyu.info/expand-ipv6-by-shell.html
@@ -1046,8 +1052,6 @@ function getIPv6Address() {
     ipv6SubnetCalc "$ip6Mask"
 # So in summary of the IPv6 sample in above, we should assign subnet mask "ffff:ffff:ffff:ffff:ffff:ffff:0000:0000"(prefix is "96") for it.
   }
-  actualIp6Prefix=`ip -6 route show | grep -w "$interface6" | grep -v "default" | grep -v "multicast" | grep -P '../[0-9]{1,3}' | head -n 1 | awk '{print $1}' | cut -d'/' -f2`
-  [[ -z "$actualIp6Prefix" ]] && actualIp6Prefix="$ip6Mask"
 }
 
 # Examples:
