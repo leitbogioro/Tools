@@ -98,7 +98,7 @@ hostname -F /etc/hostname
 # Localization
 setup-keymap us us
 setup-timezone -i ${TimeZone}
-setup-ntp chrony
+setup-ntp chrony || true
 
 # In arm netboot initramfs init,
 # if rtc hardware is detected, add hwclock for system, otherwise add swclock,
