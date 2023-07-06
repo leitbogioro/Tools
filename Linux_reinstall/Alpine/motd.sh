@@ -2,6 +2,7 @@
 #
 
 # Vim config file "defaults.vim" can only be generated on the newly boot system, not in preseed process, so we need to revise it by motd.sh
+sed -ri 's/set mouse=a/set mouse-=a/g' /usr/share/vim/vim82/defaults.vim
 sed -ri 's/set mouse=a/set mouse-=a/g' /usr/share/vim/vim90/defaults.vim
 
 DISTRIB_DESCRIPTION=`cat /etc/os-release | grep -i "id=" | grep -vi "version\|like\|platform" | cut -d "=" -f2 | sed 's/\"//g' | tr 'A-Z' 'a-z' | sed 's/\b[a-z]/\u&/g'`
