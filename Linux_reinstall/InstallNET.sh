@@ -427,8 +427,8 @@ function getIPv4Address() {
   ipPrefix=`echo ${iAddr} | cut -d'/' -f2`
   ipMask=`netmask "$ipPrefix"`
 # Get real IPv4 subnet of current System
-  ip4RouteScopeLink=`ip -4 route show scope link | grep -iv "warp" | grep -w "$interface4" | grep -w "$ipAddr" | grep -m1 -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | head -n 1`
-  actualIp4Prefix=`ip -4 route show scope link | grep -iv "warp" | grep -w "$interface4" | grep -w "$ip4RouteScopeLink" | head -n 1 | awk '{print $1}' | cut -d'/' -f2`
+  ip4RouteScopeLink=`ip -4 route show scope link | grep -iv "warp\|wgcf\|wg[0-9]" | grep -w "$interface4" | grep -w "$ipAddr" | grep -m1 -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | head -n 1`
+  actualIp4Prefix=`ip -4 route show scope link | grep -iv "warp\|wgcf\|wg[0-9]" | grep -w "$interface4" | grep -w "$ip4RouteScopeLink" | head -n 1 | awk '{print $1}' | cut -d'/' -f2`
   [[ -z "$actualIp4Prefix" ]] && actualIp4Prefix="$ipPrefix"
   actualIp4Subnet=`netmask "$actualIp4Prefix"`
 # In most situation, at least 99.9% probability, the first hop of the network should be the same as the available gateway. 
@@ -437,13 +437,13 @@ function getIPv4Address() {
 # But installer said the correct gateway should be 5.45.76.1, in a typical network, for example, your home, 
 # the default gateway is the same as the first route hop of the machine, it may be 192.168.0.1.
 # If possible, we should configure out the real available gateway of the network.
-  FirstRoute=`ip -4 route show default | grep -iv "warp" | grep -w "via" | grep -w "dev $interface4*" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+  FirstRoute=`ip -4 route show default | grep -iv "warp\|wgcf\|wg[0-9]" | grep -w "via" | grep -w "dev $interface4*" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
 # We should find it in ARP, the first hop IP and gateway IP is managed by the same device, use device mac address to configure it out.
   RouterMac=`arp -n | grep "$FirstRoute" | awk '{print$3}'`
   FrFirst=`echo "$FirstRoute" | cut -d'.' -f 1,2`
   FrThird=`echo "$FirstRoute" | cut -d'.' -f 3`
 # Print all matched available gateway.
-  ipGates=`ip -4 route show | grep -iv "warp" | grep -v "via" | grep -w "dev $interface4*" | grep -w "proto*" | grep -w "scope global\|link src $ipAddr*" | awk '{print$1}'`
+  ipGates=`ip -4 route show | grep -iv "warp\|wgcf\|wg[0-9]" | grep -v "via" | grep -w "dev $interface4*" | grep -w "proto*" | grep -w "scope global\|link src $ipAddr*" | awk '{print$1}'`
 # Figure out the line of this list.
   ipGateLine=`echo "$ipGates" | wc -l`
 # The line determines the cycling times.
@@ -974,9 +974,25 @@ function checkIpv4OrIpv6() {
   [[ "$tmpSetIPv6" == "0" ]] && setIPv6="0" || setIPv6="1"
 }
 
-# Some "BiStack" types are accomplished by Warp which provided by CloudFlare, so we need to distinguish whether IPv4 or IPv6 stack in enabled by Warp.
+# Some "BiStack" types are accomplished by Warp which provided by CloudFlare, so we need to distinguish whether IPv4 or IPv6 stack is enabled by Warp then exclude it.
+# $1 is "warp*.conf", maybe "warp.conf" or "warp-profile.conf"; $2 is "wgcf*.conf", maybe "wgcf.conf" or "wgcf-profile.conf"; $3 is "wg[0-9]", maybe "wg0.conf" or etc.
+# $4/$5/$6 are "warp*/wgcf*/wg[0-9]", $7/$8 are "PrivateKey/PublicKey".
 function checkWarp() {
-  [[ -f "/etc/wireguard/warp.conf" || -f "/opt/warp-go/warp.conf" && "$IPStackType" == "BiStack" ]] && {
+  warpConfFiles=$(find / -maxdepth 6 -name "$1" -print -or -name "$2" -print -or -name "$3" -print)
+  sysctlWarpProcess=$(systemctl 2>&1 | grep -i "$4\|$5\|$6" | wc -l)
+  rcWarpProcess=$(rc-status 2>&1 | grep -i "$4\|$5\|$6" | wc -l)
+  [[ "$IPStackType" == "BiStack" ]] && {
+    [[ -n "$warpConfFiles" ]] && {
+      for warpConfFile in $(find / -maxdepth 6 -name "$1" -print -or -name "$2" -print -or -name "$3" -print); do
+        if [[ $(grep -ic "$7" "$warpConfFile") -ge "1" || $(grep -ic "$8" "$warpConfFile") -ge "1" ]]; then
+          warpStatic="1"
+          break
+        fi
+      done
+    }
+    [[ "$sysctlWarpProcess" -gt "0" || "$rcWarpProcess" -gt "0" ]] && warpStatic="1"
+  }  
+  [[ "$warpStatic" == "1" ]] && {
     [[ -z "$ipGate" ]] && IPStackType="IPv6Stack"
     [[ -z "$ip6Gate" ]] && IPStackType="IPv4Stack"
   }
@@ -989,9 +1005,9 @@ function getIPv6Address() {
   ip6Addr=`echo ${i6Addr} |cut -d'/' -f1`
   ip6Mask=`echo ${i6Addr} |cut -d'/' -f2`
 # Get real IPv6 subnet of current System
-  actualIp6Prefix=`ip -6 route show | grep -iv "warp" | grep -w "$interface6" | grep -v "default" | grep -v "multicast" | grep -P '../[0-9]{1,3}' | head -n 1 | awk '{print $1}' | cut -d'/' -f2`
+  actualIp6Prefix=`ip -6 route show | grep -iv "warp\|wgcf\|wg[0-9]" | grep -w "$interface6" | grep -v "default" | grep -v "multicast" | grep -P '../[0-9]{1,3}' | head -n 1 | awk '{print $1}' | cut -d'/' -f2`
   [[ -z "$actualIp6Prefix" ]] && actualIp6Prefix="$ip6Mask"
-  ip6Gate=`ip -6 route show default | grep -iv "warp" | grep -w "$interface" | grep -w "via" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+  ip6Gate=`ip -6 route show default | grep -iv "warp\|wgcf\|wg[0-9]" | grep -w "$interface" | grep -w "via" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
   [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && ip6Gate=`ip -6 route show default | grep -w "$interface6" | grep -w "via" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
 # IPv6 expansion algorithm code reference: https://blog.caoyu.info/expand-ipv6-by-shell.html
   ip6AddrWhole=`ultimateFormatOfIpv6 "$ip6Addr"`
@@ -1650,7 +1666,11 @@ function DebianModifiedPreseed() {
       ReviseMOTD="$1 sed -ri 's/Debian/Kali/g' /etc/update-motd.d/00-header;"
       SupportZSH="$1 apt install zsh -y; $1 chsh -s /bin/zsh; $1 rm -rf /root/.bashrc.original;"
     }
-    export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${VimIndentEolStart} ${DnsChangePermanently} ${ModifyMOTD} ${SupportIPv6orIPv4} ${ReplaceActualIpPrefix} ${EnableSSH} ${ReviseMOTD} ${SupportZSH}"
+# Fail2ban configurations.
+# Reference: https://github.com/fail2ban/fail2ban/issues/2756
+#            https://www.mail-archive.com/debian-bugs-dist@lists.debian.org/msg1879390.html
+    EnableFail2ban="$1 sed -i '/\[Definition\]/a allowipv6 = auto' /etc/fail2ban/fail2ban.conf; $1 sed -ri 's/backend.*/backend = systemd/g' /etc/fail2ban/jail.conf; $1 update-rc.d fail2ban enable; $1 /etc/init.d/fail2ban restart;"
+    export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${VimIndentEolStart} ${DnsChangePermanently} ${ModifyMOTD} ${SupportIPv6orIPv4} ${ReplaceActualIpPrefix} ${EnableSSH} ${ReviseMOTD} ${SupportZSH} ${EnableFail2ban}"
   fi
 }
 
@@ -2032,7 +2052,7 @@ if [[ "$setNet" == "0" ]]; then
   [[ "$IPStackType" != "IPv4Stack" ]] && getIPv6Address
 fi
 
-checkWarp
+checkWarp "warp*.conf" "wgcf*.conf" "wg[0-9].conf" "warp*" "wgcf*" "wg[0-9]" "privatekey" "publickey"
 
 IPv4="$ipAddr"; MASK="$ipMask"; GATE="$ipGate";
 if [[ -z "$IPv4" && -z "$MASK" && -z "$GATE" ]] && [[ -z "$ip6Addr" && -z "$ip6Mask" && -z "$ip6Gate" ]]; then
