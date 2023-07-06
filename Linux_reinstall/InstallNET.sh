@@ -2192,10 +2192,10 @@ if [[ -n "$tmpDIST" ]]; then
   if [[ "$Relese" == 'AlpineLinux' ]]; then
     SpikCheckDIST='0'
     DIST="$(echo "$tmpDIST" |sed -r 's/(.*)/\L\1/')"
-# Recommend "edge" version of Alpine Linux to make sure to keep updating always and 3.15 or former versions were deperated.
+# Recommend "edge" version of Alpine Linux to make sure to keep always updating.
     AlpineVer1=`echo "$DIST" | sed 's/[a-z][A-Z]*//g' | cut -d"." -f 1`
     AlpineVer2=`echo "$DIST" | sed 's/[a-z][A-Z]*//g' | cut -d"." -f 2`
-    if [[ "$AlpineVer1" -lt "3" || "$AlpineVer2" -le "17" ]] && [[ "$DIST" != "edge" ]]; then
+    if [[ "$AlpineVer1" -lt "3" || "$AlpineVer2" -le "15" ]] && [[ "$DIST" != "edge" ]]; then
       echo -ne "\n[${red}Warning${plain}] $Relese $DIST is not supported!\n"
       exit 1
     fi
@@ -2590,7 +2590,7 @@ for COMP in `echo -en 'gzip\nlzma\nxz'`
 [[ "$COMPTYPE" == 'lzma' ]] && UNCOMP='xz --format=lzma --decompress'
 [[ "$COMPTYPE" == 'xz' ]] && UNCOMP='xz --decompress'
 [[ "$COMPTYPE" == 'gzip' ]] && UNCOMP='gzip -d'
-$UNCOMP < /tmp/$NewIMG | cpio --extract --verbose --make-directories --no-absolute-filenames >>/dev/null 2>&1
+$UNCOMP < /tmp/$NewIMG | cpio --extract --make-directories --preserve-modification-time >>/dev/null 2>&1
 
 if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ "$linux_relese" == 'kali' ]]; then
   DebianPreseedProcess
