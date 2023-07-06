@@ -86,6 +86,10 @@ If you need to add other parameters, version number must be assigned!
 <br />
 <br />
 
+**-windows 10/11/2012/2016/2019/2022**: Windows 10 Enterprise LTSC, Windows 11 Pro for Workstation 22H2, Windows Server 2012 R2, Windows Server 2016, Windows Server 2019, Windows Server 2022. Supports IPv4 dhcp and static, expand current OS disk partition. Automatic steps must be executed after user logged in.
+<br />
+<br />
+
 **-mirror "a valid DIST mirror url"**: OS install files resource, you can select one which nearest for actual location of your server to upspeed installation.
 <br />
 <br />
