@@ -28,6 +28,7 @@ or:
 Alpine Linux:
 <pre><code>apk update</code></pre>
 <pre><code>apk add bash wget</code></pre>
+<pre><code>sed -i 's/root:\/bin\/ash/root:\/bin\/bash/g' /etc/passwd</code></pre>
 
 ## Quickly start
 If you need to add other parameters, version number must be assigned!
