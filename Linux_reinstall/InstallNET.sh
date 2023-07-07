@@ -48,6 +48,7 @@ export IncDisk=''
 export interface=''
 export interfaceSelect=''
 export setInterfaceName='0'
+export autoPlugAdapter='0'
 export IsCN=''
 export Relese=''
 export sshPORT=''
@@ -207,6 +208,10 @@ while [[ $# -ge 1 ]]; do
     --netdevice-unite)
       shift
       setInterfaceName='1'
+      ;;
+    --autoplugadapter)
+      shift
+      autoPlugAdapter='1'
       ;;
     --loader)
       shift
@@ -617,8 +622,8 @@ function getUserTimeZone() {
     loginUser=`who am i | awk '{print $1}' | sed 's/(//g' | sed 's/)//g'`
     [[ -z "$loginUser" ]] && loginUser="root"
 # Alpine Linux doesn't support "who am i".
-    GuestIP=`netstat -anpW | grep -i 'sshd: '$loginUser''@'' | grep -iw 'tcp' | awk '{print $5}' | head -n 1 | cut -d':' -f'1'`
-    [[ "$GuestIP" == "" ]] && GuestIP=`netstat -anpW | grep -i 'sshd: '$loginUser''@'' | grep -iw 'tcp6' | awk '{print $5}' | head -n 1 | awk -F':' '{for (i=1;i<=NF-1;i++)printf("%s:", $i);print ""}' | sed 's/.$//'`
+    GuestIP=`netstat -anpW | grep -i 'established' | grep -i 'sshd: '$loginUser'' | grep -iw 'tcp' | awk '{print $5}' | head -n 1 | cut -d':' -f'1'`
+    [[ "$GuestIP" == "" ]] && GuestIP=`netstat -anpW | grep -i 'established' | grep -i 'sshd: '$loginUser'' | grep -iw 'tcp6' | awk '{print $5}' | head -n 1 | awk -F':' '{for (i=1;i<=NF-1;i++)printf("%s:", $i);print ""}' | sed 's/.$//'`
     for Count in "$2" "$3" "$4"; do
       [[ "$TimeZone" == "Asia/Shanghai" ]] && break
       tmpApi=`echo -n "$Count" | base64 -d`
@@ -1616,6 +1621,12 @@ function DebianModifiedPreseed() {
 # Enable cursor edit backspace freely in insert mode.
 # Reference: https://wonderwall.hatenablog.com/entry/2016/03/23/232634
     VimIndentEolStart="$1 sed -i 's/set compatible/set nocompatible/g' /etc/vim/vimrc.tiny; $1 sed -i '/set nocompatible/a\set backspace=2' /etc/vim/vimrc.tiny;"
+# For multiple interfaces environment, if the interface which is configurated by "auto", regardless of it is plugged by internet cable, 
+# Debian/Kali will continuously try to wake and start up it contains with dhcp even timeout.
+# Set up with "allow-hotplug(default setting by Debian/Kali installer)" will skip this problem, but if one interface has more than 1 IP or it will connect to
+# another network bridge, when system restarted, the interfaces' initialization will be failed, in most of VPS environments, the interfaces of machine should be stable,
+# so replace the default from "allow-hotplug" to "auto" for interfaces config method is a better idea?
+    [[ "$autoPlugAdapter" == "1" ]] && AutoPlugInterfaces="$1 sed -ri \"s/allow-hotplug $interface4/auto $interface4/g\" /etc/network/interfaces; $1 sed -ri \"s/allow-hotplug $interface6/auto $interface6/g\" /etc/network/interfaces;" || AutoPlugInterfaces=""
 # If the network config type of server is DHCP and it have both public IPv4 and IPv6 address,
 # Debian install program even get nerwork config with DHCP, but after log into new system,
 # only the IPv4 of the server has been configurated.
@@ -1670,7 +1681,7 @@ function DebianModifiedPreseed() {
 # Reference: https://github.com/fail2ban/fail2ban/issues/2756
 #            https://www.mail-archive.com/debian-bugs-dist@lists.debian.org/msg1879390.html
     EnableFail2ban="$1 sed -i '/\[Definition\]/a allowipv6 = auto' /etc/fail2ban/fail2ban.conf; $1 sed -ri 's/backend.*/backend = systemd/g' /etc/fail2ban/jail.conf; $1 update-rc.d fail2ban enable; $1 /etc/init.d/fail2ban restart;"
-    export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${VimIndentEolStart} ${DnsChangePermanently} ${ModifyMOTD} ${SupportIPv6orIPv4} ${ReplaceActualIpPrefix} ${EnableSSH} ${ReviseMOTD} ${SupportZSH} ${EnableFail2ban}"
+    export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${VimIndentEolStart} ${DnsChangePermanently} ${ModifyMOTD} ${AutoPlugInterfaces} ${SupportIPv6orIPv4} ${ReplaceActualIpPrefix} ${EnableSSH} ${ReviseMOTD} ${SupportZSH} ${EnableFail2ban}"
   fi
 }
 
