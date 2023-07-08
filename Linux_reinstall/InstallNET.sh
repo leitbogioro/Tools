@@ -2454,10 +2454,6 @@ if [[ "$ddMode" == '1' ]]; then
   fi
 fi
 
-echo -ne "\n${aoiBlue}# Installation Starting${plain}\n"
-
-[[ "$ddMode" == '1' ]] && echo -ne "${blue}Auto Mode${plain} insatll [${yellow}$ReleaseName${plain}]\n$DDURL\n"
-
 if [ -z "$interfaceSelect" ]; then
   if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ "$linux_relese" == 'kali' ]]; then
     interfaceSelect="auto"
@@ -2468,10 +2464,26 @@ else
 # If the kernel of original system is loaded with parameter "net.ifnames=0 biosdevname=0" and users don't want to set this
 # one in new system, they have to assign a valid, real name of their network adapter and the parameter "$interface"
 # will be written to new network configuration in preseed file for new system.
-  interface="$interfaceSelect"
+  interface4=`echo "$interfaceSelect" | cut -d' ' -f 1`
+  interface6=`echo "$interfaceSelect" | cut -d' ' -f 2`
+  interface="$interface4"
+  [[ -z "$interface6" ]] && {
+    interface=`echo "$interfaceSelect" | sed 's/[[:space:]]//g'`
+    interface6="$interface"
+  }
 fi
 # The first network adapter name is must be "eth0" if kernel is loaded with parameter "net.ifnames=0 biosdevname=0". 
-[[ "$setInterfaceName" == "1" ]] && interface="eth0"
+[[ "$setInterfaceName" == "1" ]] && {
+  interface="eth0"
+  [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && {
+    interface4="eth0"
+    interface6="eth1"
+  }
+}
+
+echo -ne "\n${aoiBlue}# Installation Starting${plain}\n"
+
+[[ "$ddMode" == '1' ]] && echo -ne "${blue}Auto Mode${plain} insatll [${yellow}$ReleaseName${plain}]\n$DDURL\n"
 
 if [[ "$linux_relese" == 'centos' ]]; then
   if [[ "$DIST" != "$UNVER" ]]; then
