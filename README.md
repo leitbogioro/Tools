@@ -221,6 +221,8 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 
 **--autoplugadapter**: Only valid for Debian/Kali, when add this, the valid interface config method in /etc/network/interfaces will be replaced from "allow-hotplug" to "auto". For multiple interfaces environment, if the interface which is configurated by "auto", regardless of it is plugged by internet cable, Debian/Kali will continuously try to wake and start up it contains with dhcp even timeout. Set up with "allow-hotplug(default setting by Debian/Kali installer)" will skip this problem, but if one interface has more than 1 IP or it will connect to another network bridge, when system restarted, the interfaces' initialization will be failed, in most of VPS environments, the interfaces of machine should be stable, so replace the default from "allow-hotplug" to "auto" for interfaces config method is a better idea, but it causes some server spending a long time to boot up(try to activate all internet adapters and waiting dhcp fatal time).
+<br />
+<br />
 
 **-netbootxyz**: Use netbootXYZ(https://netboot.xyz/) to install netbootXYZ supported OS manually, must have VNC, only for x86_64 and AMD64 with BIOS firmware(UEFI is not supported!)
 <br />
