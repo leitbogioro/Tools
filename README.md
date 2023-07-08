@@ -184,7 +184,7 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**--ip-mask "IPv4 subnet musk"**: It must be added with --ip-addr and --ip-gate together, in this situation, --network "static/manual" is automatically assigned.
+**--ip-mask "IPv4 subnet musk"**: It must be added with --ip-addr and --ip-gate together, in this situation, --network "static/manual" is automatically assigned, can only accept prefix number transmit. IPv4 CIDR Calculator: https://www.vultr.com/resources/subnet-calculator/
 <br />
 <br />
 
@@ -200,7 +200,7 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**--ip6-mask "IPv6 subnet musk"**: It must be added with --ip6-addr and --ip6-gate together, in this situation, --network "static/manual" is automatically assigned.
+**--ip6-mask "IPv6 subnet musk"**: It must be added with --ip6-addr and --ip6-gate together, in this situation, --network "static/manual" is automatically assigned, can only accept prefix number transmit. IPv6 CIDR Calculator: https://en.rakko.tools/tools/27/
 <br />
 <br />
 
@@ -219,6 +219,8 @@ For Ubuntu, official recommend mirror lists are here:
 **--netdevice-unite**: This function has an opposite effect of --adapter "real interface name", it will add "net.ifnames=0 biosdevname=0" to the kernel to redirect all different network adapters' interface name to united "eth0", this one don't need to assign any value, I suggest you that before input it and start OS installation, you should backup the real name of the network adapter carefully!
 <br />
 <br />
+
+**--autoplugadapter**: Only valid for Debian/Kali, when add this, the valid interface config method in /etc/network/interfaces will be replaced from "allow-hotplug" to "auto". For multiple interfaces environment, if the interface which is configurated by "auto", regardless of it is plugged by internet cable, Debian/Kali will continuously try to wake and start up it contains with dhcp even timeout. Set up with "allow-hotplug(default setting by Debian/Kali installer)" will skip this problem, but if one interface has more than 1 IP or it will connect to another network bridge, when system restarted, the interfaces' initialization will be failed, in most of VPS environments, the interfaces of machine should be stable, so replace the default from "allow-hotplug" to "auto" for interfaces config method is a better idea, but it causes some server spending a long time to boot up(try to activate all internet adapters and waiting dhcp fatal time).
 
 **-netbootxyz**: Use netbootXYZ(https://netboot.xyz/) to install netbootXYZ supported OS manually, must have VNC, only for x86_64 and AMD64 with BIOS firmware(UEFI is not supported!)
 <br />
