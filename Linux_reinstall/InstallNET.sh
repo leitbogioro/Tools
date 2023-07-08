@@ -1461,6 +1461,32 @@ function getInterface() {
   fi
 }
 
+# $1 is "$ipMask", $2 is "$ip6Mask". Can only accept prefix number transmit.
+function acceptIPv4AndIPv6SubnetValue() {
+  [[ -n "$1" ]] && {
+    if [[ `echo "$1" | grep '^[[:digit:]]*$'` && "$1" -ge "1" && "$1" -le "32" ]]; then
+      ipPrefix="$1"
+      actualIp4Prefix="$ipPrefix"
+      ipMask=`netmask "$1"`
+      actualIp4Subnet="$1"
+    else
+      echo -ne "\n[${red}Warning${plain}] Only accept prefix format of IPv4 address, length from 1 to 32."
+      echo -ne "\nIPv4 CIDR Calculator: https://www.vultr.com/resources/subnet-calculator/\n"
+      exit 1
+    fi
+  }
+  [[ -n "$2" ]] && {
+    if [[ `echo "$2" | grep '^[[:digit:]]*$'` && "$2" -ge "1" && "$2" -le "128" ]]; then
+      actualIp6Prefix="$2"
+      ipv6SubnetCalc "$2"
+    else
+      echo -ne "\n[${red}Warning${plain}] Only accept prefix format of IPv6 address, length from 1 to 128."
+      echo -ne "\nIPv6 CIDR Calculator: https://en.rakko.tools/tools/27/\n"
+      exit 1
+    fi
+  }
+}
+
 # To confuse whether ipv4 is dhcp or static and whether ipv6 is dhcp or static in Redhat like os in version 9 and later,
 # $1 is $NetCfgDir, $2 is $NetCfgFile, $3 is "ipv4" or "ipv6", $4 is "method="
 function checkIpv4OrIpv6ConfigForRedhat9Later() {
@@ -2041,17 +2067,20 @@ if [[ -n "$ipAddr" && -n "$ipMask" && -n "$ipGate" ]] && [[ -z "$ip6Addr" && -z 
   setNet='1'
   checkDHCP "$CurrentOS" "$CurrentOSVer" "$IPStackType"
   [[ -n "$interface" ]] || interface=`getInterface "$CurrentOS"`
+  acceptIPv4AndIPv6SubnetValue "$ipMask" ""
   Network4Config="isStatic"
   [[ "$IPStackType" != "IPv4Stack" ]] && getIPv6Address
 elif [[ -n "$ipAddr" && -n "$ipMask" && -n "$ipGate" ]] && [[ -n "$ip6Addr" && -n "$ip6Mask" && -n "$ip6Gate" ]]; then
   setNet='1'
   [[ -n "$interface" ]] || interface=`getInterface "$CurrentOS"`
+  acceptIPv4AndIPv6SubnetValue "$ipMask" "$ip6Mask"
   Network4Config="isStatic"
   Network6Config="isStatic"
 elif [[ -z "$ipAddr" && -z "$ipMask" && -z "$ipGate" ]] && [[ -n "$ip6Addr" && -n "$ip6Mask" && -n "$ip6Gate" ]]; then
   setNet='1'
   checkDHCP "$CurrentOS" "$CurrentOSVer" "$IPStackType"
   [[ -n "$interface" ]] || interface=`getInterface "$CurrentOS"`
+  acceptIPv4AndIPv6SubnetValue "" "$ip6Mask"
   Network6Config="isStatic"
   getIPv4Address
 fi
