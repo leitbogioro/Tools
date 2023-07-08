@@ -1468,7 +1468,7 @@ function acceptIPv4AndIPv6SubnetValue() {
       ipPrefix="$1"
       actualIp4Prefix="$ipPrefix"
       ipMask=`netmask "$1"`
-      actualIp4Subnet="$1"
+      actualIp4Subnet=`netmask "$1"`
     else
       echo -ne "\n[${red}Warning${plain}] Only accept prefix format of IPv4 address, length from 1 to 32."
       echo -ne "\nIPv4 CIDR Calculator: https://www.vultr.com/resources/subnet-calculator/\n"
