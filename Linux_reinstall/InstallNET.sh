@@ -432,8 +432,8 @@ function getIPv4Address() {
   ipPrefix=`echo ${iAddr} | cut -d'/' -f2`
   ipMask=`netmask "$ipPrefix"`
 # Get real IPv4 subnet of current System
-  ip4RouteScopeLink=`ip -4 route show scope link | grep -iv "warp\|wgcf\|wg[0-9]" | grep -w "$interface4" | grep -w "$ipAddr" | grep -m1 -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | head -n 1`
-  actualIp4Prefix=`ip -4 route show scope link | grep -iv "warp\|wgcf\|wg[0-9]" | grep -w "$interface4" | grep -w "$ip4RouteScopeLink" | head -n 1 | awk '{print $1}' | cut -d'/' -f2`
+  ip4RouteScopeLink=`ip -4 route show scope link | grep -iv "warp\|wgcf\|wg[0-9]" | grep -w "$interface4" | grep -w "$1" | grep -m1 -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | head -n 1`
+  actualIp4Prefix=`ip -4 route show scope link | grep -iv "warp\|wgcf\|wg[0-9]" | grep -w "$interface4" | grep -w "$ip4RouteScopeLink" | head -n 1 | awk '{print $1}' | awk -F '/' '{print $2}'`
   [[ -z "$actualIp4Prefix" ]] && actualIp4Prefix="$ipPrefix"
   actualIp4Subnet=`netmask "$actualIp4Prefix"`
 # In most situation, at least 99.9% probability, the first hop of the network should be the same as the available gateway. 
@@ -480,7 +480,12 @@ function getIPv4Address() {
   done
 # If there is no one of other gateway in this current network, use if access the public internet, the first hop route of this machine as the gateway.
   [[ "$ipGates" == "" || "$ipGate" == "" ]] && ipGate="$FirstRoute"
- 
+  transferIPv4AddressFormat "$ipAddr" "$ipGate"
+}
+
+# $1 is "$ipAddr", $2 is "$ipGate".
+function transferIPv4AddressFormat() {
+  [[ "$Network4Config" == "isStatic" ]] && {
 # Some cloud providers like Godaddy, Arkecx, Hetzner(include DHCP) etc, the subnet mask of IPv4 static network configuration of their original template OS is incorrect.
 # The following is the sample:
 #
@@ -499,8 +504,7 @@ function getIPv4Address() {
 # If this mistake has not be repaired, Debian installer will return error "untouchable gateway".
 # DHCP IPv4 network(even IPv4 netmask is "32") may not be effected by this situation.
 # The following consulted calculations are calculated by Vultr IPv4 subnet calculator, reference: https://www.vultr.com/resources/subnet-calculator/
-  [[ "$Network4Config" == "isStatic" ]] && {
-    ipv4SubnetCertificate "$ipAddr" "$ipGate"
+    ipv4SubnetCertificate "$1" "$2"
     ipPrefix="$tmpIpMask"
     ipMask=`netmask "$tmpIpMask"`
 # Some servers' provided by Hetzner are so confused because the IPv4 configurations of them are static but they are not fitted with standard, here is a sample:
@@ -518,10 +522,10 @@ function getIPv4Address() {
 # can't be included, so the reserve approach is to get the result of "ip -4 route show scope link"(89.163.208.0/24) to ensure the correct subnet and gateway,
 # then we can fix these weird settings from incorrect network router.
 # IPv4 network from Hetzner support dhcp even though it's configurated by static in "/etc/network/interfaces".
-    ip4RangeFirst=`ipv4Calc "$ipAddr" "$actualIp4Prefix" | grep "FirstIP:" | awk '{print$2}' | cut -d'.' -f1`
-    ip4RangeLast=`ipv4Calc "$ipAddr" "$actualIp4Prefix" | grep "LastIP:" | awk '{print$2}' | cut -d'.' -f1`
-    ip4GateFirst=`echo $ipGate | cut -d'.' -f1`
-    ip4GateSecond=`echo $ipGate | cut -d'.' -f2`
+    ip4RangeFirst=`ipv4Calc "$1" "$actualIp4Prefix" | grep "FirstIP:" | awk '{print$2}' | cut -d'.' -f1`
+    ip4RangeLast=`ipv4Calc "$1" "$actualIp4Prefix" | grep "LastIP:" | awk '{print$2}' | cut -d'.' -f1`
+    ip4GateFirst=`echo $2 | cut -d'.' -f1`
+    ip4GateSecond=`echo $2 | cut -d'.' -f2`
 # Common ranges of IPv4 intranet:
 # Reference: https://hczhang.cn/network/reserved-ip-addresses.html
     [[ "$ip4GateFirst" -gt "$ip4RangeLast" || "$ip4GateFirst" -lt "$ip4RangeFirst" ]] && {
@@ -529,7 +533,7 @@ function getIPv4Address() {
         ipPrefix="$actualIp4Prefix"
         ipMask="$actualIp4Subnet"
 # When IPv4 is public, IPv4 gateway is private, subnet prefix is 32, the result of "ip -4 route show scope link" is empty, the actual gateway maybe itself.
-        [[ -z "$ip4RouteScopeLink" ]] && ipGate=`ipv4Calc "$ipAddr" "$ipPrefix" | grep "FirstIP:" | awk '{print$2}'` || ipGate=`ipv4Calc "$ip4RouteScopeLink" "$ipPrefix" | grep "FirstIP:" | awk '{print$2}'`
+        [[ -z "$ip4RouteScopeLink" ]] && ipGate=`ipv4Calc "$1" "$ipPrefix" | grep "FirstIP:" | awk '{print$2}'` || ipGate=`ipv4Calc "$ip4RouteScopeLink" "$ipPrefix" | grep "FirstIP:" | awk '{print$2}'`
       }
     }
   }
@@ -917,7 +921,39 @@ function checkIpv4OrIpv6() {
     [[ "$IPv6PingDNS" != "" ]] && break
   done
 
-  [[ -n "$1" ]] && IP_Check="$1" || IP_Check="$IPv4DNSLookup"
+# Use ping -4/-6 to replace dig -4/-6 because some IPv4 network will callback IPv6 address from DNS even if we use "dig -4" to get DNS result.
+  [[ -z "$1" && -z "$2" ]] && {
+    [[ "$IPv4PingDNS" =~ ^[0-9] && "$IPv6PingDNS" =~ ^[0-9] ]] && IPStackType="BiStack"
+    [[ "$IPv4PingDNS" =~ ^[0-9] && ! "$IPv6PingDNS" =~ ^[0-9] ]] && IPStackType="IPv4Stack"
+    [[ ! "$IPv4PingDNS" =~ ^[0-9] && "$IPv6PingDNS" =~ ^[0-9] ]] && IPStackType="IPv6Stack"
+  }
+  [[ -n "$1" || -n "$2" ]] && {
+    if [[ -n "$1" && -z "$2" ]]; then
+      for ipCheck in "$1" "$ipGate"; do
+        verifyIPv4FormatLawfulness "$ipCheck"
+      done
+    elif [[ -n "$1" && -n "$2" ]]; then
+      for ipCheck in "$1" "$ipGate"; do
+        verifyIPv4FormatLawfulness "$ipCheck"
+      done
+      for ipCheck in "$2" "$ip6Gate"; do
+        verifyIPv6FormatLawfulness "$ipCheck"
+      done
+    elif [[ -z "$1" && -n "$2" ]]; then
+      for ipCheck in "$2" "$ip6Gate"; do
+        verifyIPv6FormatLawfulness "$ipCheck"
+      done
+    fi
+    [[ "$IP_Check" == "isIPv4" && "$IP6_Check" == "isIPv6" ]] && IPStackType="BiStack"
+    [[ "$IP_Check" == "isIPv4" && "$IP6_Check" != "isIPv6" ]] && IPStackType="IPv4Stack"
+    [[ "$IP_Check" != "isIPv4" && "$IP6_Check" == "isIPv6" ]] && IPStackType="IPv6Stack"
+  }
+  # [[ "$IPStackType" == "IPv4Stack" ]] && setIPv6="0" || setIPv6="1"
+  [[ "$tmpSetIPv6" == "0" ]] && setIPv6="0" || setIPv6="1"
+}
+
+function verifyIPv4FormatLawfulness() {
+  [[ -n "$1" ]] && IP_Check="$1"
   if expr "$IP_Check" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; then
     for i in 1 2 3 4; do
       if [ $(echo "$IP_Check" | cut -d. -f$i) -gt 255 ]; then
@@ -927,12 +963,18 @@ function checkIpv4OrIpv6() {
     done
     IP_Check="isIPv4"
   fi
+  [[ "$IP_Check" != "isIPv4" ]] && {
+    echo -ne "\n[${red}Error${plain}] Invalid inputted IPv4 format!\n"
+    exit 1
+  }
+}
 
-  [[ -n "$2" ]] && IPv6_Check="$2" || IPv6_Check="$IPv6DNSLookup"
+function verifyIPv6FormatLawfulness() {
+  [[ -n "$1" ]] && IPv6_Check="$1"
 # If the last two strings of IPv6 is "::", we should replace ":" to "0" for the last string to make sure it's a valid IPv6(can't end with ":").
-  [[ ${IPv6DNSLookup: -1} == ":" ]] && IPv6_Check=$(echo "$IPv6DNSLookup" | sed 's/.$/0/')
+  [[ "${IPv6_Check: -1}" == ":" ]] && IPv6_Check=$(echo "$IPv6_Check" | sed 's/.$/0/')
 # If the first two strings of IPv6 is "::", we should replace ":" to "0" for the first string to make sure it's a valid IPv6(can't start with ":").
-  [[ ${IPv6DNSLookup:0:1} == ":" ]] && IPv6_Check=$(echo "$IPv6DNSLookup" | sed 's/^./0/')
+  [[ "${IPv6_Check:0:1}" == ":" ]] && IPv6_Check=$(echo "$IPv6_Check" | sed 's/^./0/')
 # Add ":" in the last of the IPv6 address for cut all items infront of the ":" by split by symbol ":".
   IP6_Check_Temp="$IPv6_Check"":"
 # Total numbers of the hex blocks in IPv6 address includes with empty value(abbreviation of "0000").
@@ -944,39 +986,29 @@ function checkIpv4OrIpv6() {
 # 2. the longest number of ":" in IPv6 is "7", because of variable "IP6_Check_Temp" one more ":" has been add,
 # so the total number of ":" in variable "IP6_Check_Temp" should be less or equal "8".
   if [[ `echo "$IPv6_Check" | grep -i '[[:xdigit:]]' | grep ':'` ]] && [[ "$IP6_Hex_Num" -le "8" ]]; then
+# IPv6 address doesn't allow two "::" existed, the number of ":" should not above 7.
+# If number of ":" is less than 6, at least one "::" is required.
+# IPv6 can't end with "hex_number:"
+    [[ `echo "$1" | grep -o ":::" | wc -l` -gt "0" ]] || [[ `echo "$1" | grep -o "::" | wc -l` -gt "1" || `echo "$1" | grep -o ":" | wc -l` -gt "7" ]] || [[ "$IP6_Hex_Num" -le "7" && `echo "$1" | grep -o "::" | wc -l` -lt "1" ]] || [[ "${1: -2}" != "::" && "${1: -1}" == ":" ]] && { echo -ne "\n[${red}Error${plain}] Invalid inputted IPv6 format!\n"; exit 1; }
 # Total cycles of the check(sequence of the current hex block).
-    for ((i=1; i<="$IP6_Hex_Num"; i++)){
+    for ((i=1; i<="$IP6_Hex_Num"; i++)); do
 # Every IPv6 hex block of current cycle.
       IP6_Hex=$(echo "$IP6_Check_Temp" | cut -d: -f$i)
 # Count "::" abbreviations for this IPv6.
       [[ "$IP6_Hex" == "" ]] && IP6_Hex_Abbr=`expr $IP6_Hex_Abbr + 1`
 # String number of letters or numbers in one block should less or equal "4".
-      [[ `echo "$IP6_Hex" | wc -c` -le "4" ]] && {
+      if [[ `echo "$IP6_Hex" | wc -m` -le "5" ]]; then
 # The second filter plays a reversion role of the following to exclude an effective IPv6 hex block:
 # 1. Except 0-9 and a-f;
 # 2. Abbreviation of hex block should be appeared less than or equal one time in principle.
-        if [[ `echo "$IP6_Hex" | grep -iE '[^0-9a-f]'` ]] || [[ "$IP6_Hex_Abbr" -gt "1" ]]; then
-          echo "fail ($IP6_Check_Temp)"
-          exit 1
-        fi
-      }
-    }
+        [[ `echo "$IP6_Hex" | grep -iE '[^0-9a-f]'` || "$IP6_Hex_Abbr" -gt "1" ]] && { echo -ne "\n[${red}Error${plain}] Invalid inputted IPv6 format!\n"; exit 1; }
+      else
+        echo -ne "\n[${red}Error${plain}] Invalid inputted IPv6 format!\n"; exit 1;
+      fi
+    done
     IP6_Check="isIPv6"
   fi
-
-# Use ping -4/-6 to replace dig -4/-6 because some IPv4 network will callback IPv6 address from DNS even if we use "dig -4" to get DNS result.
-  [[ -z "$ipAddr" && -z "$ip6Addr" ]] && {
-    [[ "$IPv4PingDNS" =~ ^[0-9] && "$IPv6PingDNS" =~ ^[0-9] ]] && IPStackType="BiStack"
-    [[ "$IPv4PingDNS" =~ ^[0-9] && ! "$IPv6PingDNS" =~ ^[0-9] ]] && IPStackType="IPv4Stack"
-    [[ ! "$IPv4PingDNS" =~ ^[0-9] && "$IPv6PingDNS" =~ ^[0-9] ]] && IPStackType="IPv6Stack"
-  }
-  [[ -n "$ipAddr" || -n "$ip6Addr" ]] && {
-    [[ "$IP_Check" == "isIPv4" && "$IP6_Check" == "isIPv6" ]] && IPStackType="BiStack"
-    [[ "$IP_Check" == "isIPv4" && "$IP6_Check" != "isIPv6" ]] && IPStackType="IPv4Stack"
-    [[ "$IP_Check" != "isIPv4" && "$IP6_Check" == "isIPv6" ]] && IPStackType="IPv6Stack"
-  }
-  # [[ "$IPStackType" == "IPv4Stack" ]] && setIPv6="0" || setIPv6="1"
-  [[ "$tmpSetIPv6" == "0" ]] && setIPv6="0" || setIPv6="1"
+  [[ "$IP6_Check" != "isIPv6" ]] && { echo -ne "\n[${red}Error${plain}] Invalid inputted IPv6 format!\n"; exit 1; }
 }
 
 # Some "BiStack" types are accomplished by Warp which provided by CloudFlare, so we need to distinguish whether IPv4 or IPv6 stack is enabled by Warp then exclude it.
@@ -1000,86 +1032,6 @@ function checkWarp() {
   [[ "$warpStatic" == "1" ]] && {
     [[ -z "$ipGate" ]] && IPStackType="IPv6Stack"
     [[ -z "$ip6Gate" ]] && IPStackType="IPv4Stack"
-  }
-}
-
-function getIPv6Address() {
-# Differences from scope link, scope host and scope global of IPv6, reference: https://qiita.com/_dakc_/items/4eefa443306860bdcfde
-  i6Addr=`ip -6 addr show | grep -wA 5 "$interface" | grep -wv "lo\|host" | grep -wv "link" | grep -w "inet6" | grep "scope" | grep "global" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
-  [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && i6Addr=`ip -6 addr show | grep -wA 5 "$interface6" | grep -wv "lo\|host" | grep -wv "link" | grep -w "inet6" | grep "scope" | grep "global" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
-  ip6Addr=`echo ${i6Addr} |cut -d'/' -f1`
-  ip6Mask=`echo ${i6Addr} |cut -d'/' -f2`
-# Get real IPv6 subnet of current System
-  actualIp6Prefix=`ip -6 route show | grep -iv "warp\|wgcf\|wg[0-9]" | grep -w "$interface6" | grep -v "default" | grep -v "multicast" | grep -P '../[0-9]{1,3}' | head -n 1 | awk '{print $1}' | cut -d'/' -f2`
-  [[ -z "$actualIp6Prefix" ]] && actualIp6Prefix="$ip6Mask"
-  ip6Gate=`ip -6 route show default | grep -iv "warp\|wgcf\|wg[0-9]" | grep -w "$interface" | grep -w "via" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
-  [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && ip6Gate=`ip -6 route show default | grep -w "$interface6" | grep -w "via" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
-# IPv6 expansion algorithm code reference: https://blog.caoyu.info/expand-ipv6-by-shell.html
-  ip6AddrWhole=`ultimateFormatOfIpv6 "$ip6Addr"`
-  ip6GateWhole=`ultimateFormatOfIpv6 "$ip6Gate"`
-# In some original template OS of cloud provider like Akile.io etc,
-# if prefix of IPv6 mask is 128 in static network configuration, it means there is only one IPv6(current server itself) in the network.
-# The following is the sample:
-#
-# auto eth0
-#   iface eth0 inet6 static
-#     address 2603:c020:8:a19b::ffff:e6da
-#     gateway 2603:c020:8:a19b::ffff
-#     netmask 128
-#     dns-nameservers 2001:4860:4860::8888
-#
-# In this condition, if IPv6 gateway has a different address with IPv6 address, the Debian installer couldn't find the correct gateway.
-# The installation will fail in the end. The reason is mostly the upstream wrongly configurated the current network of this system.
-# So we try to revise this value for 8 levels to expand the range of the IPv6 network and help installer to find the correct gateway.
-# DHCP IPv6 network(even IPv6 netmask is "128") may not be effected by this situation.
-# The result of function ' ipv6SubnetCalc "$ip6Mask" ' is "$ip6Subnet"
-# The following consulted calculations are calculated by Vultr IPv6 subnet calculator and IPv6 subnet range calculator which is provided by iP Jisuanqi.
-# Reference: https://www.vultr.com/resources/subnet-calculator-ipv6/
-#            https://ipjisuanqi.com/ipv6.html
-  [[ "$Network6Config" == "isStatic" ]] && {
-    tmpIp6AddrFirst=`echo $ip6AddrWhole | sed 's/\(.\{4\}\).*/\1/' | sed 's/[a-z]/\u&/g'`
-    tmpIp6GateFirst=`echo $ip6GateWhole | sed 's/\(.\{4\}\).*/\1/' | sed 's/[a-z]/\u&/g'`
-    if [[ "$tmpIp6AddrFirst" != "$tmpIp6GateFirst" ]]; then
-# If some brave guys set --network "static" by force, IPv6 address, mask and gateway of IPv6 DHCP configurations like Oracle Cloud etc. are:
-# a public IPv6 address, a "128" mask, a local IPv6 gateway(starts with "fe80" mostly, like "fe80::200:f1e9:dec3:4ab").
-# The value of mask must be set as "128", not "1" which determined by first condition of above because the local IPv6 address is unique in its' network
-# and plays the role of IPv6 network discovery and identical authentication to ensure that authenticated device is certificated by upstream. 
-# Explanation of using local IPv6 address as gateway quoted from Scott Hogg:
-#
-# Link-local IPv6 addresses are on every interface of every IPv6-enabled host and router. They are essential for LAN-based Neighbor Discovery communication.
-# After the host has gone through the Duplicate Address Detection (DAD) process ensuring that its link-local address (and associated IID) is unique on the LAN segment,
-# it then proceeds to sending an ICMPv6 Router Solicitation (RS) message sourced from that address.
-#
-# There are total three IPv6 address ranges divided into local address: fe80::/10, fec0::/10, fc00::/7.
-# "fe80::/10" is similar with "169.254.0.0/16" of IPv4 of February, 2006 according to RFC 4291, ranges from fe80:0000:0000:0000:0000:0000:0000:0000 to febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff.
-# "fec0::/10" is similar with "192.168.0.0/16" of IPv4 which was deprecated and returned to public IPv6 address again of September, 2004 according to RFC 3879.
-# The function of "fec0::/10" was replaced by "fc00::/7" of October, 2005 according to RFC 4193, ranges from fc00:0000:0000:0000:0000:0000:0000:0000 to fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff.
-# So we need to calculate ranges of "fe80::/10" and "fc00::/7", if IPv6 address is public and IPv6 gateway belongs to local IPv6 address.
-# English strings in hexadecimal must be converted as capital alphabets that comparison operations can be processed by shell.
-# Reference: https://blogs.infoblox.com/ipv6-coe/fe80-1-is-a-perfectly-valid-ipv6-default-gateway-address/ chapter: Link-Local Address as Default Gateway
-#            https://www.wdic.org/w/WDIC/IPv6%E3%82%A2%E3%83%89%E3%83%AC%E3%82%B9 chapter: アドレスの種類(Types of address) → エニキャストアドレス(Anycast address)
-#            https://www.wdic.org/w/WDIC/IPv6%E3%82%A2%E3%83%89%E3%83%AC%E3%82%B9 chapter: サイトローカルアドレス(Site local address)
-#            https://www.wdic.org/w/WDIC/%E3%83%A6%E3%83%8B%E3%83%BC%E3%82%AF%E3%83%AD%E3%83%BC%E3%82%AB%E3%83%AB%E3%83%A6%E3%83%8B%E3%82%AD%E3%83%A3%E3%82%B9%E3%83%88%E3%82%A2%E3%83%89%E3%83%AC%E3%82%B9
-#            https://www.ipentec.com/document/network-format-ipv6-local-adddress chapter: IPv6のリンクローカルアドレス(Link local address of IPv6)
-#            https://www.rfc-editor.org/rfc/rfc4291.html#section-2.4 chapter: 2.4. Address Type Identification
-      if [[ "$((16#$tmpIp6GateFirst))" -ge "$((16#FE80))" && "$((16#$tmpIp6GateFirst))" -le "$((16#FEBF))" ]] || [[ "$((16#$tmpIp6GateFirst))" -ge "$((16#FC00))" && "$((16#$tmpIp6GateFirst))" -le "$((16#FDFF))" ]]; then
-        tmpIp6Mask="64"
-      else
-# If the IPv6 and IPv6 gateway are not in the same IPv6 A class, the prefix of netmask should be "1",
-# transfer to whole IPv6 subnet address is 8000:0000:0000:0000:0000:0000:0000:0000.
-# The range of 2603:c020:8:a19b::ffff:e6da/1 is 0000:0000:0000:0000:0000:0000:0000:0000 - 7fff:ffff:ffff:ffff:ffff:ffff:ffff:ffff, the gateway 2603:c020:0008:a19b:0000:0000:0000:ffff can be included.
-        tmpIp6Mask="1"
-      fi
-    else
-      ipv6SubnetCertificate "$ip6AddrWhole" "$ip6GateWhole"
-    fi
-    ip6Mask="$tmpIp6Mask"
-# Because of function "ipv6SubnetCalc" includes self-increment,
-# so we need to confirm the goal of IPv6 prefix and make function to operate only one time in the last to save performance and avoid all
-# gears of IPv6 prefix which meets well with the conditions of above are transformed to whole IPv6 addresses in one variable.
-# The same thought of moving function "netmask" to the last, only need to transform IPv4 prefix to whole IPv4 address for one time.
-    ipv6SubnetCalc "$ip6Mask"
-# So in summary of the IPv6 sample in above, we should assign subnet mask "ffff:ffff:ffff:ffff:ffff:ffff:0000:0000"(prefix is "96") for it.
   }
 }
 
@@ -1129,6 +1081,91 @@ function ultimateFormatOfIpv6() {
   done
 # Return all elements of array of "$ipv6Hex" which is filled with 4 digits in every hexadecimal block and use colon to stitch with hexes instead of space to achieve the recovery of an abbreviated IPv6 address.
   echo ${ipv6Hex[@]} | sed 's/ /\:/g'
+}
+
+function getIPv6Address() {
+# Differences from scope link, scope host and scope global of IPv6, reference: https://qiita.com/_dakc_/items/4eefa443306860bdcfde
+  i6Addr=`ip -6 addr show | grep -wA 5 "$interface" | grep -wv "lo\|host" | grep -wv "link" | grep -w "inet6" | grep "scope" | grep "global" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+  [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && i6Addr=`ip -6 addr show | grep -wA 5 "$interface6" | grep -wv "lo\|host" | grep -wv "link" | grep -w "inet6" | grep "scope" | grep "global" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+  ip6Addr=`echo ${i6Addr} |cut -d'/' -f1`
+  ip6Mask=`echo ${i6Addr} |cut -d'/' -f2`
+  ip6Gate=`ip -6 route show default | grep -iv "warp\|wgcf\|wg[0-9]" | grep -w "$interface" | grep -w "via" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+  [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && ip6Gate=`ip -6 route show default | grep -w "$interface6" | grep -w "via" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+# Get real IPv6 subnet of current System
+  actualIp6Prefix=`ip -6 route show | grep -iv "warp\|wgcf\|wg[0-9]" | grep -w "$interface6" | grep -v "default" | grep -v "multicast" | grep -P '../[0-9]{1,3}' | head -n 1 | awk '{print $1}' | awk -F '/' '{print $2}'`
+  [[ -z "$actualIp6Prefix" ]] && actualIp6Prefix="$ip6Mask"
+  transferIPv6AddressFormat "$ip6Addr" "$ip6Gate"
+}
+
+# $1 is "$ip6Addr", $2 is "$ip6Gate".
+function transferIPv6AddressFormat() {
+# In some original template OS of cloud provider like Akile.io etc,
+# if prefix of IPv6 mask is 128 in static network configuration, it means there is only one IPv6(current server itself) in the network.
+# The following is the sample:
+#
+# auto eth0
+#   iface eth0 inet6 static
+#     address 2603:c020:8:a19b::ffff:e6da
+#     gateway 2603:c020:8:a19b::ffff
+#     netmask 128
+#     dns-nameservers 2001:4860:4860::8888
+#
+# In this condition, if IPv6 gateway has a different address with IPv6 address, the Debian installer couldn't find the correct gateway.
+# The installation will fail in the end. The reason is mostly the upstream wrongly configurated the current network of this system.
+# So we try to revise this value for 8 levels to expand the range of the IPv6 network and help installer to find the correct gateway.
+# DHCP IPv6 network(even IPv6 netmask is "128") may not be effected by this situation.
+# The result of function ' ipv6SubnetCalc "$ip6Mask" ' is "$ip6Subnet"
+# The following consulted calculations are calculated by Vultr IPv6 subnet calculator and IPv6 subnet range calculator which is provided by iP Jisuanqi.
+# Reference: https://www.vultr.com/resources/subnet-calculator-ipv6/
+#            https://ipjisuanqi.com/ipv6.html
+  [[ "$Network6Config" == "isStatic" ]] && {
+# IPv6 expansion algorithm code reference: https://blog.caoyu.info/expand-ipv6-by-shell.html
+    ip6AddrWhole=`ultimateFormatOfIpv6 "$1"`
+    ip6GateWhole=`ultimateFormatOfIpv6 "$2"`
+    tmpIp6AddrFirst=`echo $ip6AddrWhole | sed 's/\(.\{4\}\).*/\1/' | sed 's/[a-z]/\u&/g'`
+    tmpIp6GateFirst=`echo $ip6GateWhole | sed 's/\(.\{4\}\).*/\1/' | sed 's/[a-z]/\u&/g'`
+    if [[ "$tmpIp6AddrFirst" != "$tmpIp6GateFirst" ]]; then
+# If some brave guys set --network "static" by force, IPv6 address, mask and gateway of IPv6 DHCP configurations like Oracle Cloud etc. are:
+# a public IPv6 address, a "128" mask, a local IPv6 gateway(starts with "fe80" mostly, like "fe80::200:f1e9:dec3:4ab").
+# The value of mask must be set as "128", not "1" which determined by first condition of above because the local IPv6 address is unique in its' network
+# and plays the role of IPv6 network discovery and identical authentication to ensure that authenticated device is certificated by upstream. 
+# Explanation of using local IPv6 address as gateway quoted from Scott Hogg:
+#
+# Link-local IPv6 addresses are on every interface of every IPv6-enabled host and router. They are essential for LAN-based Neighbor Discovery communication.
+# After the host has gone through the Duplicate Address Detection (DAD) process ensuring that its link-local address (and associated IID) is unique on the LAN segment,
+# it then proceeds to sending an ICMPv6 Router Solicitation (RS) message sourced from that address.
+#
+# There are total three IPv6 address ranges divided into local address: fe80::/10, fec0::/10, fc00::/7.
+# "fe80::/10" is similar with "169.254.0.0/16" of IPv4 of February, 2006 according to RFC 4291, ranges from fe80:0000:0000:0000:0000:0000:0000:0000 to febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff.
+# "fec0::/10" is similar with "192.168.0.0/16" of IPv4 which was deprecated and returned to public IPv6 address again of September, 2004 according to RFC 3879.
+# The function of "fec0::/10" was replaced by "fc00::/7" of October, 2005 according to RFC 4193, ranges from fc00:0000:0000:0000:0000:0000:0000:0000 to fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff.
+# So we need to calculate ranges of "fe80::/10" and "fc00::/7", if IPv6 address is public and IPv6 gateway belongs to local IPv6 address.
+# English strings in hexadecimal must be converted as capital alphabets that comparison operations can be processed by shell.
+# Reference: https://blogs.infoblox.com/ipv6-coe/fe80-1-is-a-perfectly-valid-ipv6-default-gateway-address/ chapter: Link-Local Address as Default Gateway
+#            https://www.wdic.org/w/WDIC/IPv6%E3%82%A2%E3%83%89%E3%83%AC%E3%82%B9 chapter: アドレスの種類(Types of address) → エニキャストアドレス(Anycast address)
+#            https://www.wdic.org/w/WDIC/IPv6%E3%82%A2%E3%83%89%E3%83%AC%E3%82%B9 chapter: サイトローカルアドレス(Site local address)
+#            https://www.wdic.org/w/WDIC/%E3%83%A6%E3%83%8B%E3%83%BC%E3%82%AF%E3%83%AD%E3%83%BC%E3%82%AB%E3%83%AB%E3%83%A6%E3%83%8B%E3%82%AD%E3%83%A3%E3%82%B9%E3%83%88%E3%82%A2%E3%83%89%E3%83%AC%E3%82%B9
+#            https://www.ipentec.com/document/network-format-ipv6-local-adddress chapter: IPv6のリンクローカルアドレス(Link local address of IPv6)
+#            https://www.rfc-editor.org/rfc/rfc4291.html#section-2.4 chapter: 2.4. Address Type Identification
+      if [[ "$((16#$tmpIp6GateFirst))" -ge "$((16#FE80))" && "$((16#$tmpIp6GateFirst))" -le "$((16#FEBF))" ]] || [[ "$((16#$tmpIp6GateFirst))" -ge "$((16#FC00))" && "$((16#$tmpIp6GateFirst))" -le "$((16#FDFF))" ]]; then
+        tmpIp6Mask="64"
+      else
+# If the IPv6 and IPv6 gateway are not in the same IPv6 A class, the prefix of netmask should be "1",
+# transfer to whole IPv6 subnet address is 8000:0000:0000:0000:0000:0000:0000:0000.
+# The range of 2603:c020:8:a19b::ffff:e6da/1 is 0000:0000:0000:0000:0000:0000:0000:0000 - 7fff:ffff:ffff:ffff:ffff:ffff:ffff:ffff, the gateway 2603:c020:0008:a19b:0000:0000:0000:ffff can be included.
+        tmpIp6Mask="1"
+      fi
+    else
+      ipv6SubnetCertificate "$ip6AddrWhole" "$ip6GateWhole"
+    fi
+    ip6Mask="$tmpIp6Mask"
+# Because of function "ipv6SubnetCalc" includes self-increment,
+# so we need to confirm the goal of IPv6 prefix and make function to operate only one time in the last to save performance and avoid all
+# gears of IPv6 prefix which meets well with the conditions of above are transformed to whole IPv6 addresses in one variable.
+# The same thought of moving function "netmask" to the last, only need to transform IPv4 prefix to whole IPv4 address for one time.
+    ipv6SubnetCalc "$ip6Mask"
+# So in summary of the IPv6 sample in above, we should assign subnet mask "ffff:ffff:ffff:ffff:ffff:ffff:0000:0000"(prefix is "96") for it.
+  }
 }
 
 # $1 is "$ip6AddrWhole", $2 is "$$ip6GateWhole".
@@ -2059,35 +2096,28 @@ ip6DNS2=$(echo $ip6DNS | cut -d ' ' -f 2)
 ipDNS=$(checkDNS "$ipDNS")
 ip6DNS=$(checkDNS "$ip6DNS")
 
-if [ -z "$interface" ]; then
-  [ -n "$interface" ] || interface=`getInterface "$CurrentOS"`
-fi
-
 if [[ -n "$ipAddr" && -n "$ipMask" && -n "$ipGate" ]] && [[ -z "$ip6Addr" && -z "$ip6Mask" && -z "$ip6Gate" ]]; then
   setNet='1'
   checkDHCP "$CurrentOS" "$CurrentOSVer" "$IPStackType"
-  [[ -n "$interface" ]] || interface=`getInterface "$CurrentOS"`
-  acceptIPv4AndIPv6SubnetValue "$ipMask" ""
   Network4Config="isStatic"
+  acceptIPv4AndIPv6SubnetValue "$ipMask" ""
   [[ "$IPStackType" != "IPv4Stack" ]] && getIPv6Address
 elif [[ -n "$ipAddr" && -n "$ipMask" && -n "$ipGate" ]] && [[ -n "$ip6Addr" && -n "$ip6Mask" && -n "$ip6Gate" ]]; then
   setNet='1'
-  [[ -n "$interface" ]] || interface=`getInterface "$CurrentOS"`
-  acceptIPv4AndIPv6SubnetValue "$ipMask" "$ip6Mask"
+  [[ -z "$interfaceSelect" ]] && getInterface "$CurrentOS"
   Network4Config="isStatic"
   Network6Config="isStatic"
+  acceptIPv4AndIPv6SubnetValue "$ipMask" "$ip6Mask"
 elif [[ -z "$ipAddr" && -z "$ipMask" && -z "$ipGate" ]] && [[ -n "$ip6Addr" && -n "$ip6Mask" && -n "$ip6Gate" ]]; then
   setNet='1'
   checkDHCP "$CurrentOS" "$CurrentOSVer" "$IPStackType"
-  [[ -n "$interface" ]] || interface=`getInterface "$CurrentOS"`
-  acceptIPv4AndIPv6SubnetValue "" "$ip6Mask"
   Network6Config="isStatic"
+  acceptIPv4AndIPv6SubnetValue "" "$ip6Mask"
   getIPv4Address
 fi
 
 if [[ "$setNet" == "0" ]]; then
   checkDHCP "$CurrentOS" "$CurrentOSVer" "$IPStackType"
-  [[ -n "$interface" ]] || interface=`getInterface "$CurrentOS"`
   getIPv4Address
   [[ "$IPStackType" != "IPv4Stack" ]] && getIPv6Address
 fi
@@ -2102,8 +2132,8 @@ if [[ -z "$IPv4" && -z "$MASK" && -z "$GATE" ]] && [[ -z "$ip6Addr" && -z "$ip6M
 fi
 
 echo -ne "\n${aoiBlue}# Network Details${plain}\n"
-echo -ne "\n[${yellow}Adapter Name${plain}]  $interface"
-echo -ne "\n[${yellow}Network File${plain}]  $NetCfgWhole"
+[[ -n "$interfaceSelect" ]] && echo -ne "\n[${yellow}Adapter Name${plain}]  $interfaceSelect" || echo -ne "\n[${yellow}Adapter Name${plain}]  $interface"
+[[ -n "$NetCfgWhole" ]] && echo -ne "\n[${yellow}Network File${plain}]  $NetCfgWhole" || echo -ne "\n[${yellow}Network File${plain}]  N/A"
 echo -ne "\n[${yellow}Server Stack${plain}]  $IPStackType\n"
 [[ "$IPStackType" != "IPv6Stack" ]] && echo -ne "\n[${yellow}IPv4  Method${plain}]  $Network4Config\n" || echo -ne "\n[${yellow}IPv4  Method${plain}]  N/A\n"
 [[ "$IPv4" && "$IPStackType" != "IPv6Stack" ]] && echo -e "[${yellow}IPv4 Address${plain}]  ""$IPv4" || echo -e "[${yellow}IPv4 Address${plain}]  ""N/A"
