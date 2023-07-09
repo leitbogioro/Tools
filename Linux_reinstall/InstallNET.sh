@@ -432,7 +432,7 @@ function getIPv4Address() {
   ipPrefix=`echo ${iAddr} | cut -d'/' -f2`
   ipMask=`netmask "$ipPrefix"`
 # Get real IPv4 subnet of current System
-  ip4RouteScopeLink=`ip -4 route show scope link | grep -iv "warp\|wgcf\|wg[0-9]" | grep -w "$interface4" | grep -w "$1" | grep -m1 -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | head -n 1`
+  ip4RouteScopeLink=`ip -4 route show scope link | grep -iv "warp\|wgcf\|wg[0-9]" | grep -w "$interface4" | grep -w "$ipAddr" | grep -m1 -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | head -n 1`
   actualIp4Prefix=`ip -4 route show scope link | grep -iv "warp\|wgcf\|wg[0-9]" | grep -w "$interface4" | grep -w "$ip4RouteScopeLink" | head -n 1 | awk '{print $1}' | awk -F '/' '{print $2}'`
   [[ -z "$actualIp4Prefix" ]] && actualIp4Prefix="$ipPrefix"
   actualIp4Subnet=`netmask "$actualIp4Prefix"`
