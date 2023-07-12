@@ -1807,13 +1807,12 @@ function DebianPreseedProcess() {
         AllDisksPart1=`echo "$AllDisksPart1" | sed 's/.$//'`
         AllDisksPart2=`echo "$AllDisksPart2" | sed 's/.$//'`
         AllDisksPart3=`echo "$AllDisksPart3" | sed 's/.$//'`
-# Raid recipe should include GPT table partition by force for not only UEFI but also BIOS servers to ensure any drive that above 4TB size can be taken advantage of all spaces.
+# Remove existed raid md devices without confirming; select raid recipe and all disks; don't assign swap; when one device on raid 1 is offline, the system still can be booted.
+# Reference: https://wiki.ubuntu.com/BootDegradedRaid
         RaidRecipes=`echo -e "d-i partman-md/confirm boolean true
 d-i partman-md/confirm_nooverwrite boolean true
 d-i partman-md/confirm_nochanges boolean false
 d-i partman-basicfilesystems/no_swap boolean false
-d-i partman-partitioning/choose_label select gpt
-d-i partman-partitioning/default_label string gpt
 d-i partman-auto/method string raid
 d-i partman-auto/disk string $AllDisks
 d-i mdadm/boot_degraded boolean true"`
@@ -1828,19 +1827,22 @@ d-i mdadm/boot_degraded boolean true"`
 d-i partman-auto-raid/recipe string                  \
     1        $disksNum 0 ext4 /boot $AllDisksPart2 . \
     $setRaid $disksNum 0 ext4 /     $AllDisksPart3 .
-d-i partman-auto/expert_recipe string multiraid ::                                                               \
-    538 100 1075 free \\$bootable{ } \\$primary{ } method{ efi } \\$iflabel{ gpt } \\$reusemethod{ } format{ } . \
-    269 150 538  raid                \\$primary{ } method{ raid } .                                              \
-    100 200 -1   raid                \\$primary{ } method{ raid } .
-d-i partman-efi/non_efi_system boolean true"`
+d-i partman-auto/expert_recipe string multiraid ::                                                                \
+    1075 100 2150 free \\$bootable{ } \\$primary{ } method{ efi } \\$iflabel{ gpt } \\$reusemethod{ } format{ } . \
+    269  150 538  raid                \\$primary{ } method{ raid } .                                              \
+    100  200 -1   raid                \\$primary{ } method{ raid } .
+d-i partman-efi/non_efi_system boolean true
+d-i partman-partitioning/choose_label select gpt
+d-i partman-partitioning/default_label string gpt"`
         else
+# GPT table partition should not be included in BIOS Raid recipes so that it will cause Debian installer "Unable to install GRUB in /dev/sda" by installing grub.
           FormatDisk=`echo -e "$RaidRecipes
 d-i partman-auto-raid/recipe string                  \
     1        $disksNum 0 ext4 /boot $AllDisksPart1 . \
     $setRaid $disksNum 0 ext4 /     $AllDisksPart2 .
-d-i partman-auto/expert_recipe string multiraid ::                  \
-    538 100 1075 raid \\$bootable{ } \\$primary{ } method{ raid } . \
-    100 200 -1   raid                \\$primary{ } method{ raid } .
+d-i partman-auto/expert_recipe string multiraid ::                   \
+    1075 100 2150 raid \\$bootable{ } \\$primary{ } method{ raid } . \
+    100  200 -1   raid                \\$primary{ } method{ raid } .
 "`
         fi
       else
@@ -1855,6 +1857,7 @@ d-i partman-auto/expert_recipe string multiraid ::                  \
 #            https://gist.github.com/bearice/331a954d86d890d9dbeacdd7de3aabe8
 #            https://lala.im/7911.html
 #            https://github.com/office-itou/Linux/blob/master/installer/source/preseed_debian.cfg
+#            https://qiita.com/YasuhiroABE/items/ff233459035d8187263d
 #
 # Prefer to use IPv4 to config networking.
     if [[ "$IPStackType" == "IPv4Stack" ]] || [[ "$IPStackType" == "BiStack" ]]; then
@@ -1958,8 +1961,8 @@ d-i partman/choose_partition select finish
 d-i partman/confirm boolean true
 d-i partman/confirm_nooverwrite boolean true
 d-i partman/default_filesystem string xfs
-d-i partman-md/device_remove_md boolean true
 d-i partman/mount_style select uuid
+d-i partman-md/device_remove_md boolean true
 ${FormatDisk}
 
 ### Package selection
