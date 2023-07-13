@@ -411,7 +411,7 @@ function selectMirror() {
   if [[ "$IsCN" == "cn" ]]; then
     MirrorBackup=(["debian0"]="" ["debian1"]="http://mirror.nju.edu.cn/debian" ["debian2"]="http://mirrors.hit.edu.cn/debian" ["debian3"]="https://mirrors.aliyun.com/debian-archive/debian" ["ubuntu0"]="" ["ubuntu1"]="https://mirrors.ustc.edu.cn/ubuntu" ["ubuntu2"]="http://mirrors.xjtu.edu.cn/ubuntu" ["kali0"]="" ["kali1"]="https://mirrors.tuna.tsinghua.edu.cn/kali" ["kali2"]="http://mirrors.zju.edu.cn/kali" ["alpinelinux0"]="" ["alpinelinux1"]="http://mirror.nju.edu.cn/alpine" ["alpinelinux2"]="http://mirrors.tuna.tsinghua.edu.cn/alpine" ["centos0"]="" ["centos1"]="https://mirrors.ustc.edu.cn/centos-stream" ["centos2"]="https://mirrors.tuna.tsinghua.edu.cn/centos" ["centos3"]="http://mirror.nju.edu.cn/centos-altarch" ["centos4"]="https://mirrors.tuna.tsinghua.edu.cn/centos-vault" ["fedora0"]="" ["fedora1"]="https://mirrors.tuna.tsinghua.edu.cn/fedora" ["fedora2"]="https://mirrors.bfsu.edu.cn/fedora" ["rockylinux0"]="" ["rockylinux1"]="http://mirror.nju.edu.cn/rocky" ["rockylinux2"]="http://mirrors.sdu.edu.cn/rocky" ["almalinux0"]="" ["almalinux1"]="https://mirror.sjtu.edu.cn/almalinux" ["almalinux2"]="http://mirrors.neusoft.edu.cn/almalinux")
   else
-    MirrorBackup=(["debian0"]="" ["debian1"]="http://deb.debian.org/debian" ["debian2"]="http://ftp.yz.yamagata-u.ac.jp/pub/linux/debian" ["debian3"]="http://archive.debian.org/debian" ["ubuntu0"]="" ["ubuntu1"]="http://archive.ubuntu.com/ubuntu" ["ubuntu2"]="http://ports.ubuntu.com" ["kali0"]="" ["kali1"]="https://mirrors.ocf.berkeley.edu/kali" ["kali2"]="http://ftp.jaist.ac.jp/pub/Linux/kali" ["alpinelinux0"]="" ["alpinelinux1"]="http://dl-cdn.alpinelinux.org/alpine" ["alpinelinux2"]="http://ftp.udx.icscoe.jp/Linux/alpine" ["centos0"]="" ["centos1"]="http://mirror.centos.org/centos" ["centos2"]="http://mirror.stream.centos.org" ["centos3"]="http://mirror.centos.org/altarch" ["centos4"]="http://vault.centos.org" ["fedora0"]="" ["fedora1"]="https://download-ib01.fedoraproject.org/pub/fedora/linux" ["fedora2"]="https://download-cc-rdu01.fedoraproject.org/pub/fedora/linux" ["rockylinux0"]="" ["rockylinux1"]="http://download.rockylinux.org/pub/rocky" ["rockylinux2"]="http://ftp.udx.icscoe.jp/Linux/rocky" ["almalinux0"]="" ["almalinux1"]="http://repo.almalinux.org/almalinux" ["almalinux2"]="http://ftp.iij.ad.jp/pub/linux/almalinux")
+    MirrorBackup=(["debian0"]="" ["debian1"]="http://deb.debian.org/debian" ["debian2"]="http://ftp.yz.yamagata-u.ac.jp/pub/linux/debian" ["debian3"]="http://archive.debian.org/debian" ["ubuntu0"]="" ["ubuntu1"]="http://archive.ubuntu.com/ubuntu" ["ubuntu2"]="http://ports.ubuntu.com" ["kali0"]="" ["kali1"]="https://mirrors.ocf.berkeley.edu/kali" ["kali2"]="http://ftp.jaist.ac.jp/pub/Linux/kali" ["alpinelinux0"]="" ["alpinelinux1"]="http://dl-cdn.alpinelinux.org/alpine" ["alpinelinux2"]="http://ftp.udx.icscoe.jp/Linux/alpine" ["centos0"]="" ["centos1"]="http://mirror.centos.org/centos" ["centos2"]="http://mirror.stream.centos.org" ["centos3"]="http://mirror.centos.org/altarch" ["centos4"]="http://vault.centos.org" ["fedora0"]="" ["fedora1"]="http://mirror.fcix.net/fedora/linux" ["fedora2"]="http://mirrors.rit.edu/fedora/fedora/linux" ["rockylinux0"]="" ["rockylinux1"]="http://download.rockylinux.org/pub/rocky" ["rockylinux2"]="http://ftp.udx.icscoe.jp/Linux/rocky" ["almalinux0"]="" ["almalinux1"]="http://repo.almalinux.org/almalinux" ["almalinux2"]="http://ftp.iij.ad.jp/pub/linux/almalinux")
   fi
   echo "$New" | grep -q '^http://\|^https://\|^ftp://' && MirrorBackup[${Relese}0]="${New%*/}"
   for mirror in $(echo "${!MirrorBackup[@]}" |sed 's/\ /\n/g' |sort -n |grep "^$Relese"); do
@@ -614,10 +614,163 @@ function getDisk() {
   done
 # All numbers of disks' statistic of this server.
   disksNum=$(echo $AllDisks | grep -o "/dev/*" | wc -l)
+  [[ "$disksNum" -ge "2" ]] && AllDisks=$(echo "$AllDisks" | sed 's/.$//')
 }
 
 function diskType() {
   echo `udevadm info --query all "$1" 2>/dev/null |grep 'ID_PART_TABLE_TYPE' |cut -d'=' -f2`
+}
+
+# $1 is "$setRaid", $2 is "$disksNum", $3 is "$AllDisks", $4 is "$linux_relese".
+function setRaidRecipe() {
+  [[ -n "$1" ]] && {
+# Soft Raid 0, 1, 5, 6 and 10 methods are supported by Debian, only one disk can't be as a component for any Raid method. 
+# Raid 0 needs at least two disks, all space of the disks will be exploited, and it's the most dangerous for the safety of the data.
+# Raid 1 needs at least two disks, the space can be exploited is always equal one disk, it's safest for the date but a bit wasteful.
+# Raid 5 needs at least three disks, it storages data on two disks and storages parity checking data on one disk, it's not save on any single disk over 4TB.
+# Raid 6 needs at least four disks, it's an enhanced version of Raid 5, it uses two parity stripes by practicing of dividing data across the set of drives, 
+# it allows for two disk failures within the RAID set before any data is lost.
+# Raid 10 needs at least four disks, it's a combination of Raid 0 and Raid 1, the disk 0 and disk 1 as a set of Raid 0, the same as disk 2 and disk 3,
+# and then the sets of disk 0,1 and disk 2,3 are composed as one Raid 1.
+# These Raid recipes are also applicable to Kali, fuck Canonical again! you deperated the compatibility of "preseed.cfg" installation procession from Ubuntu 22.04 and later.
+    if [[ "$1" == "0" || "$1" == "1" || "$1" == "5" || "$1" == "6" || "$1" == "10" ]]; then
+      [[ "$1" == "0" || "$1" == "1" ]] && [[ "$2" -lt "2" ]] && {
+        echo -ne "\n[${red}Error${plain}] There are $2 drives on your machine, Raid $1 partition recipe only supports a basic set of dual drive or more!\n"
+        exit 1
+      }
+      [[ "$1" == "5" ]] && [[ "$2" -lt "3" ]] && {
+        echo -ne "\n[${red}Error${plain}] There are $2 drives on your machine, Raid $1 partition recipe only supports a basic set of triple drive or more!\n"
+        exit 1
+      }
+      [[ "$1" == "6" || "$1" == "10" ]] && [[ "$2" -lt "4" ]] && {
+        echo -ne "\n[${red}Error${plain}] There are $2 drives on your machine, Raid $1 partition recipe only supports a basic set of quad drive or more!\n"
+        exit 1
+      }
+    else
+      echo -ne "\n[${red}Error${plain}] Raid $1 partition recipe is not suitable, only Raid 0, 1, 5, 6 or 10 is supported!\n"
+      exit 1
+    fi
+    if [[ "$4" == 'debian' ]] || [[ "$4" == 'kali' ]]; then
+      for (( r=1;r<="$2";r++ )); do
+        tmpAllDisksPart=`echo "$3" | cut -d ' ' -f"$r"`
+# Some NVME controller hard drives like "/dev/nvme0n1" etc are end of a number in there names must add "p" with partition numbers for "d-i partman-auto-raid/recipe string",
+# SCSI controller or Virtual controller drives like "/dev/sda" or "/dev/vda" are not effected by this situation.
+# Drives and their partitions must be connected with "#" like "/dev/nvme0n1p2#/dev/nvme0n2p2".
+        echo "${tmpAllDisksPart: -1}" | [[ -n "`sed -n '/^[0-9][0-9]*$/p'`" ]] && tmpAllDisksPart="$tmpAllDisksPart""p" || tmpAllDisksPart="$tmpAllDisksPart"
+        AllDisksPart1+="$tmpAllDisksPart""1#"
+        AllDisksPart2+="$tmpAllDisksPart""2#"
+        AllDisksPart3+="$tmpAllDisksPart""3#"
+      done
+      AllDisksPart1=`echo "$AllDisksPart1" | sed 's/.$//'`
+      AllDisksPart2=`echo "$AllDisksPart2" | sed 's/.$//'`
+      AllDisksPart3=`echo "$AllDisksPart3" | sed 's/.$//'`
+# Remove existed raid md devices without confirming; select raid recipe and all disks; don't assign swap; when one device on raid 1 is offline, the system still can be booted.
+# Reference: https://wiki.ubuntu.com/BootDegradedRaid
+      RaidRecipes=`echo -e "d-i partman-md/confirm boolean true
+d-i partman-md/confirm_nooverwrite boolean true
+d-i partman-md/confirm_nochanges boolean false
+d-i partman-basicfilesystems/no_swap boolean false
+d-i partman-auto/method string raid
+d-i partman-auto/disk string $3
+d-i mdadm/boot_degraded boolean true"`
+# In environment of UEFI firmware motherboard computers, it's not suggested to creat any Raid recipe for "/boot/efi" partition,
+# in any virtual machine which created by VMware Workstation Pro, version up to the current 17.0.2(2023/6), host OS is Windows 10 Enterprise x64,
+# we must assign an additional Raid 1 recipe for "/boot" partition to prevent the case of following to happen：
+# otherwise except of the first reboot of the Debian 12 installed soon, the next time hard reboot the system, it will failed into "GNU GRUB version 2.0x"
+# and we must type "exit" to fallback to "Boot Manager", select and enter the default opinion of "Boot normally" and then find that Debian can be booted by grub.
+# This is a particularly fatal for those servers which has no permission to access VNC in website back-end management and impossible to manipulate UEFI boot manager to boot the system normally.
+      if [[ "$EfiSupport" == "enabled" ]]; then
+        FormatDisk=`echo -e "$RaidRecipes
+d-i partman-auto-raid/recipe string     \
+    1  $2 0 ext4 /boot $AllDisksPart2 . \
+    $1 $2 0 ext4 /     $AllDisksPart3 .
+d-i partman-auto/expert_recipe string multiraid ::                                                                \
+    1075 100 2150 free \\$bootable{ } \\$primary{ } method{ efi } \\$iflabel{ gpt } \\$reusemethod{ } format{ } . \
+    269  150 538  raid                \\$primary{ } method{ raid } .                                              \
+    100  200 -1   raid                \\$primary{ } method{ raid } .
+d-i partman-efi/non_efi_system boolean true
+d-i partman-partitioning/choose_label select gpt
+d-i partman-partitioning/default_label string gpt"`
+      else
+# GPT table partition should not be included in BIOS Raid recipes so that it will cause Debian installer "Unable to install GRUB in /dev/sda" by installing grub.
+        FormatDisk=`echo -e "$RaidRecipes
+d-i partman-auto-raid/recipe string     \
+    1  $2 0 ext4 /boot $AllDisksPart1 . \
+    $1 $2 0 ext4 /     $AllDisksPart2 .
+d-i partman-auto/expert_recipe string multiraid ::                   \
+    1075 100 2150 raid \\$bootable{ } \\$primary{ } method{ raid } . \
+    100  200 -1   raid                \\$primary{ } method{ raid } .
+"`
+      fi
+# Reference: https://github.com/airium/Linux-Reinstall/blob/master/install-raid0.sh
+#            https://www.debian.org/releases/bookworm/example-preseed.txt
+#            https://www.cnblogs.com/zhangshan-log/articles/14542166.html
+#            https://gist.github.com/jnerius/6573343
+#            https://gist.github.com/bearice/331a954d86d890d9dbeacdd7de3aabe8
+#            https://lala.im/7911.html
+#            https://github.com/office-itou/Linux/blob/master/installer/source/preseed_debian.cfg
+#            https://qiita.com/YasuhiroABE/items/ff233459035d8187263d
+#
+    elif [[ "$4" == 'centos' ]] || [[ "$4" == 'rockylinux' ]] || [[ "$4" == 'almalinux' ]] || [[ "$4" == 'fedora' ]]; then
+      ksAllDisks=$(echo "$3" | sed 's/\/dev\///g')
+      ksRaidVolumes=()
+      ksRaidConfigs=""
+      ksRaidRecipes=""
+      if [[ "$EfiSupport" == "enabled" ]]; then
+        for (( partitionIndex=0; partitionIndex<="2"; partitionIndex++ )); do
+          disksIndex="1"
+          for currentDisk in $ksAllDisks; do
+            tmpKsRaidVolumes="raid."$partitionIndex""$disksIndex""
+            if [[ "$partitionIndex" == "0" ]]; then
+              tmpKsRaidConfigs="part "$tmpKsRaidVolumes" --size="512" --ondisk="$currentDisk""
+            elif [[ "$partitionIndex" == "1" ]]; then
+              tmpKsRaidConfigs="part "$tmpKsRaidVolumes" --size="1024" --ondisk="$currentDisk""
+            elif [[ "$partitionIndex" == "2" ]]; then
+              tmpKsRaidConfigs="part "$tmpKsRaidVolumes" --size="0" --grow --ondisk="$currentDisk""
+            fi
+            disksIndex=$(expr "$disksIndex" + 1)
+            ksRaidVolumes[$partitionIndex]+=""$tmpKsRaidVolumes" "
+            ksRaidConfigs+=""$tmpKsRaidConfigs"\n"
+          done
+        done
+        ksRaidConfigs=$(echo -e "$ksRaidConfigs")
+        ksRaidRecipes=`echo -e "raid /boot --fstype="xfs" --device="boot" --level="1" ${ksRaidVolumes[0]}
+raid /boot/efi --fstype="efi" --device="boot-efi" --level="1" ${ksRaidVolumes[1]}
+raid / --fstype="xfs" --device="root" --level="$1" ${ksRaidVolumes[2]}
+"`
+      else
+        for (( partitionIndex=0; partitionIndex<="2"; partitionIndex++ )); do
+          disksIndex="1"
+          for currentDisk in $ksAllDisks; do
+            tmpKsRaidVolumes="raid."$partitionIndex""$disksIndex""
+            if [[ "$partitionIndex" == "0" ]]; then
+              tmpKsRaidConfigs="part biosboot --fstype="biosboot" --size="1" --ondisk="$currentDisk""
+            elif [[ "$partitionIndex" == "1" ]]; then
+              tmpKsRaidConfigs="part "$tmpKsRaidVolumes" --size="1024" --ondisk="$currentDisk""
+            elif [[ "$partitionIndex" == "2" ]]; then
+              tmpKsRaidConfigs="part "$tmpKsRaidVolumes" --size="0" --grow --ondisk="$currentDisk""
+            fi
+            disksIndex=$(expr "$disksIndex" + 1)
+            ksRaidVolumes[$partitionIndex]+=""$tmpKsRaidVolumes" "
+            ksRaidConfigs+=""$tmpKsRaidConfigs"\n"
+          done
+        done
+        ksRaidConfigs=$(echo -e "$ksRaidConfigs")
+        ksRaidRecipes=`echo -e "raid /boot --fstype="xfs" --device="boot" --level="1" ${ksRaidVolumes[1]}
+raid / --fstype="xfs" --device="root" --level="$1" ${ksRaidVolumes[2]}
+"`
+      fi
+      FormatDisk="${ksRaidConfigs}
+${ksRaidRecipes}"
+# Reference: <Example 27.4. Using the raid Kickstart command>. https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/installation_guide/sect-kickstart-syntax
+#            https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/installation_guide/sect-kickstart-examples
+#            https://gist.github.com/micmoyles/587131aa19089e5c18916949c26b65e7
+#            <4.3.3.1. ソフトウェアRAID1でのシステムパーティションの作成>. https://dl.acronis.com/u/software-defined/html/AcronisCyberInfrastructure_3_5_installation_guide_ja-JP/installing-using-pxe/creating-kickstart-file.html#kickstart-file-example
+    else
+      echo -ne "\n[${red}Warning${plain}] Raid $1 recipe is not supported by target system!\n"
+      exit 1
+    fi
+  }
 }
 
 # $1 is timezone checkfile direction, $2 $3 $4 are api keys.
@@ -761,6 +914,7 @@ function checkVirt() {
   for Count in $(dmidecode -s system-manufacturer | awk '{print $1}' | sed 's/[A-Z]/\l&/g') $(systemd-detect-virt | sed 's/[A-Z]/\l&/g') $(lscpu | grep -i "hypervisor vendor" | cut -d ':' -f 2 | sed 's/^[ \t]*//g' | sed 's/[A-Z]/\l&/g'); do
     virtType+="$Count"
   done
+  virtWhat=$(virt-what)
 }
 
 function checkSys() {
@@ -842,7 +996,7 @@ function checkSys() {
   fi
 
 # Debian like linux OS necessary components.
-  apt install cpio curl dnsutils efibootmgr fdisk file gzip jq net-tools openssl subnetcalc tuned wget xz-utils -y
+  apt install cpio curl dnsutils efibootmgr fdisk file gzip jq net-tools openssl subnetcalc tuned virt-what wget xz-utils -y
 
 # Redhat like Linux OS prefer to use dnf instead of yum because former has a higher execute efficiency.
   yum install epel-release -y
@@ -852,7 +1006,7 @@ function checkSys() {
 # Reference: https://anatolinicolae.com/failed-loading-plugin-osmsplugin-no-module-named-librepo/
     [[ "$CurrentOS" == "CentOS" && "$CurrentOSVer" == "8" ]] && dnf install python3-librepo -y
 # Redhat like linux OS necessary components.
-    dnf install bind-utils cpio curl dnsutils efibootmgr file gzip ipcalc jq net-tools openssl redhat-lsb syslinux tuned util-linux wget xz --skip-broken -y
+    dnf install bind-utils cpio curl dnsutils efibootmgr file gzip ipcalc jq net-tools openssl redhat-lsb syslinux tuned util-linux virt-what wget xz --skip-broken -y
     # dnf update -y
   else
     yum install dnf -y > /root/yum_execute.log 2>&1
@@ -872,11 +1026,11 @@ function checkSys() {
 # Run dnf update and install components.
 # In official template of AlmaLinux 9 of Linode, "tuned" must be installed otherwise "grub2-mkconfig" can't work formally.
 # Reference: https://phanes.silogroup.org/fips-disa-stig-hardening-on-centos9/
-      dnf install bind-utils cpio curl dnsutils efibootmgr file gzip ipcalc jq net-tools openssl redhat-lsb syslinux tuned util-linux wget xz --skip-broken -y
+      dnf install bind-utils cpio curl dnsutils efibootmgr file gzip ipcalc jq net-tools openssl redhat-lsb syslinux tuned util-linux virt-what wget xz --skip-broken -y
       # dnf update -y
 # Oracle Linux 7 doesn't support DNF.
     elif [[ `grep -i "no package" /root/yum_execute.log` ]]; then
-      yum install bind-utils cpio curl dnsutils efibootmgr file gzip ipcalc jq net-tools openssl redhat-lsb syslinux tuned util-linux wget xz --skip-broken -y
+      yum install bind-utils cpio curl dnsutils efibootmgr file gzip ipcalc jq net-tools openssl redhat-lsb syslinux tuned util-linux virt-what wget xz --skip-broken -y
       # yum update -y
     fi
     rm -rf /root/yum_execute.log
@@ -894,7 +1048,7 @@ function checkSys() {
     # [[ ! `grep -i "testing" /etc/apk/repositories` ]] && sed -i '$a\http://ftp.udx.icscoe.jp/Linux/alpine/edge/testing' /etc/apk/repositories
 # Alpine Linux use "apk" as package management.
     apk update
-    apk add bash bind-tools coreutils cpio curl efibootmgr file gawk grep gzip ipcalc jq net-tools openssl sed shadow tzdata util-linux wget xz
+    apk add bash bind-tools coreutils cpio curl efibootmgr file gawk grep gzip ipcalc jq net-tools openssl sed shadow tzdata util-linux virt-what wget xz
 # Use bash to replace ash.
     sed -i 's/root:\/bin\/ash/root:\/bin\/bash/g' /etc/passwd
   }
@@ -1755,10 +1909,12 @@ function DebianPreseedProcess() {
 # https://serverfault.com/questions/571363/unable-to-automatically-remove-lvm-data
 # To part all disks:
 # https://unix.stackexchange.com/questions/341253/using-d-i-partman-recipe-strings
-    if [[ "$setDisk" == "all" ]]; then
+    if [[ "$disksNum" -gt "1" && "$setDisk" == "all" ]]; then
       FormatDisk=`echo -e "d-i partman-auto/disk string $AllDisks\nd-i partman-auto/method string regular\nd-i partman-auto/init_automatically_partition select Guided - use entire disk\nd-i partman-auto/choose_recipe select All files in one partition (recommended for new users)\nd-i partman-basicfilesystems/choose_label string gpt\nd-i partman-basicfilesystems/default_label string gpt\nd-i partman-partitioning/choose_label string gpt\nd-i partman-partitioning/default_label string gpt\nd-i partman/choose_label string gpt\nd-i partman/default_label string gpt"`
+      PartmanEarlyCommand='debconf-set partman-auto/disk '${AllDisks}'; '
     else
       FormatDisk=`echo -e "d-i partman-auto/disk string $IncDisk\nd-i partman-auto/method string regular\nd-i partman-auto/init_automatically_partition select Guided - use entire disk\nd-i partman-auto/choose_recipe select All files in one partition (recommended for new users)\nd-i partman-basicfilesystems/choose_label string gpt\nd-i partman-basicfilesystems/default_label string gpt\nd-i partman-partitioning/choose_label string gpt\nd-i partman-partitioning/default_label string gpt\nd-i partman/choose_label string gpt\nd-i partman/default_label string gpt"`
+      PartmanEarlyCommand='debconf-set partman-auto/disk "$(list-devices disk | grep '${IncDisk}' | head -n 1)"; '
     fi
 # Default single disk format recipe:
 # d-i partman-auto/disk string $AllDisks/$IncDisk
@@ -1771,94 +1927,7 @@ function DebianPreseedProcess() {
 # d-i partman-partitioning/default_label string gpt
 # d-i partman/choose_label string gpt
 # d-i partman/default_label string gpt
-    [[ -n "$setRaid" ]] && {
-# Soft Raid 0, 1, 5, 6 and 10 methods are supported by Debian, only one disk can't be as a component for any Raid method. 
-# Raid 0 needs at least two disks, all space of the disks will be exploited, and it's the most dangerous for the safety of the data.
-# Raid 1 needs at least two disks, the space can be exploited is always equal one disk, it's safest for the date but a bit wasteful.
-# Raid 5 needs at least three disks, it storages data on two disks and storages parity checking data on one disk, it's not save on any single disk over 4TB.
-# Raid 6 needs at least four disks, it's an enhanced version of Raid 5, it uses two parity stripes by practicing of dividing data across the set of drives, 
-# it allows for two disk failures within the RAID set before any data is lost.
-# Raid 10 needs at least four disks, it's a combination of Raid 0 and Raid 1, the disk 0 and disk 1 as a set of Raid 0, the same as disk 2 and disk 3,
-# and then the sets of disk 0,1 and disk 2,3 are composed as one Raid 1.
-# These Raid recipes are also applicable to Kali, fuck Canonical again! you deperated the compatibility of "preseed.cfg" installation procession from Ubuntu 22.04 and later.
-      if [[ "$setRaid" == "0" || "$setRaid" == "1" || "$setRaid" == "5" || "$setRaid" == "6" || "$setRaid" == "10" ]]; then
-        [[ "$setRaid" == "0" || "$setRaid" == "1" ]] && [[ "$disksNum" -lt "2" ]] && {
-          echo -ne "\n[${red}Error${plain}] There are $disksNum drives on your machine, Raid $setRaid partition recipe only supports a basic set of dual drive or more!\n"
-          exit 1
-        }
-        [[ "$setRaid" == "5" ]] && [[ "$disksNum" -lt "3" ]] && {
-          echo -ne "\n[${red}Error${plain}] There are $disksNum drives on your machine, Raid $setRaid partition recipe only supports a basic set of triple drive or more!\n"
-          exit 1
-        }
-        [[ "$setRaid" == "6" || "$setRaid" == "10" ]] && [[ "$disksNum" -lt "4" ]] && {
-          echo -ne "\n[${red}Error${plain}] There are $disksNum drives on your machine, Raid $setRaid partition recipe only supports a basic set of quad drive or more!\n"
-          exit 1
-        }
-        for (( r=1;r<="$disksNum";r++ )); do
-          tmpAllDisksPart=`echo "$AllDisks" | cut -d ' ' -f"$r"`
-# Some NVME controller hard drives like "/dev/nvme0n1" etc are end of a number in there names must add "p" with partition numbers for "d-i partman-auto-raid/recipe string",
-# SCSI controller or Virtual controller drives like "/dev/sda" or "/dev/vda" are not effected by this situation.
-# Drives and their partitions must be connected with "#" like "/dev/nvme0n1p2#/dev/nvme0n2p2".
-          echo "${tmpAllDisksPart: -1}" | [[ -n "`sed -n '/^[0-9][0-9]*$/p'`" ]] && tmpAllDisksPart="$tmpAllDisksPart""p" || tmpAllDisksPart="$tmpAllDisksPart"
-          AllDisksPart1+="$tmpAllDisksPart""1#"
-          AllDisksPart2+="$tmpAllDisksPart""2#"
-          AllDisksPart3+="$tmpAllDisksPart""3#"
-        done
-        AllDisksPart1=`echo "$AllDisksPart1" | sed 's/.$//'`
-        AllDisksPart2=`echo "$AllDisksPart2" | sed 's/.$//'`
-        AllDisksPart3=`echo "$AllDisksPart3" | sed 's/.$//'`
-# Remove existed raid md devices without confirming; select raid recipe and all disks; don't assign swap; when one device on raid 1 is offline, the system still can be booted.
-# Reference: https://wiki.ubuntu.com/BootDegradedRaid
-        RaidRecipes=`echo -e "d-i partman-md/confirm boolean true
-d-i partman-md/confirm_nooverwrite boolean true
-d-i partman-md/confirm_nochanges boolean false
-d-i partman-basicfilesystems/no_swap boolean false
-d-i partman-auto/method string raid
-d-i partman-auto/disk string $AllDisks
-d-i mdadm/boot_degraded boolean true"`
-# In environment of UEFI firmware motherboard computers, it's not suggested to creat any Raid recipe for "/boot/efi" partition,
-# in any virtual machine which created by VMware Workstation Pro, version up to the current 17.0.2(2023/6), host OS is Windows 10 Enterprise x64,
-# we must assign an additional Raid 1 recipe for "/boot" partition to prevent the case of following to happen：
-# otherwise except of the first reboot of the Debian 12 installed soon, the next time hard reboot the system, it will failed into "GNU GRUB version 2.0x"
-# and we must type "exit" to fallback to "Boot Manager", select and enter the default opinion of "Boot normally" and then find that Debian can be booted by grub.
-# This is a particularly fatal for those servers which has no permission to access VNC in website back-end management and impossible to manipulate UEFI boot manager to boot the system normally.
-        if [[ "$EfiSupport" == "enabled" ]]; then
-          FormatDisk=`echo -e "$RaidRecipes
-d-i partman-auto-raid/recipe string                  \
-    1        $disksNum 0 ext4 /boot $AllDisksPart2 . \
-    $setRaid $disksNum 0 ext4 /     $AllDisksPart3 .
-d-i partman-auto/expert_recipe string multiraid ::                                                                \
-    1075 100 2150 free \\$bootable{ } \\$primary{ } method{ efi } \\$iflabel{ gpt } \\$reusemethod{ } format{ } . \
-    269  150 538  raid                \\$primary{ } method{ raid } .                                              \
-    100  200 -1   raid                \\$primary{ } method{ raid } .
-d-i partman-efi/non_efi_system boolean true
-d-i partman-partitioning/choose_label select gpt
-d-i partman-partitioning/default_label string gpt"`
-        else
-# GPT table partition should not be included in BIOS Raid recipes so that it will cause Debian installer "Unable to install GRUB in /dev/sda" by installing grub.
-          FormatDisk=`echo -e "$RaidRecipes
-d-i partman-auto-raid/recipe string                  \
-    1        $disksNum 0 ext4 /boot $AllDisksPart1 . \
-    $setRaid $disksNum 0 ext4 /     $AllDisksPart2 .
-d-i partman-auto/expert_recipe string multiraid ::                   \
-    1075 100 2150 raid \\$bootable{ } \\$primary{ } method{ raid } . \
-    100  200 -1   raid                \\$primary{ } method{ raid } .
-"`
-        fi
-      else
-        echo -ne "\n[${red}Error${plain}] Raid $setRaid partition recipe is not suitable, only Raid 0, 1, 5, 6 or 10 is supported!\n"
-        exit 1
-      fi
-    }
-# Reference: https://github.com/airium/Linux-Reinstall/blob/master/install-raid0.sh
-#            https://www.debian.org/releases/bookworm/example-preseed.txt
-#            https://www.cnblogs.com/zhangshan-log/articles/14542166.html
-#            https://gist.github.com/jnerius/6573343
-#            https://gist.github.com/bearice/331a954d86d890d9dbeacdd7de3aabe8
-#            https://lala.im/7911.html
-#            https://github.com/office-itou/Linux/blob/master/installer/source/preseed_debian.cfg
-#            https://qiita.com/YasuhiroABE/items/ff233459035d8187263d
-#
+    setRaidRecipe "$setRaid" "$disksNum" "$AllDisks" "$linux_relese"
 # Prefer to use IPv4 to config networking.
     if [[ "$IPStackType" == "IPv4Stack" ]] || [[ "$IPStackType" == "BiStack" ]]; then
       [[ "$Network4Config" == "isStatic" ]] && NetConfigManually=`echo -e "d-i netcfg/disable_autoconfig boolean true\nd-i netcfg/dhcp_failed note\nd-i netcfg/dhcp_options select Configure network manually\nd-i netcfg/get_ipaddress string $IPv4\nd-i netcfg/get_netmask string $MASK\nd-i netcfg/get_gateway string $GATE\nd-i netcfg/get_nameservers string $ipDNS\nd-i netcfg/no_default_route boolean true\nd-i netcfg/confirm_static boolean true"` || NetConfigManually=""
@@ -1942,7 +2011,7 @@ lvremove --select all -ff -y; \
 vgremove --select all -ff -y; \
 pvremove /dev/* -ff -y; \
 [[ -n "\$(blkid -t TYPE='vfat' -o device)" ]] && umount "\$(blkid -t TYPE='vfat' -o device)"; \
-debconf-set partman-auto/disk "\$(list-devices disk | grep ${IncDisk} | head -n 1)"; \
+${PartmanEarlyCommand}
 wget -qO- '$DDURL' | $DEC_CMD | /bin/dd of=\$(list-devices disk | grep ${IncDisk} | head -n 1); \
 /bin/ntfs-3g \$(list-devices partition | grep ${IncDisk} | head -n 1) /mnt; \
 cd '/mnt/ProgramData/Microsoft/Windows/Start Menu/Programs'; \
@@ -2164,7 +2233,7 @@ echo -ne "\n${aoiBlue}# SSH or RDP Port, Username and Password${plain}\n\n"
 
 getDisk
 echo -ne "\n${aoiBlue}# Installing Disks${plain}\n\n"
-[[ "$setDisk" == "all" || "$setRaid" == "0" || "$setRaid" == "1" || "$setRaid" == "5" || "$setRaid" == "6" || "$setRaid" == "10" ]] && echo "$AllDisks" || echo "$IncDisk"
+[[ "$setDisk" == "all" || -n "$setRaid" ]] && echo "$AllDisks" || echo "$IncDisk"
 
 echo -ne "\n${aoiBlue}# Motherboard Firmware${plain}\n\n"
 [[ "$EfiSupport" == "enabled" ]] && echo "UEFI" || echo "BIOS"
@@ -2686,17 +2755,20 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ 
     sed -i '/netcfg\/confirm_static/d' /tmp/boot/preseed.cfg
   fi
 # If server has only one disk, lv/vg/pv volumes removement by force should be disallowed, it may causes partitioner continuous execution but not finished.
-  if [[ "$disksNum" -le "1" || "$setDisk" != "all" ]]; then
+  if [[ "$disksNum" -le "1" || "$setDisk" != "all" || -n "$setRaid" ]]; then
     sed -i 's/lvremove --select all -ff -y;//g' /tmp/boot/preseed.cfg
     sed -i 's/vgremove --select all -ff -y;//g' /tmp/boot/preseed.cfg
     sed -i 's/pvremove \/dev\/\* -ff -y;//g' /tmp/boot/preseed.cfg
+  elif [[ "$disksNum" -gt "1" && "$setDisk" == "all" ]]; then
+# Some virtual machines will hanging on partition step if execute pvremove.
+    [[ -z "$virtWhat" ]] || sed -i 's/pvremove \/dev\/\* -ff -y;//g' /tmp/boot/preseed.cfg
   fi
-  if [[ "$disksNum" -gt "1" ]] && [[ "$setRaid" == "0" || "$setRaid" == "1" || "$setRaid" == "5" || "$setRaid" == "6" || "$setRaid" == "10" ]]; then
+  if [[ "$disksNum" -gt "1" ]] && [[ -n "$setRaid" ]]; then
     sed -i 's/d-i partman\/early_command.*//g' /tmp/boot/preseed.cfg
     sed -ri "/d-i grub-installer\/bootdev.*/c\d-i grub-installer\/bootdev string $AllDisks" /tmp/boot/preseed.cfg
   fi
 # Debian 8 and former or Raid mode don't support xfs.
-  [[ "$DebianDistNum" -le "8" || "$setRaid" == "0" || "$setRaid" == "1" || "$setRaid" == "5" || "$setRaid" == "6" || "$setRaid" == "10" ]] && sed -i '/d-i\ partman\/default_filesystem string xfs/d' /tmp/boot/preseed.cfg
+  [[ "$DebianDistNum" -le "8" || -n "$setRaid" ]] && sed -i '/d-i\ partman\/default_filesystem string xfs/d' /tmp/boot/preseed.cfg
   if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]]; then
     sed -i '/user-setup\/allow-password-weak/d' /tmp/boot/preseed.cfg
     sed -i '/user-setup\/encrypt-home/d' /tmp/boot/preseed.cfg
@@ -2980,13 +3052,15 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
 #            https://blog.adachin.me/archives/3621
 #            https://www.cnblogs.com/hukey/p/14919346.html
   IncDisk=`echo $IncDisk | cut -d'/' -f 3`
-  if [[ "$disksNum" -le "1" || "$setDisk" != "all" ]]; then
+  [[ "$disksNum" -le "1" || "$setDisk" != "all" ]] && {
     clearPart="clearpart --drives=${IncDisk} --all --initlabel"
-    [[ "$EfiSupport" == "enabled" ]] && FormatDisk=`echo -e "part / --fstype="xfs" --ondisk="$IncDisk" --grow --size="0"\npart swap --ondisk="$IncDisk" --size="1024"\npart /boot --fstype="xfs" --ondisk="$IncDisk" --size="512"\npart /boot/efi --fstype="efi" --ondisk="$IncDisk" --size="512""` || FormatDisk=`echo -e "part / --fstype="xfs" --ondisk="$IncDisk" --grow --size="0"\npart swap --ondisk="$IncDisk" --size="1024"\npart /boot --fstype="xfs" --ondisk="$IncDisk" --size="512"\npart biosboot --fstype=biosboot --ondisk="$IncDisk" --size=1"`
-  elif [[ "$setDisk" == "all" ]]; then
+    [[ "$EfiSupport" == "enabled" ]] && FormatDisk=`echo -e "part / --fstype="xfs" --ondisk="$IncDisk" --grow --size="0"\npart swap --ondisk="$IncDisk" --size="1024"\npart /boot --fstype="xfs" --ondisk="$IncDisk" --size="512"\npart /boot/efi --fstype="efi" --ondisk="$IncDisk" --size="1024""` || FormatDisk=`echo -e "part / --fstype="xfs" --ondisk="$IncDisk" --grow --size="0"\npart swap --ondisk="$IncDisk" --size="1024"\npart /boot --fstype="xfs" --ondisk="$IncDisk" --size="1024"\npart biosboot --fstype=biosboot --ondisk="$IncDisk" --size=1"`
+  }
+  [[ "$setDisk" == "all" || -n "$setRaid" ]] && {
     clearPart="clearpart --all --initlabel"
     FormatDisk="autopart"
-  fi
+  }
+  setRaidRecipe "$setRaid" "$disksNum" "$AllDisks" "$linux_relese"
 if [[ "$setAutoConfig" == "1" ]]; then
   cat >/tmp/boot/ks.cfg<<EOF
 # platform x86, AMD64, or Intel EM64T, or ARM aarch64
