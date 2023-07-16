@@ -597,6 +597,7 @@ function ipv4SubnetCertificate() {
 # So in summary of the IPv4 sample in above, we should assign subnet mask "128.0.0.1"(prefix "1") for it.
 }
 
+# $1 is "$setDisk"
 function getDisk() {
 # $disks is definited as the default disk, if server has 2 and more disks, the first disk will be responsible of the grub booting.
   rootPart=`lsblk -ip | grep -v "fd[0-9]*\|sr[0-9]*\|ram[0-9]*\|loop[0-9]*" | sed 's/[[:space:]]*$//g' | grep -w "part /\|part /boot" | head -n 1 | cut -d' ' -f1 | sed 's/..//'`
@@ -612,9 +613,36 @@ function getDisk() {
   for Count in `lsblk -ipd | grep -v "fd[0-9]*\|sr[0-9]*\|ram[0-9]*\|loop[0-9]*" | sed 's/[[:space:]]*$//g' | grep -w "disk" | grep -i "[0-9]g\|[0-9]t\|[0-9]p\|[0-9]e\|[0-9]z\|[0-9]y" | cut -d' ' -f1`; do
     AllDisks+="$Count "
   done
+  AllDisks=$(echo "$AllDisks" | sed 's/.$//')
 # All numbers of disks' statistic of this server.
   disksNum=$(echo $AllDisks | grep -o "/dev/*" | wc -l)
-  [[ "$disksNum" -ge "2" ]] && AllDisks=$(echo "$AllDisks" | sed 's/.$//')
+
+# Some cloud providers using first SCSI/SATA device like "sda" to mount ISO image instead of using "sr0":
+#
+# root@node:~# lsblk -ipf
+# NAME        FSTYPE  FSVER            LABEL  UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
+# /dev/sda    iso9660 Joliet Extension cidata 2023-07-13-09-35-07-00
+# /dev/sr0
+# /dev/vda
+# |-/dev/vda1
+# |-/dev/vda2 vfat    FAT32                   0BBB-E1CA                            119.9M  0%     /boot/efi
+# `-/dev/vda3 xfs                             0c93f6bc-ef9c-468d-be02-84b4a70d3678 44.4G   11%    /
+#
+# Because of "sda" can't be written, If system is selected to install on "sda", the installation will meet a fatal,
+# So we should exclude all these devices.
+  for (( d=1; d<=$disksNum; d++ )); do
+    currentDisk=$(echo "$AllDisks" | cut -d' ' -f$d)
+    checkIfIsoPartition=$(lsblk -ipf | grep -w "$currentDisk" | awk '{print $2}' | grep -i "iso")
+    [[ -z "$checkIfIsoPartition" ]] && tmpAllDisks+="$currentDisk "
+  done
+  tmpAllDisks=$(echo "$tmpAllDisks" | sed 's/.$//')
+
+  [[ "$AllDisks" == "$tmpAllDisks" ]] || AllDisks="$tmpAllDisks";disksNum=$(echo $AllDisks | grep -o "/dev/*" | wc -l);IncDisk=$(echo "$AllDisks" | cut -d' ' -f1);
+
+# Allow user to install system to one disk manually.
+  [[ -n "$1" && "$1" =~ ^[a-z0-9]+$ && "$1" != "all" ]] && {
+    [[ "$1" =~ "/dev/" ]] && IncDisk="$1" || IncDisk="/dev/$1"
+  }
 }
 
 function diskType() {
@@ -2231,7 +2259,8 @@ echo -ne "\n${aoiBlue}# SSH or RDP Port, Username and Password${plain}\n\n"
 [[ "$targetRelese" == 'Windows' ]] && echo "Administrator" || echo "root"
 [[ "$targetRelese" == 'Windows' && "$tmpURL" == "" || "$tmpURL" =~ "dl.lamp.sh" ]] && echo "Teddysun.com" || echo "$tmpWORD"
 
-getDisk
+setDisk=$(echo "$setDisk" | sed 's/[A-Z]/\l&/g')
+getDisk "$setDisk"
 echo -ne "\n${aoiBlue}# Installing Disks${plain}\n\n"
 [[ "$setDisk" == "all" || -n "$setRaid" ]] && echo "$AllDisks" || echo "$IncDisk"
 
