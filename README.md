@@ -236,7 +236,7 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**-setdisk "all"**: If your machine has 2 or more hard drives, and every hard drive want to format during the installation, you can assign -setdisk "all" to enable it, data is invaluable, you should deal with them carefully! This parameter is only suitable for Debian/Redhat series.
+**-setdisk "a name of one disk or all"**: If your machine has 2 or more hard drives, and every hard drive want to format during the installation, you can assign -setdisk "all" to enable it, data is invaluable, you should deal with them carefully! or you can allow system to be installed on one disk like "vdc" or "/dev/sdb", This parameter is only suitable for Debian/Redhat series and conflicts with "-raid".
 <br />
 <br />
 
