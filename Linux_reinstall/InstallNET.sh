@@ -632,7 +632,7 @@ function getDisk() {
 # So we should exclude all these devices.
   for (( d=1; d<=$disksNum; d++ )); do
     currentDisk=$(echo "$AllDisks" | cut -d' ' -f$d)
-    checkIfIsoPartition=$(lsblk -ipf | grep -w "$currentDisk" | awk '{print $2}' | grep -i "iso")
+    checkIfIsoPartition=$(lsblk -ipf | grep "$currentDisk" | head -n 1 | awk '{print $2}' | grep -i "iso")
     [[ -z "$checkIfIsoPartition" ]] && tmpAllDisks+="$currentDisk "
   done
   tmpAllDisks=$(echo "$tmpAllDisks" | sed 's/.$//')
