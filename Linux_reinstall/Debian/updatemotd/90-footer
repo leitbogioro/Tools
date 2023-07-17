@@ -18,18 +18,17 @@
 #    with this program; if not, write to the Free Software Foundation, Inc.,
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-UpdateLog="/var/log/packagesupdatefile.log"
-if [ -f "$UpdateLog" ]; then
-  rm -rf $UpdateLog
-fi
+UpdateLog="/var/log/PackagesUpdatingStatus.log"
+[[ -f "$UpdateLog" ]] && rm -rf $UpdateLog
 
 apt list --upgradable | awk 'END{print NR}' | tee -a "$UpdateLog" > /dev/null 2>&1
-UpdateRemind=`cat $UpdateLog | tail -n 1`
-UpdateNum=`expr $UpdateRemind - 1`
-if [ "$UpdateNum" == "1" ]; then
-  printf "$UpdateNum package can be upgraded. Run 'apt list --upgradable' to see it.\n"
-elif [ "$UpdateNum" -ge "2" ]; then
-  printf "$UpdateNum packages can be upgraded. Run 'apt list --upgradable' to see them.\n"
-fi
+UpdateRemind=$(cat $UpdateLog | tail -n 1)
+UpdateNum=$(expr $UpdateRemind - 1)
+
+[ "$UpdateNum" -eq "1" ] && printf "$UpdateNum package can be upgraded. Run 'apt list --upgradable' to see it.\n"
+[ "$UpdateNum" -gt "1" ] && printf "$UpdateNum packages can be upgraded. Run 'apt list --upgradable' to see them.\n"
+
+rm -rf $UpdateLog
+
 
 rm -rf $UpdateLog
