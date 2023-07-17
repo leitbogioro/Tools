@@ -26,7 +26,9 @@ fi
 apt list --upgradable | awk 'END{print NR}' | tee -a "$UpdateLog" > /dev/null 2>&1
 UpdateRemind=`cat $UpdateLog | tail -n 1`
 UpdateNum=`expr $UpdateRemind - 1`
-if [ "$UpdateNum" -ge "1" ]; then
+if [ "$UpdateNum" == "1" ]; then
+  printf "$UpdateNum package can be upgraded. Run 'apt list --upgradable' to see it.\n"
+elif [ "$UpdateNum" -ge "2" ]; then
   printf "$UpdateNum packages can be upgraded. Run 'apt list --upgradable' to see them.\n"
 fi
 
