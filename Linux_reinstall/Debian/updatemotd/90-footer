@@ -29,6 +29,3 @@ UpdateNum=$(expr $UpdateRemind - 1)
 [ "$UpdateNum" -gt "1" ] && printf "$UpdateNum packages can be upgraded. Run 'apt list --upgradable' to see them.\n"
 
 rm -rf $UpdateLog
-
-
-rm -rf $UpdateLog
