@@ -1836,8 +1836,21 @@ function DebianModifiedPreseed() {
 # Must use ";" instead of using "&&", "echo -e" etc to combine multiple commands, or write text in files, recommend sed.
 # Can't pass parameters correctly in preseed environment
 # DebianVimVer=`ls -a /usr/share/vim | grep vim[0-9]`
-    DebianVimVer="vim"`expr ${DebianDistNum} + 71`
-    [[ "$DIST" == "bookworm" || "$DIST" == "kali-rolling" ]] && DebianVimVer="vim90"
+    if [[ "$DebianDistNum" -ge "9" && "$DebianDistNum" -le "11" ]]; then
+      DebianVimVer="vim"`expr ${DebianDistNum} + 71`
+    elif [[ "$DebianDistNum" -ge "12" ]]; then
+      DebianVimVer="vim"`expr ${DebianDistNum} + 78`
+    elif [[ "$DIST" =~ "kali-" ]]; then
+      DebianVimVer="vim90"
+    else
+      DebianVimVer=""
+    fi
+# Set parameter "mouse-=a" in /usr/share/vim/vim-version/defaults.vim to support copy text from terminal to client.
+    VimSupportCopy="$1 sed -i 's/set mouse=a/set mouse-=a/g' /usr/share/vim/${DebianVimVer}/defaults.vim;"
+# Enable cursor edit backspace freely in insert mode.
+# Reference: https://wonderwall.hatenablog.com/entry/2016/03/23/232634
+    VimIndentEolStart="$1 sed -i 's/set compatible/set nocompatible/g' /etc/vim/vimrc.tiny; $1 sed -i '/set nocompatible/a\set backspace=2' /etc/vim/vimrc.tiny;"
+    [[ "$DebianVimVer" == "" ]] && VimSupportCopy="";VimIndentEolStart="";
     AptUpdating="$1 apt update;"
 # pre-install some commonly used software.
     # InstallComponents="$1 apt install sudo apt-transport-https bc binutils ca-certificates cron curl debian-keyring debian-archive-keyring dnsutils dosfstools dpkg efibootmgr ethtool fail2ban file figlet iputils-tracepath jq lrzsz libnet-ifconfig-wrapper-perl lsof libnss3 lsb-release mtr-tiny mlocate netcat-openbsd net-tools ncdu nmap ntfs-3g parted psmisc python3 socat sosreport subnetcalc tcpdump telnet traceroute unzip unrar-free uuid-runtime vim vim-gtk3 wget xz-utils -y;"
@@ -1861,11 +1874,6 @@ function DebianModifiedPreseed() {
       DnsChangePermanently="$1 mkdir -p /etc/resolvconf/resolv.conf.d/; $1 wget --no-check-certificate -qO /etc/resolvconf/resolv.conf.d/head 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Debian/network/${SetDNS}';"
       ModifyMOTD="$1 rm -rf /etc/update-motd.d/ /etc/motd /run/motd.dynamic; $1 mkdir -p /etc/update-motd.d/; $1 wget --no-check-certificate -qO /etc/update-motd.d/00-header 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Debian/updatemotd/00-header'; $1 wget --no-check-certificate -qO /etc/update-motd.d/10-sysinfo 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Debian/updatemotd/10-sysinfo'; $1 wget --no-check-certificate -qO /etc/update-motd.d/90-footer 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Debian/updatemotd/90-footer'; $1 chmod +x /etc/update-motd.d/00-header; $1 chmod +x /etc/update-motd.d/10-sysinfo; $1 chmod +x /etc/update-motd.d/90-footer;"
     fi
-# Set parameter "mouse-=a" in /usr/share/vim/vim-version/defaults.vim to support copy text from terminal to client.
-    VimSupportCopy="$1 sed -i 's/set mouse=a/set mouse-=a/g' /usr/share/vim/${DebianVimVer}/defaults.vim;"
-# Enable cursor edit backspace freely in insert mode.
-# Reference: https://wonderwall.hatenablog.com/entry/2016/03/23/232634
-    VimIndentEolStart="$1 sed -i 's/set compatible/set nocompatible/g' /etc/vim/vimrc.tiny; $1 sed -i '/set nocompatible/a\set backspace=2' /etc/vim/vimrc.tiny;"
 # For multiple interfaces environment, if the interface which is configurated by "auto", regardless of it is plugged by internet cable, 
 # Debian/Kali will continuously try to wake and start up it contains with dhcp even timeout.
 # Set up with "allow-hotplug(default setting by Debian/Kali installer)" will skip this problem, but if one interface has more than 1 IP or it will connect to
@@ -2166,8 +2174,6 @@ if [[ "$loaderMode" == "0" ]]; then
   fi
 fi
 
-[ -n "$Relese" ] || Relese='Debian'
-
 [[ "$ddMode" == '1' ]] && {
   if [[ "$targetRelese" == 'Ubuntu' ]] || [[ "$targetRelese" == 'Windows' ]]; then
     Relese='AlpineLinux'
@@ -2179,12 +2185,14 @@ fi
       }
     fi
   else
-    linux_relese='debian'
-    tmpDIST='bookworm'
+    Relese='Debian'
+    tmpDIST='12'
   fi
 }
 
+[[ -n "$Relese" ]] || Relese='Debian'
 linux_relese=$(echo "$Relese" |sed 's/\ //g' |sed -r 's/(.*)/\L\1/')
+
 clear && echo -ne "\n${aoiBlue}# Check Dependence${plain}\n\n"
 
 dependence awk,basename,cat,cpio,curl,cut,dig,dirname,file,find,grep,gzip,iconv,ip,lsblk,openssl,sed,wget,xz;
@@ -2266,9 +2274,6 @@ echo -ne "\n${aoiBlue}# Installing Disks${plain}\n\n"
 
 echo -ne "\n${aoiBlue}# Motherboard Firmware${plain}\n\n"
 [[ "$EfiSupport" == "enabled" ]] && echo "UEFI" || echo "BIOS"
-
-[ -n "$Relese" ] || Relese='Debian'
-linux_relese=$(echo "$Relese" |sed 's/\ //g' |sed -r 's/(.*)/\L\1/')
 
 # Get architecture of current os automatically
 ArchName=`uname -m`
