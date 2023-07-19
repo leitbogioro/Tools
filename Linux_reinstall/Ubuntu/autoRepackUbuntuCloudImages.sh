@@ -27,7 +27,7 @@ for distName in "jammy" "focal"; do
 done
 
 # write crontab task
-if [[ ! `grep -i "autorepackimages" /etc/crontab` ]]; then
-  sed -i '$i 30 4    * * 0   root    bash /root/autoRepackImages.sh' /etc/crontab
+if [[ ! `grep -i "autorepackubuntucloudimages" /etc/crontab` ]]; then
+  sed -i '$i 30 4    * * 0   root    bash /root/autoRepackUbuntuCloudImages.sh' /etc/crontab
   /etc/init.d/cron restart
 fi
