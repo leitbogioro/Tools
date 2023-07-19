@@ -3217,6 +3217,8 @@ fi
 fi
 
 # find . | cpio -H newc --create --verbose | gzip -1 > /tmp/initrd.img
+rm -rf /boot/initrd.img
+rm -rf /boot/vmlinuz
 find . | cpio -o -H newc | gzip -1 > /tmp/initrd.img
 cp -f /tmp/initrd.img /boot/initrd.img || sudo cp -f /tmp/initrd.img /boot/initrd.img
 cp -f /tmp/vmlinuz /boot/vmlinuz || sudo cp -f /tmp/vmlinuz /boot/vmlinuz
