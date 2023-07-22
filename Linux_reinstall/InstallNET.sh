@@ -2126,6 +2126,29 @@ alpineInstallOrDdAdditionalFiles() {
   fi
 }
 
+# $1 is "$tmpURL".
+verifyUrlValidationOfDdImages() {
+  echo "$1" | grep -q '^http://\|^ftp://\|^https://'
+  [[ $? -ne '0' ]] && echo -ne "\n[${red}Error${plain}] Please input a vaild URL, only support http://, ftp:// and https:// ! \n" && exit 1
+  tmpURLCheck=$(echo $(curl -s -I -X GET $1) | grep -wi "http/[0-9]*" | awk '{print $2}')
+  [[ -z "$tmpURLCheck" || ! "$tmpURLCheck" =~ ^[0-9]+$ ]] && {
+    echo -ne "\n[${red}Error${plain}] The mirror of DD images is temporarily unavailable!\n"
+    exit 1
+  }
+  DDURL="$1"
+# Decompress command selection
+  if [[ "$setFileType" == "gz" ]]; then
+    DEC_CMD="gunzip -dc"
+    [[ $(echo "$DDURL" | grep -o ...$) == ".xz" ]] && DEC_CMD="xzcat"
+  elif [[ "$setFileType" == "xz" ]]; then
+    DEC_CMD="xzcat"
+    [[ $(echo "$DDURL" | grep -o ...$) == ".gz" ]] && DEC_CMD="gunzip -dc"
+  else
+    [[ $(echo "$DDURL" | grep -o ...$) == ".xz" ]] && DEC_CMD="xzcat"
+    [[ $(echo "$DDURL" | grep -o ...$) == ".gz" ]] && DEC_CMD="gunzip -dc"
+  fi
+}
+
 checkSys
 
 # Get the name of network adapter($interface).
@@ -2565,26 +2588,11 @@ if [[ "$ddMode" == '1' ]]; then
       showFinalDIST=""
       ReleaseName="$targetRelese"
     fi
-    echo "$tmpURL" | grep -q '^http://\|^ftp://\|^https://'
-    [[ $? -ne '0' ]] && echo -ne "\n[${red}Error${plain}] Please input a vaild URL, only support http://, ftp:// and https:// ! \n" && exit 1
-    tmpURLCheck=$(echo $(curl -s -I -X GET $tmpURL) | grep -wi "http/[0-9]*" | awk '{print $2}')
-    [[ -z "$tmpURLCheck" || ! "$tmpURLCheck" =~ ^[0-9]+$ ]] && {
-      echo -ne "\n[${red}Error${plain}] The mirror of DD images is temporarily unavailable!\n"
-      exit 1
-    }
-    DDURL="$tmpURL"
-    # Decompress command selection
-    if [[ "$setFileType" == "gz" ]]; then
-      DEC_CMD="gunzip -dc"
-      [[ $(echo "$DDURL" | grep -o ...$) == ".xz" ]] && DEC_CMD="xzcat"
-    elif [[ "$setFileType" == "xz" ]]; then
-      DEC_CMD="xzcat"
-      [[ $(echo "$DDURL" | grep -o ...$) == ".gz" ]] && DEC_CMD="gunzip -dc"
-    else
-      [[ $(echo "$DDURL" | grep -o ...$) == ".xz" ]] && DEC_CMD="xzcat"
-      [[ $(echo "$DDURL" | grep -o ...$) == ".gz" ]] && DEC_CMD="gunzip -dc"
-    fi
-  elif [[ "$tmpURL" != "" ]]; then
+    verifyUrlValidationOfDdImages "$tmpURL"
+  elif [[ -z "$targetRelese" && "$tmpURL" != "" ]]; then
+    verifyUrlValidationOfDdImages "$tmpURL"
+    ReleaseName="Self-Modified OS"
+  else
     echo -ne "\n[${red}Warning${plain}] Please input a vaild image URL!\n"
     exit 1
   fi
@@ -2619,7 +2627,7 @@ fi
 
 echo -ne "\n${aoiBlue}# Installation Starting${plain}\n"
 
-[[ "$ddMode" == '1' ]] && echo -ne "${blue}Auto Mode${plain} insatll [${yellow}$ReleaseName${plain}]\n$DDURL\n"
+[[ "$ddMode" == '1' ]] && echo -ne "${blue}Auto Mode${plain} Insatll [${yellow}$ReleaseName${plain}]\n$DDURL\n"
 
 if [[ "$linux_relese" == 'centos' ]]; then
   if [[ "$DIST" != "$UNVER" ]]; then
