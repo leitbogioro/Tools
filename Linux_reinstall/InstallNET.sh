@@ -1947,10 +1947,10 @@ function DebianPreseedProcess() {
 # https://unix.stackexchange.com/questions/341253/using-d-i-partman-recipe-strings
     if [[ "$disksNum" -gt "1" && "$setDisk" == "all" ]]; then
       FormatDisk=`echo -e "d-i partman-auto/disk string $AllDisks\nd-i partman-auto/method string regular\nd-i partman-auto/init_automatically_partition select Guided - use entire disk\nd-i partman-auto/choose_recipe select All files in one partition (recommended for new users)\nd-i partman-basicfilesystems/choose_label string gpt\nd-i partman-basicfilesystems/default_label string gpt\nd-i partman-partitioning/choose_label string gpt\nd-i partman-partitioning/default_label string gpt\nd-i partman/choose_label string gpt\nd-i partman/default_label string gpt"`
-      PartmanEarlyCommand='debconf-set partman-auto/disk '${AllDisks}'; '
+      PartmanEarlyCommand='debconf-set partman-auto/disk '${AllDisks}';'
     else
       FormatDisk=`echo -e "d-i partman-auto/disk string $IncDisk\nd-i partman-auto/method string regular\nd-i partman-auto/init_automatically_partition select Guided - use entire disk\nd-i partman-auto/choose_recipe select All files in one partition (recommended for new users)\nd-i partman-basicfilesystems/choose_label string gpt\nd-i partman-basicfilesystems/default_label string gpt\nd-i partman-partitioning/choose_label string gpt\nd-i partman-partitioning/default_label string gpt\nd-i partman/choose_label string gpt\nd-i partman/default_label string gpt"`
-      PartmanEarlyCommand='debconf-set partman-auto/disk "$(list-devices disk | grep '${IncDisk}' | head -n 1)"; '
+      PartmanEarlyCommand='debconf-set partman-auto/disk "$(list-devices disk | grep '${IncDisk}' | head -n 1)";'
     fi
 # Default single disk format recipe:
 # d-i partman-auto/disk string $AllDisks/$IncDisk
@@ -2041,13 +2041,13 @@ d-i clock-setup/ntp boolean true
 d-i clock-setup/ntp-server string ntp.nict.jp
 
 ### Get harddisk name and Windows DD installation set up
-d-i preseed/early_command string anna-install libc6-udeb libfuse3-3-udeb fuse3-udeb ntfs-3g-udeb libcrypto3-udeb libpcre2-8-0-udeb libssl3-udeb libuuid1-udeb zlib1g-udeb wget-udeb
+d-i preseed/early_command string anna-install libfuse2-udeb fuse-udeb ntfs-3g-udeb libcrypto3-udeb libpcre2-8-0-udeb libssl3-udeb libuuid1-udeb zlib1g-udeb wget-udeb
 d-i partman/early_command string \
 lvremove --select all -ff -y; \
 vgremove --select all -ff -y; \
 pvremove /dev/* -ff -y; \
 [[ -n "\$(blkid -t TYPE='vfat' -o device)" ]] && umount "\$(blkid -t TYPE='vfat' -o device)"; \
-${PartmanEarlyCommand}
+${PartmanEarlyCommand} \
 wget -qO- '$DDURL' | $DEC_CMD | /bin/dd of=\$(list-devices disk | grep ${IncDisk} | head -n 1); \
 /bin/ntfs-3g \$(list-devices partition | grep ${IncDisk} | head -n 1) /mnt; \
 cd '/mnt/ProgramData/Microsoft/Windows/Start Menu/Programs'; \
@@ -2286,9 +2286,17 @@ echo "$TimeZone"
 myPASSWORD=$(openssl passwd -1 ''$tmpWORD'')
 [[ -z "$myPASSWORD" ]] && myPASSWORD='$1$OCy2O5bt$m2N6XMgFUwCn/2PPP114J/'
 echo -ne "\n${aoiBlue}# SSH or RDP Port, Username and Password${plain}\n\n"
-[[ "$targetRelese" == 'Windows' ]] && echo "3389" || echo "$sshPORT"
-[[ "$targetRelese" == 'Windows' ]] && echo "Administrator" || echo "root"
-[[ "$targetRelese" == 'Windows' && "$tmpURL" == "" || "$tmpURL" =~ "dl.lamp.sh" ]] && echo "Teddysun.com" || echo "$tmpWORD"
+if [[ "$targetRelese" == 'Windows' && "$tmpURL" == "" || "$tmpURL" =~ "dl.lamp.sh" ]]; then
+  echo "3389"
+  echo "Administrator"
+  echo "Teddysun.com"
+elif [[ -z "$targetRelese" && "$ddMode" == '1' ]]; then
+  echo -e "N/A\nN/A\nN/A"
+else
+  echo "$sshPORT"
+  echo "root"
+  echo "$tmpWORD"
+fi
 
 setDisk=$(echo "$setDisk" | sed 's/[A-Z]/\l&/g')
 getDisk "$setDisk"
