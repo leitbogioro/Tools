@@ -946,7 +946,27 @@ function checkVirt() {
 }
 
 function checkSys() {
+  CurrentOSVer=`cat /etc/os-release | grep -w "VERSION_ID=*" | awk -F '=' '{print $2}' | sed 's/\"//g' | cut -d'.' -f 1`
+
   apt update -y
+# Try to fix error of connecting to current mirror for Debian.
+  if [[ $? -ne 0 ]]; then
+    apt update -y > /root/apt_execute.log
+    if [[ `grep -i "debian" /root/apt_execute.log` ]] && [[ `grep -i "err:[0-9]" /root/apt_execute.log` || `grep -i "404  not found" /root/apt_execute.log` ]]; then
+      currentDebianMirror=$(sed -n '/^deb /'p /etc/apt/sources.list | head -n 1 | awk '{print $2}' | sed -e 's|^[^/]*//||' -e 's|/.*$||')
+      if [[ "$CurrentOSVer" -gt "9" ]]; then
+# Replace invalid mirror of Debian to 'deb.debian.org' if current version has not been 'EOL'(End Of Life).
+        sed -ri "s/$currentDebianMirror/deb.debian.org/g" /etc/apt/sources.list
+      else
+# Replace invalid mirror of Debian to 'archive.debian.org' because it had been marked with 'EOL'.
+        sed -ri "s/$currentDebianMirror/archive.debian.org/g" /etc/apt/sources.list
+      fi
+# Disable get security update.
+      sed -ri 's/^deb-src/# deb-src/g' /etc/apt/sources.list
+      apt update -y
+    fi
+    rm -rf /root/apt_execute.log
+  fi
   apt install lsb-release -y
 # Delete mirrors from elrepo.org because it will causes dnf/yum checking updates continuously(maybe some of the server mirror lists are in the downtime?)
   [[ `grep -wri "elrepo.org" /etc/yum.repos.d/` != "" ]] && {
@@ -956,8 +976,6 @@ function checkSys() {
   yum install redhat-lsb -y
   apk update
   OsLsb=`lsb_release -d | awk '{print$2}'`
-  
-  CurrentOSVer=`cat /etc/os-release | grep -w "VERSION_ID=*" | awk -F '=' '{print $2}' | sed 's/\"//g' | cut -d'.' -f 1`
   
   RedHatRelease=""
   for Count in `cat /etc/redhat-release | awk '{print$1}'` `cat /etc/system-release | awk '{print$1}'` `cat /etc/os-release | grep -w "ID=*" | awk -F '=' '{print $2}' | sed 's/\"//g'` "$OsLsb"; do
@@ -2851,9 +2869,12 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ 
     sed -i 's/include string openssh-server/include string kali-linux-core openssh-server/g' /tmp/boot/preseed.cfg
     sed -i 's/d-i grub-installer\/with_other_os boolean true//g' /tmp/boot/preseed.cfg
   fi
+# Disable get security updates for those versions of Debian which were 'EOL'(9 and former in 2023.07).
   if [[ "$linux_relese" != 'kali' ]]; then
-    sed -i '/d-i\ apt-setup\/services-select multiselect/d' /tmp/boot/preseed.cfg
-    sed -i '/d-i\ apt-setup\/enable-source-repositories boolean false/d' /tmp/boot/preseed.cfg
+    if [[ "$tmpIpMask" -ge "16" ]] && [[ "$linux_relese" == 'debian' && "$DebianDistNum" -gt "9" ]]; then
+      sed -i '/d-i\ apt-setup\/services-select multiselect/d' /tmp/boot/preseed.cfg
+      sed -i '/d-i\ apt-setup\/enable-source-repositories boolean false/d' /tmp/boot/preseed.cfg
+    fi
   fi
 # Static network environment doesn't support ntp clock setup.
   if [[ "$Network4Config" == "isStatic" ]] || [[ "$Network6Config" == "isStatic" ]]; then
