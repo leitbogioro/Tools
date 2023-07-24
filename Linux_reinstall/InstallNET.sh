@@ -801,7 +801,7 @@ ${ksRaidRecipes}"
   }
 }
 
-# $1 is timezone checkfile direction, $2 $3 $4 are api keys.
+# $1 is timezone checkfile direction, $2 $3 $4 $5 and $6/$7/$8 are different IP geography location data providers to avoid if any of them has a downtime.
 function getUserTimeZone() {
   if [[ ! "$TimeZone" =~ ^[a-zA-Z] ]]; then
     loginUser=`who am i | awk '{print $1}' | sed 's/(//g' | sed 's/)//g'`
@@ -809,10 +809,13 @@ function getUserTimeZone() {
 # Alpine Linux doesn't support "who am i".
     GuestIP=`netstat -anpW | grep -i 'established' | grep -i 'sshd: '$loginUser'' | grep -iw 'tcp' | awk '{print $5}' | head -n 1 | cut -d':' -f'1'`
     [[ "$GuestIP" == "" ]] && GuestIP=`netstat -anpW | grep -i 'established' | grep -i 'sshd: '$loginUser'' | grep -iw 'tcp6' | awk '{print $5}' | head -n 1 | awk -F':' '{for (i=1;i<=NF-1;i++)printf("%s:", $i);print ""}' | sed 's/.$//'`
-    for Count in "$2" "$3" "$4"; do
+    for Count in "$2$GuestIP" "$3$GuestIP" "$4$GuestIP" "$5$GuestIP/json/" "$6" "$7" "$8"; do
       [[ "$TimeZone" == "Asia/Shanghai" ]] && break
-      tmpApi=`echo -n "$Count" | base64 -d`
-      TimeZone=`curl -s "https://api.ipgeolocation.io/timezone?apiKey=$tmpApi&ip=$GuestIP" | jq '.timezone' | tr -d '"'`
+      if [[ "$Count" =~ ^[a-zA-Z0-9]+$ ]]; then
+        tmpApi=`echo -n "$Count" | base64 -d`
+        Count="https://api.ipgeolocation.io/timezone?apiKey=$tmpApi&ip=$GuestIP"
+      fi
+      TimeZone=`curl -s "$Count" -A firefox | jq '.timezone, .time_zone' | grep -v "null" | tr -d '"'`
       checkTz=`echo $TimeZone | cut -d'/' -f 1`
       [[ -n "$checkTz" && "$checkTz" =~ ^[a-zA-Z] ]] && break
     done
@@ -968,13 +971,13 @@ function checkSys() {
     rm -rf /root/apt_execute.log
   fi
   apt install lsb-release -y
+
 # Delete mirrors from elrepo.org because it will causes dnf/yum checking updates continuously(maybe some of the server mirror lists are in the downtime?)
   [[ `grep -wri "elrepo.org" /etc/yum.repos.d/` != "" ]] && {
     elrepoFile=`grep -wri "elrepo.org" /etc/yum.repos.d/ | head -n 1 | cut -d':' -f 1`
     mv "$elrepoFile" "$elrepoFile.bak"
   }
   yum install redhat-lsb -y
-  apk update
   OsLsb=`lsb_release -d | awk '{print$2}'`
   
   RedHatRelease=""
@@ -991,6 +994,7 @@ function checkSys() {
   done
   
   AlpineRelease=""
+  apk update
   for Count in `cat /etc/os-release | grep -w "ID=*" | awk -F '=' '{print $2}'` `cat /etc/issue | awk '{print $3}' | head -n 1` `uname -v | awk '{print $1}' | sed 's/[^a-zA-Z]//g'`; do
     [[ -n "$Count" ]] && AlpineRelease=`echo -e "$Count"`"$AlpineRelease"
   done
@@ -1041,8 +1045,10 @@ function checkSys() {
     exit 1
   fi
 
+# Remove "inetutils-ping" because it does not support "ping -4" or "ping -6".
+  apt purge inetutils-ping -y
 # Debian like linux OS necessary components.
-  apt install cpio curl dnsutils efibootmgr fdisk file gzip jq net-tools openssl subnetcalc tuned virt-what wget xz-utils -y
+  apt install cpio curl dnsutils efibootmgr fdisk file gzip iputils-ping jq net-tools openssl subnetcalc tuned virt-what wget xz-utils -y
 
 # Redhat like Linux OS prefer to use dnf instead of yum because former has a higher execute efficiency.
   yum install epel-release -y
@@ -2295,7 +2301,7 @@ echo -ne "\n[${yellow}Server Stack${plain}]  $IPStackType\n"
 [[ "$ip6Addr" && "$IPStackType" != "IPv4Stack" ]] && echo -e "[${yellow}IPv6 Gateway${plain}]  ""$ip6Gate" || echo -e "[${yellow}IPv6 Gateway${plain}]  ""N/A"
 [[ "$ip6Addr" && "$IPStackType" != "IPv4Stack" ]] && echo -e "[${yellow}IPv6     DNS${plain}]  ""$ip6DNS" || echo -e "[${yellow}IPv6     DNS${plain}]  ""N/A"
 
-getUserTimeZone "/root/timezonelists" "ZGEyMGNhYjhhMWM2NDJlMGE0YmZhMDVmMDZlNzBmN2E=" "ZTNlMjBiN2JjOTE2NGY2YjllNzUzYWU5ZDFjYjdjOTc=" "MWQ2NGViMGQ4ZmNlNGMzYTkxYjNiMTdmZDMxODQwZDc="
+getUserTimeZone "/root/timezonelists" "https://api.ip.sb/geoip/" "http://ifconfig.co/json?ip=" "http://ip-api.com/json/" "https://ipapi.co/" "YjNhNjAxNjY5YTFiNDI2MmFmOGYxYjJjZDk3ZjNiN2YK" "MmUxMjBhYmM0Y2Q4NDM1ZDhhMmQ5YzQzYzk4ZTZiZTEK" "NjBiMThjZWJlMWU1NGQ5NDg2YWY0MTgyMWM0ZTZiZDgK"
 [[ -z "$TimeZone" ]] && TimeZone="Asia/Tokyo"
 echo -ne "\n${aoiBlue}# User Timezone${plain}\n\n"
 echo "$TimeZone"
