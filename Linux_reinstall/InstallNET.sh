@@ -465,7 +465,6 @@ function getIPv4Address() {
 
 # $1 is "$ipAddr", $2 is "$ipGate".
 function transferIPv4AddressFormat() {
-  [[ "$Network4Config" == "isStatic" ]] && {
 # Some cloud providers like Godaddy, Arkecx, Hetzner(include DHCP) etc, the subnet mask of IPv4 static network configuration of their original template OS is incorrect.
 # The following is the sample:
 #
@@ -484,9 +483,9 @@ function transferIPv4AddressFormat() {
 # If this mistake has not be repaired, Debian installer will return error "untouchable gateway".
 # DHCP IPv4 network(even IPv4 netmask is "32") may not be effected by this situation.
 # The following consulted calculations are calculated by Vultr IPv4 subnet calculator, reference: https://www.vultr.com/resources/subnet-calculator/
-    ipv4SubnetCertificate "$1" "$2"
-    ipPrefix="$tmpIpMask"
-    ipMask=`netmask "$tmpIpMask"`
+  ipv4SubnetCertificate "$1" "$2"
+  ipPrefix="$tmpIpMask"
+  ipMask=`netmask "$tmpIpMask"`
 # Some servers' provided by Hetzner are so confused because the IPv4 configurations of them are static but they are not fitted with standard, here is a sample:
 #
 # auto ens3
@@ -502,19 +501,21 @@ function transferIPv4AddressFormat() {
 # can't be included, so the reserve approach is to get the result of "ip -4 route show scope link"(89.163.208.0/24) to ensure the correct subnet and gateway,
 # then we can fix these weird settings from incorrect network router.
 # IPv4 network from Hetzner support dhcp even though it's configurated by static in "/etc/network/interfaces".
-    ip4RangeFirst=`ipv4Calc "$1" "$actualIp4Prefix" | grep "FirstIP:" | awk '{print$2}' | cut -d'.' -f1`
-    ip4RangeLast=`ipv4Calc "$1" "$actualIp4Prefix" | grep "LastIP:" | awk '{print$2}' | cut -d'.' -f1`
-    ip4GateFirst=`echo $2 | cut -d'.' -f1`
-    ip4GateSecond=`echo $2 | cut -d'.' -f2`
+  # ip4RangeFirst=`ipv4Calc "$1" "$actualIp4Prefix" | grep "FirstIP:" | awk '{print$2}' | cut -d'.' -f1`
+  # ip4RangeLast=`ipv4Calc "$1" "$actualIp4Prefix" | grep "LastIP:" | awk '{print$2}' | cut -d'.' -f1`
+  ip4AddrFirst=`echo $1 | cut -d'.' -f1`
+  ip4AddrSecond=`echo $1 | cut -d'.' -f2`
+  ip4GateFirst=`echo $2 | cut -d'.' -f1`
+  ip4GateSecond=`echo $2 | cut -d'.' -f2`
 # Common ranges of IPv4 intranet:
 # Reference: https://hczhang.cn/network/reserved-ip-addresses.html
-    [[ "$ip4GateFirst" -gt "$ip4RangeLast" || "$ip4GateFirst" -lt "$ip4RangeFirst" ]] && {
-      [[ "$ip4GateFirst" == "169" && "$ip4GateSecond" == "254" ]] || [[ "$ip4GateFirst" == "172" && "$ip4GateSecond" -ge "16" && "$ip4GateSecond" -le "31" ]] || [[ "$ip4GateFirst" == "10" && "$ip4GateSecond" -ge "0" && "$ip4GateSecond" -le "255" ]] || [[ "$ip4GateFirst" == "192" && "$ip4GateSecond" == "168" ]] || [[ "$ip4GateFirst" == "127" && "$ip4GateSecond" -ge "0" && "$ip4GateSecond" -le "255" ]] || [[ "$ip4GateFirst" == "198" && "$ip4GateSecond" -ge "18" && "$ip4GateSecond" -le "19" ]] || [[ "$ip4GateFirst" == "100" && "$ip4GateSecond" -ge "64" && "$ip4GateSecond" -le "127" ]] && {
-        ipPrefix="$actualIp4Prefix"
-        ipMask="$actualIp4Subnet"
-# When IPv4 is public, IPv4 gateway is private, subnet prefix is 32, the result of "ip -4 route show scope link" is empty, the actual gateway maybe itself.
-        [[ -z "$ip4RouteScopeLink" ]] && ipGate=`ipv4Calc "$1" "$ipPrefix" | grep "FirstIP:" | awk '{print$2}'` || ipGate=`ipv4Calc "$ip4RouteScopeLink" "$ipPrefix" | grep "FirstIP:" | awk '{print$2}'`
-      }
+  [[ "$ip4AddrFirst""$ip4AddrSecond" != "$ip4GateFirst""$ip4GateSecond" ]] && {
+    [[ "$ip4GateFirst" == "169" && "$ip4GateSecond" == "254" ]] || [[ "$ip4GateFirst" == "172" && "$ip4GateSecond" -ge "16" && "$ip4GateSecond" -le "31" ]] || [[ "$ip4GateFirst" == "10" && "$ip4GateSecond" -ge "0" && "$ip4GateSecond" -le "255" ]] || [[ "$ip4GateFirst" == "192" && "$ip4GateSecond" == "168" ]] || [[ "$ip4GateFirst" == "127" && "$ip4GateSecond" -ge "0" && "$ip4GateSecond" -le "255" ]] || [[ "$ip4GateFirst" == "198" && "$ip4GateSecond" -ge "18" && "$ip4GateSecond" -le "19" ]] || [[ "$ip4GateFirst" == "100" && "$ip4GateSecond" -ge "64" && "$ip4GateSecond" -le "127" ]] && {
+      ipPrefix="$actualIp4Prefix"
+      ipMask="$actualIp4Subnet"
+      # [[ -z "$ip4RouteScopeLink" ]] && ipGate=`ipv4Calc "$1" "$ipPrefix" | grep "FirstIP:" | awk '{print$2}'` || ipGate=`ipv4Calc "$ip4RouteScopeLink" "$ipPrefix" | grep "FirstIP:" | awk '{print$2}'`
+# Temporary installation of Debian is "BusyBox", it can't handle IPv4 public address and IPv4 private gateway well, so we prefer to use IPv6 to configure network and write static configs for IPv4 in later of installation.
+      [[ "$IPStackType" == "BiStack" ]] && { BiStackPreferIpv6='1'; Network4Config="isStatic"; }
     }
   }
 }
@@ -1897,15 +1898,28 @@ function DebianModifiedPreseed() {
       SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel ::ffff:0:0/96' /etc/gai.conf;"
       ReplaceActualIpPrefix="$1 sed -ri \"s/address $ipAddr\/$ipPrefix/address $ipAddr\/$actualIp4Prefix/g\" /etc/network/interfaces;"
     elif [[ "$IPStackType" == "BiStack" ]]; then
-      if [[ "$Network6Config" == "isDHCP" ]]; then
+# Enable IPv4 dhcp or static configurations.
+      if [[ "$BiStackPreferIpv6" == "1" ]]; then
+        if [[ "$Network4Config" == "isDHCP" ]]; then
+          SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
+          [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && SupportIPv6orIPv4="$1 sed -i '\$a\ ' /etc/network/interfaces; $1 sed -i '\$aallow-hotplug $interface4' /etc/network/interfaces; $1 sed -i '\$aiface $interface4 inet dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
+          ReplaceActualIpPrefix="$1 sed -ri \"s/address $ip6Addr\/$ip6Mask/address $ip6Addr\/$actualIp6Prefix/g\" /etc/network/interfaces;"
+        elif [[ "$Network4Config" == "isStatic" ]]; then
+          SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet static' /etc/network/interfaces; $1 sed -i '\$a\\\taddress $ipAddr' /etc/network/interfaces; $1 sed -i '\$a\\\tnetmask $MASK' /etc/network/interfaces; $1 sed -i '\$a\\\tgateway $GATE' /etc/network/interfaces; $1 sed -i '\$a\\\tdns-nameservers $ipDNS' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
+          [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && SupportIPv6orIPv4="$1 sed -i '\$a\ ' /etc/network/interfaces; $1 sed -i '\$aallow-hotplug $interface4' /etc/network/interfaces; $1 sed -i '\$aiface $interface4 inet static' /etc/network/interfaces; $1 sed -i '\$a\\\taddress $ipAddr' /etc/network/interfaces; $1 sed -i '\$a\\\tnetmask $MASK' /etc/network/interfaces; $1 sed -i '\$a\\\tgateway $GATE' /etc/network/interfaces; $1 sed -i '\$a\\\tdns-nameservers $ipDNS' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
+          ReplaceActualIpPrefix="$1 sed -ri \"s/address $ip6Addr\/$ip6Mask/address $ip6Addr\/$actualIp6Prefix/g\" /etc/network/interfaces; $1 sed -ri \"s/netmask $MASK/netmask $actualIp4Subnet/g\" /etc/network/interfaces;"
+        fi
+      else
+        if [[ "$Network6Config" == "isDHCP" ]]; then
 # Enable IPv6 dhcp and set prefer IPv6 access for BiStack or IPv6Stack machine: add "label 2002::/16", "label 2001:0::/32" in last line of the "/etc/gai.conf"
-        SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
-        [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && SupportIPv6orIPv4="$1 sed -i '\$a\ ' /etc/network/interfaces; $1 sed -i '\$aallow-hotplug $interface6' /etc/network/interfaces; $1 sed -i '\$aiface $interface6 inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
-        ReplaceActualIpPrefix="$1 sed -ri \"s/address $ipAddr\/$ipPrefix/address $ipAddr\/$actualIp4Prefix/g\" /etc/network/interfaces;"
-      elif [[ "$Network6Config" == "isStatic" ]]; then
-        SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet6 static' /etc/network/interfaces; $1 sed -i '\$a\\\taddress $ip6Addr' /etc/network/interfaces; $1 sed -i '\$a\\\tnetmask $ip6Mask' /etc/network/interfaces; $1 sed -i '\$a\\\tgateway $ip6Gate' /etc/network/interfaces; $1 sed -i '\$a\\\tdns-nameservers $ip6DNS' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
-        [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && SupportIPv6orIPv4="$1 sed -i '\$a\ ' /etc/network/interfaces; $1 sed -i '\$aallow-hotplug $interface6' /etc/network/interfaces; $1 sed -i '\$aiface $interface6 inet6 static' /etc/network/interfaces; $1 sed -i '\$a\\\taddress $ip6Addr' /etc/network/interfaces; $1 sed -i '\$a\\\tnetmask $ip6Mask' /etc/network/interfaces; $1 sed -i '\$a\\\tgateway $ip6Gate' /etc/network/interfaces; $1 sed -i '\$a\\\tdns-nameservers $ip6DNS' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
-        ReplaceActualIpPrefix="$1 sed -ri \"s/address $ipAddr\/$ipPrefix/address $ipAddr\/$actualIp4Prefix/g\" /etc/network/interfaces; $1 sed -ri \"s/netmask $ip6Mask/netmask $actualIp6Prefix/g\" /etc/network/interfaces;"
+          SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
+          [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && SupportIPv6orIPv4="$1 sed -i '\$a\ ' /etc/network/interfaces; $1 sed -i '\$aallow-hotplug $interface6' /etc/network/interfaces; $1 sed -i '\$aiface $interface6 inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
+          ReplaceActualIpPrefix="$1 sed -ri \"s/address $ipAddr\/$ipPrefix/address $ipAddr\/$actualIp4Prefix/g\" /etc/network/interfaces;"
+        elif [[ "$Network6Config" == "isStatic" ]]; then
+          SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet6 static' /etc/network/interfaces; $1 sed -i '\$a\\\taddress $ip6Addr' /etc/network/interfaces; $1 sed -i '\$a\\\tnetmask $ip6Mask' /etc/network/interfaces; $1 sed -i '\$a\\\tgateway $ip6Gate' /etc/network/interfaces; $1 sed -i '\$a\\\tdns-nameservers $ip6DNS' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
+          [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && SupportIPv6orIPv4="$1 sed -i '\$a\ ' /etc/network/interfaces; $1 sed -i '\$aallow-hotplug $interface6' /etc/network/interfaces; $1 sed -i '\$aiface $interface6 inet6 static' /etc/network/interfaces; $1 sed -i '\$a\\\taddress $ip6Addr' /etc/network/interfaces; $1 sed -i '\$a\\\tnetmask $ip6Mask' /etc/network/interfaces; $1 sed -i '\$a\\\tgateway $ip6Gate' /etc/network/interfaces; $1 sed -i '\$a\\\tdns-nameservers $ip6DNS' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
+          ReplaceActualIpPrefix="$1 sed -ri \"s/address $ipAddr\/$ipPrefix/address $ipAddr\/$actualIp4Prefix/g\" /etc/network/interfaces; $1 sed -ri \"s/netmask $ip6Mask/netmask $actualIp6Prefix/g\" /etc/network/interfaces;"
+        fi
       fi
     elif [[ "$IPStackType" == "IPv6Stack" ]]; then
 # This IPv6Stack Static machine can access IPv4 network in the future, maybe.
@@ -1968,10 +1982,12 @@ function DebianPreseedProcess() {
 # d-i partman/choose_label string gpt
 # d-i partman/default_label string gpt
     setRaidRecipe "$setRaid" "$disksNum" "$AllDisks" "$linux_relese"
-# Prefer to use IPv4 to config networking.
-    if [[ "$IPStackType" == "IPv4Stack" ]] || [[ "$IPStackType" == "BiStack" ]]; then
+# Prefer to use IPv4 stack to config networking.
+    if [[ "$IPStackType" == "IPv4Stack" ]] || [[ "$IPStackType" == "BiStack" && "$BiStackPreferIpv6" != "1" ]]; then
       [[ "$Network4Config" == "isStatic" ]] && NetConfigManually=`echo -e "d-i netcfg/disable_autoconfig boolean true\nd-i netcfg/dhcp_failed note\nd-i netcfg/dhcp_options select Configure network manually\nd-i netcfg/get_ipaddress string $IPv4\nd-i netcfg/get_netmask string $MASK\nd-i netcfg/get_gateway string $GATE\nd-i netcfg/get_nameservers string $ipDNS\nd-i netcfg/no_default_route boolean true\nd-i netcfg/confirm_static boolean true"` || NetConfigManually=""
-    elif [[ "$IPStackType" == "IPv6Stack" ]]; then
+# Prefer to use IPv6 stack to configure network because Debian 12 supports public IPv6 address with private gateway like "fe80::1" and works well,
+# if IPv4 configuration of one BiStack server has public IPv4 and private gateway like "172.31.1.1" because this case will cause Debian installer notices "unreachable gateway".
+    elif [[ "$IPStackType" == "IPv6Stack" ]] || [[ "$IPStackType" == "BiStack" && "$BiStackPreferIpv6" == "1" ]]; then
       [[ "$Network6Config" == "isStatic" ]] && NetConfigManually=`echo -e "d-i netcfg/disable_autoconfig boolean true\nd-i netcfg/dhcp_failed note\nd-i netcfg/dhcp_options select Configure network manually\nd-i netcfg/get_ipaddress string $ip6Addr\nd-i netcfg/get_netmask string $ip6Subnet\nd-i netcfg/get_gateway string $ip6Gate\nd-i netcfg/get_nameservers string $ip6DNS\nd-i netcfg/no_default_route boolean true\nd-i netcfg/confirm_static boolean true"` || NetConfigManually=""
     fi
 # Debian installer can only identify the full IPv6 address of IPv6 mask,
@@ -2857,7 +2873,7 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ 
   fi
 # Disable get security updates for those versions of Debian which were 'EOL'(9 and former in 2023.07).
   if [[ "$linux_relese" != 'kali' ]]; then
-    if [[ "$tmpIpMask" -ge "16" || "$IPStackType" == "IPv6Stack" ]] && [[ "$linux_relese" == 'debian' && "$DebianDistNum" -gt "9" ]]; then
+    if [[ "$tmpIpMask" -ge "16" || "$IPStackType" == "IPv6Stack" || "$BiStackPreferIpv6" == "1" ]] && [[ "$linux_relese" == 'debian' && "$DebianDistNum" -gt "9" ]]; then
       sed -i '/d-i\ apt-setup\/services-select multiselect/d' /tmp/boot/preseed.cfg
       sed -i '/d-i\ apt-setup\/enable-source-repositories boolean false/d' /tmp/boot/preseed.cfg
     fi
