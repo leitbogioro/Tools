@@ -303,42 +303,22 @@ while [[ $# -ge 1 ]]; do
 # Check Root
 [[ "$EUID" -ne '0' || $(id -u) != '0' ]] && echo -ne "\n[${red}Error${plain}] This script must be executed as root!\n\nTry to type:\n${yellow}sudo -s\n${plain}\nAfter entering the password, switch to root dir to execute this script:\n${yellow}cd ~${plain}\n\n" && exit 1
 
-# Ping delay to YouTube($1) and Instagram($2) and Wikipedia($3), support both ipv4 and ipv6, $4 is $IPStackType
+# Ping delay to YouTube($2), Instagram($3), Wikipedia($4) and BBC($5), support both IPv4 and IPv6 access, $1 is $IPStackType
 function checkCN() {
-  for TestUrl in "$1" "$2" "$3"; do
+  for TestUrl in "$2" "$3" "$4" "$5"; do
 # "rtt" result of ping command of Alpine Linux is "round-trip" and it can't handle "sed -n" well.
     IPv4PingDelay=`ping -4 -c 2 -w 2 "$TestUrl" | grep "rtt\|round-trip" | cut -d'/' -f5 | awk -F'.' '{print $NF}' | sed -E '/^[0-9]\+\(\.[0-9]\+\)\?$/p'`
     IPv6PingDelay=`ping -6 -c 2 -w 2 "$TestUrl" | grep "rtt\|round-trip" | cut -d'/' -f5 | awk -F'.' '{print $NF}' | sed -E '/^[0-9]\+\(\.[0-9]\+\)\?$/p'`
-    if [[ "$4"="BiStack" ]]; then
-      if [[ "$IPv4PingDelay" != "" ]] || [[ "$IPv6PingDelay" != "" ]]; then
-        IsCN=""
-        IsCN=`echo -e "$IsCN"`"$IsCN"
-      else
-        IsCN="cn"
-      fi
-    elif [[ "$4"="IPv4Stack" ]]; then
-      if [[ "$IPv4PingDelay" != "" ]]; then
-        IsCN=""
-        IsCN=`echo -e "$IsCN"`"$IsCN"
-      else
-        IsCN="cn"
-        IsCN=`echo -e "$IsCN"`"$IsCN"
-      fi
-    elif [[ "$4"="IPv6Stack" ]]; then
-      if [[ "$IPv6PingDelay" != "" ]]; then
-        IsCN=""
-        IsCN=`echo -e "$IsCN"`"$IsCN"
-      else
-        IsCN="cn"
-        IsCN=`echo -e "$IsCN"`"$IsCN"
-      fi
+    if [[ "$1"="BiStack" ]]; then
+      [[ "$IPv4PingDelay" != "" || "$IPv6PingDelay" != "" ]] && tmpIsCN+="" || tmpIsCN+="cn"
+    elif [[ "$1"="IPv4Stack" ]]; then
+      [[ "$IPv4PingDelay" != "" ]] && tmpIsCN+="" || tmpIsCN+="cn"
+    elif [[ "$1"="IPv6Stack" ]]; then
+      [[ "$IPv6PingDelay" != "" ]] && tmpIsCN+="" || tmpIsCN+="cn"
     fi
   done
-  [[ `echo "$IsCN" | grep "cn"` != "" ]] && IsCN="cn" || IsCN=""
-  if [[ "$IsCN" == "cn" ]]; then
-    ipDNS="119.29.29.29 223.6.6.6"
-    ip6DNS="2402:4e00:: 2400:3200::1"
-  fi
+# If testing servers are all unaccessible, the server may be in mainland of China.
+  [[ $(echo $tmpIsCN | grep -o "cn" | wc -l) == "4" ]] && { IsCN="cn"; ipDNS="119.29.29.29 223.6.6.6"; ip6DNS="2402:4e00:: 2400:3200::1"; }
 }
 
 # "$1" is "$ipDNS" or "$ip6DNS"
@@ -2185,8 +2165,8 @@ checkSys
 # IPv4 and IPv6 DNS check servers from OpenDNS, Quad9, Verisign and TWNIC.
 checkIpv4OrIpv6 "$ipAddr" "$ip6Addr" "208.67.220.220" "9.9.9.9" "64.6.65.6" "101.102.103.104" "2620:0:ccc::2" "2620:fe::9" "2620:74:1b::1:1" "2001:de4::101"
 
-# Youtube, Instagram and Wikipedia all have public IPv4 and IPv6 address and are also banned in mainland of China.
-checkCN "www.youtube.com" "www.instagram.com" "www.wikipedia.org" "$IPStackType"
+# Youtube, Instagram, Wikipedia and BBC are all have public IPv4 and IPv6 address and are also banned in mainland of China.
+checkCN "$IPStackType" "www.youtube.com" "www.instagram.com" "www.wikipedia.org" "bbc.com"
 
 checkEfi "/sys/firmware/efi/efivars/" "/sys/firmware/efi/vars/" "/sys/firmware/efi/runtime-map/" "/sys/firmware/efi/mok-variables/"
 
@@ -2877,7 +2857,7 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ 
   fi
 # Disable get security updates for those versions of Debian which were 'EOL'(9 and former in 2023.07).
   if [[ "$linux_relese" != 'kali' ]]; then
-    if [[ "$tmpIpMask" -ge "16" ]] && [[ "$linux_relese" == 'debian' && "$DebianDistNum" -gt "9" ]]; then
+    if [[ "$tmpIpMask" -ge "16" || "$IPStackType" == "IPv6Stack" ]] && [[ "$linux_relese" == 'debian' && "$DebianDistNum" -gt "9" ]]; then
       sed -i '/d-i\ apt-setup\/services-select multiselect/d' /tmp/boot/preseed.cfg
       sed -i '/d-i\ apt-setup\/enable-source-repositories boolean false/d' /tmp/boot/preseed.cfg
     fi
