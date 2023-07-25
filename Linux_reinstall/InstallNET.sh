@@ -412,8 +412,8 @@ function getIPv4Address() {
   ipPrefix=`echo ${iAddr} | cut -d'/' -f2`
   ipMask=`netmask "$ipPrefix"`
 # Get real IPv4 subnet of current System
-  ip4RouteScopeLink=`ip -4 route show scope link | grep -iv "warp\|wgcf\|wg[0-9]" | grep -w "$interface4" | grep -w "$ipAddr" | grep -m1 -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | head -n 1`
-  actualIp4Prefix=`ip -4 route show scope link | grep -iv "warp\|wgcf\|wg[0-9]" | grep -w "$interface4" | grep -w "$ip4RouteScopeLink" | head -n 1 | awk '{print $1}' | awk -F '/' '{print $2}'`
+  ip4RouteScopeLink=`ip -4 route show scope link | grep -iv "warp\|wgcf\|wg[0-9]\|docker[0-9]" | grep -w "$interface4" | grep -w "$ipAddr" | grep -m1 -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | head -n 1`
+  actualIp4Prefix=`ip -4 route show scope link | grep -iv "warp\|wgcf\|wg[0-9]\|docker[0-9]" | grep -w "$interface4" | grep -w "$ip4RouteScopeLink" | head -n 1 | awk '{print $1}' | awk -F '/' '{print $2}'`
   [[ -z "$actualIp4Prefix" ]] && actualIp4Prefix="$ipPrefix"
   actualIp4Subnet=`netmask "$actualIp4Prefix"`
 # In most situation, at least 99.9% probability, the first hop of the network should be the same as the available gateway. 
@@ -422,13 +422,13 @@ function getIPv4Address() {
 # But installer said the correct gateway should be 5.45.76.1, in a typical network, for example, your home, 
 # the default gateway is the same as the first route hop of the machine, it may be 192.168.0.1.
 # If possible, we should configure out the real available gateway of the network.
-  FirstRoute=`ip -4 route show default | grep -iv "warp\|wgcf\|wg[0-9]" | grep -w "via" | grep -w "dev $interface4*" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+  FirstRoute=`ip -4 route show default | grep -iv "warp\|wgcf\|wg[0-9]\|docker[0-9]" | grep -w "via" | grep -w "dev $interface4*" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
 # We should find it in ARP, the first hop IP and gateway IP is managed by the same device, use device mac address to configure it out.
   RouterMac=`arp -n | grep "$FirstRoute" | awk '{print$3}'`
   FrFirst=`echo "$FirstRoute" | cut -d'.' -f 1,2`
   FrThird=`echo "$FirstRoute" | cut -d'.' -f 3`
 # Print all matched available gateway.
-  ipGates=`ip -4 route show | grep -iv "warp\|wgcf\|wg[0-9]" | grep -v "via" | grep -w "dev $interface4*" | grep -w "proto*" | grep -w "scope global\|link src $ipAddr*" | awk '{print$1}'`
+  ipGates=`ip -4 route show | grep -iv "warp\|wgcf\|wg[0-9]\|docker[0-9]" | grep -v "via" | grep -w "dev $interface4*" | grep -w "proto*" | grep -w "scope global\|link src $ipAddr*" | awk '{print$1}'`
 # Figure out the line of this list.
   ipGateLine=`echo "$ipGates" | wc -l`
 # The line determines the cycling times.
@@ -1276,10 +1276,10 @@ function getIPv6Address() {
   [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && i6Addr=`ip -6 addr show | grep -wA 5 "$interface6" | grep -wv "lo\|host" | grep -wv "link" | grep -w "inet6" | grep "scope" | grep "global" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
   ip6Addr=`echo ${i6Addr} |cut -d'/' -f1`
   ip6Mask=`echo ${i6Addr} |cut -d'/' -f2`
-  ip6Gate=`ip -6 route show default | grep -iv "warp\|wgcf\|wg[0-9]" | grep -w "$interface" | grep -w "via" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+  ip6Gate=`ip -6 route show default | grep -iv "warp\|wgcf\|wg[0-9]\|docker[0-9]" | grep -w "$interface" | grep -w "via" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
   [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && ip6Gate=`ip -6 route show default | grep -w "$interface6" | grep -w "via" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
 # Get real IPv6 subnet of current System
-  actualIp6Prefix=`ip -6 route show | grep -iv "warp\|wgcf\|wg[0-9]" | grep -w "$interface6" | grep -v "default" | grep -v "multicast" | grep -P '../[0-9]{1,3}' | head -n 1 | awk '{print $1}' | awk -F '/' '{print $2}'`
+  actualIp6Prefix=`ip -6 route show | grep -iv "warp\|wgcf\|wg[0-9]\|docker[0-9]" | grep -w "$interface6" | grep -v "default" | grep -v "multicast" | grep -P '../[0-9]{1,3}' | head -n 1 | awk '{print $1}' | awk -F '/' '{print $2}'`
   [[ -z "$actualIp6Prefix" ]] && actualIp6Prefix="$ip6Mask"
   transferIPv6AddressFormat "$ip6Addr" "$ip6Gate"
 }
