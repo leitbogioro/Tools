@@ -582,8 +582,12 @@ function ipv4SubnetCertificate() {
 function getDisk() {
 # $disks is definited as the default disk, if server has 2 and more disks, the first disk will be responsible of the grub booting.
   rootPart=`lsblk -ip | grep -v "fd[0-9]*\|sr[0-9]*\|ram[0-9]*\|loop[0-9]*" | sed 's/[[:space:]]*$//g' | grep -w "part /\|part /boot" | head -n 1 | cut -d' ' -f1 | sed 's/..//'`
-  majorMin=`lsblk -ip | grep -w "$rootPart" | head -n 1 | awk '{print $2}' | sed -r 's/:(.*)/:0/g'`
-  disks=`lsblk -ip | grep -w "$majorMin" | head -n 1 | awk '{print $1}'`
+  # majorMin=`lsblk -ip | grep -w "$rootPart" | head -n 1 | awk '{print $2}' | sed -r 's/:(.*)/:0/g'`
+  diskSuffix=${rootPart: -4}
+# ssd like NVMe(/dev/nvme0n1), MMC sd card(/dev/mmcblk0) are parted with "p number" suffix like: "/dev/nvme0n1p1" "/dev/mmcblk0p2",
+# The partitions of vda and sda devices are ended with number "/dev/sda1" "/dev/vda2".
+  [[ -n `echo $diskSuffix | grep -o "[0-9]p[0-9]"` ]] && disks=`echo $rootPart | sed 's/p[0-9]*.$//'` || disks=`echo $rootPart | sed 's/[0-9]*.$//'`
+  # disks=`lsblk -ip | grep -w "$majorMin" | head -n 1 | awk '{print $1}'`
   [[ -z "$disks" ]] && disks=`lsblk -ip | grep -v "fd[0-9]*\|sr[0-9]*\|ram[0-9]*\|loop[0-9]*" | sed 's/[[:space:]]*$//g' | grep -w "disk /\|disk /boot" | head -n 1 | cut -d' ' -f1`
   [[ -z "$disks" ]] && disks=`lsblk -ip | grep -v "fd[0-9]*\|sr[0-9]*\|ram[0-9]*\|loop[0-9]*" | sed 's/[[:space:]]*$//g' | grep -w "disk" | grep -i "[0-9]g\|[0-9]t\|[0-9]p\|[0-9]e\|[0-9]z\|[0-9]y" | head -n 1 | cut -d' ' -f1`
   [ -n "$disks" ] || echo ""
@@ -618,7 +622,11 @@ function getDisk() {
   done
   tmpAllDisks=$(echo "$tmpAllDisks" | sed 's/.$//')
 
-  [[ "$AllDisks" == "$tmpAllDisks" ]] || AllDisks="$tmpAllDisks";disksNum=$(echo $AllDisks | grep -o "/dev/*" | wc -l);IncDisk=$(echo "$AllDisks" | cut -d' ' -f1);
+  [[ "$AllDisks" != "$tmpAllDisks" ]] && {
+    AllDisks="$tmpAllDisks"
+    disksNum=$(echo $AllDisks | grep -o "/dev/*" | wc -l)
+    [[ "$IncDisk" =~ "$AllDisks" ]] || IncDisk=$(echo "$AllDisks" | cut -d' ' -f1)
+  }
 
 # Allow user to install system to one disk manually.
   [[ -n "$1" && "$1" =~ ^[a-z0-9]+$ && "$1" != "all" ]] && {
