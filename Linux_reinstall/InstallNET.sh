@@ -1115,11 +1115,9 @@ function checkIpv4OrIpv6() {
   done
 
 # Use ping -4/-6 to replace dig -4/-6 because some IPv4 network will callback IPv6 address from DNS even if we use "dig -4" to get DNS result.
-  [[ -z "$1" && -z "$2" ]] && {
-    [[ "$IPv4PingDNS" =~ ^[0-9] && "$IPv6PingDNS" =~ ^[0-9] ]] && IPStackType="BiStack"
-    [[ "$IPv4PingDNS" =~ ^[0-9] && ! "$IPv6PingDNS" =~ ^[0-9] ]] && IPStackType="IPv4Stack"
-    [[ ! "$IPv4PingDNS" =~ ^[0-9] && "$IPv6PingDNS" =~ ^[0-9] ]] && IPStackType="IPv6Stack"
-  }
+  [[ "$IPv4PingDNS" =~ ^[0-9] && "$IPv6PingDNS" =~ ^[0-9] ]] && IPStackType="BiStack"
+  [[ "$IPv4PingDNS" =~ ^[0-9] && ! "$IPv6PingDNS" =~ ^[0-9] ]] && IPStackType="IPv4Stack"
+  [[ ! "$IPv4PingDNS" =~ ^[0-9] && "$IPv6PingDNS" =~ ^[0-9] ]] && IPStackType="IPv6Stack"
   [[ -n "$1" || -n "$2" ]] && {
     if [[ -n "$1" && -z "$2" ]]; then
       for ipCheck in "$1" "$ipGate"; do
@@ -1137,9 +1135,6 @@ function checkIpv4OrIpv6() {
         verifyIPv6FormatLawfulness "$ipCheck"
       done
     fi
-    [[ "$IP_Check" == "isIPv4" && "$IP6_Check" == "isIPv6" ]] && IPStackType="BiStack"
-    [[ "$IP_Check" == "isIPv4" && "$IP6_Check" != "isIPv6" ]] && IPStackType="IPv4Stack"
-    [[ "$IP_Check" != "isIPv4" && "$IP6_Check" == "isIPv6" ]] && IPStackType="IPv6Stack"
   }
   # [[ "$IPStackType" == "IPv4Stack" ]] && setIPv6="0" || setIPv6="1"
   [[ "$tmpSetIPv6" == "0" ]] && setIPv6="0" || setIPv6="1"
