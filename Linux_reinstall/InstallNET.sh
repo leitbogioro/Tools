@@ -389,7 +389,7 @@ function selectMirror() {
   mirrorStatus=0
   declare -A MirrorBackup
   if [[ "$IsCN" == "cn" ]]; then
-    MirrorBackup=(["debian0"]="" ["debian1"]="http://mirror.nju.edu.cn/debian" ["debian2"]="https://mirrors.cloud.tencent.com/debian" ["debian3"]="http://mirrors.hit.edu.cn/debian" ["debian4"]="https://mirrors.aliyun.com/debian-archive/debian" ["ubuntu0"]="" ["ubuntu1"]="https://mirrors.ustc.edu.cn/ubuntu" ["ubuntu2"]="http://mirrors.xjtu.edu.cn/ubuntu" ["kali0"]="" ["kali1"]="https://mirrors.tuna.tsinghua.edu.cn/kali" ["kali2"]="http://mirrors.zju.edu.cn/kali" ["alpinelinux0"]="" ["alpinelinux1"]="http://mirror.nju.edu.cn/alpine" ["alpinelinux2"]="http://mirrors.tuna.tsinghua.edu.cn/alpine" ["centos0"]="" ["centos1"]="https://mirrors.ustc.edu.cn/centos-stream" ["centos2"]="https://mirrors.bfsu.edu.cn/centos-stream" ["centos3"]="https://mirrors.tuna.tsinghua.edu.cn/centos" ["centos4"]="http://mirror.nju.edu.cn/centos-altarch" ["centos5"]="https://mirrors.tuna.tsinghua.edu.cn/centos-vault" ["fedora0"]="" ["fedora1"]="https://mirrors.tuna.tsinghua.edu.cn/fedora" ["fedora2"]="https://mirrors.bfsu.edu.cn/fedora" ["rockylinux0"]="" ["rockylinux1"]="http://mirror.nju.edu.cn/rocky" ["rockylinux2"]="http://mirrors.sdu.edu.cn/rocky" ["almalinux0"]="" ["almalinux1"]="https://mirror.sjtu.edu.cn/almalinux" ["almalinux2"]="http://mirrors.neusoft.edu.cn/almalinux")
+    MirrorBackup=(["debian0"]="" ["debian1"]="http://ftp.cn.debian.org/debian" ["debian2"]="http://mirror.nju.edu.cn/debian" ["debian3"]="http://mirrors.ustc.edu.cn/debian" ["debian4"]="https://mirrors.aliyun.com/debian-archive/debian" ["ubuntu0"]="" ["ubuntu1"]="https://mirrors.ustc.edu.cn/ubuntu" ["ubuntu2"]="http://mirrors.xjtu.edu.cn/ubuntu" ["kali0"]="" ["kali1"]="https://mirrors.tuna.tsinghua.edu.cn/kali" ["kali2"]="http://mirrors.zju.edu.cn/kali" ["alpinelinux0"]="" ["alpinelinux1"]="http://mirror.nju.edu.cn/alpine" ["alpinelinux2"]="http://mirrors.tuna.tsinghua.edu.cn/alpine" ["centos0"]="" ["centos1"]="https://mirrors.ustc.edu.cn/centos-stream" ["centos2"]="https://mirrors.bfsu.edu.cn/centos-stream" ["centos3"]="https://mirrors.tuna.tsinghua.edu.cn/centos" ["centos4"]="http://mirror.nju.edu.cn/centos-altarch" ["centos5"]="https://mirrors.tuna.tsinghua.edu.cn/centos-vault" ["fedora0"]="" ["fedora1"]="https://mirrors.tuna.tsinghua.edu.cn/fedora" ["fedora2"]="https://mirrors.bfsu.edu.cn/fedora" ["rockylinux0"]="" ["rockylinux1"]="http://mirror.nju.edu.cn/rocky" ["rockylinux2"]="http://mirrors.sdu.edu.cn/rocky" ["almalinux0"]="" ["almalinux1"]="https://mirror.sjtu.edu.cn/almalinux" ["almalinux2"]="http://mirrors.neusoft.edu.cn/almalinux")
   else
     MirrorBackup=(["debian0"]="" ["debian1"]="http://deb.debian.org/debian" ["debian2"]="http://mirrors.ocf.berkeley.edu/debian" ["debian3"]="http://ftp.yz.yamagata-u.ac.jp/pub/linux/debian" ["debian4"]="http://archive.debian.org/debian" ["ubuntu0"]="" ["ubuntu1"]="http://archive.ubuntu.com/ubuntu" ["ubuntu2"]="http://ports.ubuntu.com" ["kali0"]="" ["kali1"]="https://mirrors.ocf.berkeley.edu/kali" ["kali2"]="http://ftp.yz.yamagata-u.ac.jp/pub/linux/kali" ["alpinelinux0"]="" ["alpinelinux1"]="http://dl-cdn.alpinelinux.org/alpine" ["alpinelinux2"]="https://mirrors.edge.kernel.org/alpine" ["centos0"]="" ["centos1"]="http://mirror.stream.centos.org" ["centos2"]="http://mirrors.ocf.berkeley.edu/centos-stream" ["centos3"]="http://mirror.centos.org/centos" ["centos4"]="http://mirror.centos.org/altarch" ["centos5"]="http://vault.centos.org" ["fedora0"]="" ["fedora1"]="http://mirrors.rit.edu/fedora/fedora/linux" ["fedora2"]="http://ftp.iij.ad.jp/pub/linux/Fedora/fedora/linux" ["rockylinux0"]="" ["rockylinux1"]="http://download.rockylinux.org/pub/rocky" ["rockylinux2"]="http://mirrors.iu13.net/rocky" ["almalinux0"]="" ["almalinux1"]="http://repo.almalinux.org/almalinux" ["almalinux2"]="http://ftp.iij.ad.jp/pub/linux/almalinux")
   fi
@@ -1130,6 +1130,7 @@ function checkIpv4OrIpv6() {
       for ipCheck in "$2" "$ip6Gate"; do
         verifyIPv6FormatLawfulness "$ipCheck"
       done
+      IPStackType="BiStack"
     elif [[ -z "$1" && -n "$2" ]]; then
       for ipCheck in "$2" "$ip6Gate"; do
         verifyIPv6FormatLawfulness "$ipCheck"
@@ -1731,6 +1732,21 @@ function checkIpv4OrIpv6ConfigForRedhat9Later() {
   NetCfgLineNum=`expr $minArray + $IpTypeLine`
 }
 
+# For those IPv6 only servers which Redhat series OS are need to be installed in environment of anaconda,
+# we need to assign a valid IPv6 config in grub so that "install.img" can be loaded.
+# Reference: https://www.golinuxcloud.com/ipv6-uefi-pxe-boot-kickstart-rhel-centos-8/#Step-8_Configure_grubcfg_Dracut_Kernel_Menu
+#            https://binaryfury.wann.net/2016/03/installing-centos-7-on-an-ipv6-only-system/
+function ipv6ForRedhatGrub() {
+  if [[ "$IPStackType" == "IPv6Stack" ]]; then
+    ipv6NameserverForKsGrub="nameserver=$ip6DNS1 nameserver=$ip6DNS2"
+    if [[ "$Network6Config" == "isStatic" ]]; then
+      ipv6StaticConfForKsGrub="noipv4 ip=[$ip6Addr]::[$ip6Gate]:$actualIp6Prefix::$interface:none $ipv6NameserverForKsGrub"
+    else
+      ipv6StaticConfForKsGrub="noipv4 $ipv6NameserverForKsGrub"
+    fi
+  fi
+}
+
 # If original system using DHCP, skip IP address, subnet mask, gateway, DNS server settings manually.
 # In many DHCP servers, manual settings may cause some additional problems.
 # For example, in Hetzner's machine, the network configuration of official template is DHCP for IPv4, STATIC for IPv6,
@@ -1789,7 +1805,7 @@ function checkDHCP() {
         [[ `sed -n "$NetCfg6LineNum"p $NetCfgWhole` == "method=auto" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
       elif [[ "$3" == "IPv6Stack" ]]; then
         Network4Config="isDHCP"
-        [[ `sed -n "$NetCfg4LineNum"p $NetCfgWhole` == "method=auto" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
+        [[ `sed -n "$NetCfg6LineNum"p $NetCfgWhole` == "method=auto" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
       fi
     fi
   elif [[ "$1" == 'Debian' ]] || [[ "$1" == 'Kali' ]] || [[ "$1" == 'Ubuntu' && "$networkManagerType" == "ifupdown" ]] || [[ "$1" == 'AlpineLinux' ]]; then
@@ -3095,8 +3111,10 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
     [[ "$IsCN" == "cn" ]] && RepoEpel="repo --name=epel --baseurl=http://mirrors.163.com/fedora/releases/${DIST}/Everything/${VER}/os/" || RepoEpel="repo --name=epel --mirrorlist=https://mirrors.fedoraproject.org/mirrorlist?repo=fedora-${DIST}&arch=${VER}"
   fi
 # If network adapter is redirected, the "eth0" is default.
-# --bootproto="xx" is for IPv4, --bootproto=dhcp is IPv4 DHCP, --bootproto=static is IPv4 Static. 
-# --ipv6="a vaild IPv6 address" is IPv6 Static, --ipv6=auto is IPv6 DHCP.
+# --bootproto="a value" is exclusive to IPv4, --bootproto=dhcp is IPv4 DHCP, --bootproto=static is IPv4 Static. 
+# --ipv6="a vaild IPv6 address/netmask bits" is for IPv6 static, and then --ipv6gateway="a valid IPv6 gateway" is necessary, --ipv6=auto is for IPv6 DHCP.
+# For IPv6 only network environment, no matter dhcp or static, IPv4 configuration must be disabled(--noipv4),
+# in this situation, CentOS 7 doesn't accept any IPv4 DNS value.
 # Reference: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/system_design_guide/kickstart-commands-and-options-reference_system-design-guide#network_kickstart-commands-for-network-configuration
   if [[ "$IPStackType" == "IPv4Stack" ]]; then
     if [[ "$Network4Config" == "isDHCP" ]]; then
@@ -3116,12 +3134,12 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
     fi
   elif [[ "$IPStackType" == "IPv6Stack" ]]; then
     if [[ "$Network6Config" == "isDHCP" ]]; then
-      NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=auto --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
+      NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=auto --nameserver=$ip6DNS --hostname=$(hostname) --onboot=on --activate --noipv4"
     elif [[ "$Network6Config" == "isStatic" ]]; then
-      NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=$ip6Addr/$actualIp6Prefix --ipv6gateway=$ip6Gate --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
+      NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=$ip6Addr/$actualIp6Prefix --ipv6gateway=$ip6Gate --nameserver=$ip6DNS --hostname=$(hostname) --onboot=on --activate --noipv4"
     fi
   fi
-# Part disk manually.
+# Recipes for part disk in BIOS or UEFI manually.
 # Reference: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/installation_guide/sect-kickstart-syntax
 #            https://blog.adachin.me/archives/3621
 #            https://www.cnblogs.com/hukey/p/14919346.html
@@ -3367,11 +3385,12 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
       # Add_OPTION="ip=[2603:c020:800d:ae3d:6cde:8519:f1e3:a522]::[fe80::200:17ff:fe4c:e267]:[ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff]::eth0::[2606:4700:4700::1001]:"
       # BOOT_OPTION="alpine_repo=$LinuxMirror/$DIST/main modloop=$LinuxMirror/$DIST/releases/$VER/netboot/modloop-lts ip=2001:19f0:000c:05b9:5400:04ff:fe74:7d40::fe80:0000:0000:0000:fc00:04ff:fe74:7d40:ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff::eth0::2606:4700:4700:0000:0000:0000:0000:1001:"
     elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
+      ipv6ForRedhatGrub
 # The method for Redhat series installer to search network adapter automatically is to set "ksdevice=link" in grub file of the current system for netboot install file which need to be loaded after restart.
 # The same behavior for grub2.
 # "ksdevice=interface" will be deprecated in future versions of anaconda.
 # Reference: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/performing_an_advanced_rhel_8_installation/kickstart-and-advanced-boot-options_installing-rhel-as-an-experienced-user
-      BOOT_OPTION="inst.ks=file://ks.cfg $Add_OPTION inst.nomemcheck quiet"
+      BOOT_OPTION="inst.ks=file://ks.cfg $Add_OPTION inst.nomemcheck quiet $ipv6StaticConfForKsGrub"
     fi
     [[ "$setAutoConfig" == "0" ]] && sed -i 's/inst.ks=file:\/\/ks.cfg//' $GRUBDIR/$GRUBFILE
     
@@ -3523,7 +3542,8 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
       [[ "$Network4Config" == "isStatic" ]] && Add_OPTION="ip=$IPv4::$GATE:$MASK::$interface::$ipDNS:" || Add_OPTION="ip=dhcp"
       BOOT_OPTION="alpine_repo=$LinuxMirror/$DIST/main modloop=$ModLoopUrl $Add_OPTION"
     elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
-      BOOT_OPTION="inst.ks=file://ks.cfg $Add_OPTION inst.nomemcheck quiet"
+      ipv6ForRedhatGrub
+      BOOT_OPTION="inst.ks=file://ks.cfg $Add_OPTION inst.nomemcheck quiet $ipv6StaticConfForKsGrub"
     fi
     [[ "$setAutoConfig" == "0" ]] && sed -i 's/inst.ks=file:\/\/ks.cfg//' $GRUBDIR/$GRUBFILE
     cat >> /etc/grub.d/40_custom <<EOF
