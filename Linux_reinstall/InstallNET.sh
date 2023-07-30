@@ -1288,6 +1288,9 @@ function getIPv6Address() {
 
 # $1 is "$ip6Addr", $2 is "$ip6Gate".
 function transferIPv6AddressFormat() {
+# Some Bi-Stack server has a public IPv4 address with a private IPv4 gateway and has a dhcp configuration for IPv6 dhcp,
+# so we need to tell Debian installer IPv6 static configurations to config IPv6 network first by force.
+  [[ "$BiStackPreferIpv6" == "1" ]] && Network6Config="isStatic"
 # In some original template OS of cloud provider like Akile.io etc,
 # if prefix of IPv6 mask is 128 in static network configuration, it means there is only one IPv6(current server itself) in the network.
 # The following is the sample:
