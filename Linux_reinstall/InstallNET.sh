@@ -2933,7 +2933,9 @@ elif [[ "$linux_relese" == 'alpinelinux' ]]; then
   }
 # Hostname should not be "localhost"
   HostName=$(hostname)
-  [[ "$HostName" == "localhost" ]] && HostName="alpinelinux"
+  [[ "$HostName" == "" || "$HostName" == "localhost" ]] && {
+    [[ -n "$targetRelese" ]] && HostName="$targetRelese" || HostName="AlpineLinux"
+  }
 # Enable IPv6
   echo "ipv6" >> /tmp/boot/etc/modules
   if [[ "$setAutoConfig" == "1" ]]; then
