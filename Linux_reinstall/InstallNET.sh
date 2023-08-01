@@ -727,14 +727,14 @@ d-i partman-auto/expert_recipe string multiraid ::                   \
 #            https://qiita.com/YasuhiroABE/items/ff233459035d8187263d
 #
     elif [[ "$4" == 'centos' ]] || [[ "$4" == 'rockylinux' ]] || [[ "$4" == 'almalinux' ]] || [[ "$4" == 'fedora' ]]; then
-      ksAllDisks=$(echo "$3" | sed 's/\/dev\///g')
+      tmpKsAllDisks=$(echo "$3" | sed 's/\/dev\///g')
       ksRaidVolumes=()
       ksRaidConfigs=""
       ksRaidRecipes=""
       if [[ "$EfiSupport" == "enabled" ]]; then
         for (( partitionIndex=0; partitionIndex<="2"; partitionIndex++ )); do
           disksIndex="1"
-          for currentDisk in $ksAllDisks; do
+          for currentDisk in $tmpKsAllDisks; do
             tmpKsRaidVolumes="raid."$partitionIndex""$disksIndex""
             if [[ "$partitionIndex" == "0" ]]; then
               tmpKsRaidConfigs="part "$tmpKsRaidVolumes" --size="512" --ondisk="$currentDisk""
@@ -756,7 +756,7 @@ raid / --fstype="xfs" --device="root" --level="$1" ${ksRaidVolumes[2]}
       else
         for (( partitionIndex=0; partitionIndex<="2"; partitionIndex++ )); do
           disksIndex="1"
-          for currentDisk in $ksAllDisks; do
+          for currentDisk in $tmpKsAllDisks; do
             tmpKsRaidVolumes="raid."$partitionIndex""$disksIndex""
             if [[ "$partitionIndex" == "0" ]]; then
               tmpKsRaidConfigs="part biosboot --fstype="biosboot" --size="1" --ondisk="$currentDisk""
@@ -3148,10 +3148,11 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
 # Reference: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/installation_guide/sect-kickstart-syntax
 #            https://blog.adachin.me/archives/3621
 #            https://www.cnblogs.com/hukey/p/14919346.html
-  IncDisk=`echo $IncDisk | cut -d'/' -f 3`
+  ksIncDisk=`echo $IncDisk | cut -d'/' -f 3`
+  ksAllDisks=`echo $AllDisks | sed 's/\/dev\///g' | sed 's/ /,/g'`
   [[ "$disksNum" -le "1" || "$setDisk" != "all" ]] && {
-    clearPart="clearpart --drives=${IncDisk} --all --initlabel"
-    [[ "$EfiSupport" == "enabled" ]] && FormatDisk=`echo -e "part / --fstype="xfs" --ondisk="$IncDisk" --grow --size="0"\npart swap --ondisk="$IncDisk" --size="1024"\npart /boot --fstype="xfs" --ondisk="$IncDisk" --size="512"\npart /boot/efi --fstype="efi" --ondisk="$IncDisk" --size="1024""` || FormatDisk=`echo -e "part / --fstype="xfs" --ondisk="$IncDisk" --grow --size="0"\npart swap --ondisk="$IncDisk" --size="1024"\npart /boot --fstype="xfs" --ondisk="$IncDisk" --size="1024"\npart biosboot --fstype=biosboot --ondisk="$IncDisk" --size=1"`
+    clearPart="clearpart --drives=${ksIncDisk} --all --initlabel"
+    [[ "$EfiSupport" == "enabled" ]] && FormatDisk=`echo -e "part / --fstype="xfs" --ondisk="$ksIncDisk" --grow --size="0"\npart swap --ondisk="$ksIncDisk" --size="1024"\npart /boot --fstype="xfs" --ondisk="$ksIncDisk" --size="512"\npart /boot/efi --fstype="efi" --ondisk="$ksIncDisk" --size="1024""` || FormatDisk=`echo -e "part / --fstype="xfs" --ondisk="$ksIncDisk" --grow --size="0"\npart swap --ondisk="$ksIncDisk" --size="1024"\npart /boot --fstype="xfs" --ondisk="$ksIncDisk" --size="1024"\npart biosboot --fstype=biosboot --ondisk="$ksIncDisk" --size=1"`
   }
   [[ "$setDisk" == "all" || -n "$setRaid" ]] && {
     clearPart="clearpart --all --initlabel"
@@ -3203,7 +3204,7 @@ ${SetTimeZone}
 ${NetConfigManually}
 
 # System bootloader configuration
-bootloader --location=mbr --boot-drive=${IncDisk} --append="rhgb quiet crashkernel=auto net.ifnames=0 biosdevname=0 ipv6.disable=1"
+bootloader --location=mbr --boot-drive=${ksIncDisk} --append="rhgb quiet crashkernel=auto net.ifnames=0 biosdevname=0 ipv6.disable=1"
 
 # Clear the Master Boot Record
 zerombr
