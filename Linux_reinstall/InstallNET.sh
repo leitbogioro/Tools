@@ -1797,7 +1797,7 @@ function checkDHCP() {
 # addr-gen-mode=eui64
 # method=auto
 #
-# So we need to import the function "checkIpv4OrIpv6ConfigForRedhat9Later" to confuse
+# So we need to import the function "checkIpv4OrIpv6ConfigForRedhat9Later" to confuse.
 # which "method=auto or manual" is belonged to [ipv4], which "method=auto or manual" is belonged to [ipv6]. 
       checkIpv4OrIpv6ConfigForRedhat9Later "$NetCfgDir" "$NetCfgFile" "ipv4" "method="
       NetCfg4LineNum="$NetCfgLineNum"
@@ -1828,11 +1828,11 @@ function checkDHCP() {
       [[ `grep -iw "iface" $NetCfgWhole | grep -iw "$interface6" | grep -iw "inet6" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
     fi
   elif [[ "$1" == 'Ubuntu' && "$networkManagerType" == "netplan" ]]; then
-# For netplan(Ubuntu 18 and later), if network configuration is Static whether IPv4 or IPv6
+# For netplan(Ubuntu 18 and later), if network configuration is Static whether IPv4 or IPv6.
 # in "*.yaml" config file, dhcp(4 or 6): no or false doesn't exist is allowed.
 # But if is DHCP, dhcp(4 or 6): yes or true is necessary.
 # Typical format of dhcp status in "*.yaml" is "dhcp4/6: true/false" or "dhcp4/6: yes/no".
-# The raw sample processed by function "parseYaml" is: " network_ethernets_enp1s0_dhcp4="true" network_ethernets_enp1s0_dhcp6="true" "
+# The raw sample processed by function "parseYaml" is: " network_ethernets_enp1s0_dhcp4="true" network_ethernets_enp1s0_dhcp6="true" ".
     dhcpStatus=$(parseYaml "$NetCfgWhole" | grep "$interface" | grep "dhcp")
     if [[ "$3" == "IPv4Stack" ]]; then
       Network6Config="isDHCP"
@@ -1862,7 +1862,7 @@ function checkDHCP() {
 function DebianModifiedPreseed() {
   if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]]; then
 # Must use ";" instead of using "&&", "echo -e" etc to combine multiple commands, or write text in files, recommend sed.
-# Can't pass parameters correctly in preseed environment
+# Can't pass parameters correctly in preseed environment.
 # DebianVimVer=`ls -a /usr/share/vim | grep vim[0-9]`
     if [[ "$DebianDistNum" -ge "9" && "$DebianDistNum" -le "11" ]]; then
       DebianVimVer="vim"`expr ${DebianDistNum} + 71`
@@ -1878,11 +1878,11 @@ function DebianModifiedPreseed() {
 # Enable cursor edit backspace freely in insert mode.
 # Reference: https://wonderwall.hatenablog.com/entry/2016/03/23/232634
     VimIndentEolStart="$1 sed -i 's/set compatible/set nocompatible/g' /etc/vim/vimrc.tiny; $1 sed -i '/set nocompatible/a\set backspace=2' /etc/vim/vimrc.tiny;"
-    [[ "$DebianVimVer" == "" ]] && VimSupportCopy="";VimIndentEolStart="";
-    AptUpdating="$1 apt update;"
+    [[ "$DebianVimVer" == "" ]] && { VimSupportCopy=""; VimIndentEolStart=""; }
+    AptUpdating="$1 apt update -y;"
 # pre-install some commonly used software.
     # InstallComponents="$1 apt install sudo apt-transport-https bc binutils ca-certificates cron curl debian-keyring debian-archive-keyring dnsutils dosfstools dpkg efibootmgr ethtool fail2ban file figlet iputils-tracepath jq lrzsz libnet-ifconfig-wrapper-perl lsof libnss3 lsb-release mtr-tiny mlocate netcat-openbsd net-tools ncdu nmap ntfs-3g parted psmisc python3 socat sosreport subnetcalc tcpdump telnet traceroute unzip unrar-free uuid-runtime vim vim-gtk3 wget xz-utils -y;"
-    InstallComponents="$1 apt install sudo ca-certificates cron curl dnsutils dpkg fail2ban file lrzsz lsb-release net-tools traceroute unzip vim wget xz-utils -y;"
+    InstallComponents="$1 apt install apt-transport-https ca-certificates cron curl dnsutils dpkg fail2ban file lrzsz lsb-release net-tools sudo traceroute unzip vim wget xz-utils -y;"
 # In Debian 9 and former, some certificates are expired.
     DisableCertExpiredCheck="$1 sed -i '/^mozilla\/DST_Root_CA_X3/s/^/!/' /etc/ca-certificates.conf; $1 update-ca-certificates -f;"
     if [[ "$IsCN" == "cn" ]]; then
@@ -1890,17 +1890,20 @@ function DebianModifiedPreseed() {
       ChangeBashrc="$1 rm -rf /root/.bashrc; $1 wget --no-check-certificate -qO /root/.bashrc 'https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Debian/.bashrc';"
 # Need to install "resolvconf" manually after all installation ended, logged into new system.
 # DNS server validation must setting up in installed system, can't in preseeding!
-# Set China DNS server from USTC and Tsinghua University permanently
+# Set China DNS server from Tencent Cloud and Alibaba Cloud permanently.
       SetDNS="CNResolvHead"
       DnsChangePermanently="$1 mkdir -p /etc/resolvconf/resolv.conf.d/; $1 wget --no-check-certificate -qO /etc/resolvconf/resolv.conf.d/head 'https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Debian/network/${SetDNS}';"
 # Modify logging in welcome information(Message Of The Day) of Debian and make it more pretty.
       ModifyMOTD="$1 rm -rf /etc/update-motd.d/ /etc/motd /run/motd.dynamic; $1 mkdir -p /etc/update-motd.d/; $1 wget --no-check-certificate -qO /etc/update-motd.d/00-header 'https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Debian/updatemotd/00-header'; $1 wget --no-check-certificate -qO /etc/update-motd.d/10-sysinfo 'https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Debian/updatemotd/10-sysinfo'; $1 wget --no-check-certificate -qO /etc/update-motd.d/90-footer 'https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Debian/updatemotd/90-footer'; $1 chmod +x /etc/update-motd.d/00-header; $1 chmod +x /etc/update-motd.d/10-sysinfo; $1 chmod +x /etc/update-motd.d/90-footer;"
+# Change "security.debian.org" to "mirrors.tuna.tsinghua.edu.cn". Reference: https://mirrors.tuna.tsinghua.edu.cn/help/debian/
+      ChangeSecurityMirror="$1 sed -i 's/security.debian.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list;"
     else
       ChangeBashrc="$1 rm -rf /root/.bashrc; $1 wget --no-check-certificate -qO /root/.bashrc 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Debian/.bashrc';"
-# Set DNS server from CloudFlare and Google permanently
+# Set DNS server from Cloudflare and Google permanently.
       SetDNS="NomalResolvHead"
       DnsChangePermanently="$1 mkdir -p /etc/resolvconf/resolv.conf.d/; $1 wget --no-check-certificate -qO /etc/resolvconf/resolv.conf.d/head 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Debian/network/${SetDNS}';"
       ModifyMOTD="$1 rm -rf /etc/update-motd.d/ /etc/motd /run/motd.dynamic; $1 mkdir -p /etc/update-motd.d/; $1 wget --no-check-certificate -qO /etc/update-motd.d/00-header 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Debian/updatemotd/00-header'; $1 wget --no-check-certificate -qO /etc/update-motd.d/10-sysinfo 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Debian/updatemotd/10-sysinfo'; $1 wget --no-check-certificate -qO /etc/update-motd.d/90-footer 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Debian/updatemotd/90-footer'; $1 chmod +x /etc/update-motd.d/00-header; $1 chmod +x /etc/update-motd.d/10-sysinfo; $1 chmod +x /etc/update-motd.d/90-footer;"
+      ChangeSecurityMirror=""
     fi
 # For multiple interfaces environment, if the interface which is configurated by "auto", regardless of it is plugged by internet cable, 
 # Debian/Kali will continuously try to wake and start up it contains with dhcp even timeout.
@@ -1977,7 +1980,7 @@ function DebianModifiedPreseed() {
 # Reference: https://github.com/fail2ban/fail2ban/issues/2756
 #            https://www.mail-archive.com/debian-bugs-dist@lists.debian.org/msg1879390.html
     EnableFail2ban="$1 sed -i '/\[Definition\]/a allowipv6 = auto' /etc/fail2ban/fail2ban.conf; $1 sed -ri 's/backend.*/backend = systemd/g' /etc/fail2ban/jail.conf; $1 update-rc.d fail2ban enable; $1 /etc/init.d/fail2ban restart;"
-    export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${VimIndentEolStart} ${DnsChangePermanently} ${ModifyMOTD} ${AutoPlugInterfaces} ${BurnIrregularIpv4Gate} ${SupportIPv6orIPv4} ${ReplaceActualIpPrefix} ${EnableSSH} ${ReviseMOTD} ${SupportZSH} ${EnableFail2ban}"
+    export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${VimIndentEolStart} ${DnsChangePermanently} ${ModifyMOTD} ${ChangeSecurityMirror} ${AutoPlugInterfaces} ${BurnIrregularIpv4Gate} ${SupportIPv6orIPv4} ${ReplaceActualIpPrefix} ${EnableSSH} ${ReviseMOTD} ${SupportZSH} ${EnableFail2ban}"
   fi
 }
 
