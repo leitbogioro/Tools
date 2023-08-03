@@ -513,7 +513,10 @@ function transferIPv4AddressFormat() {
     [[ "$ip4GateFirst" == "169" && "$ip4GateSecond" == "254" ]] || [[ "$ip4GateFirst" == "172" && "$ip4GateSecond" -ge "16" && "$ip4GateSecond" -le "31" ]] || [[ "$ip4GateFirst" == "10" && "$ip4GateSecond" -ge "0" && "$ip4GateSecond" -le "255" ]] || [[ "$ip4GateFirst" == "192" && "$ip4GateSecond" == "168" ]] || [[ "$ip4GateFirst" == "127" && "$ip4GateSecond" -ge "0" && "$ip4GateSecond" -le "255" ]] || [[ "$ip4GateFirst" == "198" && "$ip4GateSecond" -ge "18" && "$ip4GateSecond" -le "19" ]] || [[ "$ip4GateFirst" == "100" && "$ip4GateSecond" -ge "64" && "$ip4GateSecond" -le "127" ]] || [[ "$ip4AddrFirst" != "$ip4GateFirst" ]] && {
       # [[ -z "$ip4RouteScopeLink" ]] && ipGate=`ipv4Calc "$1" "$ipPrefix" | grep "FirstIP:" | awk '{print$2}'` || ipGate=`ipv4Calc "$ip4RouteScopeLink" "$ipPrefix" | grep "FirstIP:" | awk '{print$2}'`
 # Temporary installation of Debian is "BusyBox", it can't handle IPv4 public address and IPv4 private gateway well, so we prefer to use IPv6 to configure network and write static configs for IPv4 in later of installation.
-      [[ "$IPStackType" == "BiStack" ]] && { ipPrefix="$actualIp4Prefix"; ipMask="$actualIp4Subnet"; BiStackPreferIpv6='1'; Network4Config="isStatic"; }
+      [[ "$linux_relese" == 'debian' || "$linux_relese" == 'kali' ]] && { ipPrefix="$actualIp4Prefix"; ipMask="$actualIp4Subnet"; }
+      Network4Config="isStatic"
+      [[ "$IPStackType" == "BiStack" ]] && BiStackPreferIpv6Status='1'
+      [[ "$IPStackType" == "IPv4Stack" ]] && BurnIrregularIpv4Status='1'
     }
   }
 }
@@ -1290,7 +1293,7 @@ function getIPv6Address() {
 function transferIPv6AddressFormat() {
 # Some Bi-Stack server has a public IPv4 address with a private IPv4 gateway and has a dhcp configuration for IPv6 stack,
 # so we need to tell Debian installer IPv6 static configurations to config IPv6 network first by force.
-  [[ "$BiStackPreferIpv6" == "1" ]] && Network6Config="isStatic"
+  [[ "$BiStackPreferIpv6Status" == "1" ]] && Network6Config="isStatic"
 # In some original template OS of cloud provider like Akile.io etc,
 # if prefix of IPv6 mask is 128 in static network configuration, it means there is only one IPv6(current server itself) in the network.
 # The following is the sample:
@@ -1913,13 +1916,14 @@ function DebianModifiedPreseed() {
     SupportIPv6orIPv4=""
     ReplaceActualIpPrefix=""
     if [[ "$IPStackType" == "IPv4Stack" ]]; then
+      [[ "$BurnIrregularIpv4Status" == "1" ]] && BurnIrregularIpv4Gate="$1 sed -i '\$a\\\tgateway $actualIp4Gate' /etc/network/interfaces;"
 # This IPv4Stack DHCP machine can access IPv6 network in the future, maybe.
 # But it should be setting as IPv4 network priority.
       SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel ::ffff:0:0/96' /etc/gai.conf;"
       ReplaceActualIpPrefix="$1 sed -ri \"s/address $ipAddr\/$ipPrefix/address $ipAddr\/$actualIp4Prefix/g\" /etc/network/interfaces;"
     elif [[ "$IPStackType" == "BiStack" ]]; then
 # Enable IPv4 dhcp or static configurations.
-      if [[ "$BiStackPreferIpv6" == "1" ]]; then
+      if [[ "$BiStackPreferIpv6Status" == "1" ]]; then
         if [[ "$Network4Config" == "isDHCP" ]]; then
           SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
           [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && SupportIPv6orIPv4="$1 sed -i '\$a\ ' /etc/network/interfaces; $1 sed -i '\$aallow-hotplug $interface4' /etc/network/interfaces; $1 sed -i '\$aiface $interface4 inet dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
@@ -1930,6 +1934,7 @@ function DebianModifiedPreseed() {
           ReplaceActualIpPrefix="$1 sed -ri \"s/address $ip6Addr\/$ip6Mask/address $ip6Addr\/$actualIp6Prefix/g\" /etc/network/interfaces; $1 sed -ri \"s/netmask $MASK/netmask $actualIp4Subnet/g\" /etc/network/interfaces;"
         fi
       else
+        [[ "$BurnIrregularIpv4Status" == "1" ]] && BurnIrregularIpv4Gate="$1 sed -i '\$a\\\tgateway $actualIp4Gate' /etc/network/interfaces;"
         if [[ "$Network6Config" == "isDHCP" ]]; then
 # Enable IPv6 dhcp and set prefer IPv6 access for BiStack or IPv6Stack machine: add "label 2002::/16", "label 2001:0::/32" in last line of the "/etc/gai.conf"
           SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
@@ -1972,7 +1977,7 @@ function DebianModifiedPreseed() {
 # Reference: https://github.com/fail2ban/fail2ban/issues/2756
 #            https://www.mail-archive.com/debian-bugs-dist@lists.debian.org/msg1879390.html
     EnableFail2ban="$1 sed -i '/\[Definition\]/a allowipv6 = auto' /etc/fail2ban/fail2ban.conf; $1 sed -ri 's/backend.*/backend = systemd/g' /etc/fail2ban/jail.conf; $1 update-rc.d fail2ban enable; $1 /etc/init.d/fail2ban restart;"
-    export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${VimIndentEolStart} ${DnsChangePermanently} ${ModifyMOTD} ${AutoPlugInterfaces} ${SupportIPv6orIPv4} ${ReplaceActualIpPrefix} ${EnableSSH} ${ReviseMOTD} ${SupportZSH} ${EnableFail2ban}"
+    export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${VimIndentEolStart} ${DnsChangePermanently} ${ModifyMOTD} ${AutoPlugInterfaces} ${BurnIrregularIpv4Gate} ${SupportIPv6orIPv4} ${ReplaceActualIpPrefix} ${EnableSSH} ${ReviseMOTD} ${SupportZSH} ${EnableFail2ban}"
   fi
 }
 
@@ -2002,12 +2007,31 @@ function DebianPreseedProcess() {
 # d-i partman/choose_label string gpt
 # d-i partman/default_label string gpt
     setRaidRecipe "$setRaid" "$disksNum" "$AllDisks" "$linux_relese"
+# Debian 11 and former versions couldn't accept irregular IPv6 format configs, they can only be recognized by Debian 12+ and Kali, dd mode(base system is Debian 12) prefer IPv4 to config network.
+    if [[ "$BiStackPreferIpv6Status" == "1" && "$linux_relese" == "debian" && "$DebianDistNum" -le "11" ]] || [[ "$ddMode" == '1' ]]; then
+      BiStackPreferIpv6Status=""
+      BurnIrregularIpv4Status='1'
+    fi
+# A valid method to add an irregular gateway by force:
+# This method aims to hack IPv4 network service and add IPv4 route by force in busybox, so we need to assign "none" for "d-i netcfg/get_gateway string" to avoid Debian installer report "unreachable gateway",
+# don't forget to write IPv4 gateway back in "d-i preseed/late_command" stage.
+# Reference: https://lab.civicrm.org/infra/ops/blob/master/ansible/roles/kvm-server/templates/etc/preseeds/host/preseed.cfg
+    [[ "$BurnIrregularIpv4Status" == "1" ]] && {
+      actualIp4Gate="$GATE"
+      GATE="none"
+      if [[ "$IPStackType" == "IPv4Stack" ]]; then
+        writeDnsByForce='echo '\''nameserver '$ipDNS1''\'' > /etc/resolv.conf && echo '\''nameserver '$ipDNS2''\'' >> /etc/resolv.conf'
+      elif [[ "$IPStackType" == "BiStack" ]]; then
+        writeDnsByForce='echo '\''nameserver '$ipDNS1''\'' > /etc/resolv.conf && echo '\''nameserver '$ip6DNS1''\'' >> /etc/resolv.conf && echo '\''nameserver '$ipDNS2''\'' >> /etc/resolv.conf && echo '\''nameserver '$ip6DNS2''\'' >> /etc/resolv.conf'
+      fi
+      BurnIrregularIpv4ByForce=`echo -e 'd-i preseed/early_command string ip link set '$interface' up; ip a add '$IPv4'/'$ipPrefix' dev '$interface'; echo "(ip route add '$actualIp4Gate' dev '$interface' || true) && (ip route add default via '$actualIp4Gate' dev '$interface' || true) && '$writeDnsByForce'" > /bin/ethdetect; echo "(test -x /bin/ethdetect && /bin/ethdetect) || true" >> /usr/share/debconf/confmodule'`
+    }
 # Prefer to use IPv4 stack to config networking.
-    if [[ "$IPStackType" == "IPv4Stack" ]] || [[ "$IPStackType" == "BiStack" && "$BiStackPreferIpv6" != "1" ]]; then
+    if [[ "$IPStackType" == "IPv4Stack" ]] || [[ "$IPStackType" == "BiStack" && "$BiStackPreferIpv6Status" != "1" ]]; then
       [[ "$Network4Config" == "isStatic" ]] && NetConfigManually=`echo -e "d-i netcfg/disable_autoconfig boolean true\nd-i netcfg/dhcp_failed note\nd-i netcfg/dhcp_options select Configure network manually\nd-i netcfg/get_ipaddress string $IPv4\nd-i netcfg/get_netmask string $MASK\nd-i netcfg/get_gateway string $GATE\nd-i netcfg/get_nameservers string $ipDNS\nd-i netcfg/no_default_route boolean true\nd-i netcfg/confirm_static boolean true"` || NetConfigManually=""
 # Prefer to use IPv6 stack to configure network because Debian 12 supports public IPv6 address with private gateway like "fe80::1" and works well,
 # if IPv4 configuration of one BiStack server has public IPv4 and private gateway like "172.31.1.1" because this case will cause Debian installer notices "unreachable gateway".
-    elif [[ "$IPStackType" == "IPv6Stack" ]] || [[ "$IPStackType" == "BiStack" && "$BiStackPreferIpv6" == "1" ]]; then
+    elif [[ "$IPStackType" == "IPv6Stack" ]] || [[ "$IPStackType" == "BiStack" && "$BiStackPreferIpv6Status" == "1" ]]; then
       [[ "$Network6Config" == "isStatic" ]] && NetConfigManually=`echo -e "d-i netcfg/disable_autoconfig boolean true\nd-i netcfg/dhcp_failed note\nd-i netcfg/dhcp_options select Configure network manually\nd-i netcfg/get_ipaddress string $ip6Addr\nd-i netcfg/get_netmask string $ip6Subnet\nd-i netcfg/get_gateway string $ip6Gate\nd-i netcfg/get_nameservers string $ip6DNS\nd-i netcfg/no_default_route boolean true\nd-i netcfg/confirm_static boolean true"` || NetConfigManually=""
     fi
 # Debian installer can only identify the full IPv6 address of IPv6 mask,
@@ -2060,6 +2084,7 @@ d-i apt-setup/cdrom/set-failed boolean false
 d-i netcfg/choose_interface select $interfaceSelect
 ${NetConfigManually}
 d-i hw-detect/load_firmware boolean true
+${BurnIrregularIpv4ByForce}
 
 ### Mirror settings
 d-i mirror/country string manual
@@ -2893,7 +2918,7 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ 
   fi
 # Disable get security updates for those versions of Debian which were 'EOL'(9 and former in 2023.07).
   if [[ "$linux_relese" != 'kali' ]]; then
-    if [[ "$tmpIpMask" -ge "16" || "$IPStackType" == "IPv6Stack" || "$BiStackPreferIpv6" == "1" ]] && [[ "$linux_relese" == 'debian' && "$DebianDistNum" -gt "9" ]]; then
+    if [[ "$tmpIpMask" -ge "16" || "$IPStackType" == "IPv6Stack" || "$BiStackPreferIpv6Status" == "1" || "$BurnIrregularIpv4Status" == "1" ]] && [[ "$linux_relese" == 'debian' && "$DebianDistNum" -gt "9" ]]; then
       sed -i '/d-i\ apt-setup\/services-select multiselect/d' /tmp/boot/preseed.cfg
       sed -i '/d-i\ apt-setup\/enable-source-repositories boolean false/d' /tmp/boot/preseed.cfg
     fi
