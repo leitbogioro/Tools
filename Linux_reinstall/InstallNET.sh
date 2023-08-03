@@ -512,10 +512,11 @@ function transferIPv4AddressFormat() {
   [[ "$ip4AddrFirst""$ip4AddrSecond" != "$ip4GateFirst""$ip4GateSecond" ]] && {
     [[ "$ip4GateFirst" == "169" && "$ip4GateSecond" == "254" ]] || [[ "$ip4GateFirst" == "172" && "$ip4GateSecond" -ge "16" && "$ip4GateSecond" -le "31" ]] || [[ "$ip4GateFirst" == "10" && "$ip4GateSecond" -ge "0" && "$ip4GateSecond" -le "255" ]] || [[ "$ip4GateFirst" == "192" && "$ip4GateSecond" == "168" ]] || [[ "$ip4GateFirst" == "127" && "$ip4GateSecond" -ge "0" && "$ip4GateSecond" -le "255" ]] || [[ "$ip4GateFirst" == "198" && "$ip4GateSecond" -ge "18" && "$ip4GateSecond" -le "19" ]] || [[ "$ip4GateFirst" == "100" && "$ip4GateSecond" -ge "64" && "$ip4GateSecond" -le "127" ]] || [[ "$ip4AddrFirst" != "$ip4GateFirst" ]] && {
       # [[ -z "$ip4RouteScopeLink" ]] && ipGate=`ipv4Calc "$1" "$ipPrefix" | grep "FirstIP:" | awk '{print$2}'` || ipGate=`ipv4Calc "$ip4RouteScopeLink" "$ipPrefix" | grep "FirstIP:" | awk '{print$2}'`
-# Temporary installation of Debian is "BusyBox", it can't handle IPv4 public address and IPv4 private gateway well, so we prefer to use IPv6 to configure network and write static configs for IPv4 in later of installation.
       [[ "$linux_relese" == 'debian' || "$linux_relese" == 'kali' ]] && { ipPrefix="$actualIp4Prefix"; ipMask="$actualIp4Subnet"; }
       Network4Config="isStatic"
+# Temporary installation of Debian 12 and Kali can't handle IPv4 public address and IPv4 private gateway well, so we prefer to invoke irregular IPv6 parameters to configure network in "busybox" and write static configs for IPv4 in later stage of the installation.
       [[ "$IPStackType" == "BiStack" ]] && BiStackPreferIpv6Status='1'
+# Installation environment of Debian 11 and former releases can't handle either irregular(gateway is not within the range of which is calculated by IP/mask) IPv4 or IPv6 parameters, so we need to execute a "ip route add" trick to make sure the networking of pure IPv4 stack servers works normally in "busybox".
       [[ "$IPStackType" == "IPv4Stack" ]] && BurnIrregularIpv4Status='1'
     }
   }
