@@ -3313,8 +3313,6 @@ fi
 rm -rf /boot/initrd.img
 rm -rf /boot/vmlinuz
 find . | cpio -o -H newc | gzip -1 > /tmp/initrd.img
-cp -f /tmp/initrd.img /boot/initrd.img || sudo cp -f /tmp/initrd.img /boot/initrd.img
-cp -f /tmp/vmlinuz /boot/vmlinuz || sudo cp -f /tmp/vmlinuz /boot/vmlinuz
 
 # Grub config start
 # Debian/Ubuntu/Kali Grub1 set start
@@ -3606,19 +3604,21 @@ EOF
 fi
 # Grub config end
 
-chown root:root $GRUBDIR/$GRUBFILE
-chmod 444 $GRUBDIR/$GRUBFILE
-
 if [[ "$loaderMode" == "0" ]]; then
   # sleep 5 && reboot || sudo reboot >/dev/null 2>&1
-  echo -ne "\n[${green}Finish${plain}] Input '${yellow}reboot${plain}' to continue the subsequential installation.\n"
-  exit 1
+  cp -f /tmp/initrd.img /boot/initrd.img || sudo cp -f /tmp/initrd.img /boot/initrd.img
+  cp -f /tmp/vmlinuz /boot/vmlinuz || sudo cp -f /tmp/vmlinuz /boot/vmlinuz
+  chown root:root $GRUBDIR/$GRUBFILE
+  chmod 444 $GRUBDIR/$GRUBFILE
 else
   rm -rf "$HOME/loader"
   mkdir -p "$HOME/loader"
-  cp -rf "/boot/initrd.img" "$HOME/loader/initrd.img"
-  cp -rf "/boot/vmlinuz" "$HOME/loader/vmlinuz"
-  [[ -f "/boot/initrd.img" ]] && rm -rf "/boot/initrd.img"
-  [[ -f "/boot/vmlinuz" ]] && rm -rf "/boot/vmlinuz"
+  cp -rf "/tmp/initrd.img" "$HOME/loader/initrd.img"
+  cp -rf "/tmp/vmlinuz" "$HOME/loader/vmlinuz"
+  [[ -f "/tmp/initrd.img" ]] && rm -rf "/tmp/initrd.img"
+  [[ -f "/tmp/vmlinuz" ]] && rm -rf "/tmp/vmlinuz"
   echo && ls -AR1 "$HOME/loader"
 fi
+
+echo -ne "\n[${green}Finish${plain}] Input '${yellow}reboot${plain}' to continue the subsequential installation.\n"
+exit 1
