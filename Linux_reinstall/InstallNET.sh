@@ -507,10 +507,11 @@ function transferIPv4AddressFormat() {
   ip4AddrSecond=`echo $1 | cut -d'.' -f2`
   ip4GateFirst=`echo $2 | cut -d'.' -f1`
   ip4GateSecond=`echo $2 | cut -d'.' -f2`
+  ip4GateThird=`echo $2 | cut -d'.' -f3`
 # Common ranges of IPv4 intranet:
 # Reference: https://hczhang.cn/network/reserved-ip-addresses.html
   [[ "$ip4AddrFirst""$ip4AddrSecond" != "$ip4GateFirst""$ip4GateSecond" ]] && {
-    [[ "$ip4GateFirst" == "169" && "$ip4GateSecond" == "254" ]] || [[ "$ip4GateFirst" == "172" && "$ip4GateSecond" -ge "16" && "$ip4GateSecond" -le "31" ]] || [[ "$ip4GateFirst" == "10" && "$ip4GateSecond" -ge "0" && "$ip4GateSecond" -le "255" ]] || [[ "$ip4GateFirst" == "192" && "$ip4GateSecond" == "168" ]] || [[ "$ip4GateFirst" == "127" && "$ip4GateSecond" -ge "0" && "$ip4GateSecond" -le "255" ]] || [[ "$ip4GateFirst" == "198" && "$ip4GateSecond" -ge "18" && "$ip4GateSecond" -le "19" ]] || [[ "$ip4GateFirst" == "100" && "$ip4GateSecond" -ge "64" && "$ip4GateSecond" -le "127" ]] || [[ "$ip4AddrFirst" != "$ip4GateFirst" ]] && {
+    [[ "$ip4GateFirst" == "169" && "$ip4GateSecond" == "254" ]] || [[ "$ip4GateFirst" == "172" && "$ip4GateSecond" -ge "16" && "$ip4GateSecond" -le "31" ]] || [[ "$ip4GateFirst" == "192" && "$ip4GateSecond" == "168" ]] || [[ "$ip4GateFirst" == "100" && "$ip4GateSecond" -ge "64" && "$ip4GateSecond" -le "127" ]] || [[ "$ip4GateFirst" == "10" && "$ip4GateSecond" -ge "0" && "$ip4GateSecond" -le "255" ]] || [[ "$ip4GateFirst" == "127" && "$ip4GateSecond" -ge "0" && "$ip4GateSecond" -le "255" ]] || [[ "$ip4GateFirst" == "198" && "$ip4GateSecond" -ge "18" && "$ip4GateSecond" -le "19" ]] || [[ "$ip4GateFirst" == "192" && "$ip4GateSecond" == "0" && "$ip4GateThird" == "0" || "$ip4GateThird" == "2" ]] || [[ "$ip4GateFirst" == "198" && "$ip4GateSecond" == "51" && "$ip4GateThird" == "100" ]] || [[ "$ip4GateFirst" == "203" && "$ip4GateSecond" == "0" && "$ip4GateThird" == "113" ]] || [[ "$ip4AddrFirst" != "$ip4GateFirst" ]] && {
       # [[ -z "$ip4RouteScopeLink" ]] && ipGate=`ipv4Calc "$1" "$ipPrefix" | grep "FirstIP:" | awk '{print$2}'` || ipGate=`ipv4Calc "$ip4RouteScopeLink" "$ipPrefix" | grep "FirstIP:" | awk '{print$2}'`
       [[ "$linux_relese" == 'debian' || "$linux_relese" == 'kali' ]] && { ipPrefix="$actualIp4Prefix"; ipMask="$actualIp4Subnet"; }
       Network4Config="isStatic"
