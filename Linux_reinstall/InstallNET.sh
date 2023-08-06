@@ -60,6 +60,7 @@ export tmpSetIPv6=''
 export setIPv6='1'
 export setRaid=''
 export setDisk=''
+export partitionTable='mbr'
 export setMemCheck='1'
 export isMirror='0'
 export FindDists='0'
@@ -234,6 +235,16 @@ while [[ $# -ge 1 ]]; do
       setRaid="$1"
       shift
       ;;
+    -setdisk)
+      shift
+      setDisk="$1"
+      shift
+      ;;
+    -partition)
+      shift
+      partitionTable="$1"
+      shift
+      ;;
     -timezone)
       shift
       TimeZone="$1"
@@ -267,11 +278,6 @@ while [[ $# -ge 1 ]]; do
     -pwd)
       shift
       tmpWORD="$1"
-      shift
-      ;;
-    -setdisk)
-      shift
-      setDisk="$1"
       shift
       ;;
     --setipv6)
@@ -1982,7 +1988,12 @@ function DebianModifiedPreseed() {
 # Reference: https://github.com/fail2ban/fail2ban/issues/2756
 #            https://www.mail-archive.com/debian-bugs-dist@lists.debian.org/msg1879390.html
     EnableFail2ban="$1 sed -i '/\[Definition\]/a allowipv6 = auto' /etc/fail2ban/fail2ban.conf; $1 sed -ri 's/backend.*/backend = systemd/g' /etc/fail2ban/jail.conf; $1 update-rc.d fail2ban enable; $1 /etc/init.d/fail2ban restart;"
-    export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${VimIndentEolStart} ${DnsChangePermanently} ${ModifyMOTD} ${ChangeSecurityMirror} ${AutoPlugInterfaces} ${BurnIrregularIpv4Gate} ${SupportIPv6orIPv4} ${ReplaceActualIpPrefix} ${EnableSSH} ${ReviseMOTD} ${SupportZSH} ${EnableFail2ban}"
+# For some cloud providers which servers boot from their own grub2 bootloader first by force, not boot from grub in harddisk of our own servers directly,
+# we need to creat a soft link for grub2 from grub1 to make sure the first reboot after installation won't meet a fatal.
+# In this situation, the partition table and filesystem of the newly installed OS must be "mbr" and "ext4".
+# This case has been occurred in these cloud providers such as "app.cloudcone.com", "www.readyidc.com".
+    CreateSoftLinkToGrub2FromGrub1="$1 ln -s /boot/grub/ /boot/grub2;"
+    export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${VimIndentEolStart} ${DnsChangePermanently} ${ModifyMOTD} ${ChangeSecurityMirror} ${AutoPlugInterfaces} ${BurnIrregularIpv4Gate} ${SupportIPv6orIPv4} ${ReplaceActualIpPrefix} ${EnableSSH} ${ReviseMOTD} ${SupportZSH} ${EnableFail2ban} ${CreateSoftLinkToGrub2FromGrub1}"
   fi
 }
 
@@ -1994,13 +2005,13 @@ function DebianPreseedProcess() {
 # To part all disks:
 # https://unix.stackexchange.com/questions/341253/using-d-i-partman-recipe-strings
     if [[ "$disksNum" -gt "1" && "$setDisk" == "all" ]]; then
-      FormatDisk=`echo -e "d-i partman-auto/disk string $AllDisks\nd-i partman-auto/method string regular\nd-i partman-auto/init_automatically_partition select Guided - use entire disk\nd-i partman-auto/choose_recipe select All files in one partition (recommended for new users)\nd-i partman-basicfilesystems/choose_label string gpt\nd-i partman-basicfilesystems/default_label string gpt\nd-i partman-partitioning/choose_label string gpt\nd-i partman-partitioning/default_label string gpt\nd-i partman/choose_label string gpt\nd-i partman/default_label string gpt"`
+      [[ "$partitionTable" == "gpt" ]] && FormatDisk=`echo -e "d-i partman-auto/disk string $AllDisks\nd-i partman-auto/method string regular\nd-i partman-auto/init_automatically_partition select Guided - use entire disk\nd-i partman-auto/choose_recipe select All files in one partition (recommended for new users)\nd-i partman-basicfilesystems/choose_label string gpt\nd-i partman-basicfilesystems/default_label string gpt\nd-i partman-partitioning/choose_label string gpt\nd-i partman-partitioning/default_label string gpt\nd-i partman/choose_label string gpt\nd-i partman/default_label string gpt"` || FormatDisk=`echo -e "d-i partman-auto/disk string $AllDisks\nd-i partman-auto/method string regular\nd-i partman-auto/init_automatically_partition select Guided - use entire disk\nd-i partman-auto/choose_recipe select All files in one partition (recommended for new users)"`
       PartmanEarlyCommand='debconf-set partman-auto/disk '${AllDisks}';'
     else
-      FormatDisk=`echo -e "d-i partman-auto/disk string $IncDisk\nd-i partman-auto/method string regular\nd-i partman-auto/init_automatically_partition select Guided - use entire disk\nd-i partman-auto/choose_recipe select All files in one partition (recommended for new users)\nd-i partman-basicfilesystems/choose_label string gpt\nd-i partman-basicfilesystems/default_label string gpt\nd-i partman-partitioning/choose_label string gpt\nd-i partman-partitioning/default_label string gpt\nd-i partman/choose_label string gpt\nd-i partman/default_label string gpt"`
+      [[ "$partitionTable" == "gpt" ]] && FormatDisk=`echo -e "d-i partman-auto/disk string $IncDisk\nd-i partman-auto/method string regular\nd-i partman-auto/init_automatically_partition select Guided - use entire disk\nd-i partman-auto/choose_recipe select All files in one partition (recommended for new users)\nd-i partman-basicfilesystems/choose_label string gpt\nd-i partman-basicfilesystems/default_label string gpt\nd-i partman-partitioning/choose_label string gpt\nd-i partman-partitioning/default_label string gpt\nd-i partman/choose_label string gpt\nd-i partman/default_label string gpt"` || FormatDisk=`echo -e "d-i partman-auto/disk string $IncDisk\nd-i partman-auto/method string regular\nd-i partman-auto/init_automatically_partition select Guided - use entire disk\nd-i partman-auto/choose_recipe select All files in one partition (recommended for new users)"`
       PartmanEarlyCommand='debconf-set partman-auto/disk "$(list-devices disk | grep '${IncDisk}' | head -n 1)";'
     fi
-# Default single disk format recipe:
+# Default single disk format recipe( -partition="gpt" ):
 # d-i partman-auto/disk string $AllDisks/$IncDisk
 # d-i partman-auto/method string regular
 # d-i partman-auto/init_automatically_partition select Guided - use entire disk
@@ -2135,7 +2146,7 @@ d-i partman-partitioning/confirm_write_new_label boolean true
 d-i partman/choose_partition select finish
 d-i partman/confirm boolean true
 d-i partman/confirm_nooverwrite boolean true
-d-i partman/default_filesystem string xfs
+d-i partman/default_filesystem string ext4
 d-i partman/mount_style select uuid
 d-i partman-md/device_remove_md boolean true
 ${FormatDisk}
@@ -2909,6 +2920,9 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ 
     sed -i '/d-i\ partman\/default_filesystem string xfs/d' /tmp/boot/preseed.cfg
     sed -i '/d-i\ grub-installer\/force-efi-extra-removable/d' /tmp/boot/preseed.cfg
     sed -i '/d-i\ lowmem\/low boolean true/d' /tmp/boot/preseed.cfg
+  fi
+  if [[ "$partitionTable" == "gpt" ]]; then
+    sed -i 's/default_filesystem string ext4/default_filesystem string xfs/g' /tmp/boot/preseed.cfg
   fi
 # Kali preseed.cfg reference:
 # https://github.com/iesplin/kali-preseed/blob/master/preseed/core-minimal.cfg
