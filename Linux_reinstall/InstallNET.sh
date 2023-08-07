@@ -805,8 +805,12 @@ function getUserTimeZone() {
     loginUser=`who am i | awk '{print $1}' | sed 's/(//g' | sed 's/)//g'`
     [[ -z "$loginUser" ]] && loginUser="root"
 # Alpine Linux doesn't support "who am i".
-    GuestIP=`netstat -anpW | grep -i 'established' | grep -i 'sshd: '$loginUser'' | grep -iw 'tcp' | awk '{print $5}' | head -n 1 | cut -d':' -f'1'`
-    [[ "$GuestIP" == "" ]] && GuestIP=`netstat -anpW | grep -i 'established' | grep -i 'sshd: '$loginUser'' | grep -iw 'tcp6' | awk '{print $5}' | head -n 1 | awk -F':' '{for (i=1;i<=NF-1;i++)printf("%s:", $i);print ""}' | sed 's/.$//'`
+# In some situations, there are several users with different IPs to connect to server by ssh service,
+# So we need to filter a list of "Send-Q" and IPs from netstat and sort from largest to smallest by "Sent-Q" to ensure which IP is the current user,
+# because the "Sent-Q" can record the data packs which IP is active for current ssh user.
+# The same as for IPv6s.
+    GuestIP=`netstat -naputeoW | grep -i 'established' | grep -i 'sshd: '$loginUser'' | grep -iw '^tcp\|udp' | awk '{print $3,$5}' | sort -t ' ' -k 1 -rn | awk '{print $2}' | head -n 1 | cut -d':' -f'1'`
+    [[ "$GuestIP" == "" ]] && GuestIP=`netstat -naputeoW | grep -i 'established' | grep -i 'sshd: '$loginUser'' | grep -iw '^tcp6\|udp6' | awk '{print $3,$5}' | sort -t ' ' -k 1 -rn | awk '{print $2}' | head -n 1 | awk -F':' '{for (i=1;i<=NF-1;i++)printf("%s:", $i);print ""}' | sed 's/.$//'`
     for Count in "$2$GuestIP" "$3$GuestIP" "$4$GuestIP" "$5$GuestIP/json/" "$6" "$7" "$8"; do
       [[ "$TimeZone" == "Asia/Shanghai" ]] && break
       if [[ "$Count" =~ ^[a-zA-Z0-9]+$ ]]; then
@@ -817,6 +821,7 @@ function getUserTimeZone() {
       checkTz=`echo $TimeZone | cut -d'/' -f 1`
       [[ -n "$checkTz" && "$checkTz" =~ ^[a-zA-Z] ]] && break
     done
+    [[ -z "$TimeZone" ]] && TimeZone="Asia/Tokyo"
   else
     echo `timedatectl list-timezones` >> "$1"
     [[ `grep -c "$TimeZone" "$1"` == "0" || ! "/usr/share/zoneinfo/$1" ]] && TimeZone="Asia/Tokyo"
@@ -1680,9 +1685,9 @@ function getInterface() {
       tmpNetCfgFiles=""
       for Count in $readIfupdown; do
         if [[ "$IPStackType" == "IPv4Stack" ]]; then
-          NetCfgFiles=`grep -wrl 'iface' | grep -wrl "auto\|dhcp\|static\|manual" | grep -wrl 'inet' "$Count""/" 2>/dev/null | grep -v "if-*" | grep -v "state" | grep -v "helper" | grep -v "template"`
+          NetCfgFiles=`grep -wrl 'iface' | grep -wrl "auto\|dhcp\|static\|manual" | grep -wrl 'inet\|ip addr\|ip route' "$Count""/" 2>/dev/null | grep -v "if-*" | grep -v "state" | grep -v "helper" | grep -v "template"`
         elif [[ "$IPStackType" == "BiStack" ]] || [[ "$IPStackType" == "IPv6Stack" ]]; then
-          NetCfgFiles=`grep -wrl 'iface' | grep -wrl "auto\|dhcp\|static\|manual" | grep -wrl 'inet\|inet6\|ip -6' "$Count""/" 2>/dev/null | grep -v "if-*" | grep -v "state" | grep -v "helper" | grep -v "template"`
+          NetCfgFiles=`grep -wrl 'iface' | grep -wrl "auto\|dhcp\|static\|manual" | grep -wrl 'inet\|ip addr\|ip route\|inet6\|ip -6' "$Count""/" 2>/dev/null | grep -v "if-*" | grep -v "state" | grep -v "helper" | grep -v "template"`
         fi
         for Files in $NetCfgFiles; do
           if [[ `grep -w "$interface4\|$interface6" "$Files"` != "" ]]; then
