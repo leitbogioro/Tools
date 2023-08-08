@@ -1290,9 +1290,9 @@ function ultimateFormatOfIpv6() {
 
 function getIPv6Address() {
 # Differences from scope link, scope host and scope global of IPv6, reference: https://qiita.com/_dakc_/items/4eefa443306860bdcfde
-  allI6Addrs=`ip -6 addr show | grep -wA 20 "$interface\|$interface6" | grep -wv "lo\|host" | grep -wv "link" | grep -w "inet6" | grep "scope" | grep "global" | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
-  i6Addr=`echo $allI6Addrs | awk '{print $1}'`
-  i6AddrNum=`echo $allI6Addrs | awk '{print NF}'`
+  allI6Addrs=`ip -6 addr show | grep -wA 65536 "$interface\|$interface6" | grep -wv "lo\|host" | grep -wv "link" | grep -w "inet6" | grep "scope" | grep "global" | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print $1}'`
+  i6Addr=`echo "$allI6Addrs" | head -n 1`
+  i6AddrNum=`echo "$allI6Addrs" | wc -l`
   [[ "$i6AddrNum" -ge "2" ]] && {
     i6Addrs=()
     for tmpIp6 in $allI6Addrs; do
@@ -1467,7 +1467,7 @@ function ipv6SubnetCalc() {
 #     up ip -6 route add default via 2a12:a520:2e0b:0000:0000:0000:0000:0001 dev eth0
 #
 # $1 is "in-target", $2 is "$i6AddrNum", $3 is '/etc/network/interfaces'.
-writeMultipleIp6Addresses() {
+function writeMultipleIp6Addresses() {
   [[ "$2" -ge "2" ]] && {
     for writeIp6s in ${i6Addrs[@]}; do
       ip6AddrItem="up ip addr add $writeIp6s dev $interface6"
