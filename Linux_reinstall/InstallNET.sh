@@ -519,7 +519,10 @@ function transferIPv4AddressFormat() {
   [[ "$ip4AddrFirst""$ip4AddrSecond" != "$ip4GateFirst""$ip4GateSecond" ]] && {
     [[ "$ip4GateFirst" == "169" && "$ip4GateSecond" == "254" ]] || [[ "$ip4GateFirst" == "172" && "$ip4GateSecond" -ge "16" && "$ip4GateSecond" -le "31" ]] || [[ "$ip4GateFirst" == "192" && "$ip4GateSecond" == "168" ]] || [[ "$ip4GateFirst" == "100" && "$ip4GateSecond" -ge "64" && "$ip4GateSecond" -le "127" ]] || [[ "$ip4GateFirst" == "10" && "$ip4GateSecond" -ge "0" && "$ip4GateSecond" -le "255" ]] || [[ "$ip4GateFirst" == "127" && "$ip4GateSecond" -ge "0" && "$ip4GateSecond" -le "255" ]] || [[ "$ip4GateFirst" == "198" && "$ip4GateSecond" -ge "18" && "$ip4GateSecond" -le "19" ]] || [[ "$ip4GateFirst" == "192" && "$ip4GateSecond" == "0" && "$ip4GateThird" == "0" || "$ip4GateThird" == "2" ]] || [[ "$ip4GateFirst" == "198" && "$ip4GateSecond" == "51" && "$ip4GateThird" == "100" ]] || [[ "$ip4GateFirst" == "203" && "$ip4GateSecond" == "0" && "$ip4GateThird" == "113" ]] || [[ "$ip4AddrFirst" != "$ip4GateFirst" ]] && {
       # [[ -z "$ip4RouteScopeLink" ]] && ipGate=`ipv4Calc "$1" "$ipPrefix" | grep "FirstIP:" | awk '{print$2}'` || ipGate=`ipv4Calc "$ip4RouteScopeLink" "$ipPrefix" | grep "FirstIP:" | awk '{print$2}'`
-      [[ "$linux_relese" == 'debian' || "$linux_relese" == 'kali' ]] && { ipPrefix="$actualIp4Prefix"; ipMask="$actualIp4Subnet"; }
+      if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]]; then
+        ipPrefix="$actualIp4Prefix"
+        ipMask="$actualIp4Subnet"
+      fi
       Network4Config="isStatic"
 # Temporary installation of Debian 12 and Kali can't handle IPv4 public address and IPv4 private gateway well, so we prefer to invoke irregular IPv6 parameters to configure network in "busybox" and write static configs for IPv4 in later stage of the installation.
       [[ "$IPStackType" == "BiStack" ]] && BiStackPreferIpv6Status='1'
@@ -1296,13 +1299,15 @@ function getIPv6Address() {
   [[ "$i6AddrNum" -ge "2" ]] && {
     i6Addrs=()
     for tmpIp6 in $allI6Addrs; do
-      i6Addrs+="$tmpIp6 "
+# The best way to add several elements into an array by using "for" loop in the shell.
+# Reference: https://linuxhandbook.com/bash-append-array/
+      i6Addrs[${#i6Addrs[@]}]=$tmpIp6
     done
     Network6Config="isStatic"
   }
   # [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && i6Addr=`ip -6 addr show | grep -wA 5 "$interface6" | grep -wv "lo\|host" | grep -wv "link" | grep -w "inet6" | grep "scope" | grep "global" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
-  ip6Addr=`echo ${i6Addr} |cut -d'/' -f1`
-  ip6Mask=`echo ${i6Addr} |cut -d'/' -f2`
+  ip6Addr=`echo ${i6Addr} | cut -d'/' -f1`
+  ip6Mask=`echo ${i6Addr} | cut -d'/' -f2`
   ip6Gate=`ip -6 route show default | grep -iv "warp\|wgcf\|wg[0-9]\|docker[0-9]" | grep -w "$interface\|$interface6" | grep -w "via" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
   # [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && ip6Gate=`ip -6 route show default | grep -w "$interface6" | grep -w "via" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
 # Get real IPv6 subnet of current System
@@ -1466,16 +1471,31 @@ function ipv6SubnetCalc() {
 #     up ip -6 route add 2a12:a520:2e0b:0000:0000:0000:0000:0001 dev eth0
 #     up ip -6 route add default via 2a12:a520:2e0b:0000:0000:0000:0000:0001 dev eth0
 #
-# $1 is "in-target", $2 is "$i6AddrNum", $3 is '/etc/network/interfaces'.
+# $1 is "$i6AddrNum", $2 is "in-target", $3 is 'netconfig file'.
 function writeMultipleIp6Addresses() {
-  [[ "$2" -ge "2" ]] && {
-    for writeIp6s in ${i6Addrs[@]}; do
-      ip6AddrItem="up ip addr add $writeIp6s dev $interface6"
-      tmpWriteIp6sCmd+=''$1' sed -i '\''$a\\t'$ip6AddrItem''\'' '$3'; '
-    done
-    writeIp6sCmd=$(echo $tmpWriteIp6sCmd)
-    writeIp6GateCmd=''$1' sed -i '\''$a\\tup ip -6 route add '$ip6Gate' dev '$interface6''\'' '$3'; '$1' sed -i '\''$a\\tup ip -6 route add default via '$ip6Gate' dev '$interface6''\'' '$3';'
-    SupportIPv6orIPv4=''$writeIp6sCmd' '$writeIp6GateCmd' '$1' sed -i '\''$a\\tdns-nameservers '$ip6DNS''\'' '$3'; '$1' sed -i '\''$alabel 2002::/16'\'' /etc/gai.conf; '$1' sed -i '\''$alabel 2001:0::/32'\'' /etc/gai.conf;'
+  [[ "$1" -ge "2" && "$IPStackType" != "IPv6Stack" ]] && {
+    if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]]; then
+      for writeIp6s in ${i6Addrs[@]}; do
+        ip6AddrItem="up ip addr add $writeIp6s dev $interface6"
+        tmpWriteIp6sCmd+=''$2' sed -i '\''$a\\t'$ip6AddrItem''\'' '$3'; '
+      done
+      writeIp6sCmd=$(echo $tmpWriteIp6sCmd)
+      writeIp6GateCmd=''$2' sed -i '\''$a\\tup ip -6 route add '$ip6Gate' dev '$interface6''\'' '$3'; '$2' sed -i '\''$a\\tup ip -6 route add default via '$ip6Gate' dev '$interface6''\'' '$3';'
+      SupportIPv6orIPv4=''$writeIp6sCmd' '$writeIp6GateCmd' '$3' sed -i '\''$a\\tdns-nameservers '$ip6DNS''\'' '$3'; '$2' sed -i '\''$alabel 2002::/16'\'' /etc/gai.conf; '$2' sed -i '\''$alabel 2001:0::/32'\'' /etc/gai.conf;'
+    elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
+# The following strategy of adding multiple IPv6 addresses with subnet, gateway and DNS parameters is only suitable for
+# Redhat series(9+, Fedora 30+) which are using "NetworkManager" to manage the configurations of the networking by default.
+# The first IPv6 address will be written to the target system which has a native syntax support was provided by kickstart from Redhat,
+# so we just need to add the second and more IPv6 addresses in the late command of the kickstart which area is involved from "%post" to "%end".
+      for (( tmpI6Num=1; tmpI6Num<"$1"; tmpI6Num++ )); do
+        writeIp6s="${i6Addrs[$tmpI6Num]}"
+        ipv6AddressOrder=$(expr $tmpI6Num + 1)
+        ip6AddrItem+='address'$ipv6AddressOrder'='$writeIp6s','$ip6Gate'\n'
+      done
+      ip6AddrItems=''$ip6AddrItem''
+      addIpv6DnsForRedhat='dns='$ip6DNS1';'$ip6DNS2';'
+      addIpv6AddrsForRedhat='sed -i '\''/addr-gen-mode=eui64/a\'$ip6AddrItems''$addIpv6DnsForRedhat''\'' '$3''
+    fi
   }
 }
 
@@ -2002,7 +2022,7 @@ function DebianModifiedPreseed() {
           ReplaceActualIpPrefix="$1 sed -ri \"s/address $ipAddr\/$ipPrefix/address $ipAddr\/$actualIp4Prefix/g\" /etc/network/interfaces; $1 sed -ri \"s/netmask $ip6Mask/netmask $actualIp6Prefix/g\" /etc/network/interfaces;"
         fi
       fi
-      writeMultipleIp6Addresses "$1" "$i6AddrNum" '/etc/network/interfaces'
+      writeMultipleIp6Addresses "$i6AddrNum" "$1" '/etc/network/interfaces'
     elif [[ "$IPStackType" == "IPv6Stack" ]]; then
 # This IPv6Stack Static machine can access IPv4 network in the future, maybe.
 # But it should be setting as IPv6 network priority.
@@ -2923,7 +2943,7 @@ for COMP in `echo -en 'gzip\nlzma\nxz'`
 [[ "$COMPTYPE" == 'gzip' ]] && UNCOMP='gzip -d'
 $UNCOMP < /tmp/$NewIMG | cpio --extract --make-directories --preserve-modification-time >>/dev/null 2>&1
 
-if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ "$linux_relese" == 'kali' ]]; then
+if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
   DebianPreseedProcess
   if [[ "$loaderMode" != "0" ]] && [[ "$setNet" == '0' ]]; then
     sed -i '/netcfg\/disable_autoconfig/d' /tmp/boot/preseed.cfg
@@ -3211,6 +3231,7 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
 # For IPv6 only network environment, no matter dhcp or static, IPv4 configuration must be disabled(--noipv4),
 # in this situation, CentOS 7 doesn't accept any IPv4 DNS value.
 # Reference: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/system_design_guide/kickstart-commands-and-options-reference_system-design-guide#network_kickstart-commands-for-network-configuration
+  writeMultipleIp6Addresses "$i6AddrNum" "" '/etc/NetworkManager/system-connections/'$interface'.nmconnection'
   if [[ "$IPStackType" == "IPv4Stack" ]]; then
     if [[ "$Network4Config" == "isDHCP" ]]; then
       NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=auto --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
@@ -3227,6 +3248,10 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
     elif [[ "$Network4Config" == "isStatic" ]] && [[ "$Network6Config" == "isStatic" ]]; then
       NetConfigManually="network --device=$interface --bootproto=static --ip=$IPv4 --netmask=$actualIp4Subnet --gateway=$GATE --ipv6=$ip6Addr/$actualIp6Prefix --ipv6gateway=$ip6Gate --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
     fi
+# By adding multiple IPv6 addresses is only support these servers which are configurated in IPv4 networking in temporary environment of anaconda during the installation at current.
+    [[ "$i6AddrNum" -ge "2" ]] && {
+      [[ "$Network4Config" == "isDHCP" ]] && NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6="${i6Addrs[0]}" --ipv6gateway=$ip6Gate --nameserver=$ipDNS --hostname=$(hostname) --onboot=on" || NetConfigManually="network --device=$interface --bootproto=static --ip=$IPv4 --netmask=$actualIp4Subnet --gateway=$GATE --ipv6="${i6Addrs[0]}" --ipv6gateway=$ip6Gate --nameserver=$ipDNS --hostname=$(hostname) --onboot=on"
+    }
   elif [[ "$IPStackType" == "IPv6Stack" ]]; then
     if [[ "$Network6Config" == "isDHCP" ]]; then
       NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=auto --nameserver=$ip6DNS --hostname=$(hostname) --onboot=on --activate --noipv4"
@@ -3351,6 +3376,9 @@ echo -ne "[DEFAULT]\nbanaction = firewallcmd-ipset\nbackend = systemd\n\n[sshd]\
 touch /var/log/fail2ban.log
 sed -i -E 's/^(logtarget =).*/\1 \/var\/log\/fail2ban.log/' /etc/fail2ban/fail2ban.conf
 systemctl enable fail2ban
+
+# Add multiple IPv6 addresses
+${addIpv6AddrsForRedhat}
 
 # Clean logs and kickstart files
 rm -rf /root/anaconda-ks.cfg
