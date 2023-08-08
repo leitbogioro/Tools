@@ -1290,14 +1290,23 @@ function ultimateFormatOfIpv6() {
 
 function getIPv6Address() {
 # Differences from scope link, scope host and scope global of IPv6, reference: https://qiita.com/_dakc_/items/4eefa443306860bdcfde
-  i6Addr=`ip -6 addr show | grep -wA 5 "$interface" | grep -wv "lo\|host" | grep -wv "link" | grep -w "inet6" | grep "scope" | grep "global" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
-  [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && i6Addr=`ip -6 addr show | grep -wA 5 "$interface6" | grep -wv "lo\|host" | grep -wv "link" | grep -w "inet6" | grep "scope" | grep "global" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+  allI6Addrs=`ip -6 addr show | grep -wA 20 "$interface\|$interface6" | grep -wv "lo\|host" | grep -wv "link" | grep -w "inet6" | grep "scope" | grep "global" | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+  i6Addr=`echo $allI6Addrs | awk '{print $1}'`
+  i6AddrNum=`echo $allI6Addrs | awk '{print NF}'`
+  [[ "$i6AddrNum" -ge "2" ]] && {
+    i6Addrs=()
+    for tmpIp6 in $allI6Addrs; do
+      i6Addrs+="$tmpIp6 "
+    done
+    Network6Config="isStatic"
+  }
+  # [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && i6Addr=`ip -6 addr show | grep -wA 5 "$interface6" | grep -wv "lo\|host" | grep -wv "link" | grep -w "inet6" | grep "scope" | grep "global" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
   ip6Addr=`echo ${i6Addr} |cut -d'/' -f1`
   ip6Mask=`echo ${i6Addr} |cut -d'/' -f2`
-  ip6Gate=`ip -6 route show default | grep -iv "warp\|wgcf\|wg[0-9]\|docker[0-9]" | grep -w "$interface" | grep -w "via" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
-  [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && ip6Gate=`ip -6 route show default | grep -w "$interface6" | grep -w "via" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+  ip6Gate=`ip -6 route show default | grep -iv "warp\|wgcf\|wg[0-9]\|docker[0-9]" | grep -w "$interface\|$interface6" | grep -w "via" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+  # [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && ip6Gate=`ip -6 route show default | grep -w "$interface6" | grep -w "via" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
 # Get real IPv6 subnet of current System
-  actualIp6Prefix=`ip -6 route show | grep -iv "warp\|wgcf\|wg[0-9]\|docker[0-9]" | grep -w "$interface6" | grep -v "default" | grep -v "multicast" | grep -P '../[0-9]{1,3}' | head -n 1 | awk '{print $1}' | awk -F '/' '{print $2}'`
+  actualIp6Prefix=`ip -6 route show | grep -iv "warp\|wgcf\|wg[0-9]\|docker[0-9]" | grep -w "$interface\|$interface6" | grep -v "default" | grep -v "multicast" | grep -P '../[0-9]{1,3}' | head -n 1 | awk '{print $1}' | awk -F '/' '{print $2}'`
   [[ -z "$actualIp6Prefix" ]] && actualIp6Prefix="$ip6Mask"
   transferIPv6AddressFormat "$ip6Addr" "$ip6Gate"
 }
@@ -1437,6 +1446,37 @@ function ipv6SubnetCalc() {
     ip6Subnet+=$(echo ${tmpIp6Subnet:`expr $k \* 4`:4})":"
   done
   ip6Subnet=`echo ${ip6Subnet%?}`
+}
+
+# Debian installer can't accept any command that writing multi lines by one "sed -i" or "echo -e" etc in "preseed.cfg".
+# For example, if we want to add two lines or more like "up ip addr add IPv6one/48 dev eth0" and "up ip addr add IPv6two/40 dev eth0" to "network file",
+# using "sed -i '$a\\tup ip addr add IPv6one/48 dev eth0' 'network file';" and then "sed -i '$a\\tup ip addr add IPv6two/40 dev eth0' 'network file';" is necessary.
+# Otherwise, if try to use "sed -i '$a\\tup ip addr add IPv6one/48 dev eth0\n\tup ip addr add IPv6two/40 dev eth0' 'network file';" to add two IPv6 addresses config lines in the same "sed -i",
+# Debian installer will meet a fatal.
+#
+# An excellent method to add multiple IPv6 addresses and the IPv6 gateway of them in network configuration file for Debian/Kali, here is the sample:
+# allow-hotplug eth0
+# iface eth0 inet static
+#     address 59.67.82.30
+#     gateway 59.67.82.1
+#     netmask 255.255.255.0
+#     dns-nameservers 1.0.0.1 8.8.4.4
+#     up ip addr add 2a12:a520:d420::736f/48 dev eth0
+#     up ip addr add 2a12:a520:2e0b::a89c:11de/40 dev eth0
+#     up ip -6 route add 2a12:a520:2e0b:0000:0000:0000:0000:0001 dev eth0
+#     up ip -6 route add default via 2a12:a520:2e0b:0000:0000:0000:0000:0001 dev eth0
+#
+# $1 is "in-target", $2 is "$i6AddrNum", $3 is '/etc/network/interfaces'.
+writeMultipleIp6Addresses() {
+  [[ "$2" -ge "2" ]] && {
+    for writeIp6s in ${i6Addrs[@]}; do
+      ip6AddrItem="up ip addr add $writeIp6s dev $interface6"
+      tmpWriteIp6sCmd+=''$1' sed -i '\''$a\\t'$ip6AddrItem''\'' '$3'; '
+    done
+    writeIp6sCmd=$(echo $tmpWriteIp6sCmd)
+    writeIp6GateCmd=''$1' sed -i '\''$a\\tup ip -6 route add '$ip6Gate' dev '$interface6''\'' '$3'; '$1' sed -i '\''$a\\tup ip -6 route add default via '$ip6Gate' dev '$interface6''\'' '$3';'
+    SupportIPv6orIPv4=''$writeIp6sCmd' '$writeIp6GateCmd' '$1' sed -i '\''$a\\tdns-nameservers '$ip6DNS''\'' '$3'; '$1' sed -i '\''$alabel 2002::/16'\'' /etc/gai.conf; '$1' sed -i '\''$alabel 2001:0::/32'\'' /etc/gai.conf;'
+  }
 }
 
 # This function help us to sort sizes for different files from different directions.
@@ -1962,6 +2002,7 @@ function DebianModifiedPreseed() {
           ReplaceActualIpPrefix="$1 sed -ri \"s/address $ipAddr\/$ipPrefix/address $ipAddr\/$actualIp4Prefix/g\" /etc/network/interfaces; $1 sed -ri \"s/netmask $ip6Mask/netmask $actualIp6Prefix/g\" /etc/network/interfaces;"
         fi
       fi
+      writeMultipleIp6Addresses "$1" "$i6AddrNum" '/etc/network/interfaces'
     elif [[ "$IPStackType" == "IPv6Stack" ]]; then
 # This IPv6Stack Static machine can access IPv4 network in the future, maybe.
 # But it should be setting as IPv6 network priority.
