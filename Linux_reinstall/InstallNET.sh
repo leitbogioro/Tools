@@ -2403,7 +2403,7 @@ if [[ "$setNet" == "0" ]]; then
   [[ "$IPStackType" != "IPv4Stack" ]] && getIPv6Address
   if [[ "$IPStackType" == "BiStack" && "$i6AddrNum" -ge "2" ]]; then
     Network4Config="isStatic"
-    [[ "$BiStackPreferIpv6Status" == '1' ]] && {
+    [[ "$BiStackPreferIpv6Status" == "1" ]] && {
       BiStackPreferIpv6Status=""
       BurnIrregularIpv4Status='1'
     }
