@@ -2092,7 +2092,7 @@ function DebianPreseedProcess() {
     setRaidRecipe "$setRaid" "$disksNum" "$AllDisks" "$linux_relese"
 # Debian 11 and former versions couldn't accept irregular IPv6 format configs, they can only be recognized by Debian 12+ and Kali, dd mode(base system is Debian 12) prefer IPv4 to config network.
     if [[ "$BiStackPreferIpv6Status" == "1" ]]; then
-      if [[ "$linux_relese" == "debian" && "$DebianDistNum" -le "11" ]] || [[ "$ddMode" == '1' ]]; then
+      if [[ "$linux_relese" == 'debian' && "$DebianDistNum" -le "11" ]] || [[ "$ddMode" == '1' ]]; then
         BiStackPreferIpv6Status=""
         BurnIrregularIpv4Status='1'
       fi
