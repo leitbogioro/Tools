@@ -2091,9 +2091,11 @@ function DebianPreseedProcess() {
 # d-i partman/default_label string gpt
     setRaidRecipe "$setRaid" "$disksNum" "$AllDisks" "$linux_relese"
 # Debian 11 and former versions couldn't accept irregular IPv6 format configs, they can only be recognized by Debian 12+ and Kali, dd mode(base system is Debian 12) prefer IPv4 to config network.
-    if [[ "$BiStackPreferIpv6Status" == "1" && "$linux_relese" == "debian" && "$DebianDistNum" -le "11" ]] || [[ "$ddMode" == '1' ]]; then
-      BiStackPreferIpv6Status=""
-      BurnIrregularIpv4Status='1'
+    if [[ "$BiStackPreferIpv6Status" == "1" ]]; then
+      if [[ "$linux_relese" == "debian" && "$DebianDistNum" -le "11" ]] || [[ "$ddMode" == '1' ]]; then
+        BiStackPreferIpv6Status=""
+        BurnIrregularIpv4Status='1'
+      fi
     fi
 # A valid method to add an irregular gateway by force:
 # This method aims to hack IPv4 network service and add IPv4 route by force in busybox, so we need to assign "none" for "d-i netcfg/get_gateway string" to avoid Debian installer report "unreachable gateway",
