@@ -1458,8 +1458,8 @@ function ipv6SubnetCalc() {
 # Debian installer can't accept any command that writing multi lines by one "sed -i" or "echo -e" etc in "preseed.cfg".
 # For example, if we want to add two lines or more like "up ip addr add IPv6one/48 dev eth0" and "up ip addr add IPv6two/40 dev eth0" to "network file",
 # using "sed -i '$a\\tup ip addr add IPv6one/48 dev eth0' 'network file';" and then "sed -i '$a\\tup ip addr add IPv6two/40 dev eth0' 'network file';" is necessary.
-# Otherwise, if try to use "sed -i '$a\\tup ip addr add IPv6one/48 dev eth0\n\tup ip addr add IPv6two/40 dev eth0' 'network file';" to add two IPv6 addresses config lines in the same "sed -i",
-# Debian installer will meet a fatal.
+# Otherwise, if try to use "sed -i '$a\\tup ip addr add IPv6one/48 dev eth0\n\tup ip addr add IPv6two/40 dev eth0' 'network file';" 
+# to add two IPv6 addresses config lines in the same "sed -i", Debian installer will meet a fatal.
 #
 # An excellent method to add multiple IPv6 addresses and the IPv6 gateway of them in network configuration file for Debian/Kali, here is the sample:
 # allow-hotplug eth0
