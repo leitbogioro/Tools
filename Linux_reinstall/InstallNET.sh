@@ -2902,7 +2902,7 @@ if [[ "$IncFirmware" == '1' ]]; then
       [[ $? -ne '0' ]] && echo -ne "\n[${red}Error${plain}] Download firmware for ${red}$linux_relese${plain} failed! \n" && exit 1
     fi
     if [[ "$ddMode" == '1' ]]; then
-      vKernel_udeb=$(wget --no-check-certificate -qO- "http://$LinuxMirror/dists/$DIST/main/installer-$VER/current/images/udeb.list" |grep '^acpi-modules' | head -n1 |grep -o '[0-9]\{1,2\}.[0-9]\{1,2\}.[0-9]\{1,2\}-[0-9]\{1,2\}' | head -n1)
+      vKernel_udeb=$(wget --no-check-certificate -qO- "http://$LinuxMirror/dists/$DIST/main/installer-$VER/current/images/udeb.list" | grep '^acpi-modules' | head -n1 | grep -o '[0-9]\{1,2\}.[0-9]\{1,2\}.[0-9]\{1,2\}-[0-9]\{1,2\}' | head -n1)
       [[ -z "vKernel_udeb" ]] && vKernel_udeb="6.1.0-10"
     fi
   elif [[ "$linux_relese" == 'kali' ]]; then
