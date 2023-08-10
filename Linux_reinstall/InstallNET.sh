@@ -36,6 +36,7 @@ export tmpDHCP=''
 export targetRelese=''
 export targetLang='cn'
 export TimeZone=''
+export setIpStack=''
 export ipAddr=''
 export ipMask=''
 export ipGate=''
@@ -154,6 +155,11 @@ while [[ $# -ge 1 ]]; do
       shift
       ddMode='1'
       tmpURL="$1"
+      shift
+      ;;
+    --networkstack)
+      shift
+      setIpStack="$1"
       shift
       ;;
     --ip-addr)
@@ -1158,6 +1164,11 @@ function checkIpv4OrIpv6() {
       done
     fi
   }
+  
+  [[ $(echo "$setIpStack" | grep -i "bi\|bistack\|dual\|two") ]] && IPStackType="BiStack"
+  [[ $(echo "$setIpStack" | grep -i "4\|i4\|ip4\|ipv4") ]] && IPStackType="IPv4Stack"
+  [[ $(echo "$setIpStack" | grep -i "6\|i6\|ip6\|ipv6") ]] && IPStackType="IPv6Stack"
+  
   # [[ "$IPStackType" == "IPv4Stack" ]] && setIPv6="0" || setIPv6="1"
   [[ "$tmpSetIPv6" == "0" ]] && setIPv6="0" || setIPv6="1"
 }
@@ -1481,7 +1492,8 @@ function writeMultipleIpv6Addresses() {
       done
       writeIp6sCmd=$(echo $tmpWriteIp6sCmd)
       writeIp6GateCmd=''$2' sed -i '\''$a\\tup ip -6 route add '$ip6Gate' dev '$interface6''\'' '$3'; '$2' sed -i '\''$a\\tup ip -6 route add default via '$ip6Gate' dev '$interface6''\'' '$3';'
-      SupportIPv6orIPv4=''$writeIp6sCmd' '$writeIp6GateCmd' '$3' sed -i '\''$a\\tdns-nameservers '$ip6DNS''\'' '$3'; '$2' sed -i '\''$alabel 2002::/16'\'' /etc/gai.conf; '$2' sed -i '\''$alabel 2001:0::/32'\'' /etc/gai.conf;'
+      addIpv6DnsForPreseed=''$2' sed -ri '\''s/'$ipDNS'/'$ipDNS' '$ip6DNS'/g'\'' '$3';'
+      SupportIPv6orIPv4=''$writeIp6sCmd' '$writeIp6GateCmd' '$addIpv6DnsForPreseed' '$2' sed -i '\''$alabel 2002::/16'\'' /etc/gai.conf; '$2' sed -i '\''$alabel 2001:0::/32'\'' /etc/gai.conf;'
     elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
 # The following strategy of adding multiple IPv6 addresses with subnet, gateway and DNS parameters is only suitable for
 # Redhat series(9+, Fedora 30+) which are using "NetworkManager" to manage the configurations of the networking by default.
@@ -2784,6 +2796,8 @@ fi
 # The first network adapter name is must be "eth0" if kernel is loaded with parameter "net.ifnames=0 biosdevname=0". 
 [[ "$setInterfaceName" == "1" ]] && {
   interface="eth0"
+  interface4="eth0"
+  interface6="eth0"
   [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && {
     interface4="eth0"
     interface6="eth1"
