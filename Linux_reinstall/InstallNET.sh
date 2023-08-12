@@ -1306,24 +1306,16 @@ function ultimateFormatOfIpv6() {
 
 function getIPv6Address() {
 # Differences from scope link, scope host and scope global of IPv6, reference: https://qiita.com/_dakc_/items/4eefa443306860bdcfde
-  allI6Addrs=`ip -6 addr show | grep -wA 65536 "$interface\|$interface6" | grep -wv "lo\|host" | grep -wv "link" | grep -w "inet6" | grep "scope" | grep "global" | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print $1}'`
+  allI6Addrs=`ip -6 addr show | grep -wA 65536 "$interface\|$interface6" | grep -wv "lo" | grep -wv "link\|host" | grep -w "inet6" | grep "scope" | grep "global" | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print $1}'`
   i6Addr=`echo "$allI6Addrs" | head -n 1`
   i6AddrNum=`echo "$allI6Addrs" | wc -l`
-  [[ "$i6AddrNum" -ge "2" ]] && {
-    i6Addrs=()
-    for tmpIp6 in $allI6Addrs; do
-# The best way to add several elements into an array by using "for" loop in the shell.
-# Reference: https://linuxhandbook.com/bash-append-array/
-      i6Addrs[${#i6Addrs[@]}]=$tmpIp6
-    done
-    Network6Config="isStatic"
-  }
+  collectAllIpv6Addresses "$i6AddrNum"
   ip6Addr=`echo ${i6Addr} | cut -d'/' -f1`
   ip6Mask=`echo ${i6Addr} | cut -d'/' -f2`
   ip6Gate=`ip -6 route show default | grep -iv "warp\|wgcf\|wg[0-9]\|docker[0-9]" | grep -w "$interface\|$interface6" | grep -w "via" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
 # Get real IPv6 subnet of current System
   actualIp6Prefix=`ip -6 route show | grep -iv "warp\|wgcf\|wg[0-9]\|docker[0-9]" | grep -w "$interface\|$interface6" | grep -v "default" | grep -v "multicast" | grep -P '../[0-9]{1,3}' | head -n 1 | awk '{print $1}' | awk -F '/' '{print $2}'`
-  [[ -z "$actualIp6Prefix" ]] && actualIp6Prefix="$ip6Mask"
+  [[ -z "$actualIp6Prefix" || "$i6AddrNum" -ge "2" ]] && actualIp6Prefix="$ip6Mask"
   transferIPv6AddressFormat "$ip6Addr" "$ip6Gate"
 }
 
@@ -1464,28 +1456,93 @@ function ipv6SubnetCalc() {
   ip6Subnet=`echo ${ip6Subnet%?}`
 }
 
+# $1 is "$i6AddrNum".
+function collectAllIpv6Addresses() {
+  [[ "$1" -ge "2" && "$IPStackType" != "IPv4Stack" ]] && {
+    Network6Config="isStatic"
+    i6Addrs=()
+    for tmpIp6 in $allI6Addrs; do
+# The best way to add several elements into an array by using "for" loop in the shell.
+# Reference: https://linuxhandbook.com/bash-append-array/
+      i6Addrs[${#i6Addrs[@]}]=$tmpIp6
+    done
+    if [[ "$IPStackType" == "IPv6Stack" ]]; then
+# A sample result of the following program "for" loops:
+#
+# ${i6Addrs[@]}                         : 2606:a8c0:3:6f::b/64 2606:a8c0:3:6f::a/64 2606:a8c0:3::64/128
+# ${allI6AddrsWithoutSuffix[@]}         : 2606:a8c0:3:6f::b 2606:a8c0:3:6f::a 2606:a8c0:3::64
+# ${allI6AddrsWithUltimateFormat[@]}    : 2606:a8c0:0003:006f:0000:0000:0000:000b 2606:a8c0:0003:006f:0000:0000:0000:000a 2606:a8c0:0003:0000:0000:0000:0000:0064
+# ${allI6AddrsWithOmittedClassesNum[@]} : 3 3 4
+# $omittedClassesMaxNum                 : 4
+# $mainIp6Index                         : 2
+# $i6Addr                               : 2606:a8c0:3::64/128
+#
+# To find out the segment with the largest range of one IPv6 in all of the IPv6s as default to config IPv6 network in netboot environment for machines of IPv6 stack.
+      allI6AddrsWithoutSuffix=()
+      for tmpIp6 in ${i6Addrs[@]}; do
+        tmpIp6=$(echo $tmpIp6 | cut -d'/' -f1)
+        allI6AddrsWithoutSuffix[${#allI6AddrsWithoutSuffix[@]}]=$tmpIp6
+      done
+      allI6AddrsWithUltimateFormat=()
+      for tmpIp6 in ${allI6AddrsWithoutSuffix[@]}; do
+        tmpIp6=$(ultimateFormatOfIpv6 "$tmpIp6")
+        allI6AddrsWithUltimateFormat[${#allI6AddrsWithUltimateFormat[@]}]=$tmpIp6
+      done
+      allI6AddrsWithOmittedClassesNum=()
+      for tmpIp6 in ${allI6AddrsWithUltimateFormat[@]}; do
+        tmpIp6=$(echo $tmpIp6 | grep -oi "0000" | wc -l)
+        allI6AddrsWithOmittedClassesNum[${#allI6AddrsWithOmittedClassesNum[@]}]=$tmpIp6
+      done
+      omittedClassesMaxNum=${allI6AddrsWithOmittedClassesNum[0]}
+      for tmpIp6 in ${!allI6AddrsWithOmittedClassesNum[@]}; do
+        if [[ "$omittedClassesMaxNum" -le "${allI6AddrsWithOmittedClassesNum[${tmpIp6}]}" ]]; then
+          omittedClassesMaxNum=${allI6AddrsWithOmittedClassesNum[${tmpIp6}]}
+        fi
+      done
+      getArrItemIdx "${allI6AddrsWithOmittedClassesNum[*]}" "$omittedClassesMaxNum"
+      mainIp6Index="$index"
+      i6Addr=${i6Addrs[$mainIp6Index]}
+    fi
+  }
+}
+
 # Debian installer can't accept any command that writing multi lines by one "sed -i" or "echo -e" etc in "preseed.cfg".
 # For example, if we want to add two lines or more like "up ip addr add IPv6one/48 dev eth0" and "up ip addr add IPv6two/40 dev eth0" to "network file",
 # using "sed -i '$a\\tup ip addr add IPv6one/48 dev eth0' 'network file';" and then "sed -i '$a\\tup ip addr add IPv6two/40 dev eth0' 'network file';" is necessary.
 # Otherwise, if try to use "sed -i '$a\\tup ip addr add IPv6one/48 dev eth0\n\tup ip addr add IPv6two/40 dev eth0' 'network file';" 
 # to add two IPv6 addresses config lines in the same "sed -i", Debian installer will meet a fatal.
 #
-# An excellent method to add multiple IPv6 addresses and the IPv6 gateway of them in network configuration file for Debian/Kali, here is the sample:
+# An excellent method to add multiple IPv6 addresses and the IPv6 gateway of them in Bi-stack(dual-stack) network configuration file for Debian/Kali, here is the sample:
+#
 # allow-hotplug eth0
 # iface eth0 inet static
 #     address 59.67.82.30
 #     gateway 59.67.82.1
 #     netmask 255.255.255.0
-#     dns-nameservers 1.0.0.1 8.8.4.4
+#     dns-nameservers 1.0.0.1 8.8.4.4 2606:4700:4700::1001 2001:4860:4860::8844
 #     up ip addr add 2a12:a520:d420::736f/48 dev eth0
 #     up ip addr add 2a12:a520:2e0b::a89c:11de/40 dev eth0
 #     up ip -6 route add 2a12:a520:2e0b:0000:0000:0000:0000:0001 dev eth0
 #     up ip -6 route add default via 2a12:a520:2e0b:0000:0000:0000:0000:0001 dev eth0
 #
+# A standard format of adding multiple IPv6 configs into IPv6 stack server for Debian series:
+#
+# allow-hotplug enp3s0
+# iface enp3s0 inet6 static
+#	    address 2606:a8c0:3::64/128
+#	    gateway 2606:a8c0:3::1
+#	    dns-nameservers 2606:4700:4700::1001 2001:4860:4860::8844
+#   	dns-search debian
+# 	  up ip addr add 2606:a8c0:3:6f::3b/64 dev enp3s0
+#	    up ip addr add 2606:a8c0:3:6f::a/64 dev enp3s0
+#
 # $1 is "$i6AddrNum", $2 is "in-target", $3 is 'netconfig file'.
 function writeMultipleIpv6Addresses() {
-  [[ "$1" -ge "2" && "$IPStackType" != "IPv6Stack" ]] && {
+  [[ "$1" -ge "2" && "$IPStackType" != "IPv4Stack" ]] && {
+# For environment of IPv6 stack, one main IPv6 config will be written to system by "preseed" or "kickstart" into the unattend file to config the network firstly.
+# So the main IPv6 config should be excluded in the array of "i6Addrs[@]" for the later stage of writing other IPv6s to the network config file in the newly installed system. 
     if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]]; then
+      [[ "$IPStackType" == "IPv6Stack" ]] && unset i6Addrs[$mainIp6Index]
       for writeIp6s in ${i6Addrs[@]}; do
         ip6AddrItem="up ip addr add $writeIp6s dev $interface6"
         tmpWriteIp6sCmd+=''$2' sed -i '\''$a\\t'$ip6AddrItem''\'' '$3'; '
@@ -1493,13 +1550,15 @@ function writeMultipleIpv6Addresses() {
       writeIp6sCmd=$(echo $tmpWriteIp6sCmd)
       writeIp6GateCmd=''$2' sed -i '\''$a\\tup ip -6 route add '$ip6Gate' dev '$interface6''\'' '$3'; '$2' sed -i '\''$a\\tup ip -6 route add default via '$ip6Gate' dev '$interface6''\'' '$3';'
       addIpv6DnsForPreseed=''$2' sed -ri '\''s/'$ipDNS'/'$ipDNS' '$ip6DNS'/g'\'' '$3';'
-      SupportIPv6orIPv4=''$writeIp6sCmd' '$writeIp6GateCmd' '$addIpv6DnsForPreseed' '$2' sed -i '\''$alabel 2002::/16'\'' /etc/gai.conf; '$2' sed -i '\''$alabel 2001:0::/32'\'' /etc/gai.conf;'
+      preferIpv6Access=''$2' sed -i '\''$alabel 2002::/16'\'' /etc/gai.conf; '$2' sed -i '\''$alabel 2001:0::/32'\'' /etc/gai.conf;'
+      SupportIPv6orIPv4=''$writeIp6sCmd' '$writeIp6GateCmd' '$addIpv6DnsForPreseed' '$preferIpv6Access''
+      [[ "$IPStackType" == "IPv6Stack" ]] && SupportIPv6orIPv4=''$writeIp6sCmd' '$preferIpv6Access''
     elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
 # The following strategy of adding multiple IPv6 addresses with subnet, gateway and DNS parameters is only suitable for
 # Redhat series(9+, Fedora 30+) which are using "NetworkManager" to manage the configurations of the networking by default.
 # The first IPv6 address will be written to the target system which has a native syntax support was provided by kickstart from Redhat,
 # so we just need to add the second and more IPv6 addresses in the late command of the kickstart which area is involved from "%post" to "%end".
-      for (( tmpI6Index=0; tmpI6Index<"$1"; tmpI6Index++ )); do
+      for (( tmpI6Index="0"; tmpI6Index<"$1"; tmpI6Index++ )); do
         writeIp6s="${i6Addrs[$tmpI6Index]}"
         ipv6AddressOrder=$(expr $tmpI6Index + 1)
         ip6AddrItem+='address'$ipv6AddressOrder'='$writeIp6s','$ip6Gate'\n'
@@ -1508,6 +1567,7 @@ function writeMultipleIpv6Addresses() {
       addIpv6DnsForRedhat='dns='$ip6DNS1';'$ip6DNS2';'
       addIpv6AddrsForRedhat='sed -i '\''/addr-gen-mode=eui64/a\'$ip6AddrItems''$addIpv6DnsForRedhat''\'' '$3''
       setIpv6ConfigMethodForRedhat='sed -ri '\''s/method=auto/method=manual/g'\'' '$3''
+      [[ "$IPStackType" == "IPv6Stack" ]] && { ip6AddrItems=$(echo $ip6AddrItem | sed 's/..$//'); deleteOriginalIpv6Coning='sed -ri '\''/address1.*/d'\'' '$3''; addIpv6AddrsForRedhat='sed -i '\''/addr-gen-mode=eui64/a\'$ip6AddrItems''\'' '$3''; setIpv6ConfigMethodForRedhat=""; }
     fi
   }
 }
@@ -2000,15 +2060,14 @@ function DebianModifiedPreseed() {
 # If the network config type of server is DHCP and it have both public IPv4 and IPv6 address,
 # Debian install program even get nerwork config with DHCP, but after log into new system,
 # only the IPv4 of the server has been configurated.
-# so need to write "iface interface inet6 dhcp" to /etc/network/interfaces in preseeding process,
+# so need to write "iface interface inet6 dhcp" to /etc/network/interfaces in preseeding process for Bi-stack machine,
 # to avoid config IPv6 manually after log into new system.
     SupportIPv6orIPv4=""
     ReplaceActualIpPrefix=""
     if [[ "$IPStackType" == "IPv4Stack" ]]; then
       [[ "$BurnIrregularIpv4Status" == "1" ]] && BurnIrregularIpv4Gate="$1 sed -i '\$a\\\tgateway $actualIp4Gate' /etc/network/interfaces;"
-# This IPv4Stack DHCP machine can access IPv6 network in the future, maybe.
-# But it should be setting as IPv4 network priority.
-      SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel ::ffff:0:0/96' /etc/gai.conf;"
+# This IPv4Stack machine should be setting as IPv4 network accessing priority.
+      SupportIPv6orIPv4="$1 sed -i '\$aprecedence ::ffff:0:0/96' /etc/gai.conf;"
       ReplaceActualIpPrefix="$1 sed -ri \"s/address $ipAddr\/$ipPrefix/address $ipAddr\/$actualIp4Prefix/g\" /etc/network/interfaces;"
     elif [[ "$IPStackType" == "BiStack" ]]; then
 # Enable IPv4 dhcp or static configurations.
@@ -2037,10 +2096,10 @@ function DebianModifiedPreseed() {
       fi
       writeMultipleIpv6Addresses "$i6AddrNum" "$1" '/etc/network/interfaces'
     elif [[ "$IPStackType" == "IPv6Stack" ]]; then
-# This IPv6Stack Static machine can access IPv4 network in the future, maybe.
-# But it should be setting as IPv6 network priority.
-      [[ ! "$IPv4" || "$Network6Config" == "isStatic" ]] && SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;" || SupportIPv6orIPv4="$1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
+# This IPv6Stack machine should be setting as IPv6 network accessing priority.
+      SupportIPv6orIPv4="$1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
       ReplaceActualIpPrefix="$1 sed -ri \"s/address $ip6Addr\/$ip6Mask/address $ip6Addr\/$actualIp6Prefix/g\" /etc/network/interfaces;"
+      writeMultipleIpv6Addresses "$i6AddrNum" "$1" '/etc/network/interfaces'
     fi
 # a typical network configuration sample of IPv6 static for Debian:
 # iface eth0 inet static
@@ -2917,7 +2976,7 @@ if [[ "$IncFirmware" == '1' ]]; then
     fi
     if [[ "$ddMode" == '1' ]]; then
       vKernel_udeb=$(wget --no-check-certificate -qO- "http://$LinuxMirror/dists/$DIST/main/installer-$VER/current/images/udeb.list" | grep '^acpi-modules' | head -n1 | grep -o '[0-9]\{1,2\}.[0-9]\{1,2\}.[0-9]\{1,2\}-[0-9]\{1,2\}' | head -n1)
-      [[ -z "vKernel_udeb" ]] && vKernel_udeb="6.1.0-10"
+      [[ -z "vKernel_udeb" ]] && vKernel_udeb="6.1.0-11"
     fi
   elif [[ "$linux_relese" == 'kali' ]]; then
     if [[ "$IsCN" == "cn" ]]; then
@@ -3400,6 +3459,7 @@ sed -i -E 's/^(logtarget =).*/\1 \/var\/log\/fail2ban.log/' /etc/fail2ban/fail2b
 systemctl enable fail2ban
 
 # Add multiple IPv6 addresses
+${deleteOriginalIpv6Coning}
 ${addIpv6AddrsForRedhat}
 ${setIpv6ConfigMethodForRedhat}
 
