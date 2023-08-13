@@ -1466,8 +1466,8 @@ function collectAllIpv6Addresses() {
 # Reference: https://linuxhandbook.com/bash-append-array/
       i6Addrs[${#i6Addrs[@]}]=$tmpIp6
     done
-    if [[ "$IPStackType" == "IPv6Stack" ]]; then
-# A sample result of the following program "for" loops:
+    if [[ "$IPStackType" == "IPv6Stack" ]] || [[ "$IPStackType" == "BiStack" && -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]]; then
+# A sample result of the following programmed "for" loops:
 #
 # ${i6Addrs[@]}                         : 2606:a8c0:3:6f::b/64 2606:a8c0:3:6f::a/64 2606:a8c0:3::64/128
 # ${allI6AddrsWithoutSuffix[@]}         : 2606:a8c0:3:6f::b 2606:a8c0:3:6f::a 2606:a8c0:3::64
@@ -1536,15 +1536,36 @@ function collectAllIpv6Addresses() {
 # 	  up ip addr add 2606:a8c0:3:6f::3b/64 dev enp3s0
 #	    up ip addr add 2606:a8c0:3:6f::a/64 dev enp3s0
 #
+# A standard formart of adding multiple IPv6 addresses for the second network adapter in Bi-stack(dual-stack) server for Debian series:
+# The first network adapter which is called such as "eth0" plays a role of establishing IPv4 stack network,
+# and then the second network adapter of "eth1" is responsible of creating multiple terms of IPv6 stack networking configurations.
+# This uncommon and extreme situation can only be applied for Debian series at current because the file of "/etc/network/interfaces" is easily to be modified.
+#
+# allow-hotplug eth0
+# iface eth0 inet static
+#     address 104.36.84.237/32
+#     gateway 104.36.84.1
+#     dns-nameservers 1.0.0.1 8.8.4.4
+#
+# allow-hotplug eth1
+# iface eth1 inet6 static
+#     address 2606:a8c0:3::64/128
+#     gateway 2606:a8c0:3::1
+#     dns-nameservers 2606:4700:4700::1001 2001:4860:4860::8844
+#     up ip -6 addr add 2606:a8c0:3:6f::2f/64 dev eth1
+#     up ip -6 addr add 2606:a8c0:3:6f::1c/64 dev eth1
+#
 # $1 is "$i6AddrNum", $2 is "in-target", $3 is 'netconfig file'.
 function writeMultipleIpv6Addresses() {
   [[ "$1" -ge "2" && "$IPStackType" != "IPv4Stack" ]] && {
 # For environment of IPv6 stack, one main IPv6 config will be written to system by "preseed" or "kickstart" into the unattend file to config the network firstly.
 # So the main IPv6 config should be excluded in the array of "i6Addrs[@]" for the later stage of writing other IPv6s to the network config file in the newly installed system. 
     if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]]; then
-      [[ "$IPStackType" == "IPv6Stack" ]] && unset i6Addrs[$mainIp6Index]
+      if [[ "$IPStackType" == "IPv6Stack" ]] || [[ "$IPStackType" == "BiStack" && -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]]; then
+        unset i6Addrs[$mainIp6Index]
+      fi
       for writeIp6s in ${i6Addrs[@]}; do
-        ip6AddrItem="up ip addr add $writeIp6s dev $interface6"
+        [[ "$IPStackType" == "BiStack" && -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && ip6AddrItem="up ip -6 addr add $writeIp6s dev $interface6" || ip6AddrItem="up ip addr add $writeIp6s dev $interface6"
         tmpWriteIp6sCmd+=''$2' sed -i '\''$a\\t'$ip6AddrItem''\'' '$3'; '
       done
       writeIp6sCmd=$(echo $tmpWriteIp6sCmd)
@@ -1553,6 +1574,11 @@ function writeMultipleIpv6Addresses() {
       preferIpv6Access=''$2' sed -i '\''$alabel 2002::/16'\'' /etc/gai.conf; '$2' sed -i '\''$alabel 2001:0::/32'\'' /etc/gai.conf;'
       SupportIPv6orIPv4=''$writeIp6sCmd' '$writeIp6GateCmd' '$addIpv6DnsForPreseed' '$preferIpv6Access''
       [[ "$IPStackType" == "IPv6Stack" ]] && SupportIPv6orIPv4=''$writeIp6sCmd' '$preferIpv6Access''
+      [[ "$IPStackType" == "BiStack" && -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && {
+        addIpv6Adapter=''$2' sed -i '\''$a\ '\'' '$3'; '$2' sed -i '\''$aallow-hotplug '$interface6''\'' '$3';'
+        addFirstIpv6Config=''$2' sed -i '\''$aiface '$interface6' inet6 static'\'' '$3'; '$2' sed -i '\''$a\\taddress '$i6Addr''\'' '$3'; '$2' sed -i '\''$a\\tgateway '$ip6Gate''\'' '$3'; '$2' sed -i '\''$a\\tdns-nameservers '$ip6DNS''\'' '$3';'
+        SupportIPv6orIPv4=''$addIpv6Adapter' '$addFirstIpv6Config' '$writeIp6sCmd' '$preferIpv6Access''
+      }
     elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
 # The following strategy of adding multiple IPv6 addresses with subnet, gateway and DNS parameters is only suitable for
 # Redhat series(9+, Fedora 30+) which are using "NetworkManager" to manage the configurations of the networking by default.
