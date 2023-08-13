@@ -1467,7 +1467,7 @@ function collectAllIpv6Addresses() {
       i6Addrs[${#i6Addrs[@]}]=$tmpIp6
     done
     if [[ "$IPStackType" == "IPv6Stack" ]] || [[ "$IPStackType" == "BiStack" && -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]]; then
-# A sample result of the following programmed "for" loops:
+# A sample result of the following arrays which were programmed by "for" loops:
 #
 # ${i6Addrs[@]}                         : 2606:a8c0:3:6f::b/64 2606:a8c0:3:6f::a/64 2606:a8c0:3::64/128
 # ${allI6AddrsWithoutSuffix[@]}         : 2606:a8c0:3:6f::b 2606:a8c0:3:6f::a 2606:a8c0:3::64
