@@ -528,8 +528,10 @@ function transferIPv4AddressFormat() {
       if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]]; then
         ipPrefix="$actualIp4Prefix"
         ipMask="$actualIp4Subnet"
+        Network4Config="isStatic"
+# Redirecting all actual names of network adapters to "eth0", "eth1"... by force aims to make a convenience to adding gateway(route) in soft hacking process.
+        setInterfaceName='1'
       fi
-      Network4Config="isStatic"
 # Temporary installation of Debian 12 and Kali can't handle IPv4 public address and IPv4 private gateway well, so we prefer to invoke irregular IPv6 parameters to configure network in "busybox" and write static configs for IPv4 in later stage of the installation.
       [[ "$IPStackType" == "BiStack" ]] && BiStackPreferIpv6Status='1'
 # Installation environment of Debian 11 and former releases can't handle either irregular(gateway is not within the range of which is calculated by IP/mask) IPv4 or IPv6 parameters, so we need to execute a "ip route add" trick to make sure the networking of pure IPv4 stack servers works normally in "busybox".
@@ -2198,6 +2200,11 @@ function DebianPreseedProcess() {
 # This method aims to hack IPv4 network service and add IPv4 route by force in busybox, so we need to assign "none" for "d-i netcfg/get_gateway string" to avoid Debian installer report "unreachable gateway",
 # don't forget to write IPv4 gateway back in "d-i preseed/late_command" stage.
 # Reference: https://lab.civicrm.org/infra/ops/blob/master/ansible/roles/kvm-server/templates/etc/preseeds/host/preseed.cfg
+#
+# Reserved empty variables for engineering debugging, if you are not known them well, don't uncomment with them!
+    # BurnIrregularIpv4Status='1'
+    # ipPrefix=""
+    # MASK=""
     [[ "$BurnIrregularIpv4Status" == "1" ]] && {
       actualIp4Gate="$GATE"
       GATE="none"
@@ -2206,7 +2213,14 @@ function DebianPreseedProcess() {
       elif [[ "$IPStackType" == "BiStack" ]]; then
         writeDnsByForce='echo '\''nameserver '$ipDNS1''\'' > /etc/resolv.conf && echo '\''nameserver '$ip6DNS1''\'' >> /etc/resolv.conf && echo '\''nameserver '$ipDNS2''\'' >> /etc/resolv.conf && echo '\''nameserver '$ip6DNS2''\'' >> /etc/resolv.conf'
       fi
-      BurnIrregularIpv4ByForce=`echo -e 'd-i preseed/early_command string ip link set '$interface' up; ip a add '$IPv4'/'$ipPrefix' dev '$interface'; echo "(ip route add '$actualIp4Gate' dev '$interface' || true) && (ip route add default via '$actualIp4Gate' dev '$interface' || true) && '$writeDnsByForce'" > /bin/ethdetect; echo "(test -x /bin/ethdetect && /bin/ethdetect) || true" >> /usr/share/debconf/confmodule'`
+# If subnet of some machines of IPv4 config is "32"(255.255.255.255) means the intranet range is smallest, just including the server itself,
+# the "onlink" must be included in command of adding gateway(route) by force via soft hack, for example:
+#
+# ip route add default via 10.0.0.1 dev eth0 onlink
+#
+# to tell the networking service that the gateway of "10.0.0.1" will serve the device of network adapter "eth0" via "onlink" by IPv4 stack protocol
+# because "onlink" stipulates networking to establish a connection from local to gateway by "arp" directly without creating any area of intranet.
+      BurnIrregularIpv4ByForce=`echo -e 'd-i preseed/early_command string ip link set '$interface4' up; ip addr add '$IPv4'/'$ipPrefix' dev '$interface4'; echo "(ip route add '$actualIp4Gate' dev '$interface4' || true) && (ip route add default via '$actualIp4Gate' dev '$interface4' onlink || true) && '$writeDnsByForce'" > /bin/ethdetect; echo "(test -x /bin/ethdetect && /bin/ethdetect) || true" >> /usr/share/debconf/confmodule'`
     }
 # Prefer to use IPv4 stack to config networking.
     if [[ "$IPStackType" == "IPv4Stack" ]] || [[ "$IPStackType" == "BiStack" && "$BiStackPreferIpv6Status" != "1" ]]; then
