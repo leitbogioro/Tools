@@ -34,9 +34,9 @@ processes=`ps aux | wc -l`
 localip=`hostname -I | awk '{print $1}'`
 
 IPv4=`timeout 1s dig -4 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
-[[ "$IPv4" == "" ]] && IPv4=`timeout 1s dig -4 TXT CH +short whoami.cloudflare @1.0.0.1 | sed 's/\"//g'`
+[[ "$IPv4" == "" ]] && IPv4=`timeout 1s dig -4 TXT CH +short whoami.cloudflare @1.1.1.1 | sed 's/\"//g'`
 IPv6=`timeout 1s dig -6 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
-[[ "$IPv6" == "" ]] && IPv6=`timeout 1s dig -6 TXT CH +short whoami.cloudflare @2606:4700:4700::1001 | sed 's/\"//g'`
+[[ "$IPv6" == "" ]] && IPv6=`timeout 1s dig -6 TXT CH +short whoami.cloudflare @2606:4700:4700::1111 | sed 's/\"//g'`
 # IP_Check=$(echo $IPv4 | awk -F. '$1<255&&$2<255&&$3<255&&$4<255{print "isIPv4"}')
 IP_Check="$IPv4"
 if expr "$IP_Check" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; then
