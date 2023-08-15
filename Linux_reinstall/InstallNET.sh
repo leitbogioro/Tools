@@ -581,9 +581,19 @@ function ipv4Calc() {
   echo -e "Network:   $tmpNetwork\nBroadcast: $tmpBroadcast\nFirstIP:   $FirstIP\nLastIP:    $LastIP\n"
 }
 
+# Unsuitable settings of subnet will cause not only "Death Red" of Debian installer which is called "unreachable gateway"
+# but also contributes to some additional negative results as of if it's wider than the actual,
+# this host will lose communications with some other servers which are serving in public internet because these will be treated as intranet hosts.
+# To the opposite, if the subnet of one server is narrower than the actual, this host will lose communications with some local hosts because these will be treated as public servers.
+# As an environment of a VPS, a narrower subnet causes less bad subsequentials than a wider prefer because VPS is usually be used by individual.
+# If it's in a cluster such as home, office or company which is a place of that usually needs to transmit data with other hosts within LAN(local area network),
+# the better opinion is to setting a wider value if you don't know them well.
+# To figure out the most suitable subnet of a class segment of one IP or just a specific IP address,
+# you can visit: https://bgp.tools/ which allows you to inquire announced allocations of IP addresses that were assigned by Internet Organizations.
+#
 # $1 is "$ipAddr", $2 is "$ipGate"
 function ipv4SubnetCertificate() {
-  # If the IP and gateway are not in the same IPv4 A class, the prefix of netmask should be "1", transfer to whole IPv4 address is 128.0.0.1
+# If the IP and gateway are not in the same IPv4 A class, the prefix of netmask should be "1", transfer to whole IPv4 address is 128.0.0.1
 # The range of 190.168.23.175/1 is 128.0.0.0 - 255.255.255.255, the gateway 169.254.0.1 can be included.
   [[ `echo $1 | cut -d'.' -f 1` != `echo $2 | cut -d'.' -f 1` ]] && tmpIpMask="1"
 # If the IP and gateway are in the same IPv4 A class, not in the same IPv4 B class, the prefix of netmask should less equal than "8", transfer to whole IPv4 address is 255.0.0.0
