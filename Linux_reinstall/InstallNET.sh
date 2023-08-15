@@ -40,11 +40,11 @@ export setIpStack=''
 export ipAddr=''
 export ipMask=''
 export ipGate=''
-export ipDNS='1.0.0.1 8.8.4.4'
+export ipDNS='8.8.8.8 1.1.1.1'
 export ip6Addr=''
 export ip6Mask=''
 export ip6Gate=''
-export ip6DNS='2606:4700:4700::1001 2001:4860:4860::8844'
+export ip6DNS='2001:4860:4860::8888 2606:4700:4700::1111'
 export IncDisk=''
 export interface=''
 export interfaceSelect=''
@@ -81,7 +81,7 @@ export setConsole=''
 export setAutoConfig='1'
 export FirmwareImage=''
 export AddNum='1'
-export DebianModifiedProcession='echo "";'
+export DebianModifiedProcession=''
 
 while [[ $# -ge 1 ]]; do
   case $1 in
@@ -1126,12 +1126,12 @@ function checkSys() {
 function checkIpv4OrIpv6() {
   for ((w=1; w<=2; w++)); do
     IPv4DNSLookup=`timeout 0.3s dig -4 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
-    [[ "$IPv4DNSLookup" == "" ]] && IPv4DNSLookup=`timeout 0.3s dig -4 TXT CH +short whoami.cloudflare @1.0.0.1 | sed 's/\"//g'`
+    [[ "$IPv4DNSLookup" == "" ]] && IPv4DNSLookup=`timeout 0.3s dig -4 TXT CH +short whoami.cloudflare @1.1.1.1 | sed 's/\"//g'`
     [[ "$IPv4DNSLookup" != "" ]] && break
   done
   for ((x=1; x<=2; x++)); do
     IPv6DNSLookup=`timeout 0.3s dig -6 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
-    [[ "$IPv6DNSLookup" == "" ]] && IPv6DNSLookup=`timeout 0.3s dig -6 TXT CH +short whoami.cloudflare @2606:4700:4700::1001 | sed 's/\"//g'`
+    [[ "$IPv6DNSLookup" == "" ]] && IPv6DNSLookup=`timeout 0.3s dig -6 TXT CH +short whoami.cloudflare @2606:4700:4700::1111 | sed 's/\"//g'`
     [[ "$IPv6DNSLookup" != "" ]] && break
   done
   for y in "$3" "$4" "$5" "$6"; do
