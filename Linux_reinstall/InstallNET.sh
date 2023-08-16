@@ -2230,7 +2230,8 @@ function DebianPreseedProcess() {
 #
 # to tell the networking service that the gateway of "10.0.0.1" will serve the device of network adapter "eth0" via "onlink" by IPv4 stack protocol
 # because "onlink" stipulates networking to establish a connection from local to gateway by "arp" directly without creating any area of intranet.
-      BurnIrregularIpv4ByForce=`echo -e 'd-i preseed/early_command string ip link set '$interface4' up; ip addr add '$IPv4'/'$ipPrefix' dev '$interface4'; echo "(ip route add '$actualIp4Gate' dev '$interface4' || true) && (ip route add default via '$actualIp4Gate' dev '$interface4' onlink || true) && '$writeDnsByForce'" > /bin/ethdetect; echo "(test -x /bin/ethdetect && /bin/ethdetect) || true" >> /usr/share/debconf/confmodule'`
+      [[ "$ddMode" == '1' ]] && ddWinEarlyCommandsOfAnna='anna-install libfuse2-udeb fuse-udeb ntfs-3g-udeb libcrypto3-udeb libpcre2-8-0-udeb libssl3-udeb libuuid1-udeb zlib1g-udeb wget-udeb'
+      BurnIrregularIpv4ByForce=`echo -e 'd-i preseed/early_command string ip link set '$interface4' up; ip addr add '$IPv4'/'$ipPrefix' dev '$interface4'; echo "(ip route add '$actualIp4Gate' dev '$interface4' || true) && (ip route add default via '$actualIp4Gate' dev '$interface4' onlink || true) && '$writeDnsByForce'" > /bin/ethdetect; echo "(test -x /bin/ethdetect && /bin/ethdetect) || true" >> /usr/share/debconf/confmodule; '$ddWinEarlyCommandsOfAnna''`
     }
 # Prefer to use IPv4 stack to config networking.
     if [[ "$IPStackType" == "IPv4Stack" ]] || [[ "$IPStackType" == "BiStack" && "$BiStackPreferIpv6Status" != "1" ]]; then
@@ -3170,6 +3171,11 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]] || [[ "$
   [[ "$ddMode" == '0' ]] && {
     sed -i '/anna-install/d' /tmp/boot/preseed.cfg
     sed -i 's/wget.*\/sbin\/reboot\;\ //g' /tmp/boot/preseed.cfg
+  }
+# Commands of "d-i preseed/early_command" in "preseed.cfg" can only appear at one time, otherwise if there are two or more "preseed/early_command" in one preseed,
+# Debian installer can only execute one of them instead of running all of them because soft hack for irregular IPv4 configs and dd Windows will all using "preseed/early_command".
+  [[ "$BurnIrregularIpv4Status" == "1" ]] && {
+    sed -i '/early_command string anna-install/d' /tmp/boot/preseed.cfg
   }
 elif [[ "$linux_relese" == 'alpinelinux' ]]; then
 # Alpine Linux only support booting with IPv4 by dhcp or static, not support booting from IPv6 by any method.
