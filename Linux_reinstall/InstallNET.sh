@@ -2029,7 +2029,6 @@ function checkDHCP() {
       [[ "$dhcpStatus" =~ "dhcp6=\"true\"" || "$dhcpStatus" =~ "dhcp6=\"yes\"" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
     fi
   fi
-  setDhcpOrStatic "$tmpDHCP"
   [[ "$Network4Config" == "" ]] && Network4Config="isStatic"
   [[ "$Network6Config" == "" ]] && Network6Config="isStatic"
   rm -rf "$tmpNetcfgDir"
