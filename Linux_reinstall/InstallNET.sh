@@ -2175,6 +2175,8 @@ function DebianModifiedPreseed() {
 
 function DebianPreseedProcess() {
   if [[ "$setAutoConfig" == "1" ]]; then
+    ddWindowsEarlyCommandsOfAnna='anna-install libfuse2-udeb fuse-udeb ntfs-3g-udeb libcrypto3-udeb libpcre2-8-0-udeb libssl3-udeb libuuid1-udeb zlib1g-udeb wget-udeb'
+    tmpDdWinsEarlyCommandsOfAnna="$ddWindowsEarlyCommandsOfAnna"
 # Default to make a GPT partition to support 3TB hard drive or larger.
 # To remove LVM VGM PVM force automatically:
 # https://serverfault.com/questions/571363/unable-to-automatically-remove-lvm-data
@@ -2230,8 +2232,8 @@ function DebianPreseedProcess() {
 #
 # to tell the networking service that the gateway of "10.0.0.1" will serve the device of network adapter "eth0" via "onlink" by IPv4 stack protocol
 # because "onlink" stipulates networking to establish a connection from local to gateway by "arp" directly without creating any area of intranet.
-      [[ "$ddMode" == '1' ]] && ddWinEarlyCommandsOfAnna='anna-install libfuse2-udeb fuse-udeb ntfs-3g-udeb libcrypto3-udeb libpcre2-8-0-udeb libssl3-udeb libuuid1-udeb zlib1g-udeb wget-udeb'
-      BurnIrregularIpv4ByForce=`echo -e 'd-i preseed/early_command string ip link set '$interface4' up; ip addr add '$IPv4'/'$ipPrefix' dev '$interface4'; echo "(ip route add '$actualIp4Gate' dev '$interface4' || true) && (ip route add default via '$actualIp4Gate' dev '$interface4' onlink || true) && '$writeDnsByForce'" > /bin/ethdetect; echo "(test -x /bin/ethdetect && /bin/ethdetect) || true" >> /usr/share/debconf/confmodule; '$ddWinEarlyCommandsOfAnna''`
+      [[ "$ddMode" == '0' ]] && tmpDdWinsEarlyCommandsOfAnna=''
+      BurnIrregularIpv4ByForce=`echo -e 'd-i preseed/early_command string ip link set '$interface4' up; ip addr add '$IPv4'/'$ipPrefix' dev '$interface4'; echo "(ip route add '$actualIp4Gate' dev '$interface4' || true) && (ip route add default via '$actualIp4Gate' dev '$interface4' onlink || true) && '$writeDnsByForce'" > /bin/ethdetect; echo "(test -x /bin/ethdetect && /bin/ethdetect) || true" >> /usr/share/debconf/confmodule; '$tmpDdWinsEarlyCommandsOfAnna''`
     }
 # Prefer to use IPv4 stack to config networking.
     if [[ "$IPStackType" == "IPv4Stack" ]] || [[ "$IPStackType" == "BiStack" && "$BiStackPreferIpv6Status" != "1" ]]; then
@@ -2313,7 +2315,7 @@ d-i clock-setup/ntp boolean true
 d-i clock-setup/ntp-server string ntp.nict.jp
 
 ### Get harddisk name and Windows DD installation set up
-d-i preseed/early_command string anna-install libfuse2-udeb fuse-udeb ntfs-3g-udeb libcrypto3-udeb libpcre2-8-0-udeb libssl3-udeb libuuid1-udeb zlib1g-udeb wget-udeb
+d-i preseed/early_command string ${ddWindowsEarlyCommandsOfAnna}
 d-i partman/early_command string \
 lvremove --select all -ff -y; \
 vgremove --select all -ff -y; \
