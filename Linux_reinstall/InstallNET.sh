@@ -2029,17 +2029,22 @@ function checkDHCP() {
       [[ "$dhcpStatus" =~ "dhcp6=\"true\"" || "$dhcpStatus" =~ "dhcp6=\"yes\"" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
     fi
   fi
-  [[ "$tmpDHCP" == "dhcp" || "$tmpDHCP" == "auto" || "$tmpDHCP" == "automatic" || "$tmpDHCP" == "true" || "$tmpDHCP" == "yes" || "$tmpDHCP" == "1" ]] && {
-    Network4Config="isDHCP"
-    Network6Config="isDHCP"
-  }
-  [[ "$tmpDHCP" == "static" || "$tmpDHCP" == "manual" || "$tmpDHCP" == "none" || "$tmpDHCP" == "false" || "$tmpDHCP" == "no" || "$tmpDHCP" == "0" ]] && {
-    Network4Config="isStatic"
-    Network6Config="isStatic"
-  }
+  setDhcpOrStatic "$tmpDHCP"
   [[ "$Network4Config" == "" ]] && Network4Config="isStatic"
   [[ "$Network6Config" == "" ]] && Network6Config="isStatic"
   rm -rf "$tmpNetcfgDir"
+}
+
+# $1 is "$tmpDHCP".
+function setDhcpOrStatic() {
+  [[ "$1" == "dhcp" || "$1" == "auto" || "$1" == "automatic" || "$1" == "true" || "$1" == "yes" || "$1" == "1" ]] && {
+    Network4Config="isDHCP"
+    Network6Config="isDHCP"
+  }
+  [[ "$1" == "static" || "$1" == "manual" || "$1" == "none" || "$1" == "false" || "$1" == "no" || "$1" == "0" ]] && {
+    Network4Config="isStatic"
+    Network6Config="isStatic"
+  }
 }
 
 # $1 is "in-target"
@@ -2217,6 +2222,7 @@ function DebianPreseedProcess() {
     # BurnIrregularIpv4Status='1'
     # ipPrefix=""
     # MASK=""
+    [[ Network4Config == "isDHCP" || "$interfaceSelect" != "auto" ]] && BurnIrregularIpv4Status='0'
     [[ "$BurnIrregularIpv4Status" == "1" ]] && {
       actualIp4Gate="$GATE"
       GATE="none"
@@ -2522,7 +2528,7 @@ elif [[ -z "$ipAddr" && -z "$ipMask" && -z "$ipGate" ]] && [[ -n "$ip6Addr" && -
 fi
 
 if [[ "$setNet" == "0" ]]; then
-  checkDHCP "$CurrentOS" "$CurrentOSVer" "$IPStackType"
+  [[ -z "$tmpDHCP" ]] && checkDHCP "$CurrentOS" "$CurrentOSVer" "$IPStackType"
   getIPv4Address
   [[ "$IPStackType" != "IPv4Stack" ]] && getIPv6Address
   if [[ "$IPStackType" == "BiStack" && "$i6AddrNum" -ge "2" ]]; then
@@ -2533,6 +2539,8 @@ if [[ "$setNet" == "0" ]]; then
     }
   fi
 fi
+
+setDhcpOrStatic "$tmpDHCP"
 
 checkWarp "warp*.conf" "wgcf*.conf" "wg[0-9].conf" "warp*" "wgcf*" "wg[0-9]" "privatekey" "publickey"
 
