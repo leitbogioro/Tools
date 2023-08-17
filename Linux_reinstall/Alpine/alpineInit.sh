@@ -133,4 +133,4 @@ export BOOTLOADER="grub"
 printf 'y' | setup-disk -m sys $kernelOpt -s 0 $IncDisk
 
 # Reboot, the system in the memory will all be written to the hard drive.
-# exec reboot
+exec reboot
