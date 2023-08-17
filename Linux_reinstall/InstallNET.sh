@@ -1965,13 +1965,13 @@ function checkDHCP() {
 # Reference: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/deployment_guide/s1-networkscripts-interfaces
         if [[ "$3" == "IPv4Stack" ]]; then
           Network6Config="isDHCP"
-          [[ -n `timeout 8s grep -Ewirn "BOOTPROTO=none|BOOTPROTO=\"none\"|BOOTPROTO=\'none\'|BOOTPROTO=NONE|BOOTPROTO=\"NONE\"|BOOTPROTO=\'NONE\'|BOOTPROTO=static|BOOTPROTO=\"static\"|BOOTPROTO=\'static\'|BOOTPROTO=STATIC|BOOTPROTO=\"STATIC\"|BOOTPROTO=\'STATIC\'" $NetCfgWhole` ]] && Network4Config="isStatic" || Network4Config="isDHCP"
+          [[ -n `timeout 4s grep -Ewirn "BOOTPROTO=none|BOOTPROTO=\"none\"|BOOTPROTO=\'none\'|BOOTPROTO=NONE|BOOTPROTO=\"NONE\"|BOOTPROTO=\'NONE\'|BOOTPROTO=static|BOOTPROTO=\"static\"|BOOTPROTO=\'static\'|BOOTPROTO=STATIC|BOOTPROTO=\"STATIC\"|BOOTPROTO=\'STATIC\'" $NetCfgWhole` ]] && Network4Config="isStatic" || Network4Config="isDHCP"
         elif [[ "$3" == "BiStack" ]]; then
-          [[ -n `timeout 8s grep -Ewirn "BOOTPROTO=none|BOOTPROTO=\"none\"|BOOTPROTO=\'none\'|BOOTPROTO=NONE|BOOTPROTO=\"NONE\"|BOOTPROTO=\'NONE\'|BOOTPROTO=static|BOOTPROTO=\"static\"|BOOTPROTO=\'static\'|BOOTPROTO=STATIC|BOOTPROTO=\"STATIC\"|BOOTPROTO=\'STATIC\'" $NetCfgWhole` ]] && Network4Config="isStatic" || Network4Config="isDHCP"
-          [[ -n `timeout 8s grep -Ewirn "IPV6_AUTOCONF=yes|IPV6_AUTOCONF=\"yes\"|IPV6_AUTOCONF=YES|IPV6_AUTOCONF=\"YES\"|DHCPV6C=yes|DHCPV6C=\"yes\"" $NetCfgWhole` ]] && Network6Config="isDHCP" || Network6Config="isStatic"
+          [[ -n `timeout 4s grep -Ewirn "BOOTPROTO=none|BOOTPROTO=\"none\"|BOOTPROTO=\'none\'|BOOTPROTO=NONE|BOOTPROTO=\"NONE\"|BOOTPROTO=\'NONE\'|BOOTPROTO=static|BOOTPROTO=\"static\"|BOOTPROTO=\'static\'|BOOTPROTO=STATIC|BOOTPROTO=\"STATIC\"|BOOTPROTO=\'STATIC\'" $NetCfgWhole` ]] && Network4Config="isStatic" || Network4Config="isDHCP"
+          [[ -n `timeout 4s grep -Ewirn "IPV6_AUTOCONF=yes|IPV6_AUTOCONF=\"yes\"|IPV6_AUTOCONF=YES|IPV6_AUTOCONF=\"YES\"|DHCPV6C=yes|DHCPV6C=\"yes\"" $NetCfgWhole` ]] && Network6Config="isDHCP" || Network6Config="isStatic"
         elif [[ "$3" == "IPv6Stack" ]]; then
           Network4Config="isDHCP"
-          [[ -n `timeout 8s grep -Ewirn "IPV6_AUTOCONF=yes|IPV6_AUTOCONF=\"yes\"|IPV6_AUTOCONF=YES|IPV6_AUTOCONF=\"YES\"|DHCPV6C=yes|DHCPV6C=\"yes\"" $NetCfgWhole` ]] && Network6Config="isDHCP" || Network6Config="isStatic"
+          [[ -n `timeout 4s grep -Ewirn "IPV6_AUTOCONF=yes|IPV6_AUTOCONF=\"yes\"|IPV6_AUTOCONF=YES|IPV6_AUTOCONF=\"YES\"|DHCPV6C=yes|DHCPV6C=\"yes\"" $NetCfgWhole` ]] && Network6Config="isDHCP" || Network6Config="isStatic"
         fi
       elif [[ "$NetCfgFile" =~ "nmconnection" ]]; then
 # In NetworkManager for Redhat 9 and later, IPv4 and IPv6 share the same config method and value like the following sample:
@@ -1993,13 +1993,13 @@ function checkDHCP() {
         NetCfg6LineNum="$NetCfgLineNum"
         if [[ "$3" == "IPv4Stack" ]]; then
           Network6Config="isDHCP"
-          [[ `timeout 8s sed -n "$NetCfg4LineNum"p $NetCfgWhole` == "method=auto" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
+          [[ `timeout 4s sed -n "$NetCfg4LineNum"p $NetCfgWhole` == "method=auto" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
         elif [[ "$3" == "BiStack" ]]; then
-          [[ `timeout 8s sed -n "$NetCfg4LineNum"p $NetCfgWhole` == "method=auto" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
-          [[ `timeout 8s sed -n "$NetCfg6LineNum"p $NetCfgWhole` == "method=auto" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
+          [[ `timeout 4s sed -n "$NetCfg4LineNum"p $NetCfgWhole` == "method=auto" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
+          [[ `timeout 4s sed -n "$NetCfg6LineNum"p $NetCfgWhole` == "method=auto" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
         elif [[ "$3" == "IPv6Stack" ]]; then
           Network4Config="isDHCP"
-          [[ `timeout 8s sed -n "$NetCfg6LineNum"p $NetCfgWhole` == "method=auto" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
+          [[ `timeout 4s sed -n "$NetCfg6LineNum"p $NetCfgWhole` == "method=auto" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
         fi
       fi
     elif [[ "$1" == 'Debian' ]] || [[ "$1" == 'Kali' ]] || [[ "$1" == 'Ubuntu' && "$networkManagerType" == "ifupdown" ]] || [[ "$1" == 'AlpineLinux' ]]; then
@@ -2007,13 +2007,13 @@ function checkDHCP() {
 # /etc/network/interfaces or /etc/network/interfaces.d/interface or /run/network/interfaces.d/interface
       if [[ "$3" == "IPv4Stack" ]]; then
         Network6Config="isDHCP"
-        [[ `timeout 8s grep -iw "iface" $NetCfgWhole | grep -iw "$interface4" | grep -iw "inet" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
+        [[ `timeout 4s grep -iw "iface" $NetCfgWhole | grep -iw "$interface4" | grep -iw "inet" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
       elif [[ "$3" == "BiStack" ]]; then
-        [[ `timeout 8s grep -iw "iface" $NetCfgWhole | grep -iw "$interface4" | grep -iw "inet" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
-        [[ `timeout 8s grep -iw "iface" $NetCfgWhole | grep -iw "$interface6" | grep -iw "inet6" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
+        [[ `timeout 4s grep -iw "iface" $NetCfgWhole | grep -iw "$interface4" | grep -iw "inet" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
+        [[ `timeout 4s grep -iw "iface" $NetCfgWhole | grep -iw "$interface6" | grep -iw "inet6" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
       elif [[ "$3" == "IPv6Stack" ]]; then
         Network4Config="isDHCP"
-        [[ `timeout 8s grep -iw "iface" $NetCfgWhole | grep -iw "$interface6" | grep -iw "inet6" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
+        [[ `timeout 4s grep -iw "iface" $NetCfgWhole | grep -iw "$interface6" | grep -iw "inet6" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
       fi
     elif [[ "$1" == 'Ubuntu' && "$networkManagerType" == "netplan" ]]; then
 # For netplan(Ubuntu 18 and later), if network configuration is Static whether IPv4 or IPv6.
