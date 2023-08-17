@@ -525,7 +525,7 @@ function transferIPv4AddressFormat() {
   [[ "$ip4AddrFirst""$ip4AddrSecond" != "$ip4GateFirst""$ip4GateSecond" ]] && {
     [[ "$ip4GateFirst" == "169" && "$ip4GateSecond" == "254" ]] || [[ "$ip4GateFirst" == "172" && "$ip4GateSecond" -ge "16" && "$ip4GateSecond" -le "31" ]] || [[ "$ip4GateFirst" == "192" && "$ip4GateSecond" == "168" ]] || [[ "$ip4GateFirst" == "100" && "$ip4GateSecond" -ge "64" && "$ip4GateSecond" -le "127" ]] || [[ "$ip4GateFirst" == "10" && "$ip4GateSecond" -ge "0" && "$ip4GateSecond" -le "255" ]] || [[ "$ip4GateFirst" == "127" && "$ip4GateSecond" -ge "0" && "$ip4GateSecond" -le "255" ]] || [[ "$ip4GateFirst" == "198" && "$ip4GateSecond" -ge "18" && "$ip4GateSecond" -le "19" ]] || [[ "$ip4GateFirst" == "192" && "$ip4GateSecond" == "0" && "$ip4GateThird" == "0" || "$ip4GateThird" == "2" ]] || [[ "$ip4GateFirst" == "198" && "$ip4GateSecond" == "51" && "$ip4GateThird" == "100" ]] || [[ "$ip4GateFirst" == "203" && "$ip4GateSecond" == "0" && "$ip4GateThird" == "113" ]] || [[ "$ip4AddrFirst" != "$ip4GateFirst" ]] && {
       # [[ -z "$ip4RouteScopeLink" ]] && ipGate=`ipv4Calc "$1" "$ipPrefix" | grep "FirstIP:" | awk '{print$2}'` || ipGate=`ipv4Calc "$ip4RouteScopeLink" "$ipPrefix" | grep "FirstIP:" | awk '{print$2}'`
-      if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]]; then
+      if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]] || [[ "$linux_relese" == 'alpinelinux' ]]; then
         ipPrefix="$actualIp4Prefix"
         ipMask="$actualIp4Subnet"
         Network4Config="isStatic"
@@ -3269,6 +3269,15 @@ elif [[ "$linux_relese" == 'alpinelinux' ]]; then
         fi
       }
     fi
+# Soft hack of irregular IPv4 configs.
+# Reserved empty variables for engineering debugging, if you are not known them well, don't uncomment with them!
+    # BurnIrregularIpv4Status='1'
+    # ipPrefix=""
+    # ipMask=""
+    [[ "$BurnIrregularIpv4Status" == "1" ]] && {
+      actualIp4Gate="$GATE"
+      sed -i '/manual configuration/a\ip link set '$interface4' up\nip addr add '$IPv4'/'$ipPrefix' dev '$interface4'\nip route add '$actualIp4Gate' dev '$interface4'\nip route add default via '$actualIp4Gate' dev '$interface4' onlink\necho '\''nameserver '$ipDNS1''\'' > /etc/resolv.conf\necho '\''nameserver '$ipDNS2''\'' >> /etc/resolv.conf' /tmp/boot/init
+    }
 # All the following steps are processed in the temporary Alpine Linux.
     cat <<EOF | sed -i "${AlpineInitLineNum}r /dev/stdin" /tmp/boot/init
 # Download "interfaces" templates and replace IP details.
@@ -3284,7 +3293,8 @@ rm -rf \$sysroot/etc/motd
 wget --no-check-certificate -O \$sysroot/etc/profile.d/motd.sh ${AlpineMotd}
 chmod a+x \$sysroot/etc/profile.d/motd.sh
 
-# Modify initial file.
+# Creat a modify initial file.
+echo '' > \$sysroot/root/alpine.config
 
 # To determine main hard drive.
 echo "IncDisk  "${IncDisk} >> \$sysroot/root/alpine.config
@@ -3323,6 +3333,8 @@ echo "ipPrefix  "${ipPrefix} >> \$sysroot/root/alpine.config
 echo "actualIp4Prefix  "${actualIp4Prefix} >> \$sysroot/root/alpine.config
 echo "actualIp4Subnet  "${actualIp4Subnet} >> \$sysroot/root/alpine.config
 echo "GATE  "${GATE} >> \$sysroot/root/alpine.config
+echo "actualIp4Gate  "${actualIp4Gate} >> \$sysroot/root/alpine.config
+echo "BurnIrregularIpv4Status  "${BurnIrregularIpv4Status} >> \$sysroot/root/alpine.config
 echo "ipDNS1  "${ipDNS1} >> \$sysroot/root/alpine.config
 echo "ipDNS2  "${ipDNS2} >> \$sysroot/root/alpine.config
 
@@ -3659,6 +3671,7 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
 # ip=179.86.100.76::179.86.100.1:255.255.255.0::eth0::1.0.0.1 8.8.8.8:
 # Any of IPv6 address format can't be recognized.
       [[ "$Network4Config" == "isStatic" ]] && Add_OPTION="ip=$IPv4::$GATE:$MASK::$interface::$ipDNS:" || Add_OPTION="ip=dhcp"
+      [[ "$BurnIrregularIpv4Status" == "1" ]] && Add_OPTION="ip=$IPv4:::$ipMask::$interface4::$ipDNS:"
       BOOT_OPTION="alpine_repo=$LinuxMirror/$DIST/main modloop=$ModLoopUrl $Add_OPTION"
       # Add_OPTION="ip=[2603:c020:800d:ae3d:6cde:8519:f1e3:a522]::[fe80::200:17ff:fe4c:e267]:[ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff]::eth0::[2606:4700:4700::1001]:"
       # BOOT_OPTION="alpine_repo=$LinuxMirror/$DIST/main modloop=$LinuxMirror/$DIST/releases/$VER/netboot/modloop-lts ip=2001:19f0:000c:05b9:5400:04ff:fe74:7d40::fe80:0000:0000:0000:fc00:04ff:fe74:7d40:ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff::eth0::2606:4700:4700:0000:0000:0000:0000:1001:"
@@ -3818,6 +3831,7 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
       BOOT_OPTION="auto=true $Add_OPTION hostname=$(hostname) domain=$linux_relese quiet"
     elif [[ "$linux_relese" == 'alpinelinux' ]]; then
       [[ "$Network4Config" == "isStatic" ]] && Add_OPTION="ip=$IPv4::$GATE:$MASK::$interface::$ipDNS:" || Add_OPTION="ip=dhcp"
+      [[ "$BurnIrregularIpv4Status" == "1" ]] && Add_OPTION="ip=$IPv4:::$ipMask::$interface4::$ipDNS:"
       BOOT_OPTION="alpine_repo=$LinuxMirror/$DIST/main modloop=$ModLoopUrl $Add_OPTION"
     elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
       ipv6ForRedhatGrub
