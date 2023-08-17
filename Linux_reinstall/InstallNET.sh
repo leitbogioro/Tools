@@ -1737,33 +1737,35 @@ function getInterface() {
 # This setting may confuse program to get real adapter name from reading /proc/cat/dev
   GrubCmdLine=`grep "GRUB_CMDLINE_LINUX" /etc/default/grub | grep -v "#" | grep "net.ifnames=0\|biosdevname=0"`
 # So we need to comfirm whether adapter name is renamed and whether we should inherit it into new system.
-  if [[ -n "$GrubCmdLine" && -z "$interfaceSelect" ]] || [[ "$interface4" == "eth0" ]] || [[ "$interface6" == "eth0" ]]|| [[ "$linux_relese" == 'kali' ]] || [[ "$linux_relese" == 'alpinelinux' ]]; then
+  [[ -n "$interfaceSelect" ]] && { interface="$interfaceSelect"; interface4="$interface"; interface6="$interface"; }
+  if [[ -n "$GrubCmdLine" && -z "$interfaceSelect" ]] || [[ "$interface4" =~ "eth" ]] || [[ "$interface6" =~ "eth" ]]|| [[ "$linux_relese" == 'kali' ]] || [[ "$linux_relese" == 'alpinelinux' ]]; then
     setInterfaceName='1'
   fi
-  if [[ "$1" == 'CentOS' || "$1" == 'AlmaLinux' || "$1" == 'RockyLinux' || "$1" == 'Fedora' || "$1" == 'Vzlinux' || "$1" == 'OracleLinux' || "$1" == 'OpenCloudOS' || "$1" == 'AlibabaCloudLinux' || "$1" == 'ScientificLinux' || "$1" == 'AmazonLinux' || "$1" == 'RedHatEnterpriseLinux' || "$1" == 'OpenAnolis' || "$1" == 'CloudLinux' ]]; then
-    [[ ! $(find / -maxdepth 5 -path /*network-scripts -type d -print -or -path /*system-connections -type d -print) ]] && {
-      echo -ne "\n[${red}Error${plain}] Invalid network configuration!\n"
-      exit 1
-    }
-    NetCfgWhole=()
-    tmpNetCfgFiles=""
-    for Count in $(find / -maxdepth 5 -path /*network-scripts -type d -print -or -path /*system-connections -type d -print); do
-      NetCfgDir="$Count""/"
+  [[ -z "$tmpDHCP" ]] && {
+    if [[ "$1" == 'CentOS' || "$1" == 'AlmaLinux' || "$1" == 'RockyLinux' || "$1" == 'Fedora' || "$1" == 'Vzlinux' || "$1" == 'OracleLinux' || "$1" == 'OpenCloudOS' || "$1" == 'AlibabaCloudLinux' || "$1" == 'ScientificLinux' || "$1" == 'AmazonLinux' || "$1" == 'RedHatEnterpriseLinux' || "$1" == 'OpenAnolis' || "$1" == 'CloudLinux' ]]; then
+      [[ ! $(find / -maxdepth 5 -path /*network-scripts -type d -print -or -path /*system-connections -type d -print) ]] && {
+        echo -ne "\n[${red}Error${plain}] Invalid network configuration!\n"
+        exit 1
+      }
+      NetCfgWhole=()
+      tmpNetCfgFiles=""
+      for Count in $(find / -maxdepth 5 -path /*network-scripts -type d -print -or -path /*system-connections -type d -print); do
+        NetCfgDir="$Count""/"
 # If "NetworkManager" replaced "network-scripts", there is a file called "readme-ifcfg-rh.txt" in dir: /etc/sysconfig/network-scripts/
-      # NetCfgFile=`ls -Sl $NetCfgDir 2>/dev/null | awk -F' ' '{print $NF}' | grep -iv 'lo\|sit\|stf\|gif\|dummy\|vmnet\|vir\|gre\|ipip\|ppp\|bond\|tun\|tap\|ip6gre\|ip6tnl\|teql\|ocserv\|vpn\|readme' | grep -s "$interface" | head -n 1`
+        # NetCfgFile=`ls -Sl $NetCfgDir 2>/dev/null | awk -F' ' '{print $NF}' | grep -iv 'lo\|sit\|stf\|gif\|dummy\|vmnet\|vir\|gre\|ipip\|ppp\|bond\|tun\|tap\|ip6gre\|ip6tnl\|teql\|ocserv\|vpn\|readme' | grep -s "$interface" | head -n 1`
 # Condition of "grep -iv 'lo\|sit\|stf..." has been deperated because the config file name of "NetworkManager" which initiated by "cloud init" is like "cloud-init-eth0.nmconnection".
 # Different from command "grep", command "ls" can only show file name but not full file direction.
 # There are 3 files named "ifcfg-ens18  ifcfg-eth0  ifcfg-eth1" in dir "/etc/sysconfig/network-scripts/" of Almalinux 8 of Bandwagonhosts template.
 # We should select the correct one by adjust whether includes interface name and file size.
 # Files in "/etc/sysconfig/network-scripts/", reference: https://zetawiki.com/wiki/%EB%B6%84%EB%A5%98:/etc/sysconfig/network-scripts
-      NetCfgFiles=`ls -Sl $NetCfgDir 2>/dev/null | awk -F' ' '{print $NF}' | grep -iv 'readme\|ifcfg-lo\|ifcfg-bond\|ifup\|ifdown\|vpn\|init.ipv6-global\|network-functions' | grep -s "ifcfg\|nmconnection"`
-      for Files in $NetCfgFiles; do
-        if [[ `grep -w "$interface4\|$interface6" "$NetCfgDir$Files"` != "" ]]; then
-          tmpNetCfgFiles+=$(echo -e "\n""$NetCfgDir$Files")
-        fi
-      done
-      getLargestOrSmallestFile "$tmpNetCfgFiles" "sort -hr"
-      NetCfgFile="$FileName"
+        NetCfgFiles=`ls -Sl $NetCfgDir 2>/dev/null | awk -F' ' '{print $NF}' | grep -iv 'readme\|ifcfg-lo\|ifcfg-bond\|ifup\|ifdown\|vpn\|init.ipv6-global\|network-functions' | grep -s "ifcfg\|nmconnection"`
+        for Files in $NetCfgFiles; do
+          if [[ `grep -w "$interface4\|$interface6" "$NetCfgDir$Files"` != "" ]]; then
+            tmpNetCfgFiles+=$(echo -e "\n""$NetCfgDir$Files")
+          fi
+        done
+        getLargestOrSmallestFile "$tmpNetCfgFiles" "sort -hr"
+        NetCfgFile="$FileName"
 # In Google Cloud Platform, network configuration files of Redhat Enterprise 8+, CentOS-stream 8+, RockyLinux 8+ are all named " 'Wired connection 1.nmconnection' " in "/run/NetworkManager/system-connections/" direction.
 # Yes, that's right, the name of this file includes spaces and two single quotes which are in the first and last.
 # Only command "ls" can show the whole file name:
@@ -1787,94 +1789,95 @@ function getInterface() {
 # No matter what command you choice, unless attach its' absolute direction and execute it with other commands directly in the shell, it can work correctly, otherwise you wanna be cried when handle them by parameters transactions.
 # We should use "grep" to extract which key words we need and print the result to another file.
 # If this universe has hell, those jackass  who deployed these tortured settings of OS templates works on Google Cloud Platform will go to there when they died.
-      if [[ ! -z "$NetCfgFile" && ! -f "$NetCfgDir$NetCfgFile" ]]; then
-        tmpNetcfgDir="/root/tmp/installNetcfgCollections/"
-        [[ ! -d "$tmpNetcfgDir" ]] && mkdir -p "$tmpNetcfgDir"
-        if [[ "$NetCfgFile" =~ "nmconnection" ]]; then
-          NetCfgFile="$interface.nmconnection"
-          grep -wr "$interface\|\[ipv4\]\|\[ipv6\]\|\[connection\]\|\[ethernet\]\|id=*\|interface-name=*\|type=*\|method=*" "$NetCfgDir" | cut -d ':' -f 2 | tee -a "$tmpNetcfgDir$NetCfgFile"
-          NetCfgDir="$tmpNetcfgDir"
-        elif [[ "$NetCfgFile" =~ "ifcfg" ]]; then
-          NetCfgFile="$ifcfg-$interface"
-          grep -wr "$interface\|BOOTPROTO=*\|DEVICE=*\|ONBOOT=*\|TYPE=*\|HWADDR=*\|IPV6_AUTOCONF=*\|DHCPV6C=*" "$NetCfgDir" | cut -d ':' -f 2 | tee -a "$tmpNetcfgDir$NetCfgFile"
-          NetCfgDir="$tmpNetcfgDir"
+        if [[ ! -z "$NetCfgFile" && ! -f "$NetCfgDir$NetCfgFile" ]]; then
+          tmpNetcfgDir="/root/tmp/installNetcfgCollections/"
+          [[ ! -d "$tmpNetcfgDir" ]] && mkdir -p "$tmpNetcfgDir"
+          if [[ "$NetCfgFile" =~ "nmconnection" ]]; then
+            NetCfgFile="$interface.nmconnection"
+            grep -wr "$interface\|\[ipv4\]\|\[ipv6\]\|\[connection\]\|\[ethernet\]\|id=*\|interface-name=*\|type=*\|method=*" "$NetCfgDir" | cut -d ':' -f 2 | tee -a "$tmpNetcfgDir$NetCfgFile"
+            NetCfgDir="$tmpNetcfgDir"
+          elif [[ "$NetCfgFile" =~ "ifcfg" ]]; then
+            NetCfgFile="$ifcfg-$interface"
+            grep -wr "$interface\|BOOTPROTO=*\|DEVICE=*\|ONBOOT=*\|TYPE=*\|HWADDR=*\|IPV6_AUTOCONF=*\|DHCPV6C=*" "$NetCfgDir" | cut -d ':' -f 2 | tee -a "$tmpNetcfgDir$NetCfgFile"
+            NetCfgDir="$tmpNetcfgDir"
+          fi
         fi
-      fi
 # The following conditions must appeared at least 3 times in a vaild network config file.
-      [[ `grep -wcs "$interface4\|$interface6\|BOOTPROTO=*\|DEVICE=*\|ONBOOT=*\|TYPE=*\|HWADDR=*\|id=*\|\[connection\]\|interface-name=*\|type=*\|method=*" $NetCfgDir$NetCfgFile` -ge "3" ]] && {
+        [[ `grep -wcs "$interface4\|$interface6\|BOOTPROTO=*\|DEVICE=*\|ONBOOT=*\|TYPE=*\|HWADDR=*\|id=*\|\[connection\]\|interface-name=*\|type=*\|method=*" $NetCfgDir$NetCfgFile` -ge "3" ]] && {
 # In AlmaLinux 9 template of DigitalOcean, network adapter name is "eth0", there are two network config files in the OS, and they all belong to "eth0".
 # /etc/sysconfig/network-scripts/ifcfg-eth0
 # /etc/NetworkManager/system-connections/eth0.nmconnection
 # Which is the vaild one? We can storage them to one array first.
-        NetCfgWhole+=("$NetCfgDir$NetCfgFile")
-      }
-    done
+          NetCfgWhole+=("$NetCfgDir$NetCfgFile")
+        }
+      done
 # If index "1"(starts in "0") is not empty, it means there at least two network config files in current OS.
-    if [[ "${NetCfgWhole[1]}" != "" ]]; then
-      for c in "${NetCfgWhole[@]}"; do
+      if [[ "${NetCfgWhole[1]}" != "" ]]; then
+        for c in "${NetCfgWhole[@]}"; do
 # Cloud providers usually use automatic tools like SolusVM or Cloud-init etc. to initial different Linux OS.
 # The first row of the network config files is showed like the following example regularly:
 # # Generated by SolusVM
 # # Created by cloud-init on instance boot automatically, do not edit.
 # So the "#" and preposition "(did something) by (who)" is a obvious hint to help us to distinguish:
-        [[ `sed -e "4"p "$c" | grep " by " | grep -c "#"` -ge "1" ]] && {
-          NetCfgWhole="$c"
-          break
-        }
-      done
+          [[ `sed -e "4"p "$c" | grep " by " | grep -c "#"` -ge "1" ]] && {
+            NetCfgWhole="$c"
+            break
+          }
+        done
 # If the array of "${NetCfgWhole}" doesn't be turned into a parameter, it means there are not any annotates generated by automatic tools.
 # We need to import command "declare" to make an inspection to comfirm whether it's an array or a parameter,
 # If it's still an arrary, we can only assume the index "0" in this array as the valid network config file.
-      [[ `declare -p NetCfgWhole 2>/dev/null | grep -iw '^declare -a'` ]] && {
-        NetCfgWhole="${NetCfgWhole[0]}"
-      }
-    fi
-    splitDirAndFile "$NetCfgWhole"
-    NetCfgFile="$FileName"
-    NetCfgDir="$FileDirection"
-  else
-    readNetplan=$(find $(echo `find / -maxdepth 4 -path /*netplan`) -maxdepth 1 -name "*.yaml" -print)
-    readIfupdown=$(find / -maxdepth 5 -path /*network -type d -print | grep -v "lib\|systemd")
-    if [[ ! -z "$readNetplan" ]]; then
-# Ubuntu 18+ network configuration
-      networkManagerType="netplan"
-      tmpNetCfgFiles=""
-      for Count in $readNetplan; do
-        tmpNetCfgFiles+=$(echo -e "\n"`grep -wrl "network" | grep -wrl "ethernets" | grep -wrl "$interface4\|$interface6" | grep -wrl "version" "$Count" 2>/dev/null`)
-      done
-      getLargestOrSmallestFile "$tmpNetCfgFiles" "sort -hr"
+        [[ `declare -p NetCfgWhole 2>/dev/null | grep -iw '^declare -a'` ]] && {
+          NetCfgWhole="${NetCfgWhole[0]}"
+        }
+      fi
+      splitDirAndFile "$NetCfgWhole"
       NetCfgFile="$FileName"
       NetCfgDir="$FileDirection"
-      NetCfgWhole="$NetCfgDir$NetCfgFile"
-    elif [[ ! -z "$readIfupdown" ]]; then
+    else
+      readNetplan=$(find $(echo `find / -maxdepth 4 -path /*netplan`) -maxdepth 1 -name "*.yaml" -print)
+      readIfupdown=$(find / -maxdepth 5 -path /*network -type d -print | grep -v "lib\|systemd")
+      if [[ ! -z "$readNetplan" ]]; then
+# Ubuntu 18+ network configuration
+        networkManagerType="netplan"
+        tmpNetCfgFiles=""
+        for Count in $readNetplan; do
+          tmpNetCfgFiles+=$(echo -e "\n"`grep -wrl "network" | grep -wrl "ethernets" | grep -wrl "$interface4\|$interface6" | grep -wrl "version" "$Count" 2>/dev/null`)
+        done
+        getLargestOrSmallestFile "$tmpNetCfgFiles" "sort -hr"
+        NetCfgFile="$FileName"
+        NetCfgDir="$FileDirection"
+        NetCfgWhole="$NetCfgDir$NetCfgFile"
+      elif [[ ! -z "$readIfupdown" ]]; then
 # Debian/Kali/AlpineLinux network configuration
 # Some versions of Ubuntu 18 like virmach template use ifupdown not netplan.
-      networkManagerType="ifupdown"
+        networkManagerType="ifupdown"
 # Collect all eligible config files by the several parent directions names "network".
 # Reference: https://wiki.debian.org/NetworkConfiguration           
 #            https://wiki.debian.org/IPv6PrefixDelegation
-      tmpNetCfgFiles=""
-      for Count in $readIfupdown; do
-        if [[ "$IPStackType" == "IPv4Stack" ]]; then
-          NetCfgFiles=`grep -wrl 'iface' | grep -wrl "auto\|dhcp\|static\|manual" | grep -wrl 'inet\|ip addr\|ip route' "$Count""/" 2>/dev/null | grep -v "if-*" | grep -v "state" | grep -v "helper" | grep -v "template"`
-        elif [[ "$IPStackType" == "BiStack" ]] || [[ "$IPStackType" == "IPv6Stack" ]]; then
-          NetCfgFiles=`grep -wrl 'iface' | grep -wrl "auto\|dhcp\|static\|manual" | grep -wrl 'inet\|ip addr\|ip route\|inet6\|ip -6' "$Count""/" 2>/dev/null | grep -v "if-*" | grep -v "state" | grep -v "helper" | grep -v "template"`
-        fi
-        for Files in $NetCfgFiles; do
-          if [[ `grep -w "$interface4\|$interface6" "$Files"` != "" ]]; then
-            tmpNetCfgFiles+=$(echo -e "\n""$Files")
+        tmpNetCfgFiles=""
+        for Count in $readIfupdown; do
+          if [[ "$IPStackType" == "IPv4Stack" ]]; then
+            NetCfgFiles=`grep -wrl 'iface' | grep -wrl "auto\|dhcp\|static\|manual" | grep -wrl 'inet\|ip addr\|ip route' "$Count""/" 2>/dev/null | grep -v "if-*" | grep -v "state" | grep -v "helper" | grep -v "template"`
+          elif [[ "$IPStackType" == "BiStack" ]] || [[ "$IPStackType" == "IPv6Stack" ]]; then
+            NetCfgFiles=`grep -wrl 'iface' | grep -wrl "auto\|dhcp\|static\|manual" | grep -wrl 'inet\|ip addr\|ip route\|inet6\|ip -6' "$Count""/" 2>/dev/null | grep -v "if-*" | grep -v "state" | grep -v "helper" | grep -v "template"`
           fi
+          for Files in $NetCfgFiles; do
+            if [[ `grep -w "$interface4\|$interface6" "$Files"` != "" ]]; then
+              tmpNetCfgFiles+=$(echo -e "\n""$Files")
+            fi
+          done
         done
-      done
-      getLargestOrSmallestFile "$tmpNetCfgFiles" "sort -hr"
-      NetCfgFile="$FileName"
-      NetCfgDir="$FileDirection"
-      NetCfgWhole="$NetCfgDir$NetCfgFile"
-    else
-      echo -ne "\n[${red}Error${plain}] Invalid network configuration!\n"
-      exit 1
+        getLargestOrSmallestFile "$tmpNetCfgFiles" "sort -hr"
+        NetCfgFile="$FileName"
+        NetCfgDir="$FileDirection"
+        NetCfgWhole="$NetCfgDir$NetCfgFile"
+      else
+        echo -ne "\n[${red}Error${plain}] Invalid network configuration!\n"
+        exit 1
+      fi
     fi
-  fi
+  }
 }
 
 # $1 is "$ipMask", $2 is "$ip6Mask". Can only accept prefix number transmit.
@@ -1947,29 +1950,30 @@ function ipv6ForRedhatGrub() {
 # $1 is $CurrentOS, $2 is $CurrentOSVer, $3 is $IPStackType
 function checkDHCP() {
   getInterface "$1"
-  if [[ "$1" == 'CentOS' || "$1" == 'AlmaLinux' || "$1" == 'RockyLinux' || "$1" == 'Fedora' || "$1" == 'Vzlinux' || "$1" == 'OracleLinux' || "$1" == 'OpenCloudOS' || "$1" == 'AlibabaCloudLinux' || "$1" == 'ScientificLinux' || "$1" == 'AmazonLinux' || "$1" == 'RedHatEnterpriseLinux' || "$1" == 'OpenAnolis' || "$1" == 'CloudLinux' ]]; then
+  [[ -z "$tmpDHCP" ]] && {
+    if [[ "$1" == 'CentOS' || "$1" == 'AlmaLinux' || "$1" == 'RockyLinux' || "$1" == 'Fedora' || "$1" == 'Vzlinux' || "$1" == 'OracleLinux' || "$1" == 'OpenCloudOS' || "$1" == 'AlibabaCloudLinux' || "$1" == 'ScientificLinux' || "$1" == 'AmazonLinux' || "$1" == 'RedHatEnterpriseLinux' || "$1" == 'OpenAnolis' || "$1" == 'CloudLinux' ]]; then
 # RedHat like linux system 8 and before network config name is "ifcfg-interface", deposited in /etc/sysconfig/network-scripts/
 # RedHat like linux system 9 and later network config name is "interface.nmconnection", deposited in /etc/NetworkManager/system-connections/
 # In some templates like RockyLinux 9 x64 of DigitalOcean, both "/etc/sysconfig/network-scripts/ifcfg-eth0" and "/etc/NetworkManager/system-connections/ens3.nmconnection" are existed.
 # in "ifcfg-eth0", BOOTPROTO=none; in "ens3.nmconnection", [ipv4] method=auto. the actually network adapter is "eth0", so the vaild network config file name is "ifcfg-eth0".
 # So we need to check the type of the network configuration file to determine whether the method of config is dhcp or static.
-    if [[ "$NetCfgFile" =~ "ifcfg" ]]; then
+      if [[ "$NetCfgFile" =~ "ifcfg" ]]; then
 # "BOOTPROTO=dhcp" is for IPv4 DHCP, "=none" or "=static" is Static.
 # "IPv6_AUTOCONf=yes" or "DHCPV6C=yes" is IPv6 DHCP, "=no" is IPv6 Static.
 # For IPv6 STATIC configuration, "IPv6_AUTOCONf=no" or "DHCPV6C=no" doesn't exist is allowed.
 # For IPv6 DHCP configuration, "IPv6_AUTOCONf=yes" or "DHCPV6C=yes" is necessary.
 # Reference: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/deployment_guide/s1-networkscripts-interfaces
-      if [[ "$3" == "IPv4Stack" ]]; then
-        Network6Config="isDHCP"
-        [[ -n `grep -Ewirn "BOOTPROTO=none|BOOTPROTO=\"none\"|BOOTPROTO=\'none\'|BOOTPROTO=NONE|BOOTPROTO=\"NONE\"|BOOTPROTO=\'NONE\'|BOOTPROTO=static|BOOTPROTO=\"static\"|BOOTPROTO=\'static\'|BOOTPROTO=STATIC|BOOTPROTO=\"STATIC\"|BOOTPROTO=\'STATIC\'" $NetCfgWhole` ]] && Network4Config="isStatic" || Network4Config="isDHCP"
-      elif [[ "$3" == "BiStack" ]]; then
-        [[ -n `grep -Ewirn "BOOTPROTO=none|BOOTPROTO=\"none\"|BOOTPROTO=\'none\'|BOOTPROTO=NONE|BOOTPROTO=\"NONE\"|BOOTPROTO=\'NONE\'|BOOTPROTO=static|BOOTPROTO=\"static\"|BOOTPROTO=\'static\'|BOOTPROTO=STATIC|BOOTPROTO=\"STATIC\"|BOOTPROTO=\'STATIC\'" $NetCfgWhole` ]] && Network4Config="isStatic" || Network4Config="isDHCP"
-        [[ -n `grep -Ewirn "IPV6_AUTOCONF=yes|IPV6_AUTOCONF=\"yes\"|IPV6_AUTOCONF=YES|IPV6_AUTOCONF=\"YES\"|DHCPV6C=yes|DHCPV6C=\"yes\"" $NetCfgWhole` ]] && Network6Config="isDHCP" || Network6Config="isStatic"
-      elif [[ "$3" == "IPv6Stack" ]]; then
-        Network4Config="isDHCP"
-        [[ -n `grep -Ewirn "IPV6_AUTOCONF=yes|IPV6_AUTOCONF=\"yes\"|IPV6_AUTOCONF=YES|IPV6_AUTOCONF=\"YES\"|DHCPV6C=yes|DHCPV6C=\"yes\"" $NetCfgWhole` ]] && Network6Config="isDHCP" || Network6Config="isStatic"
-      fi
-    elif [[ "$NetCfgFile" =~ "nmconnection" ]]; then
+        if [[ "$3" == "IPv4Stack" ]]; then
+          Network6Config="isDHCP"
+          [[ -n `timeout 8s grep -Ewirn "BOOTPROTO=none|BOOTPROTO=\"none\"|BOOTPROTO=\'none\'|BOOTPROTO=NONE|BOOTPROTO=\"NONE\"|BOOTPROTO=\'NONE\'|BOOTPROTO=static|BOOTPROTO=\"static\"|BOOTPROTO=\'static\'|BOOTPROTO=STATIC|BOOTPROTO=\"STATIC\"|BOOTPROTO=\'STATIC\'" $NetCfgWhole` ]] && Network4Config="isStatic" || Network4Config="isDHCP"
+        elif [[ "$3" == "BiStack" ]]; then
+          [[ -n `timeout 8s grep -Ewirn "BOOTPROTO=none|BOOTPROTO=\"none\"|BOOTPROTO=\'none\'|BOOTPROTO=NONE|BOOTPROTO=\"NONE\"|BOOTPROTO=\'NONE\'|BOOTPROTO=static|BOOTPROTO=\"static\"|BOOTPROTO=\'static\'|BOOTPROTO=STATIC|BOOTPROTO=\"STATIC\"|BOOTPROTO=\'STATIC\'" $NetCfgWhole` ]] && Network4Config="isStatic" || Network4Config="isDHCP"
+          [[ -n `timeout 8s grep -Ewirn "IPV6_AUTOCONF=yes|IPV6_AUTOCONF=\"yes\"|IPV6_AUTOCONF=YES|IPV6_AUTOCONF=\"YES\"|DHCPV6C=yes|DHCPV6C=\"yes\"" $NetCfgWhole` ]] && Network6Config="isDHCP" || Network6Config="isStatic"
+        elif [[ "$3" == "IPv6Stack" ]]; then
+          Network4Config="isDHCP"
+          [[ -n `timeout 8s grep -Ewirn "IPV6_AUTOCONF=yes|IPV6_AUTOCONF=\"yes\"|IPV6_AUTOCONF=YES|IPV6_AUTOCONF=\"YES\"|DHCPV6C=yes|DHCPV6C=\"yes\"" $NetCfgWhole` ]] && Network6Config="isDHCP" || Network6Config="isStatic"
+        fi
+      elif [[ "$NetCfgFile" =~ "nmconnection" ]]; then
 # In NetworkManager for Redhat 9 and later, IPv4 and IPv6 share the same config method and value like the following sample:
 #
 # [ethernet]
@@ -1983,55 +1987,56 @@ function checkDHCP() {
 #
 # So we need to import the function "checkIpv4OrIpv6ConfigForRedhat9Later" to confuse.
 # which "method=auto or manual" is belonged to [ipv4], which "method=auto or manual" is belonged to [ipv6]. 
-      checkIpv4OrIpv6ConfigForRedhat9Later "$NetCfgDir" "$NetCfgFile" "ipv4" "method="
-      NetCfg4LineNum="$NetCfgLineNum"
-      checkIpv4OrIpv6ConfigForRedhat9Later "$NetCfgDir" "$NetCfgFile" "ipv6" "method="
-      NetCfg6LineNum="$NetCfgLineNum"
-      if [[ "$3" == "IPv4Stack" ]]; then
-        Network6Config="isDHCP"
-        [[ `sed -n "$NetCfg4LineNum"p $NetCfgWhole` == "method=auto" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
-      elif [[ "$3" == "BiStack" ]]; then
-        [[ `sed -n "$NetCfg4LineNum"p $NetCfgWhole` == "method=auto" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
-        [[ `sed -n "$NetCfg6LineNum"p $NetCfgWhole` == "method=auto" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
-      elif [[ "$3" == "IPv6Stack" ]]; then
-        Network4Config="isDHCP"
-        [[ `sed -n "$NetCfg6LineNum"p $NetCfgWhole` == "method=auto" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
+        checkIpv4OrIpv6ConfigForRedhat9Later "$NetCfgDir" "$NetCfgFile" "ipv4" "method="
+        NetCfg4LineNum="$NetCfgLineNum"
+        checkIpv4OrIpv6ConfigForRedhat9Later "$NetCfgDir" "$NetCfgFile" "ipv6" "method="
+        NetCfg6LineNum="$NetCfgLineNum"
+        if [[ "$3" == "IPv4Stack" ]]; then
+          Network6Config="isDHCP"
+          [[ `timeout 8s sed -n "$NetCfg4LineNum"p $NetCfgWhole` == "method=auto" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
+        elif [[ "$3" == "BiStack" ]]; then
+          [[ `timeout 8s sed -n "$NetCfg4LineNum"p $NetCfgWhole` == "method=auto" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
+          [[ `timeout 8s sed -n "$NetCfg6LineNum"p $NetCfgWhole` == "method=auto" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
+        elif [[ "$3" == "IPv6Stack" ]]; then
+          Network4Config="isDHCP"
+          [[ `timeout 8s sed -n "$NetCfg6LineNum"p $NetCfgWhole` == "method=auto" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
+        fi
       fi
-    fi
-  elif [[ "$1" == 'Debian' ]] || [[ "$1" == 'Kali' ]] || [[ "$1" == 'Ubuntu' && "$networkManagerType" == "ifupdown" ]] || [[ "$1" == 'AlpineLinux' ]]; then
+    elif [[ "$1" == 'Debian' ]] || [[ "$1" == 'Kali' ]] || [[ "$1" == 'Ubuntu' && "$networkManagerType" == "ifupdown" ]] || [[ "$1" == 'AlpineLinux' ]]; then
 # Debian network configs may be deposited in the following directions.
 # /etc/network/interfaces or /etc/network/interfaces.d/interface or /run/network/interfaces.d/interface
-    if [[ "$3" == "IPv4Stack" ]]; then
-      Network6Config="isDHCP"
-      [[ `grep -iw "iface" $NetCfgWhole | grep -iw "$interface4" | grep -iw "inet" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
-    elif [[ "$3" == "BiStack" ]]; then
-      [[ `grep -iw "iface" $NetCfgWhole | grep -iw "$interface4" | grep -iw "inet" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
-      [[ `grep -iw "iface" $NetCfgWhole | grep -iw "$interface6" | grep -iw "inet6" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
-    elif [[ "$3" == "IPv6Stack" ]]; then
-      Network4Config="isDHCP"
-      [[ `grep -iw "iface" $NetCfgWhole | grep -iw "$interface6" | grep -iw "inet6" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
-    fi
-  elif [[ "$1" == 'Ubuntu' && "$networkManagerType" == "netplan" ]]; then
+      if [[ "$3" == "IPv4Stack" ]]; then
+        Network6Config="isDHCP"
+        [[ `timeout 8s grep -iw "iface" $NetCfgWhole | grep -iw "$interface4" | grep -iw "inet" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
+      elif [[ "$3" == "BiStack" ]]; then
+        [[ `timeout 8s grep -iw "iface" $NetCfgWhole | grep -iw "$interface4" | grep -iw "inet" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
+        [[ `timeout 8s grep -iw "iface" $NetCfgWhole | grep -iw "$interface6" | grep -iw "inet6" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
+      elif [[ "$3" == "IPv6Stack" ]]; then
+        Network4Config="isDHCP"
+        [[ `timeout 8s grep -iw "iface" $NetCfgWhole | grep -iw "$interface6" | grep -iw "inet6" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
+      fi
+    elif [[ "$1" == 'Ubuntu' && "$networkManagerType" == "netplan" ]]; then
 # For netplan(Ubuntu 18 and later), if network configuration is Static whether IPv4 or IPv6.
 # in "*.yaml" config file, dhcp(4 or 6): no or false doesn't exist is allowed.
 # But if is DHCP, dhcp(4 or 6): yes or true is necessary.
 # Typical format of dhcp status in "*.yaml" is "dhcp4/6: true/false" or "dhcp4/6: yes/no".
 # The raw sample processed by function "parseYaml" is: " network_ethernets_enp1s0_dhcp4="true" network_ethernets_enp1s0_dhcp6="true" ".
-    dhcpStatus=$(parseYaml "$NetCfgWhole" | grep "$interface" | grep "dhcp")
-    if [[ "$3" == "IPv4Stack" ]]; then
-      Network6Config="isDHCP"
-      [[ "$dhcpStatus" =~ "dhcp4=\"true\"" || "$dhcpStatus" =~ "dhcp4=\"yes\"" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
-    elif [[ "$3" == "BiStack" ]]; then
-      [[ "$dhcpStatus" =~ "dhcp4=\"true\"" || "$dhcpStatus" =~ "dhcp4=\"yes\"" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
-      [[ "$dhcpStatus" =~ "dhcp6=\"true\"" || "$dhcpStatus" =~ "dhcp6=\"yes\"" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
-    elif [[ "$3" == "IPv6Stack" ]]; then
-      Network4Config="isDHCP"
-      [[ "$dhcpStatus" =~ "dhcp6=\"true\"" || "$dhcpStatus" =~ "dhcp6=\"yes\"" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
+      dhcpStatus=$(parseYaml "$NetCfgWhole" | grep "$interface" | grep "dhcp")
+      if [[ "$3" == "IPv4Stack" ]]; then
+        Network6Config="isDHCP"
+        [[ "$dhcpStatus" =~ "dhcp4=\"true\"" || "$dhcpStatus" =~ "dhcp4=\"yes\"" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
+      elif [[ "$3" == "BiStack" ]]; then
+        [[ "$dhcpStatus" =~ "dhcp4=\"true\"" || "$dhcpStatus" =~ "dhcp4=\"yes\"" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
+        [[ "$dhcpStatus" =~ "dhcp6=\"true\"" || "$dhcpStatus" =~ "dhcp6=\"yes\"" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
+      elif [[ "$3" == "IPv6Stack" ]]; then
+        Network4Config="isDHCP"
+        [[ "$dhcpStatus" =~ "dhcp6=\"true\"" || "$dhcpStatus" =~ "dhcp6=\"yes\"" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
+      fi
     fi
-  fi
+    rm -rf "$tmpNetcfgDir"
+  }
   [[ "$Network4Config" == "" ]] && Network4Config="isStatic"
   [[ "$Network6Config" == "" ]] && Network6Config="isStatic"
-  rm -rf "$tmpNetcfgDir"
 }
 
 # $1 is "$tmpDHCP".
@@ -2221,7 +2226,7 @@ function DebianPreseedProcess() {
     # BurnIrregularIpv4Status='1'
     # ipPrefix=""
     # MASK=""
-    [[ Network4Config == "isDHCP" || "$interfaceSelect" != "auto" ]] && BurnIrregularIpv4Status='0'
+    [[ Network4Config == "isDHCP" ]] && BurnIrregularIpv4Status='0'
     [[ "$BurnIrregularIpv4Status" == "1" ]] && {
       actualIp4Gate="$GATE"
       GATE="none"
@@ -2527,7 +2532,7 @@ elif [[ -z "$ipAddr" && -z "$ipMask" && -z "$ipGate" ]] && [[ -n "$ip6Addr" && -
 fi
 
 if [[ "$setNet" == "0" ]]; then
-  [[ -z "$tmpDHCP" ]] && checkDHCP "$CurrentOS" "$CurrentOSVer" "$IPStackType"
+  checkDHCP "$CurrentOS" "$CurrentOSVer" "$IPStackType"
   getIPv4Address
   [[ "$IPStackType" != "IPv4Stack" ]] && getIPv6Address
   if [[ "$IPStackType" == "BiStack" && "$i6AddrNum" -ge "2" ]]; then
@@ -2900,6 +2905,8 @@ if [ -z "$interfaceSelect" ]; then
   elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
     interfaceSelect="link"
   fi
+# Some cloud providers using the second or further order back of interface adapter like "eth1" to config public networking usually and we don't know what's role of "eth0".
+  [[ "$interface" =~ "eth" && `echo "$interface" | grep -o '[0-9]'` != "0" ]] && interfaceSelect="$interface"
 else
 # If the kernel of original system is loaded with parameter "net.ifnames=0 biosdevname=0" and users don't want to set this
 # one in new system, they have to assign a valid, real name of their network adapter and the parameter "$interface"
@@ -2912,8 +2919,9 @@ else
     interface6="$interface"
   }
 fi
+
 # The first network adapter name is must be "eth0" if kernel is loaded with parameter "net.ifnames=0 biosdevname=0". 
-[[ "$setInterfaceName" == "1" ]] && {
+if [[ "$setInterfaceName" == "1" ]] && [[ ! "$interface4" =~ "eth" || ! "$interface6" =~ "eth" ]]; then
   interface="eth0"
   interface4="eth0"
   interface6="eth0"
@@ -2921,7 +2929,7 @@ fi
     interface4="eth0"
     interface6="eth1"
   }
-}
+fi
 
 echo -ne "\n${aoiBlue}# Installation Starting${plain}\n"
 
