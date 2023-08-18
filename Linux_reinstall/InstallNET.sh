@@ -3276,7 +3276,10 @@ elif [[ "$linux_relese" == 'alpinelinux' ]]; then
     # ipMask=""
     [[ "$BurnIrregularIpv4Status" == "1" ]] && {
       actualIp4Gate="$GATE"
-      sed -i '/manual configuration/a\ip link set '$interface4' up\nip addr add '$IPv4'/'$ipPrefix' dev '$interface4'\nip route add '$actualIp4Gate' dev '$interface4'\nip route add default via '$actualIp4Gate' dev '$interface4' onlink\necho '\''nameserver '$ipDNS1''\'' > /etc/resolv.conf\necho '\''nameserver '$ipDNS2''\'' >> /etc/resolv.conf' /tmp/boot/init
+# To add the following soft hacking commands in function "configure_ip()" of the initial file which is dedicated for AlpineLinux can let network service execute immediately at netboot kernel starting,
+# it has a similar effect with "d-i preseed/early_command" in the file "preseed.cfg" of Debian series.
+# A valid anchor is a comment of "# manual configuration" in this function.
+      sed -i '/manual configuration/a\\t\tip link set '$interface4' up\n\t\tip addr add '$IPv4'/'$ipPrefix' dev '$interface4'\n\t\tip route add '$actualIp4Gate' dev '$interface4'\n\t\tip route add default via '$actualIp4Gate' dev '$interface4' onlink\n\t\techo '\''nameserver '$ipDNS1''\'' > /etc/resolv.conf\n\t\techo '\''nameserver '$ipDNS2''\'' >> /etc/resolv.conf' /tmp/boot/init
     }
 # All the following steps are processed in the temporary Alpine Linux.
     cat <<EOF | sed -i "${AlpineInitLineNum}r /dev/stdin" /tmp/boot/init
