@@ -535,7 +535,7 @@ function transferIPv4AddressFormat() {
 # Temporary installation of Debian 12 and Kali can't handle IPv4 public address and IPv4 private gateway well, so we prefer to invoke irregular IPv6 parameters to configure network in "busybox" and write static configs for IPv4 in later stage of the installation.
       [[ "$IPStackType" == "BiStack" ]] && BiStackPreferIpv6Status='1'
 # Installation environment of Debian 11 and former releases can't handle either irregular(gateway is not within the range of which is calculated by IP/mask) IPv4 or IPv6 parameters, so we need to execute a "ip route add" trick to make sure the networking of pure IPv4 stack servers works normally in "busybox".
-      [[ "$IPStackType" == "IPv4Stack" ]] && BurnIrregularIpv4Status='1'
+      [[ "$IPStackType" == "IPv4Stack" || "$linux_relese" == 'alpinelinux' ]] && BurnIrregularIpv4Status='1'
     }
   }
 }
