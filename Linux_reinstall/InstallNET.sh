@@ -1604,7 +1604,8 @@ function writeMultipleIpv6Addresses() {
       ip6AddrItems=''$ip6AddrItem''
       addIpv6DnsForRedhat='dns='$ip6DNS1';'$ip6DNS2';'
       addIpv6AddrsForRedhat='sed -i '\''/addr-gen-mode=eui64/a\'$ip6AddrItems''$addIpv6DnsForRedhat''\'' '$3''
-      setIpv6ConfigMethodForRedhat='sed -ri '\''s/method=auto/method=manual/g'\'' '$3''
+# Make sure to match "method=auto" only for IPv6 selection so that to avoid if some situations of "method=auto" as of IPv4 configuration.
+      setIpv6ConfigMethodForRedhat='sed -ri '\'':label;N;s/addr-gen-mode=eui64\nmethod=auto/addr-gen-mode=eui64\nmethod=manual/;b label'\'' '$3''
       [[ "$IPStackType" == "IPv6Stack" ]] && { ip6AddrItems=$(echo $ip6AddrItem | sed 's/..$//'); deleteOriginalIpv6Coning='sed -ri '\''/address1.*/d'\'' '$3''; addIpv6AddrsForRedhat='sed -i '\''/addr-gen-mode=eui64/a\'$ip6AddrItems''\'' '$3''; setIpv6ConfigMethodForRedhat=""; }
     fi
   }
@@ -2536,7 +2537,9 @@ if [[ "$setNet" == "0" ]]; then
   getIPv4Address
   [[ "$IPStackType" != "IPv4Stack" ]] && getIPv6Address
   if [[ "$IPStackType" == "BiStack" && "$i6AddrNum" -ge "2" ]]; then
-    Network4Config="isStatic"
+    if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]]; then
+      Network4Config="isStatic"
+    fi
     [[ "$BiStackPreferIpv6Status" == "1" ]] && {
       BiStackPreferIpv6Status=""
       BurnIrregularIpv4Status='1'
@@ -3375,28 +3378,28 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
   RedHatUrl=""
   RepoBase=""
   RepoAppStream=""
-  [[ "$IsCN" == "cn" ]] && RepoEpel="repo --name=epel --baseurl=http://mirrors.ustc.edu.cn/epel/${RedHatSeries}/Everything/${VER}/" || RepoEpel="repo --name=epel --mirrorlist=https://mirrors.fedoraproject.org/mirrorlist?repo=epel-${RedHatSeries}&arch=${VER}"
+  [[ "$IsCN" == "cn" ]] && RepoEpel="repo --name=epel --baseurl=http://mirrors.ustc.edu.cn/epel/${RedHatSeries}/Everything/${VER}" || RepoEpel="repo --name=epel --mirrorlist=https://mirrors.fedoraproject.org/mirrorlist?repo=epel-${RedHatSeries}&arch=${VER}"
   AuthMethod="authselect --useshadow --passalgo sha512"
   SetTimeZone="timezone --utc ${TimeZone}"
   [[ "$IsCN" == "cn" ]] && FirewallRule="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/RedHat/RHEL9Public.xml" || FirewallRule="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/RedHat/RHEL9Public.xml"
   if [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]]; then
     if [[ "$RedHatSeries" -ge "8" ]]; then
-      RedHatUrl="${LinuxMirror}/${DIST}/BaseOS/${VER}/os/"	  
-      RepoBase="repo --name=base --baseurl=${LinuxMirror}/${DIST}/BaseOS/${VER}/os/"
-      RepoAppStream="repo --name=appstream --baseurl=${LinuxMirror}/${DIST}/AppStream/${VER}/os/"
+      RedHatUrl="url --url=${LinuxMirror}/${DIST}/BaseOS/${VER}/os"
+      RepoBase="repo --name=base --baseurl=${LinuxMirror}/${DIST}/BaseOS/${VER}/os"
+      RepoAppStream="repo --name=appstream --baseurl=${LinuxMirror}/${DIST}/AppStream/${VER}/os"
     elif [[ "$linux_relese" == 'centos' ]] && [[ "$RedHatSeries" -le "7" ]]; then
-      RedHatUrl="${LinuxMirror}/${DIST}/os/${VER}/"
+      RedHatUrl="url --url=${LinuxMirror}/${DIST}/os/${VER}"
       AuthMethod="auth --useshadow --passalgo=sha512"
       SetTimeZone="timezone --isUtc ${TimeZone}"
-      RepoBase="repo --name=base --baseurl=${LinuxMirror}/${DIST}/os/${VER}/"
-      RepoAppStream="repo --name=updates --baseurl=${LinuxMirror}/${DIST}/updates/${VER}/"
+      RepoBase="repo --name=base --baseurl=${LinuxMirror}/${DIST}/os/${VER}"
+      RepoAppStream="repo --name=updates --baseurl=${LinuxMirror}/${DIST}/updates/${VER}"
       [[ "$IsCN" == "cn" ]] && FirewallRule="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/RedHat/RHEL7Public.xml" || FirewallRule="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/RedHat/RHEL7Public.xml"
     fi
   elif [[ "$linux_relese" == 'fedora' ]]; then
-    RedHatUrl="${LinuxMirror}/releases/${DIST}/Server/${VER}/os/"
-    RepoBase="repo --name=base --baseurl=${LinuxMirror}/releases/${DIST}/Server/${VER}/os/"
-    [[ "$IsCN" == "cn" ]] && RepoAppStream="repo --name=updates --baseurl=http://mirrors.bfsu.edu.cn/fedora/updates/${DIST}/Everything/${VER}/" || RepoAppStream="repo --name=updates --mirrorlist=https://mirrors.fedoraproject.org/mirrorlist?repo=updates-released-f${DIST}&arch=${VER}"
-    [[ "$IsCN" == "cn" ]] && RepoEpel="repo --name=epel --baseurl=http://mirrors.163.com/fedora/releases/${DIST}/Everything/${VER}/os/" || RepoEpel="repo --name=epel --mirrorlist=https://mirrors.fedoraproject.org/mirrorlist?repo=fedora-${DIST}&arch=${VER}"
+    RedHatUrl="url --url=${LinuxMirror}/releases/${DIST}/Server/${VER}/os"
+    RepoBase="repo --name=base --baseurl=${LinuxMirror}/releases/${DIST}/Server/${VER}/os"
+    [[ "$IsCN" == "cn" ]] && RepoAppStream="repo --name=updates --baseurl=http://mirrors.bfsu.edu.cn/fedora/updates/${DIST}/Everything/${VER}" || RepoAppStream="repo --name=updates --mirrorlist=https://mirrors.fedoraproject.org/mirrorlist?repo=updates-released-f${DIST}&arch=${VER}"
+    [[ "$IsCN" == "cn" ]] && RepoEpel="repo --name=epel --baseurl=http://mirrors.163.com/fedora/releases/${DIST}/Everything/${VER}/os" || RepoEpel="repo --name=epel --mirrorlist=https://mirrors.fedoraproject.org/mirrorlist?repo=fedora-${DIST}&arch=${VER}"
   fi
 # If network adapter is redirected, the "eth0" is default.
 # --bootproto="a value" is exclusive to IPv4, --bootproto=dhcp is IPv4 DHCP, --bootproto=static is IPv4 Static. 
@@ -3416,13 +3419,14 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
       NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=auto --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
     elif [[ "$Network4Config" == "isDHCP" ]] && [[ "$Network6Config" == "isStatic" ]]; then
       NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=$ip6Addr/$actualIp6Prefix --ipv6gateway=$ip6Gate --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
+# By adding multiple IPv6 addresses is only support these servers which are configurated in IPv4 networking in temporary environment of anaconda during the installation at current.
+      [[ "$i6AddrNum" -ge "2" ]] && NetConfigManually="network --device=$interface --bootproto=dhcp --nameserver=$ipDNS --hostname=$(hostname) --onboot=on"
     elif [[ "$Network4Config" == "isStatic" ]] && [[ "$Network6Config" == "isDHCP" ]]; then
       NetConfigManually="network --device=$interface --bootproto=static --ip=$IPv4 --netmask=$actualIp4Subnet --gateway=$GATE --ipv6=auto --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
     elif [[ "$Network4Config" == "isStatic" ]] && [[ "$Network6Config" == "isStatic" ]]; then
       NetConfigManually="network --device=$interface --bootproto=static --ip=$IPv4 --netmask=$actualIp4Subnet --gateway=$GATE --ipv6=$ip6Addr/$actualIp6Prefix --ipv6gateway=$ip6Gate --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
+      [[ "$i6AddrNum" -ge "2" ]] && NetConfigManually="network --device=$interface --bootproto=static --ip=$IPv4 --netmask=$actualIp4Subnet --gateway=$GATE --nameserver=$ipDNS --hostname=$(hostname) --onboot=on"
     fi
-# By adding multiple IPv6 addresses is only support these servers which are configurated in IPv4 networking in temporary environment of anaconda during the installation at current.
-    [[ "$i6AddrNum" -ge "2" ]] && NetConfigManually="network --device=$interface --bootproto=static --ip=$IPv4 --netmask=$actualIp4Subnet --gateway=$GATE --nameserver=$ipDNS --hostname=$(hostname) --onboot=on"
   elif [[ "$IPStackType" == "IPv6Stack" ]]; then
     if [[ "$Network6Config" == "isDHCP" ]]; then
       NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=auto --nameserver=$ip6DNS --hostname=$(hostname) --onboot=on --activate --noipv4"
@@ -3452,7 +3456,7 @@ if [[ "$setAutoConfig" == "1" ]]; then
 firewall --enabled --ssh
 
 # Use network installation
-url --url="${RedHatUrl}"
+${RedHatUrl}
 ${RepoBase}
 ${RepoAppStream}
 ${RepoEpel}
@@ -3550,8 +3554,8 @@ systemctl enable fail2ban
 
 # Add multiple IPv6 addresses
 ${deleteOriginalIpv6Coning}
-${addIpv6AddrsForRedhat}
 ${setIpv6ConfigMethodForRedhat}
+${addIpv6AddrsForRedhat}
 
 # Clean logs and kickstart files
 rm -rf /root/anaconda-ks.cfg
