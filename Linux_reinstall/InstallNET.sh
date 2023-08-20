@@ -2537,7 +2537,7 @@ if [[ "$setNet" == "0" ]]; then
   getIPv4Address
   [[ "$IPStackType" != "IPv4Stack" ]] && getIPv6Address
   if [[ "$IPStackType" == "BiStack" && "$i6AddrNum" -ge "2" ]]; then
-    if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]]; then
+    if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]] || [[ "$linux_relese" == 'alpinelinux' ]]; then
       Network4Config="isStatic"
     fi
     [[ "$BiStackPreferIpv6Status" == "1" ]] && {
