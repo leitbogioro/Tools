@@ -2863,12 +2863,14 @@ if [[ "$ddMode" == '1' ]]; then
       [[ `echo "$finalDIST" | grep -i "server"` ]] && tmpFinalDIST=`echo $finalDIST | awk -F ' |-|_' '{print $2}'`
       [[ `echo "$finalDIST" | grep -i "pro"` || `echo "$finalDIST" | grep -i "ltsc"` ]] && tmpFinalDIST=`echo $finalDIST | awk -F ' |-|_' '{print $1}'`
       [[ "$finalDIST" =~ ^[0-9]+$ ]] && tmpFinalDIST="$finalDIST"
+      [[ "$targetLang" == 'jp' ]] && targetLang='ja'
+      [[ "$targetLang" == 'zh' ]] && targetLang='cn'
       if [[ "$tmpFinalDIST" -ge "2012" && "$tmpFinalDIST" -le "2019" ]]; then
         tmpTargetLang="$targetLang"
       else
         [[ "$targetLang" == 'cn' ]] && tmpTargetLang="zh-""$targetLang"
         [[ "$targetLang" == 'en' ]] && tmpTargetLang="$targetLang""-us"
-        [[ "$targetLang" == 'ja' ]] && tmpTargetLang="ja-""$targetLang"
+        [[ "$targetLang" == 'ja' ]] && tmpTargetLang="$targetLang""-jp"
       fi
       if [[ "$tmpFinalDIST" == "2012" ]]; then
         tmpURL="$tmpURL/"${tmpTargetLang}"_win"${tmpFinalDIST}"r2.xz"
