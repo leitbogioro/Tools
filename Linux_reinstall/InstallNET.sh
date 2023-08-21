@@ -2861,6 +2861,9 @@ if [[ "$ddMode" == '1' ]]; then
     DDURL="$tmpURL$finalDIST-server-cloudimg-$ubuntuVER.raw"
     ReleaseName="$targetRelese $finalDIST $ubuntuVER"
   elif [[ "$targetRelese" == 'Windows' ]]; then
+# If the range of IPv4 address is too narrow, it will cause IPv4 address and subnet are added with a fatal by using "CMD(*.bat script)" of
+# "wmic nicconfig where ipenabled=true call enablestatic(%staticip%),(%subnetmask%)" on newly installed Windows OS.
+    [[ "$actualIp4Prefix" -gt "24" ]] && { actualIp4Prefix="24"; actualIp4Subnet=$(netmask "$actualIp4Prefix"); }
     if [[ -z "$tmpURL" ]]; then
       tmpURL="https://dl.lamp.sh/vhd"
       [[ `echo "$finalDIST" | grep -i "server"` ]] && tmpFinalDIST=`echo $finalDIST | awk -F ' |-|_' '{print $2}'`
