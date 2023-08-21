@@ -17,6 +17,7 @@ for /f "tokens=2" %%a in ('echo list vol ^| diskpart ^| findstr "\<%systemDisk%\
 echo;%setmode%|find "on"&&goto:enable||goto:disable
 :enable
 wmic nicconfig where ipenabled=true call enablestatic(%staticip%),(%subnetmask%)
+wmic nicconfig where ipenabled=true call setgateways(%staticip%)
 wmic nicconfig where ipenabled=true call setgateways(%gateways%)
 wmic nicconfig where ipenabled=true call setdnsserversearchorder(%dnsserver1%,%dnsserver2%)
 del %0
