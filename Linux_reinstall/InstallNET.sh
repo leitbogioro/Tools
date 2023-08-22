@@ -519,11 +519,11 @@ function transferIPv4AddressFormat() {
   ip4AddrSecond=`echo $1 | cut -d'.' -f2`
   ip4GateFirst=`echo $2 | cut -d'.' -f1`
   ip4GateSecond=`echo $2 | cut -d'.' -f2`
-  ip4GateThird=`echo $2 | cut -d'.' -f3`
 # Common ranges of IPv4 intranet:
 # Reference: https://hczhang.cn/network/reserved-ip-addresses.html
   [[ "$ip4AddrFirst""$ip4AddrSecond" != "$ip4GateFirst""$ip4GateSecond" ]] && {
-    [[ "$ip4GateFirst" == "169" && "$ip4GateSecond" == "254" ]] || [[ "$ip4GateFirst" == "172" && "$ip4GateSecond" -ge "16" && "$ip4GateSecond" -le "31" ]] || [[ "$ip4GateFirst" == "192" && "$ip4GateSecond" == "168" ]] || [[ "$ip4GateFirst" == "100" && "$ip4GateSecond" -ge "64" && "$ip4GateSecond" -le "127" ]] || [[ "$ip4GateFirst" == "10" && "$ip4GateSecond" -ge "0" && "$ip4GateSecond" -le "255" ]] || [[ "$ip4GateFirst" == "127" && "$ip4GateSecond" -ge "0" && "$ip4GateSecond" -le "255" ]] || [[ "$ip4GateFirst" == "198" && "$ip4GateSecond" -ge "18" && "$ip4GateSecond" -le "19" ]] || [[ "$ip4GateFirst" == "192" && "$ip4GateSecond" == "0" && "$ip4GateThird" == "0" || "$ip4GateThird" == "2" ]] || [[ "$ip4GateFirst" == "198" && "$ip4GateSecond" == "51" && "$ip4GateThird" == "100" ]] || [[ "$ip4GateFirst" == "203" && "$ip4GateSecond" == "0" && "$ip4GateThird" == "113" ]] || [[ "$ip4AddrFirst" != "$ip4GateFirst" ]] && {
+    checkIfIpv4AndIpv6IsLocalOrPublic "$2" ""
+    [[ "$ipv4LocalOrPublicStatus" == '1' ]] || [[ "$ip4AddrFirst" != "$ip4GateFirst" ]] || [[ "$ip4AddrSecond" != "$ip4GateSecond" ]] && {
       # [[ -z "$ip4RouteScopeLink" ]] && ipGate=`ipv4Calc "$1" "$ipPrefix" | grep "FirstIP:" | awk '{print$2}'` || ipGate=`ipv4Calc "$ip4RouteScopeLink" "$ipPrefix" | grep "FirstIP:" | awk '{print$2}'`
       if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]] || [[ "$linux_relese" == 'alpinelinux' ]]; then
         ipPrefix="$actualIp4Prefix"
@@ -831,7 +831,20 @@ function getUserTimeZone() {
 # because the "Sent-Q" can record the data packs which IP is active for current ssh user.
 # The same as for IPv6s.
     GuestIP=`netstat -naputeoW | grep -i 'established' | grep -i 'sshd: '$loginUser'' | grep -iw '^tcp\|udp' | awk '{print $3,$5}' | sort -t ' ' -k 1 -rn | awk '{print $2}' | head -n 1 | cut -d':' -f'1'`
-    [[ "$GuestIP" == "" ]] && GuestIP=`netstat -naputeoW | grep -i 'established' | grep -i 'sshd: '$loginUser'' | grep -iw '^tcp6\|udp6' | awk '{print $3,$5}' | sort -t ' ' -k 1 -rn | awk '{print $2}' | head -n 1 | awk -F':' '{for (i=1;i<=NF-1;i++)printf("%s:", $i);print ""}' | sed 's/.$//'`
+    if [[ ! -z "$GuestIP" ]]; then
+      checkIfIpv4AndIpv6IsLocalOrPublic "$GuestIP" ""
+      [[ "$ipv4LocalOrPublicStatus" == '1' ]] && {
+        GuestIP=`timeout 0.3s dig -4 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
+        [[ "$GuestIP" == "" ]] && GuestIP=`timeout 0.3s dig -4 TXT CH +short whoami.cloudflare @1.1.1.1 | sed 's/\"//g'`
+      }
+    else
+      GuestIP=`netstat -naputeoW | grep -i 'established' | grep -i 'sshd: '$loginUser'' | grep -iw '^tcp6\|udp6' | awk '{print $3,$5}' | sort -t ' ' -k 1 -rn | awk '{print $2}' | head -n 1 | awk -F':' '{for (i=1;i<=NF-1;i++)printf("%s:", $i);print ""}' | sed 's/.$//'`
+      checkIfIpv4AndIpv6IsLocalOrPublic "" "$GuestIP"
+      [[ "$ipv6LocalOrPublicStatus" == '1' ]] && {
+        GuestIP=`timeout 0.3s dig -6 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
+        [[ "$GuestIP" == "" ]] && GuestIP=`timeout 0.3s dig -6 TXT CH +short whoami.cloudflare @2606:4700:4700::1111 | sed 's/\"//g'`
+      }
+    fi
     for Count in "$2$GuestIP" "$3$GuestIP" "$4$GuestIP" "$5$GuestIP/json/" "$6" "$7" "$8"; do
       [[ "$TimeZone" == "Asia/Shanghai" ]] && break
       if [[ "$Count" =~ ^[a-zA-Z0-9]+$ ]]; then
@@ -1244,6 +1257,26 @@ function verifyIPv6FormatLawfulness() {
   [[ "$IP6_Check" != "isIPv6" ]] && { echo -ne "\n[${red}Error${plain}] Invalid inputted IPv6 format!\n"; exit 1; }
 }
 
+# $1 is for IPv4s, $2 is for IPv6s, '1' is private to each stack.
+function checkIfIpv4AndIpv6IsLocalOrPublic() {
+  ipv4LocalOrPublicStatus=''; ipv6LocalOrPublicStatus=''; ip4CertFirst=''; ip4CertSecond=''; ip4CertThird=''; ip6CertAddrWhole=''; ip6CertAddrFirst='';
+  [[ -n "$1" ]] && {
+    ip4CertFirst=`echo $1 | cut -d'.' -f1`
+    ip4CertSecond=`echo $1 | cut -d'.' -f2`
+    ip4CertThird=`echo $1 | cut -d'.' -f3`
+    [[ "$ip4CertFirst" == "169" && "$ip4CertSecond" == "254" ]] || [[ "$ip4CertFirst" == "172" && "$ip4CertSecond" -ge "16" && "$ip4CertSecond" -le "31" ]] || [[ "$ip4CertFirst" == "192" && "$ip4CertSecond" == "168" ]] || [[ "$ip4CertFirst" == "100" && "$ip4CertSecond" -ge "64" && "$ip4CertSecond" -le "127" ]] || [[ "$ip4CertFirst" == "10" && "$ip4CertSecond" -ge "0" && "$ip4CertSecond" -le "255" ]] || [[ "$ip4CertFirst" == "127" && "$ip4CertSecond" -ge "0" && "$ip4CertSecond" -le "255" ]] || [[ "$ip4CertFirst" == "198" && "$ip4CertSecond" -ge "18" && "$ip4CertSecond" -le "19" ]] || [[ "$ip4CertFirst" == "192" && "$ip4CertSecond" == "0" && "$ip4CertThird" == "0" || "$ip4CertThird" == "2" ]] || [[ "$ip4CertFirst" == "198" && "$ip4CertSecond" == "51" && "$ip4CertThird" == "100" ]] || [[ "$ip4CertFirst" == "203" && "$ip4CertSecond" == "0" && "$ip4CertThird" == "113" ]] && {
+      ipv4LocalOrPublicStatus='1'
+    }
+  }
+  [[ -n "$2" ]] && {
+    ip6CertAddrWhole=`ultimateFormatOfIpv6 "$2"`
+    ip6CertAddrFirst=`echo $ip6CertAddrWhole | sed 's/\(.\{4\}\).*/\1/' | sed 's/[a-z]/\u&/g'`
+    [[ "$((16#$ip6CertAddrFirst))" -ge "$((16#FE80))" && "$((16#$ip6CertAddrFirst))" -le "$((16#FEBF))" ]] || [[ "$((16#$ip6CertAddrFirst))" -ge "$((16#FC00))" && "$((16#$ip6CertAddrFirst))" -le "$((16#FDFF))" ]] && {
+      ipv6LocalOrPublicStatus='1'
+    }
+  }
+}
+
 # Some "BiStack" types are accomplished by Warp which provided by CloudFlare, so we need to distinguish whether IPv4 or IPv6 stack is enabled by Warp then exclude it.
 # $1 is "warp*.conf", maybe "warp.conf" or "warp-profile.conf"; $2 is "wgcf*.conf", maybe "wgcf.conf" or "wgcf-profile.conf"; $3 is "wg[0-9]", maybe "wg0.conf" or etc.
 # $4/$5/$6 are "warp*/wgcf*/wg[0-9]", $7/$8 are "PrivateKey/PublicKey".
@@ -1384,7 +1417,8 @@ function transferIPv6AddressFormat() {
 #            https://www.wdic.org/w/WDIC/%E3%83%A6%E3%83%8B%E3%83%BC%E3%82%AF%E3%83%AD%E3%83%BC%E3%82%AB%E3%83%AB%E3%83%A6%E3%83%8B%E3%82%AD%E3%83%A3%E3%82%B9%E3%83%88%E3%82%A2%E3%83%89%E3%83%AC%E3%82%B9
 #            https://www.ipentec.com/document/network-format-ipv6-local-adddress chapter: IPv6のリンクローカルアドレス(Link local address of IPv6)
 #            https://www.rfc-editor.org/rfc/rfc4291.html#section-2.4 chapter: 2.4. Address Type Identification
-      if [[ "$((16#$tmpIp6GateFirst))" -ge "$((16#FE80))" && "$((16#$tmpIp6GateFirst))" -le "$((16#FEBF))" ]] || [[ "$((16#$tmpIp6GateFirst))" -ge "$((16#FC00))" && "$((16#$tmpIp6GateFirst))" -le "$((16#FDFF))" ]]; then
+      checkIfIpv4AndIpv6IsLocalOrPublic "" "$2"
+      if [[ "$ipv6LocalOrPublicStatus" == '1' ]]; then
         tmpIp6Mask="64"
       else
 # If the IPv6 and IPv6 gateway are not in the same IPv6 A class, the prefix of netmask should be "1",
