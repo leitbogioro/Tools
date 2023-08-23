@@ -2271,9 +2271,10 @@ function DebianPreseedProcess() {
     setRaidRecipe "$setRaid" "$disksNum" "$AllDisks" "$linux_relese"
 # Debian 11 and former versions couldn't accept irregular IPv6 format configs, they can only be recognized by Debian 12+ and Kali, dd mode(base system is Debian 12) prefer IPv4 to config network.
     if [[ "$BiStackPreferIpv6Status" == "1" ]]; then
-      if [[ "$linux_relese" == 'debian' && "$DebianDistNum" -le "11" ]] || [[ "$ddMode" == '1' ]]; then
+      if [[ "$interfacesNum" -ge "2" ]] || [[ "$linux_relese" == 'debian' && "$DebianDistNum" -le "11" ]] || [[ "$ddMode" == '1' ]]; then
         BiStackPreferIpv6Status=""
         BurnIrregularIpv4Status='1'
+        interfaceSelect="$interface4"
       fi
     fi
 # A valid method to add an irregular gateway by force:
@@ -2982,9 +2983,12 @@ if [ -z "$interfaceSelect" ]; then
     interfaceSelect="link"
   fi
 # Some cloud providers using the second or further order back of interface adapter like "eth1" to config public networking usually and we don't know what's role of "eth0".
-  [[ "$interface4" =~ "eth" && `echo "$interface4" | grep -o '[0-9]'` != "0" ]] && interfaceSelect="$interface4"
-  [[ "$IPStackType" == "IPv6Stack" ]] && {
-    [[ "$interface6" =~ "eth" && `echo "$interface6" | grep -o '[0-9]'` != "0" ]] && interfaceSelect="$interface6"
+  [[ "$interfacesNum" -ge "2" ]] && {
+    if [[ "$IPStackType" == "IPv6Stack" ]]; then
+      [[ "$interface6" =~ "eth" && `echo "$interface6" | grep -o '[0-9]'` != "0" ]] && interfaceSelect="$interface6"
+    elif [[ "$IPStackType" == "BiStack" || "$IPStackType" == "IPv4Stack" ]]; then
+      [[ "$interface4" =~ "eth" && `echo "$interface4" | grep -o '[0-9]'` != "0" ]] && interfaceSelect="$interface4"
+    fi
   }
 else
 # If the kernel of original system is loaded with parameter "net.ifnames=0 biosdevname=0" and users don't want to set this
