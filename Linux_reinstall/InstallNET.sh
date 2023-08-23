@@ -2985,6 +2985,7 @@ if [ -z "$interfaceSelect" ]; then
 # Some cloud providers using the second or further order back of interface adapter like "eth1" to config public networking usually and we don't know what's role of "eth0".
   [[ "$interfacesNum" -ge "2" ]] && {
     if [[ "$IPStackType" == "IPv6Stack" ]]; then
+# Approximately equal "=~" to "eth..." is for the redirected situation, "device order" is on the contrary for an un-redirected example.
       [[ "$interface6" =~ "eth" && `echo "$interface6" | grep -o '[0-9]'` != "0" ]] || [[ "$interface6DeviceOrder" != "0" ]] && {
         interfaceSelect="$interface6"
       }
