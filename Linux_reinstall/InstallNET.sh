@@ -2985,9 +2985,13 @@ if [ -z "$interfaceSelect" ]; then
 # Some cloud providers using the second or further order back of interface adapter like "eth1" to config public networking usually and we don't know what's role of "eth0".
   [[ "$interfacesNum" -ge "2" ]] && {
     if [[ "$IPStackType" == "IPv6Stack" ]]; then
-      [[ "$interface6" =~ "eth" && `echo "$interface6" | grep -o '[0-9]'` != "0" ]] && interfaceSelect="$interface6"
+      [[ "$interface6" =~ "eth" && `echo "$interface6" | grep -o '[0-9]'` != "0" ]] || [[ "$interface6DeviceOrder" != "0" ]] && {
+        interfaceSelect="$interface6"
+      }
     elif [[ "$IPStackType" == "BiStack" || "$IPStackType" == "IPv4Stack" ]]; then
-      [[ "$interface4" =~ "eth" && `echo "$interface4" | grep -o '[0-9]'` != "0" ]] && interfaceSelect="$interface4"
+      [[ "$interface4" =~ "eth" && `echo "$interface4" | grep -o '[0-9]'` != "0" ]] || [[ "$interface4DeviceOrder" != "0" ]] && {
+        interfaceSelect="$interface4"
+      }
     fi
   }
 else
