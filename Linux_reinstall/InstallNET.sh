@@ -538,6 +538,12 @@ function transferIPv4AddressFormat() {
       [[ "$IPStackType" == "IPv4Stack" || "$linux_relese" == 'alpinelinux' ]] && BurnIrregularIpv4Status='1'
     }
   }
+  [[ "$interfacesNum" -ge "2" ]] && {
+# If there are two and more network adapters on the system like "eth0" and "eth1" and the first adapter "eth0" plays a role of connecting to the public network by dhcp method,
+# AlpineLinux will prefer to use the last order of the adapter like "eth1" to configure the network instead of "eth0" if assign "ip=dhcp" parameter to the netboot kernel,
+# so we need to switch the network configuration method to static to make sure the expect valid network adapter "eth0" can be activated.
+    [[ "$linux_relese" == 'alpinelinux' ]] && Network4Config="isStatic"
+  }
 }
 
 function netmask() {
@@ -833,6 +839,8 @@ function getUserTimeZone() {
     GuestIP=`netstat -naputeoW | grep -i 'established' | grep -i 'sshd: '$loginUser'' | grep -iw '^tcp\|udp' | awk '{print $3,$5}' | sort -t ' ' -k 1 -rn | awk '{print $2}' | head -n 1 | cut -d':' -f'1'`
     if [[ ! -z "$GuestIP" ]]; then
       checkIfIpv4AndIpv6IsLocalOrPublic "$GuestIP" ""
+# If some users are connecting to ssh service via private IPs, the actual location of this server may be the same as the public IP of this server like:
+# I created a virtual machine by VMware on my laptop and access it with as "192.168.0.217", to determine timezone of current user according to this IP is meaningless.
       [[ "$ipv4LocalOrPublicStatus" == '1' ]] && {
         GuestIP=`timeout 0.3s dig -4 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
         [[ "$GuestIP" == "" ]] && GuestIP=`timeout 0.3s dig -4 TXT CH +short whoami.cloudflare @1.1.1.1 | sed 's/\"//g'`
@@ -969,10 +977,17 @@ function checkMem() {
       fi
     }
     [[ "$1" == 'alpinelinux' || "$3" == 'Ubuntu' ]] && {
-      [[ "$TotalMem1" -le "895328" || "$TotalMem2" -le "895328" ]] && {
-        echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 1GB!\n"
-        exit 1
-      }
+      if [[ "$3" == 'Ubuntu' ]]; then
+        [[ "$TotalMem1" -le "447664" || "$TotalMem2" -le "447664" ]] && {
+          echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 0.5GB!\n"
+          exit 1
+        }
+      elif [[ "$1" == 'alpinelinux' ]]; then
+        [[ "$TotalMem1" -le "895328" || "$TotalMem2" -le "895328" ]] && {
+          echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 1GB!\n"
+          exit 1
+        }
+      fi
     }
   }
 }
@@ -1744,17 +1759,22 @@ function getInterface() {
 # Debian all version included the latest Debian 11 is deposited in /etc/network/interfaces, they managed by "ifupdown".
 # Ubuntu 18.04 and later version, using netplan to replace legacy ifupdown, the network config file is in /etc/netplan/
   interface=""
-  Interfaces=`cat /proc/net/dev |grep ':' | cut -d':' -f1 | sed 's/\s//g' | grep -iv '^lo\|^sit\|^stf\|^gif\|^dummy\|^vmnet\|^vir\|^gre\|^ipip\|^ppp\|^bond\|^tun\|^tap\|^ip6gre\|^ip6tnl\|^teql\|^ocserv\|^vpn'`
+  Interfaces=()
+  allInterfaces=`cat /proc/net/dev | grep ':' | cut -d':' -f1 | sed 's/\s//g' | grep -iv '^lo\|^sit\|^stf\|^gif\|^dummy\|^vmnet\|^vir\|^gre\|^ipip\|^ppp\|^bond\|^tun\|^tap\|^ip6gre\|^ip6tnl\|^teql\|^ocserv\|^vpn\|^warp\|^wgcf\|^wg\|^docker'`
+  for interfaceItem in $allInterfaces; do
+    Interfaces[${#Interfaces[@]}]=$interfaceItem
+  done
+  interfacesNum="${#Interfaces[*]}"
 # Some server has two different network adapters and for example: eth0 is for IPv4, eth1 is for IPv6, so we need to distinguish whether they are the same.
   default4Route=`ip -4 route show default | grep "^default"`
 # In Vultr server of 2.5$/mo plan, it has only IPv6 address, so the default route is via IPv6. 
   default6Route=`ip -6 route show default | grep "^default"`
-  for item in `echo "$Interfaces"`; do
+  for item in ${Interfaces[*]}; do
     [ -n "$item" ] || continue
     echo "$default4Route" | grep -q "$item"
     [ $? -eq 0 ] && interface4="$item" && break
   done
-  for item in `echo "$Interfaces"`; do
+  for item in ${Interfaces[*]}; do
     [ -n "$item" ] || continue
     echo "$default6Route" | grep -q "$item"
     [ $? -eq 0 ] && interface6="$item" && break
@@ -1767,6 +1787,10 @@ function getInterface() {
     [[ -z "$interface6" ]] && interface6="$interface"
   }
   echo "$interface" > /dev/null
+  getArrItemIdx "${Interfaces[*]}" "$interface4"
+  interface4DeviceOrder="$index"
+  getArrItemIdx "${Interfaces[*]}" "$interface6"
+  interface6DeviceOrder="$index"
 # Some templates of cloud provider like Bandwagonhosts, Ubuntu 22.04, may modify parameters in " GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0" " in /etc/default/grub
 # to make Linux kernel redirect names of network adapters from real name like ens18, ens3, enp0s4 to eth0, eth1, eth2...
 # This setting may confuse program to get real adapter name from reading /proc/cat/dev
@@ -2941,6 +2965,16 @@ if [[ "$ddMode" == '1' ]]; then
   fi
 fi
 
+# The first network adapter name is must be "eth0" if kernel is loaded with parameter "net.ifnames=0 biosdevname=0".
+# If the names of network adapters on original system were not be redirected, we can speculate them according to the sequence 
+# which they had plugged into the system by a physical queue if newly installed system need to redirect network adapters.
+if [[ "$setInterfaceName" == "1" ]] && [[ ! "$interface4" =~ "eth" || ! "$interface6" =~ "eth" ]]; then
+  interface4="eth""$interface4DeviceOrder"
+  interface6="eth""$interface6DeviceOrder"
+  interface="$interface4"
+  [[ "$IPStackType" == "IPv6Stack" ]] && interface="$interface6"
+fi
+
 if [ -z "$interfaceSelect" ]; then
   if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ "$linux_relese" == 'kali' ]]; then
     interfaceSelect="auto"
@@ -2948,7 +2982,10 @@ if [ -z "$interfaceSelect" ]; then
     interfaceSelect="link"
   fi
 # Some cloud providers using the second or further order back of interface adapter like "eth1" to config public networking usually and we don't know what's role of "eth0".
-  [[ "$interface" =~ "eth" && `echo "$interface" | grep -o '[0-9]'` != "0" ]] && interfaceSelect="$interface"
+  [[ "$interface4" =~ "eth" && `echo "$interface4" | grep -o '[0-9]'` != "0" ]] && interfaceSelect="$interface4"
+  [[ "$IPStackType" == "IPv6Stack" ]] && {
+    [[ "$interface6" =~ "eth" && `echo "$interface6" | grep -o '[0-9]'` != "0" ]] && interfaceSelect="$interface6"
+  }
 else
 # If the kernel of original system is loaded with parameter "net.ifnames=0 biosdevname=0" and users don't want to set this
 # one in new system, they have to assign a valid, real name of their network adapter and the parameter "$interface"
@@ -2959,17 +2996,6 @@ else
   [[ -z "$interface6" ]] && {
     interface=`echo "$interfaceSelect" | sed 's/[[:space:]]//g'`
     interface6="$interface"
-  }
-fi
-
-# The first network adapter name is must be "eth0" if kernel is loaded with parameter "net.ifnames=0 biosdevname=0". 
-if [[ "$setInterfaceName" == "1" ]] && [[ ! "$interface4" =~ "eth" || ! "$interface6" =~ "eth" ]]; then
-  interface="eth0"
-  interface4="eth0"
-  interface6="eth0"
-  [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && {
-    interface4="eth0"
-    interface6="eth1"
   }
 fi
 
@@ -3371,6 +3397,9 @@ echo 'tmpWORD  '$tmpWORD'' >> \$sysroot/root/alpine.config
 # To determine ssh port.
 echo "sshPORT  "${sshPORT} >> \$sysroot/root/alpine.config
 
+# To determine network adapter name.
+echo "networkAdapter  "${interface4} >> \$sysroot/root/alpine.config
+
 # To determine IPv4 static config
 echo "IPv4  "${IPv4} >> \$sysroot/root/alpine.config
 echo "MASK  "${MASK} >> \$sysroot/root/alpine.config
@@ -3716,7 +3745,7 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
 # Sample:
 # ip=179.86.100.76::179.86.100.1:255.255.255.0::eth0::1.0.0.1 8.8.8.8:
 # Any of IPv6 address format can't be recognized.
-      [[ "$Network4Config" == "isStatic" ]] && Add_OPTION="ip=$IPv4::$GATE:$MASK::$interface::$ipDNS:" || Add_OPTION="ip=dhcp"
+      [[ "$Network4Config" == "isStatic" ]] && Add_OPTION="ip=$IPv4::$GATE:$MASK::$interface4::$ipDNS:" || Add_OPTION="ip=dhcp"
       [[ "$BurnIrregularIpv4Status" == "1" ]] && Add_OPTION="ip=$IPv4:::$ipMask::$interface4::$ipDNS:"
       BOOT_OPTION="alpine_repo=$LinuxMirror/$DIST/main modloop=$ModLoopUrl $Add_OPTION"
       # Add_OPTION="ip=[2603:c020:800d:ae3d:6cde:8519:f1e3:a522]::[fe80::200:17ff:fe4c:e267]:[ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff]::eth0::[2606:4700:4700::1001]:"
@@ -3876,7 +3905,7 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
     if [[ "$linux_relese" == 'ubuntu'  || "$linux_relese" == 'debian' || "$linux_relese" == 'kali' ]]; then
       BOOT_OPTION="auto=true $Add_OPTION hostname=$(hostname) domain=$linux_relese quiet"
     elif [[ "$linux_relese" == 'alpinelinux' ]]; then
-      [[ "$Network4Config" == "isStatic" ]] && Add_OPTION="ip=$IPv4::$GATE:$MASK::$interface::$ipDNS:" || Add_OPTION="ip=dhcp"
+      [[ "$Network4Config" == "isStatic" ]] && Add_OPTION="ip=$IPv4::$GATE:$MASK::$interface4::$ipDNS:" || Add_OPTION="ip=dhcp"
       [[ "$BurnIrregularIpv4Status" == "1" ]] && Add_OPTION="ip=$IPv4:::$ipMask::$interface4::$ipDNS:"
       BOOT_OPTION="alpine_repo=$LinuxMirror/$DIST/main modloop=$ModLoopUrl $Add_OPTION"
     elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
