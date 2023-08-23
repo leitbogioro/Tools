@@ -23,6 +23,7 @@ TimeZone1=$(grep "TimeZone" $confFile | awk '{print $2}' | cut -d'/' -f 1)
 TimeZone2=$(grep "TimeZone" $confFile | awk '{print $2}' | cut -d'/' -f 2)
 tmpWORD=$(grep -w "tmpWORD" $confFile | awk '{print $2}')
 sshPORT=$(grep "sshPORT" $confFile | awk '{print $2}')
+networkAdapter=$(grep "networkAdapter" $confFile | awk '{print $2}')
 IPv4=$(grep "IPv4" $confFile | awk '{print $2}')
 MASK=$(grep "MASK" $confFile | awk '{print $2}')
 ipPrefix=$(grep "ipPrefix" $confFile | awk '{print $2}')
@@ -84,6 +85,7 @@ sed -ri 's/tmpWORD/'${tmpWORD}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
 sed -ri 's/sshPORT/'${sshPORT}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
 sed -ri 's/TimeZone/'${TimeZone1}'\/'${TimeZone2}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
 sed -ri 's/targetLinuxMirror/'${targetLinuxMirror}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+sed -ri 's/networkAdapter/'${networkAdapter}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
 sed -ri 's/IPv4/'${IPv4}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
 sed -ri 's/MASK/'${MASK}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
 sed -ri 's/ipPrefix/'${ipPrefix}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
