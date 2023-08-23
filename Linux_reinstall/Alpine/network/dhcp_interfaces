@@ -1,6 +1,6 @@
 auto lo
 iface lo inet loopback
 
-auto eth0
-iface eth0 inet dhcp
-iface eth0 inet6 auto
+auto networkAdapter
+iface networkAdapter inet dhcp
+iface networkAdapter inet6 auto
