@@ -23,6 +23,7 @@ TimeZone=$(grep "TimeZone" $confFile | awk '{print $2}')
 tmpWORD=$(grep -w "tmpWORD" $confFile | awk '{print $2}')
 sshPORT=$(grep "sshPORT" $confFile | awk '{print $2}')
 AlpineTestRepository=$(grep "AlpineTestRepository" $confFile | awk '{print $2}')
+networkAdapter=$(grep "networkAdapter" $confFile | awk '{print $2}')
 IPv4=$(grep "IPv4" $confFile | awk '{print $2}')
 MASK=$(grep "MASK" $confFile | awk '{print $2}')
 actualIp4Subnet=$(grep "actualIp4Subnet" $confFile | awk '{print $2}')
@@ -67,6 +68,7 @@ rc-update add networking boot
 rm -rf /etc/network/interfaces
 mv /etc/network/tmp_interfaces /etc/network/interfaces
 # Static network configurating
+sed -ri 's/networkAdapter/'${networkAdapter}'/g' /etc/network/interfaces
 sed -ri 's/IPv4/'${IPv4}'/g' /etc/network/interfaces
 sed -ri 's/MASK/'${MASK}'/g' /etc/network/interfaces
 sed -ri 's/netmask '${MASK}'/netmask '${actualIp4Subnet}'/g' /etc/network/interfaces
