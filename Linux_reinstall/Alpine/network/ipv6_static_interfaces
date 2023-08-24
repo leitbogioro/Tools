@@ -6,4 +6,4 @@ iface networkAdapter inet6 static
         address ip6Addr
         netmask ip6Mask
         gateway ip6Gate
-        pre-up echo 0 > /proc/sys/net/ipv6/conf/eth0/accept_ra
+        pre-up echo 0 > /proc/sys/net/ipv6/conf/networkAdapter/accept_ra
