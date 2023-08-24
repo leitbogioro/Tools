@@ -2,7 +2,6 @@ auto lo
 iface lo inet loopback
 
 auto networkAdapter
-iface networkAdapter inet dhcp
 iface networkAdapter inet6 static
         address ip6Addr
         netmask ip6Mask
