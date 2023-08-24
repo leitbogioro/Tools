@@ -3356,8 +3356,11 @@ elif [[ "$linux_relese" == 'alpinelinux' ]]; then
 # To add the following soft hacking commands in function "configure_ip()" of the initial file which is dedicated for AlpineLinux can let network service execute immediately at netboot kernel starting,
 # it has a similar effect with "d-i preseed/early_command" in the file "preseed.cfg" of Debian series.
 # A valid anchor is a comment of "# manual configuration" in this function.
-      sed -i '/manual configuration/a\\t\tip link set '$interface4' up\n\t\tip addr add '$IPv4'/'$ipPrefix' dev '$interface4'\n\t\tip route add '$actualIp4Gate' dev '$interface4'\n\t\tip route add default via '$actualIp4Gate' dev '$interface4' onlink\n\t\techo '\''nameserver '$ipDNS1''\'' > /etc/resolv.conf\n\t\techo '\''nameserver '$ipDNS2''\'' >> /etc/resolv.conf' /tmp/boot/init
+      sed -i '/manual configuration/a\\t\tip link set dev '$interface4' up\n\t\tip addr add '$IPv4'/'$ipPrefix' dev '$interface4'\n\t\tip route add '$actualIp4Gate' dev '$interface4'\n\t\tip route add default via '$actualIp4Gate' dev '$interface4' onlink\n\t\techo '\''nameserver '$ipDNS1''\'' > /etc/resolv.conf\n\t\techo '\''nameserver '$ipDNS2''\'' >> /etc/resolv.conf' /tmp/boot/init
     }
+    # [[ "$IPStackType" == "IPv6Stack" ]] && {
+      # sed -i '/manual configuration/a\\t\tdepmod\n\t\tmodprobe ipv6\n\t\tip link set dev '$interface6' up\n\t\tip -6 addr add '$ip6Addr'/'$actualIp6Prefix' dev '$interface6'\n\t\tip -6 route add '$ip6Gate' dev '$interface6'\n\t\tip -6 route add default via '$ip6Gate' dev '$interface6' onlink\n\t\techo '\''nameserver '$ip6DNS1''\'' > /etc/resolv.conf\n\t\techo '\''nameserver '$ip6DNS2''\'' >> /etc/resolv.conf' /tmp/boot/init
+    # }
 # All the following steps are processed in the temporary Alpine Linux.
     cat <<EOF | sed -i "${AlpineInitLineNum}r /dev/stdin" /tmp/boot/init
 # Download "interfaces" templates and replace IP details.
@@ -3756,7 +3759,8 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
 # Any of IPv6 address format can't be recognized.
       [[ "$Network4Config" == "isStatic" ]] && Add_OPTION="ip=$IPv4::$GATE:$MASK::$interface4::$ipDNS:" || Add_OPTION="ip=dhcp"
       [[ "$BurnIrregularIpv4Status" == "1" ]] && Add_OPTION="ip=$IPv4:::$ipMask::$interface4::$ipDNS:"
-      BOOT_OPTION="alpine_repo=$LinuxMirror/$DIST/main modloop=$ModLoopUrl $Add_OPTION"
+      # [[ "$IPStackType" == "IPv6Stack" ]] && Add_OPTION="ip=:::::$interface6:::"
+      BOOT_OPTION="alpine_repo=$LinuxMirror/$DIST/main/ modloop=$ModLoopUrl $Add_OPTION"
       # Add_OPTION="ip=[2603:c020:800d:ae3d:6cde:8519:f1e3:a522]::[fe80::200:17ff:fe4c:e267]:[ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff]::eth0::[2606:4700:4700::1001]:"
       # BOOT_OPTION="alpine_repo=$LinuxMirror/$DIST/main modloop=$LinuxMirror/$DIST/releases/$VER/netboot/modloop-lts ip=2001:19f0:000c:05b9:5400:04ff:fe74:7d40::fe80:0000:0000:0000:fc00:04ff:fe74:7d40:ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff::eth0::2606:4700:4700:0000:0000:0000:0000:1001:"
     elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
@@ -3916,7 +3920,8 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
     elif [[ "$linux_relese" == 'alpinelinux' ]]; then
       [[ "$Network4Config" == "isStatic" ]] && Add_OPTION="ip=$IPv4::$GATE:$MASK::$interface4::$ipDNS:" || Add_OPTION="ip=dhcp"
       [[ "$BurnIrregularIpv4Status" == "1" ]] && Add_OPTION="ip=$IPv4:::$ipMask::$interface4::$ipDNS:"
-      BOOT_OPTION="alpine_repo=$LinuxMirror/$DIST/main modloop=$ModLoopUrl $Add_OPTION"
+      # [[ "$IPStackType" == "IPv6Stack" ]] && Add_OPTION="ip=:::::$interface6:::"
+      BOOT_OPTION="alpine_repo=$LinuxMirror/$DIST/main/ modloop=$ModLoopUrl $Add_OPTION"
     elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
       ipv6ForRedhatGrub
       BOOT_OPTION="inst.ks=file://ks.cfg $Add_OPTION inst.nomemcheck quiet $ipv6StaticConfForKsGrub"
