@@ -1383,7 +1383,7 @@ function getIPv6Address() {
 function transferIPv6AddressFormat() {
 # Some Bi-Stack server has a public IPv4 address with a private IPv4 gateway and has a dhcp configuration for IPv6 stack,
 # so we need to tell Debian installer IPv6 static configurations to config IPv6 network first by force.
-  [[ "$BiStackPreferIpv6Status" == "1" ]] && Network6Config="isStatic"
+  [[ "$BiStackPreferIpv6Status" == "1" || "$linux_relese" == 'alpinelinux' ]] && Network6Config="isStatic"
 # In some original template OS of cloud provider like Akile.io etc,
 # if prefix of IPv6 mask is 128 in static network configuration, it means there is only one IPv6(current server itself) in the network.
 # The following is the sample:
@@ -3272,11 +3272,6 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]] || [[ "$
     sed -i '/early_command string anna-install/d' /tmp/boot/preseed.cfg
   }
 elif [[ "$linux_relese" == 'alpinelinux' ]]; then
-# Alpine Linux only support booting with IPv4 by dhcp or static, not support booting from IPv6 by any method.
-  [[ "$IPStackType" == "IPv6Stack" ]] && {
-    echo -ne "\n[${red}Error${plain}] Does't support $IPStackType!\n"
-    exit 1
-  }
 # Hostname should not be "localhost"
   HostName=$(hostname)
   [[ "$HostName" == "" || "$HostName" == "localhost" ]] && {
@@ -3327,6 +3322,7 @@ elif [[ "$linux_relese" == 'alpinelinux' ]]; then
           [[ "$targetRelese" == 'Ubuntu' ]] && cloudInitUrl="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/CloudInit/ipv4_static_interfaces.cfg"
         fi
       fi
+      networkAdapter="$interface4"
     elif [[ "$IPStackType" == "BiStack" ]]; then
 # Alpine Linux doesn't support IPv6 automatic config, must manually.
       if [[ "$Network4Config" == "isDHCP" ]]; then
@@ -3345,6 +3341,16 @@ elif [[ "$linux_relese" == 'alpinelinux' ]]; then
           [[ "$IsCN" == "cn" ]] && cloudInitUrl="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Ubuntu/CloudInit/ipv4_static_ipv6_static_interfaces.cfg" || cloudInitUrl="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/CloudInit/ipv4_static_ipv6_static_interfaces.cfg"
         fi
       }
+      networkAdapter="$interface4"
+    elif [[ "$IPStackType" == "IPv6Stack" ]]; then
+      if [[ "$IsCN" == "cn" ]]; then
+        AlpineNetworkConf="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/ipv6_static_interfaces"
+        [[ "$targetRelese" == 'Ubuntu' ]] && cloudInitUrl="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Ubuntu/CloudInit/ipv6_static_interfaces.cfg"
+      else
+        AlpineNetworkConf="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/ipv6_static_interfaces"
+        [[ "$targetRelese" == 'Ubuntu' ]] && cloudInitUrl="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/CloudInit/ipv6_static_interfaces.cfg"
+      fi
+      networkAdapter="$interface6"
     fi
 # Soft hack of irregular IPv4 configs.
 # Reserved empty variables for engineering debugging, if you are not known them well, don't uncomment with them!
@@ -3358,9 +3364,11 @@ elif [[ "$linux_relese" == 'alpinelinux' ]]; then
 # A valid anchor is a comment of "# manual configuration" in this function.
       sed -i '/manual configuration/a\\t\tip link set dev '$interface4' up\n\t\tip addr add '$IPv4'/'$ipPrefix' dev '$interface4'\n\t\tip route add '$actualIp4Gate' dev '$interface4'\n\t\tip route add default via '$actualIp4Gate' dev '$interface4' onlink\n\t\techo '\''nameserver '$ipDNS1''\'' > /etc/resolv.conf\n\t\techo '\''nameserver '$ipDNS2''\'' >> /etc/resolv.conf' /tmp/boot/init
     }
-    # [[ "$IPStackType" == "IPv6Stack" ]] && {
-      # sed -i '/manual configuration/a\\t\tdepmod\n\t\tmodprobe ipv6\n\t\tip link set dev '$interface6' up\n\t\tip -6 addr add '$ip6Addr'/'$actualIp6Prefix' dev '$interface6'\n\t\tip -6 route add '$ip6Gate' dev '$interface6'\n\t\tip -6 route add default via '$ip6Gate' dev '$interface6' onlink\n\t\techo '\''nameserver '$ip6DNS1''\'' > /etc/resolv.conf\n\t\techo '\''nameserver '$ip6DNS2''\'' >> /etc/resolv.conf' /tmp/boot/init
-    # }
+    [[ "$IPStackType" == "IPv6Stack" ]] && {
+      fakeIpv4="172.25.255.72"
+      fakeIpMask="255.255.255.0"
+      sed -i '/manual configuration/a\\t\tdepmod\n\t\tmodprobe ipv6\n\t\tip link set dev '$interface6' up\n\t\tip -6 addr add '$ip6Addr'/'$actualIp6Prefix' dev '$interface6'\n\t\tip -6 route add '$ip6Gate' dev '$interface6'\n\t\tip -6 route add default via '$ip6Gate' dev '$interface6' onlink\n\t\techo '\''nameserver '$ip6DNS1''\'' > /etc/resolv.conf\n\t\techo '\''nameserver '$ip6DNS2''\'' >> /etc/resolv.conf' /tmp/boot/init
+    }
 # All the following steps are processed in the temporary Alpine Linux.
     cat <<EOF | sed -i "${AlpineInitLineNum}r /dev/stdin" /tmp/boot/init
 # Download "interfaces" templates and replace IP details.
@@ -3410,7 +3418,7 @@ echo 'tmpWORD  '$tmpWORD'' >> \$sysroot/root/alpine.config
 echo "sshPORT  "${sshPORT} >> \$sysroot/root/alpine.config
 
 # To determine network adapter name.
-echo "networkAdapter  "${interface4} >> \$sysroot/root/alpine.config
+echo "networkAdapter  "${networkAdapter} >> \$sysroot/root/alpine.config
 
 # To determine IPv4 static config
 echo "IPv4  "${IPv4} >> \$sysroot/root/alpine.config
@@ -3759,10 +3767,8 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
 # Any of IPv6 address format can't be recognized.
       [[ "$Network4Config" == "isStatic" ]] && Add_OPTION="ip=$IPv4::$GATE:$MASK::$interface4::$ipDNS:" || Add_OPTION="ip=dhcp"
       [[ "$BurnIrregularIpv4Status" == "1" ]] && Add_OPTION="ip=$IPv4:::$ipMask::$interface4::$ipDNS:"
-      # [[ "$IPStackType" == "IPv6Stack" ]] && Add_OPTION="ip=:::::$interface6:::"
+      [[ "$IPStackType" == "IPv6Stack" ]] && Add_OPTION="ip=$fakeIpv4:::$fakeIpMask::$interface6:::"
       BOOT_OPTION="alpine_repo=$LinuxMirror/$DIST/main/ modloop=$ModLoopUrl $Add_OPTION"
-      # Add_OPTION="ip=[2603:c020:800d:ae3d:6cde:8519:f1e3:a522]::[fe80::200:17ff:fe4c:e267]:[ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff]::eth0::[2606:4700:4700::1001]:"
-      # BOOT_OPTION="alpine_repo=$LinuxMirror/$DIST/main modloop=$LinuxMirror/$DIST/releases/$VER/netboot/modloop-lts ip=2001:19f0:000c:05b9:5400:04ff:fe74:7d40::fe80:0000:0000:0000:fc00:04ff:fe74:7d40:ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff::eth0::2606:4700:4700:0000:0000:0000:0000:1001:"
     elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
       ipv6ForRedhatGrub
 # The method for Redhat series installer to search network adapter automatically is to set "ksdevice=link" in grub file of the current system for netboot install file which need to be loaded after restart.
@@ -3920,7 +3926,7 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
     elif [[ "$linux_relese" == 'alpinelinux' ]]; then
       [[ "$Network4Config" == "isStatic" ]] && Add_OPTION="ip=$IPv4::$GATE:$MASK::$interface4::$ipDNS:" || Add_OPTION="ip=dhcp"
       [[ "$BurnIrregularIpv4Status" == "1" ]] && Add_OPTION="ip=$IPv4:::$ipMask::$interface4::$ipDNS:"
-      # [[ "$IPStackType" == "IPv6Stack" ]] && Add_OPTION="ip=:::::$interface6:::"
+      [[ "$IPStackType" == "IPv6Stack" ]] && Add_OPTION="ip=$fakeIpv4:::$fakeIpMask::$interface6:::"
       BOOT_OPTION="alpine_repo=$LinuxMirror/$DIST/main/ modloop=$ModLoopUrl $Add_OPTION"
     elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
       ipv6ForRedhatGrub
