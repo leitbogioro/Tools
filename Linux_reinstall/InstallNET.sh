@@ -533,7 +533,11 @@ function transferIPv4AddressFormat() {
         setInterfaceName='1'
       fi
 # Temporary installation of Debian 12 and Kali can't handle IPv4 public address and IPv4 private gateway well, so we prefer to invoke irregular IPv6 parameters to configure network in "busybox" and write static configs for IPv4 in later stage of the installation.
-      [[ "$IPStackType" == "BiStack" ]] && BiStackPreferIpv6Status='1'
+      [[ "$IPStackType" == "BiStack" ]] && {
+        [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]] && {
+          BiStackPreferIpv6Status='1'
+        }
+      }
 # Installation environment of Debian 11 and former releases can't handle either irregular(gateway is not within the range of which is calculated by IP/mask) IPv4 or IPv6 parameters, so we need to execute a "ip route add" trick to make sure the networking of pure IPv4 stack servers works normally in "busybox".
       [[ "$IPStackType" == "IPv4Stack" || "$linux_relese" == 'alpinelinux' ]] && BurnIrregularIpv4Status='1'
     }
@@ -1383,7 +1387,7 @@ function getIPv6Address() {
 function transferIPv6AddressFormat() {
 # Some Bi-Stack server has a public IPv4 address with a private IPv4 gateway and has a dhcp configuration for IPv6 stack,
 # so we need to tell Debian installer IPv6 static configurations to config IPv6 network first by force.
-  [[ "$BiStackPreferIpv6Status" == "1" || "$linux_relese" == 'alpinelinux' ]] && Network6Config="isStatic"
+  [[ "$BiStackPreferIpv6Status" == "1" ]] && Network6Config="isStatic"
 # In some original template OS of cloud provider like Akile.io etc,
 # if prefix of IPv6 mask is 128 in static network configuration, it means there is only one IPv6(current server itself) in the network.
 # The following is the sample:
@@ -3304,71 +3308,94 @@ elif [[ "$linux_relese" == 'alpinelinux' ]]; then
 # https://askubuntu.com/questions/1051655/convert-etc-network-interfaces-to-netplan
 # disable cloud init service when next restart
 # https://cloudinit.readthedocs.io/en/latest/howto/disable_cloud_init.html
+    alpineNetcfgMirrorCn="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/"
+    alpineNetcfgMirror="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/"
+    [[ "$targetRelese" == 'Ubuntu' ]] && { ubuntuCloudinitMirrorCn="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Ubuntu/CloudInit/"; ubuntuCloudinitMirror="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/CloudInit/"; }
     if [[ "$IPStackType" == "IPv4Stack" ]]; then
       if [[ "$Network4Config" == "isDHCP" ]]; then
         if [[ "$IsCN" == "cn" ]]; then
-          AlpineNetworkConf="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/dhcp_interfaces"
-          [[ "$targetRelese" == 'Ubuntu' ]] && cloudInitUrl="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Ubuntu/CloudInit/dhcp_interfaces.cfg"
+          AlpineNetworkConf="$alpineNetcfgMirrorCn""ipv4_dhcp_interfaces"
+          [[ "$targetRelese" == 'Ubuntu' ]] && cloudInitUrl="$ubuntuCloudinitMirrorCn""dhcp_interfaces.cfg"
         else
-          AlpineNetworkConf="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/dhcp_interfaces"
-          [[ "$targetRelese" == 'Ubuntu' ]] && cloudInitUrl="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/CloudInit/dhcp_interfaces.cfg"
+          AlpineNetworkConf="$alpineNetcfgMirror""ipv4_dhcp_interfaces"
+          [[ "$targetRelese" == 'Ubuntu' ]] && cloudInitUrl="$ubuntuCloudinitMirror""dhcp_interfaces.cfg"
         fi
       elif [[ "$Network4Config" == "isStatic" ]]; then
         if [[ "$IsCN" == "cn" ]]; then
-          AlpineNetworkConf="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/ipv4_static_interfaces"
-          [[ "$targetRelese" == 'Ubuntu' ]] && cloudInitUrl="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Ubuntu/CloudInit/ipv4_static_interfaces.cfg"
+          AlpineNetworkConf="$alpineNetcfgMirrorCn""ipv4_static_interfaces"
+          [[ "$targetRelese" == 'Ubuntu' ]] && cloudInitUrl="$ubuntuCloudinitMirrorCn""ipv4_static_interfaces.cfg"
         else
-          AlpineNetworkConf="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/ipv4_static_interfaces"
-          [[ "$targetRelese" == 'Ubuntu' ]] && cloudInitUrl="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/CloudInit/ipv4_static_interfaces.cfg"
+          AlpineNetworkConf="$alpineNetcfgMirror""ipv4_static_interfaces"
+          [[ "$targetRelese" == 'Ubuntu' ]] && cloudInitUrl="$ubuntuCloudinitMirror""ipv4_static_interfaces.cfg"
         fi
       fi
       networkAdapter="$interface4"
     elif [[ "$IPStackType" == "BiStack" ]]; then
-# Alpine Linux doesn't support IPv6 automatic config, must manually.
-      if [[ "$Network4Config" == "isDHCP" ]]; then
-        [[ "$IsCN" == "cn" ]] && AlpineNetworkConf="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/ipv6_static_interfaces" || AlpineNetworkConf="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/ipv6_static_interfaces"
-      elif [[ "$Network4Config" == "isStatic" ]]; then
-        [[ "$IsCN" == "cn" ]] && AlpineNetworkConf="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/ipv4_ipv6_static_interfaces" || AlpineNetworkConf="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/ipv4_ipv6_static_interfaces"
+# To let Alpine Linux support IPv6 automatic config, we must install dhcpcd.
+      if [[ "$Network4Config" == "isDHCP" ]] && [[ "$Network6Config" == "isDHCP" ]]; then
+        [[ "$IsCN" == "cn" ]] && AlpineNetworkConf="$alpineNetcfgMirrorCn""ipv4_ipv6_dhcp_interfaces" || AlpineNetworkConf="$alpineNetcfgMirror""ipv4_ipv6_dhcp_interfaces"
+      elif [[ "$Network4Config" == "isDHCP" ]] && [[ "$Network6Config" == "isStatic" ]]; then
+        [[ "$IsCN" == "cn" ]] && AlpineNetworkConf="$alpineNetcfgMirrorCn""ipv4_dhcp_ipv6_static_interfaces" || AlpineNetworkConf="$alpineNetcfgMirror""ipv4_dhcp_ipv6_static_interfaces"
+      elif [[ "$Network4Config" == "isStatic" ]] && [[ "$Network6Config" == "isDHCP" ]]; then
+        [[ "$IsCN" == "cn" ]] && AlpineNetworkConf="$alpineNetcfgMirrorCn""ipv4_static_ipv6_dhcp_interfaces" || AlpineNetworkConf="$alpineNetcfgMirror""ipv4_static_ipv6_dhcp_interfaces"
+      elif [[ "$Network4Config" == "isStatic" ]] && [[ "$Network6Config" == "isStatic" ]]; then
+        [[ "$IsCN" == "cn" ]] && AlpineNetworkConf="$alpineNetcfgMirrorCn""ipv4_ipv6_static_interfaces" || AlpineNetworkConf="$alpineNetcfgMirror""ipv4_ipv6_static_interfaces"
       fi
       [[ "$targetRelese" == 'Ubuntu' ]] && {
         if [[ "$Network4Config" == "isDHCP" ]] && [[ "$Network6Config" == "isDHCP" ]]; then
-          [[ "$IsCN" == "cn" ]] && cloudInitUrl="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Ubuntu/CloudInit/dhcp_interfaces.cfg" || cloudInitUrl="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/CloudInit/dhcp_interfaces.cfg"
+          [[ "$IsCN" == "cn" ]] && cloudInitUrl="$ubuntuCloudinitMirrorCn""dhcp_interfaces.cfg" || cloudInitUrl="$ubuntuCloudinitMirror""dhcp_interfaces.cfg"
         elif [[ "$Network4Config" == "isDHCP" ]] && [[ "$Network6Config" == "isStatic" ]]; then
-          [[ "$IsCN" == "cn" ]] && cloudInitUrl="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Ubuntu/CloudInit/ipv4_dhcp_ipv6_static_interfaces.cfg" || cloudInitUrl="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/CloudInit/ipv4_dhcp_ipv6_static_interfaces.cfg"
+          [[ "$IsCN" == "cn" ]] && cloudInitUrl="$ubuntuCloudinitMirrorCn""ipv4_dhcp_ipv6_static_interfaces.cfg" || cloudInitUrl="$ubuntuCloudinitMirror""ipv4_dhcp_ipv6_static_interfaces.cfg"
         elif [[ "$Network4Config" == "isStatic" ]] && [[ "$Network6Config" == "isDHCP" ]]; then
-          [[ "$IsCN" == "cn" ]] && cloudInitUrl="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Ubuntu/CloudInit/ipv4_static_ipv6_dhcp_interfaces.cfg" || cloudInitUrl="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/CloudInit/ipv4_static_ipv6_dhcp_interfaces.cfg"
+          [[ "$IsCN" == "cn" ]] && cloudInitUrl="$ubuntuCloudinitMirrorCn""ipv4_static_ipv6_dhcp_interfaces.cfg" || cloudInitUrl="$ubuntuCloudinitMirror""ipv4_static_ipv6_dhcp_interfaces.cfg"
         elif [[ "$Network4Config" == "isStatic" ]] && [[ "$Network6Config" == "isStatic" ]]; then
-          [[ "$IsCN" == "cn" ]] && cloudInitUrl="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Ubuntu/CloudInit/ipv4_static_ipv6_static_interfaces.cfg" || cloudInitUrl="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/CloudInit/ipv4_static_ipv6_static_interfaces.cfg"
+          [[ "$IsCN" == "cn" ]] && cloudInitUrl="$ubuntuCloudinitMirrorCn""ipv4_static_ipv6_static_interfaces.cfg" || cloudInitUrl="$ubuntuCloudinitMirror""ipv4_static_ipv6_static_interfaces.cfg"
         fi
       }
       networkAdapter="$interface4"
     elif [[ "$IPStackType" == "IPv6Stack" ]]; then
-      if [[ "$IsCN" == "cn" ]]; then
-        AlpineNetworkConf="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/ipv6_static_interfaces"
-        [[ "$targetRelese" == 'Ubuntu' ]] && cloudInitUrl="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Ubuntu/CloudInit/ipv6_static_interfaces.cfg"
-      else
-        AlpineNetworkConf="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/ipv6_static_interfaces"
-        [[ "$targetRelese" == 'Ubuntu' ]] && cloudInitUrl="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/CloudInit/ipv6_static_interfaces.cfg"
+      if [[ "$Network6Config" == "isDHCP" ]]; then
+        if [[ "$IsCN" == "cn" ]]; then
+          AlpineNetworkConf="$alpineNetcfgMirrorCn""ipv6_dhcp_interfaces"
+          [[ "$targetRelese" == 'Ubuntu' ]] && cloudInitUrl="$ubuntuCloudinitMirrorCn""dhcp_interfaces.cfg"
+        else
+          AlpineNetworkConf="$alpineNetcfgMirror""ipv6_dhcp_interfaces"
+          [[ "$targetRelese" == 'Ubuntu' ]] && cloudInitUrl="$ubuntuCloudinitMirror""dhcp_interfaces.cfg"
+        fi
+      elif [[ "$Network6Config" == "isStatic" ]]; then
+        if [[ "$IsCN" == "cn" ]]; then
+          AlpineNetworkConf="$alpineNetcfgMirrorCn""ipv6_static_interfaces"
+          [[ "$targetRelese" == 'Ubuntu' ]] && cloudInitUrl="$ubuntuCloudinitMirrorCn""ipv6_static_interfaces.cfg"
+        else
+          AlpineNetworkConf="$alpineNetcfgMirror""ipv6_static_interfaces"
+          [[ "$targetRelese" == 'Ubuntu' ]] && cloudInitUrl="$ubuntuCloudinitMirror""ipv6_static_interfaces.cfg"
+        fi
       fi
       networkAdapter="$interface6"
     fi
+    if [[ "$IPStackType" == "BiStack" || "$IPStackType" == "IPv4Stack" ]]; then
 # Soft hack of irregular IPv4 configs.
 # Reserved empty variables for engineering debugging, if you are not known them well, don't uncomment with them!
-    # BurnIrregularIpv4Status='1'
-    # ipPrefix=""
-    # ipMask=""
-    [[ "$BurnIrregularIpv4Status" == "1" ]] && {
-      actualIp4Gate="$GATE"
+      # BurnIrregularIpv4Status='1'
+      # ipPrefix=""
+      # ipMask=""
+      [[ "$BurnIrregularIpv4Status" == "1" ]] && {
+        actualIp4Gate="$GATE"
 # To add the following soft hacking commands in function "configure_ip()" of the initial file which is dedicated for AlpineLinux can let network service execute immediately at netboot kernel starting,
 # it has a similar effect with "d-i preseed/early_command" in the file "preseed.cfg" of Debian series.
 # A valid anchor is a comment of "# manual configuration" in this function.
-      sed -i '/manual configuration/a\\t\tip link set dev '$interface4' up\n\t\tip addr add '$IPv4'/'$ipPrefix' dev '$interface4'\n\t\tip route add '$actualIp4Gate' dev '$interface4'\n\t\tip route add default via '$actualIp4Gate' dev '$interface4' onlink\n\t\techo '\''nameserver '$ipDNS1''\'' > /etc/resolv.conf\n\t\techo '\''nameserver '$ipDNS2''\'' >> /etc/resolv.conf' /tmp/boot/init
-    }
-    [[ "$IPStackType" == "IPv6Stack" ]] && {
-      fakeIpv4="172.25.255.72"
-      fakeIpMask="255.255.255.0"
-      sed -i '/manual configuration/a\\t\tdepmod\n\t\tmodprobe ipv6\n\t\tip link set dev '$interface6' up\n\t\tip -6 addr add '$ip6Addr'/'$actualIp6Prefix' dev '$interface6'\n\t\tip -6 route add '$ip6Gate' dev '$interface6'\n\t\tip -6 route add default via '$ip6Gate' dev '$interface6' onlink\n\t\techo '\''nameserver '$ip6DNS1''\'' > /etc/resolv.conf\n\t\techo '\''nameserver '$ip6DNS2''\'' >> /etc/resolv.conf' /tmp/boot/init
-    }
+        sed -i '/manual configuration/a\\t\tip link set dev '$interface4' up\n\t\tip addr add '$IPv4'/'$ipPrefix' dev '$interface4'\n\t\tip route add '$actualIp4Gate' dev '$interface4'\n\t\tip route add default via '$actualIp4Gate' dev '$interface4' onlink\n\t\techo '\''nameserver '$ipDNS1''\'' > /etc/resolv.conf\n\t\techo '\''nameserver '$ipDNS2''\'' >> /etc/resolv.conf' /tmp/boot/init
+      }
+    elif [[ "$IPStackType" == "IPv6Stack" ]]; then
+      if [[ "$Network6Config" == "isStatic" ]]; then
+        fakeIpv4="172.25.255.72"
+        fakeIpMask="255.255.255.0"
+        hackIpv6Context="manual configuration"
+      elif [[ "$Network6Config" == "isDHCP" ]]; then
+        hackIpv6Context="automatic configuration"
+      fi
+      sed -i '/'"$hackIpv6Context"'/a\\t\tdepmod\n\t\tmodprobe ipv6\n\t\tip link set dev '$interface6' up\n\t\tip -6 addr add '$ip6Addr'/'$actualIp6Prefix' dev '$interface6'\n\t\tip -6 route add '$ip6Gate' dev '$interface6'\n\t\tip -6 route add default via '$ip6Gate' dev '$interface6' onlink\n\t\techo '\''nameserver '$ip6DNS1''\'' > /etc/resolv.conf\n\t\techo '\''nameserver '$ip6DNS2''\'' >> /etc/resolv.conf' /tmp/boot/init
+    fi
 # All the following steps are processed in the temporary Alpine Linux.
     cat <<EOF | sed -i "${AlpineInitLineNum}r /dev/stdin" /tmp/boot/init
 # Download "interfaces" templates and replace IP details.
@@ -3765,9 +3792,12 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
 # Sample:
 # ip=179.86.100.76::179.86.100.1:255.255.255.0::eth0::1.0.0.1 8.8.8.8:
 # Any of IPv6 address format can't be recognized.
-      [[ "$Network4Config" == "isStatic" ]] && Add_OPTION="ip=$IPv4::$GATE:$MASK::$interface4::$ipDNS:" || Add_OPTION="ip=dhcp"
-      [[ "$BurnIrregularIpv4Status" == "1" ]] && Add_OPTION="ip=$IPv4:::$ipMask::$interface4::$ipDNS:"
-      [[ "$IPStackType" == "IPv6Stack" ]] && Add_OPTION="ip=$fakeIpv4:::$fakeIpMask::$interface6:::"
+      if [[ "$IPStackType" == "BiStack" || "$IPStackType" == "IPv4Stack" ]]; then
+        [[ "$Network4Config" == "isStatic" ]] && Add_OPTION="ip=$IPv4::$GATE:$MASK::$interface4::$ipDNS:" || Add_OPTION="ip=dhcp"
+        [[ "$BurnIrregularIpv4Status" == "1" ]] && Add_OPTION="ip=$IPv4:::$ipMask::$interface4::$ipDNS:"
+      elif [[ "$IPStackType" == "IPv6Stack" ]]; then
+        [[ "$Network6Config" == "isStatic" ]] && Add_OPTION="ip=$fakeIpv4:::$fakeIpMask::$interface6:::" || Add_OPTION="ip=dhcp"
+      fi
       BOOT_OPTION="alpine_repo=$LinuxMirror/$DIST/main/ modloop=$ModLoopUrl $Add_OPTION"
     elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
       ipv6ForRedhatGrub
@@ -3924,9 +3954,12 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
     if [[ "$linux_relese" == 'ubuntu'  || "$linux_relese" == 'debian' || "$linux_relese" == 'kali' ]]; then
       BOOT_OPTION="auto=true $Add_OPTION hostname=$(hostname) domain=$linux_relese quiet"
     elif [[ "$linux_relese" == 'alpinelinux' ]]; then
-      [[ "$Network4Config" == "isStatic" ]] && Add_OPTION="ip=$IPv4::$GATE:$MASK::$interface4::$ipDNS:" || Add_OPTION="ip=dhcp"
-      [[ "$BurnIrregularIpv4Status" == "1" ]] && Add_OPTION="ip=$IPv4:::$ipMask::$interface4::$ipDNS:"
-      [[ "$IPStackType" == "IPv6Stack" ]] && Add_OPTION="ip=$fakeIpv4:::$fakeIpMask::$interface6:::"
+      if [[ "$IPStackType" == "BiStack" || "$IPStackType" == "IPv4Stack" ]]; then
+        [[ "$Network4Config" == "isStatic" ]] && Add_OPTION="ip=$IPv4::$GATE:$MASK::$interface4::$ipDNS:" || Add_OPTION="ip=dhcp"
+        [[ "$BurnIrregularIpv4Status" == "1" ]] && Add_OPTION="ip=$IPv4:::$ipMask::$interface4::$ipDNS:"
+      elif [[ "$IPStackType" == "IPv6Stack" ]]; then
+        [[ "$Network6Config" == "isStatic" ]] && Add_OPTION="ip=$fakeIpv4:::$fakeIpMask::$interface6:::" || Add_OPTION="ip=dhcp"
+      fi
       BOOT_OPTION="alpine_repo=$LinuxMirror/$DIST/main/ modloop=$ModLoopUrl $Add_OPTION"
     elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
       ipv6ForRedhatGrub
