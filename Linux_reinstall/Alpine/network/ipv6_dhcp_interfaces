@@ -1,0 +1,5 @@
+auto lo
+iface lo inet loopback
+
+auto networkAdapter
+iface networkAdapter inet6 auto
