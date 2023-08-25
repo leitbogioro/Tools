@@ -115,7 +115,7 @@ sed -ri 's/ash/bash/g' /etc/passwd
 
 # Insall more components.
 apk update
-apk add axel bind-tools cpio curl e2fsprogs fail2ban grep grub gzip hdparm lsblk lsof net-tools parted udev util-linux virt-what vim wget
+apk add axel bind-tools cpio curl dhcpcd e2fsprogs fail2ban grep grub gzip hdparm lsblk lsof net-tools parted udev util-linux virt-what vim wget
 
 # Config fail2ban
 sed -i '/\[Definition\]/a allowipv6 = auto' /etc/fail2ban/fail2ban.conf
