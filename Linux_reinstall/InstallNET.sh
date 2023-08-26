@@ -3396,6 +3396,7 @@ elif [[ "$linux_relese" == 'alpinelinux' ]]; then
       fi
       sed -i '/'"$hackIpv6Context"'/a\\t\tdepmod\n\t\tmodprobe ipv6\n\t\tip link set dev '$interface6' up\n\t\tip -6 addr add '$ip6Addr'/'$actualIp6Prefix' dev '$interface6'\n\t\tip -6 route add '$ip6Gate' dev '$interface6'\n\t\tip -6 route add default via '$ip6Gate' dev '$interface6' onlink\n\t\techo '\''nameserver '$ip6DNS1''\'' > /etc/resolv.conf\n\t\techo '\''nameserver '$ip6DNS2''\'' >> /etc/resolv.conf' /tmp/boot/init
     fi
+    [[ -z "$virtWhat" ]] && virtualizationStatus='0' || virtualizationStatus='1'
 # All the following steps are processed in the temporary Alpine Linux.
     cat <<EOF | sed -i "${AlpineInitLineNum}r /dev/stdin" /tmp/boot/init
 # Download "interfaces" templates and replace IP details.
@@ -3432,7 +3433,7 @@ echo "windowsStaticConfigCmd  "${windowsStaticConfigCmd} >> \$sysroot/root/alpin
 # To determine Windows network IPv4 static or dhcp.
 echo "Network4Config  "${Network4Config} >> \$sysroot/root/alpine.config
 
-# Tod determine Windows dd package decompress method.
+# To determine Windows dd package decompress method.
 echo "DEC_CMD  "${DEC_CMD} >> \$sysroot/root/alpine.config
 
 # To determine timezone.
@@ -3470,13 +3471,16 @@ echo "ip6DNS2  "${ip6DNS2} >> \$sysroot/root/alpine.config
 # To determine whether to disable IPv6 modules
 echo "setIPv6  "${setIPv6} >> \$sysroot/root/alpine.config
 
-# To Determine hostname
+# To determine hostname
 echo "HostName  "${HostName} >> \$sysroot/root/alpine.config
 
-# To Determine dd image url
+# To determine whether in virtual or physical machine
+echo "virtualizationStatus  "${virtualizationStatus} >> \$sysroot/root/alpine.config
+
+# To determine dd image url
 echo "DDURL  "${DDURL} >> \$sysroot/root/alpine.config
 
-# To Determine cloud init url
+# To determine cloud init url
 echo "cloudInitUrl  "${cloudInitUrl} >> \$sysroot/root/alpine.config
 
 # Download initial file.
