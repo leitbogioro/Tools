@@ -33,6 +33,7 @@ ip6Mask=$(grep "ip6Mask" $confFile | awk '{print $2}')
 actualIp6Prefix=$(grep "actualIp6Prefix" $confFile | awk '{print $2}')
 ip6Gate=$(grep "ip6Gate" $confFile | awk '{print $2}')
 HostName=$(grep "HostName" $confFile | awk '{print $2}')
+virtualizationStatus=$(grep "virtualizationStatus" $confFile | awk '{print $2}')
 
 # Setting Alpine Linux by "setup-alpine" will enable the following services
 # https://github.com/alpinelinux/alpine-conf/blob/c5131e9a038b09881d3d44fb35e86851e406c756/setup-alpine.in#L189
@@ -115,7 +116,7 @@ sed -ri 's/ash/bash/g' /etc/passwd
 
 # Insall more components.
 apk update
-apk add axel bind-tools cpio curl dhcpcd e2fsprogs fail2ban grep grub gzip hdparm lsblk lsof net-tools parted udev util-linux virt-what vim wget
+apk add axel bind-tools cpio curl dhcpcd e2fsprogs fail2ban grep grub gzip hdparm lsblk lsof net-tools parted udev util-linux vim wget
 
 # Config fail2ban
 sed -i '/\[Definition\]/a allowipv6 = auto' /etc/fail2ban/fail2ban.conf
@@ -124,7 +125,7 @@ rc-update add fail2ban
 
 # Use kernel "virt" if be executed on virtual machine.
 cp /etc/apk/world /tmp/world.old
-[[ -n "$(virt-what)" ]] && kernelOpt="-k virt"
+[[ "$virtualizationStatus" == "1" ]] && kernelOpt="-k virt" || kernelOpt="-k lts"
 
 # Make a blank motd to avoid Alpine Linux writes a new one.
 rm -rf /etc/motd
