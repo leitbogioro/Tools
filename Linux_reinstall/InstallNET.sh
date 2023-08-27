@@ -2238,7 +2238,7 @@ function DebianModifiedPreseed() {
 # Fail2ban configurations.
 # Reference: https://github.com/fail2ban/fail2ban/issues/2756
 #            https://www.mail-archive.com/debian-bugs-dist@lists.debian.org/msg1879390.html
-    EnableFail2ban="$1 sed -i '/\[Definition\]/a allowipv6 = auto' /etc/fail2ban/fail2ban.conf; $1 sed -ri 's/backend.*/backend = systemd/g' /etc/fail2ban/jail.conf; $1 update-rc.d fail2ban enable; $1 /etc/init.d/fail2ban restart;"
+    EnableFail2ban="$1 sed -i '/^\[Definition\]/a allowipv6 = auto' /etc/fail2ban/fail2ban.conf; $1 sed -ri 's/^backend = auto/backend = systemd/g' /etc/fail2ban/jail.conf; $1 update-rc.d fail2ban enable; $1 /etc/init.d/fail2ban restart;"
 # For some cloud providers which servers boot from their own grub2 bootloader first by force, not boot from grub in harddisk of our own servers directly,
 # we need to creat a soft link for grub2 from grub1 to make sure the first reboot after installation won't meet a fatal.
 # In this situation, the partition table and filesystem of the newly installed OS must be "mbr" and "ext4".
@@ -2363,9 +2363,10 @@ d-i apt-setup/services-select multiselect
 ### Disable source repositories
 d-i apt-setup/enable-source-repositories boolean false
 
-### Enable contrib and non-free
-d-i apt-setup/non-free boolean true
+### Enable contrib, non-free and non-free firmware
 d-i apt-setup/contrib boolean true
+d-i apt-setup/non-free boolean true
+d-i apt-setup/non-free-firmware boolean true
 
 ### Disable CD-rom automatic scan
 d-i apt-setup/cdrom/set-first boolean false
@@ -3244,9 +3245,9 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]] || [[ "$
     sed -i 's/include string openssh-server/include string kali-linux-core openssh-server/g' /tmp/boot/preseed.cfg
     sed -i 's/d-i grub-installer\/with_other_os boolean true//g' /tmp/boot/preseed.cfg
   fi
-# Disable get security updates for those versions of Debian which were 'EOL'(9 and former in 2023.07).
+# Disable get security updates for those versions of Debian which were 'EOL'(9 and former in 2023.07) or Kali.
   if [[ "$linux_relese" != 'kali' ]]; then
-    if [[ "$tmpIpMask" -ge "16" || "$IPStackType" == "IPv6Stack" || "$BiStackPreferIpv6Status" == "1" || "$BurnIrregularIpv4Status" == "1" ]] && [[ "$linux_relese" == 'debian' && "$DebianDistNum" -gt "9" ]]; then
+    if [[ "$linux_relese" == 'debian' && "$DebianDistNum" -ge "10" ]]; then
       sed -i '/d-i\ apt-setup\/services-select multiselect/d' /tmp/boot/preseed.cfg
       sed -i '/d-i\ apt-setup\/enable-source-repositories boolean false/d' /tmp/boot/preseed.cfg
     fi
