@@ -119,7 +119,7 @@ apk update
 apk add bind-tools curl dhcpcd e2fsprogs fail2ban grep grub lsblk lsof net-tools udev util-linux vim wget
 
 # Config fail2ban
-sed -i '/\[Definition\]/a allowipv6 = auto' /etc/fail2ban/fail2ban.conf
+sed -i '/^\[Definition\]/a allowipv6 = auto' /etc/fail2ban/fail2ban.conf
 rc-update add fail2ban
 /etc/init.d/fail2ban start
 
