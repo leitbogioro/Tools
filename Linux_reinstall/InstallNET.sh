@@ -2588,6 +2588,7 @@ ip6DNS=$(checkDNS "$ip6DNS")
 if [[ -n "$ipAddr" && -n "$ipMask" && -n "$ipGate" ]] && [[ -z "$ip6Addr" && -z "$ip6Mask" && -z "$ip6Gate" ]]; then
   setNet='1'
   checkDHCP "$CurrentOS" "$CurrentOSVer" "$IPStackType"
+  setDhcpOrStatic "$tmpDHCP"
   Network4Config="isStatic"
   acceptIPv4AndIPv6SubnetValue "$ipMask" ""
   [[ "$IPStackType" != "IPv4Stack" ]] && getIPv6Address
@@ -2600,6 +2601,7 @@ elif [[ -n "$ipAddr" && -n "$ipMask" && -n "$ipGate" ]] && [[ -n "$ip6Addr" && -
 elif [[ -z "$ipAddr" && -z "$ipMask" && -z "$ipGate" ]] && [[ -n "$ip6Addr" && -n "$ip6Mask" && -n "$ip6Gate" ]]; then
   setNet='1'
   checkDHCP "$CurrentOS" "$CurrentOSVer" "$IPStackType"
+  setDhcpOrStatic "$tmpDHCP"
   Network6Config="isStatic"
   acceptIPv4AndIPv6SubnetValue "" "$ip6Mask"
   getIPv4Address
@@ -2607,6 +2609,7 @@ fi
 
 if [[ "$setNet" == "0" ]]; then
   checkDHCP "$CurrentOS" "$CurrentOSVer" "$IPStackType"
+  setDhcpOrStatic "$tmpDHCP"
   getIPv4Address
   [[ "$IPStackType" != "IPv4Stack" ]] && getIPv6Address
   if [[ "$IPStackType" == "BiStack" && "$i6AddrNum" -ge "2" ]]; then
@@ -2619,8 +2622,6 @@ if [[ "$setNet" == "0" ]]; then
     }
   fi
 fi
-
-setDhcpOrStatic "$tmpDHCP"
 
 checkWarp "warp*.conf" "wgcf*.conf" "wg[0-9].conf" "warp*" "wgcf*" "wg[0-9]" "privatekey" "publickey"
 
