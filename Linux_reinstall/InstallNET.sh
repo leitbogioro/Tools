@@ -1439,6 +1439,8 @@ function transferIPv6AddressFormat() {
       checkIfIpv4AndIpv6IsLocalOrPublic "" "$2"
       if [[ "$ipv6LocalOrPublicStatus" == '1' ]]; then
         tmpIp6Mask="64"
+# Installer of Debian 11 and former doesn't support irregular IPv6 configs.
+        [[ "$linux_relese" == 'debian' && -n $(echo $tmpDIST | grep -o "[0-9]") && "$tmpDIST" -le "11" && "$IPStackType" == "IPv6Stack" && "$Network6Config" == "isStatic" ]] && BurnIrregularIpv6Status='1'
       else
 # If the IPv6 and IPv6 gateway are not in the same IPv6 A class, the prefix of netmask should be "1",
 # transfer to whole IPv6 subnet address is 8000:0000:0000:0000:0000:0000:0000:0000.
@@ -2206,6 +2208,7 @@ function DebianModifiedPreseed() {
       fi
       writeMultipleIpv6Addresses "$i6AddrNum" "$1" '/etc/network/interfaces'
     elif [[ "$IPStackType" == "IPv6Stack" ]]; then
+      [[ "$BurnIrregularIpv6Status" == "1" ]] && BurnIrregularIpv6Gate="$1 sed -i '\$a\\\tgateway $ip6Gate' /etc/network/interfaces;"
 # This IPv6Stack machine should be setting as IPv6 network accessing priority.
       SupportIPv6orIPv4="$1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
       ReplaceActualIpPrefix="$1 sed -ri \"s/address $ip6Addr\/$ip6Mask/address $ip6Addr\/$actualIp6Prefix/g\" /etc/network/interfaces;"
@@ -2241,7 +2244,7 @@ function DebianModifiedPreseed() {
 # In this situation, the partition table and filesystem of the newly installed OS must be "mbr" and "ext4".
 # This case has been occurred in these cloud providers such as "app.cloudcone.com", "www.readyidc.com".
     CreateSoftLinkToGrub2FromGrub1="$1 ln -s /boot/grub/ /boot/grub2;"
-    export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${VimIndentEolStart} ${DnsChangePermanently} ${ModifyMOTD} ${ChangeSecurityMirror} ${AutoPlugInterfaces} ${BurnIrregularIpv4Gate} ${SupportIPv6orIPv4} ${ReplaceActualIpPrefix} ${EnableSSH} ${ReviseMOTD} ${SupportZSH} ${EnableFail2ban} ${CreateSoftLinkToGrub2FromGrub1}"
+    export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${VimIndentEolStart} ${DnsChangePermanently} ${ModifyMOTD} ${ChangeSecurityMirror} ${AutoPlugInterfaces} ${BurnIrregularIpv4Gate} ${BurnIrregularIpv6Gate} ${SupportIPv6orIPv4} ${ReplaceActualIpPrefix} ${EnableSSH} ${ReviseMOTD} ${SupportZSH} ${EnableFail2ban} ${CreateSoftLinkToGrub2FromGrub1}"
   fi
 }
 
@@ -2307,7 +2310,7 @@ function DebianPreseedProcess() {
 # to tell the networking service that the gateway of "10.0.0.1" will serve the device of network adapter "eth0" via "onlink" by IPv4 stack protocol
 # because "onlink" stipulates networking to establish a connection from local to gateway by "arp" directly without creating any area of intranet.
       [[ "$ddMode" == '0' ]] && tmpDdWinsEarlyCommandsOfAnna=''
-      BurnIrregularIpv4ByForce=`echo -e 'd-i preseed/early_command string ip link set '$interface4' up; ip addr add '$IPv4'/'$ipPrefix' dev '$interface4'; echo "(ip route add '$actualIp4Gate' dev '$interface4' || true) && (ip route add default via '$actualIp4Gate' dev '$interface4' onlink || true) && '$writeDnsByForce'" > /bin/ethdetect; echo "(test -x /bin/ethdetect && /bin/ethdetect) || true" >> /usr/share/debconf/confmodule; '$tmpDdWinsEarlyCommandsOfAnna''`
+      BurnIrregularIpv4ByForce=`echo -e 'd-i preseed/early_command string ip link set dev '$interface4' up; ip addr add '$IPv4'/'$ipPrefix' dev '$interface4'; echo "(ip route add '$actualIp4Gate' dev '$interface4' || true) && (ip route add default via '$actualIp4Gate' dev '$interface4' onlink || true) && '$writeDnsByForce'" > /bin/ethdetect; echo "(test -x /bin/ethdetect && /bin/ethdetect) || true" >> /usr/share/debconf/confmodule; '$tmpDdWinsEarlyCommandsOfAnna''`
     }
 # Prefer to use IPv4 stack to config networking.
     if [[ "$IPStackType" == "IPv4Stack" ]] || [[ "$IPStackType" == "BiStack" && "$BiStackPreferIpv6Status" != "1" ]]; then
@@ -2317,6 +2320,12 @@ function DebianPreseedProcess() {
     elif [[ "$IPStackType" == "IPv6Stack" ]] || [[ "$IPStackType" == "BiStack" && "$BiStackPreferIpv6Status" == "1" ]]; then
       [[ "$Network6Config" == "isStatic" ]] && NetConfigManually=`echo -e "d-i netcfg/disable_autoconfig boolean true\nd-i netcfg/dhcp_failed note\nd-i netcfg/dhcp_options select Configure network manually\nd-i netcfg/get_ipaddress string $ip6Addr\nd-i netcfg/get_netmask string $ip6Subnet\nd-i netcfg/get_gateway string $ip6Gate\nd-i netcfg/get_nameservers string $ip6DNS\nd-i netcfg/no_default_route boolean true\nd-i netcfg/confirm_static boolean true"` || NetConfigManually=""
     fi
+# The similar principle as hacking IPv4.
+    [[ "$BurnIrregularIpv6Status" == "1" ]] && {
+      writeDnsByForce='echo '\''nameserver '$ip6DNS1''\'' > /etc/resolv.conf && echo '\''nameserver '$ip6DNS2''\'' >> /etc/resolv.conf'
+      BurnIrregularIpv6ByForce=`echo -e 'd-i preseed/early_command string ip link set dev '$interface6' up; ip -6 addr add '$ip6Addr'/'$actualIp6Prefix' dev '$interface6'; echo "(ip -6 route add '$ip6Gate' dev '$interface6' || true) && (ip -6 route add default via '$ip6Gate' dev '$interface6' onlink || true) && '$writeDnsByForce'" > /bin/ethdetect; echo "(test -x /bin/ethdetect && /bin/ethdetect) || true" >> /usr/share/debconf/confmodule;'`
+      NetConfigManually=`echo -e "d-i netcfg/disable_autoconfig boolean true\nd-i netcfg/dhcp_failed note\nd-i netcfg/dhcp_options select Configure network manually\nd-i netcfg/get_ipaddress string $ip6Addr\nd-i netcfg/get_netmask string $ip6Subnet\nd-i netcfg/get_gateway string none\nd-i netcfg/get_nameservers string $ip6DNS\nd-i netcfg/no_default_route boolean true\nd-i netcfg/confirm_static boolean true"`
+    }
 # Debian installer can only identify the full IPv6 address of IPv6 mask,
 # so we need to covert IPv6 prefix shortening from "0-128" to whole IPv6 address.
 # The result of "$ip6Subnet" is calculated by function "ipv6SubnetCalc".
@@ -2368,6 +2377,7 @@ d-i netcfg/choose_interface select $interfaceSelect
 ${NetConfigManually}
 d-i hw-detect/load_firmware boolean true
 ${BurnIrregularIpv4ByForce}
+${BurnIrregularIpv6ByForce}
 
 ### Mirror settings
 d-i mirror/country string manual
