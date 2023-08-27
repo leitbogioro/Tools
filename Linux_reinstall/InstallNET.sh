@@ -1158,7 +1158,7 @@ function checkSys() {
     # [[ ! `grep -i "testing" /etc/apk/repositories` ]] && sed -i '$a\http://ftp.udx.icscoe.jp/Linux/alpine/edge/testing' /etc/apk/repositories
 # Alpine Linux use "apk" as package management.
     apk update
-    apk add bash bind-tools coreutils cpio curl efibootmgr file gawk grep gzip ipcalc jq net-tools openssl sed shadow tzdata util-linux virt-what wget xz
+    apk add bash bind-tools coreutils cpio curl efibootmgr file gawk grep gzip ipcalc jq lsblk net-tools openssl sed shadow tzdata util-linux virt-what wget xz
 # Use bash to replace ash.
     sed -i 's/root:\/bin\/ash/root:\/bin\/bash/g' /etc/passwd
   }
