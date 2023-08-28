@@ -534,7 +534,7 @@ function transferIPv4AddressFormat() {
       fi
 # Temporary installation of Debian 12 and Kali can't handle IPv4 public address and IPv4 private gateway well, so we prefer to invoke irregular IPv6 parameters to configure network in "busybox" and write static configs for IPv4 in later stage of the installation.
       [[ "$IPStackType" == "BiStack" ]] && {
-        [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]] && {
+        [[ "$linux_relese" == 'debian' || "$linux_relese" == 'kali' ]] && {
           BiStackPreferIpv6Status='1'
         }
       }
@@ -892,27 +892,37 @@ function checkEfi() {
   fi
 }
 
-# "/boot/grub/" "/boot/grub2/" "/etc/" "grub.cfg" "grub.conf" "/boot/efi/EFI/"
+# $1 is "/boot/grub/", $2 is "/boot/grub2/", $3 is "/etc/", $4 is "grub.cfg", $5 is "grub.conf", $6 is "/boot/efi/EFI/"
+# In some templates of Redhat series 7-8, UEFI firmware from Hetzner and etc. , there are two directions of grub configure files like:
+#
+# /boot/efi/EFI/rocky/grub.cfg
+# /boot/grub2/grub.cfg
+#
+# The contents of the above two files are almost equal, but the new boot menuentry which we need to write in file "/etc/grub.d/40_custom"
+# can only valid after reboot by using "grub2-mkconfig -o /boot/efi/EFI/rocky/grub.cfg", "grub2-mkconfig -o /boot/grub2/grub.cfg" doesn't cause any effect,
+# So in this situation, to find out the valid grub config file like "/boot/efi/EFI/rocky/grub.cfg" at first is necessary.
+# For Redhat series 9 and later, including Fedora 36+, the valid direction of grub config files are unified back to "/boot/grub2/grub.cfg" now,
+# so we won't have to consider the troubles which were caused by Redhat 7-8 series's abnormal settings.
 function checkGrub() {
   GRUBDIR=""
   GRUBFILE=""
-  for Count in "$1" "$2" "$3"; do
-# Don't support grub1 of CentOS/Redhat Enterprise Linux/Oracle Linux 6.x
-    if [[ -f "$Count""$4" ]] && [[ `grep -c "insmod*" $Count$4` -ge "1" ]]; then
-      GRUBDIR="$Count"
-      GRUBFILE="$4"
-    elif [[ -f "$Count""$5" ]] && [[ `grep -c "insmod*" $Count$5` -ge "1" ]]; then
-      GRUBDIR="$Count"
-      GRUBFILE="$5"
+  for Count in "$4" "$5"; do
+    GRUBFILE=`find "$6" -name "$Count"`
+    if [[ -n "$GRUBFILE" ]]; then
+      GRUBDIR=`echo "$GRUBFILE" | sed "s/$Count//g"`
+      GRUBFILE="$Count"
+      break
     fi
   done
   if [[ -z "$GRUBFILE" ]] || [[ `grep -c "insmod*" $GRUBDIR$GRUBFILE` == "0" ]]; then
-    for Count in "$4" "$5"; do
-      GRUBFILE=`find "$6" -name "$Count"`
-      if [[ -n "$GRUBFILE" ]]; then
-        GRUBDIR=`echo "$GRUBFILE" | sed "s/$Count//g"`
-        GRUBFILE="$Count"
-        break
+    for Count in "$1" "$2" "$3"; do
+# Don't support grub1 of CentOS/Redhat Enterprise Linux/Oracle Linux 6.x
+      if [[ -f "$Count""$4" ]] && [[ `grep -c "insmod*" $Count$4` -ge "1" ]]; then
+        GRUBDIR="$Count"
+        GRUBFILE="$4"
+      elif [[ -f "$Count""$5" ]] && [[ `grep -c "insmod*" $Count$5` -ge "1" ]]; then
+        GRUBDIR="$Count"
+        GRUBFILE="$5"
       fi
     done
   fi
@@ -1450,6 +1460,10 @@ function transferIPv6AddressFormat() {
     else
       ipv6SubnetCertificate "$ip6AddrWhole" "$ip6GateWhole"
     fi
+# Too narrow of IPv6 prefix may cause some unpredictable risks.
+    [[ "$tmpIp6Mask" -le "16" ]] && {
+      [[ "$BiStackPreferIpv6Status" == "1" ]] || [[ "$linux_relese" == 'debian' || "$linux_relese" == 'kali' && "$IPStackType" == "IPv6Stack" && "$Network6Config" == "isStatic" ]] && BurnIrregularIpv6Status='1'
+    }
     ip6Mask="$tmpIp6Mask"
 # Because of function "ipv6SubnetCalc" includes self-increment,
 # so we need to confirm the goal of IPv6 prefix and make function to operate only one time in the last to save performance and avoid all
@@ -2280,6 +2294,7 @@ function DebianPreseedProcess() {
     if [[ "$BiStackPreferIpv6Status" == "1" ]]; then
       if [[ "$interfacesNum" -ge "2" ]] || [[ "$linux_relese" == 'debian' && "$DebianDistNum" -le "11" ]] || [[ "$ddMode" == '1' ]]; then
         BiStackPreferIpv6Status=""
+        BurnIrregularIpv6Status=""
         BurnIrregularIpv4Status='1'
         interfaceSelect="$interface4"
       fi
@@ -2619,6 +2634,7 @@ if [[ "$setNet" == "0" ]]; then
     fi
     [[ "$BiStackPreferIpv6Status" == "1" ]] && {
       BiStackPreferIpv6Status=""
+      BurnIrregularIpv6Status=""
       BurnIrregularIpv4Status='1'
     }
   fi
@@ -3399,6 +3415,16 @@ elif [[ "$linux_relese" == 'alpinelinux' ]]; then
         sed -i '/manual configuration/a\\t\tip link set dev '$interface4' up\n\t\tip addr add '$IPv4'/'$ipPrefix' dev '$interface4'\n\t\tip route add '$actualIp4Gate' dev '$interface4'\n\t\tip route add default via '$actualIp4Gate' dev '$interface4' onlink\n\t\techo '\''nameserver '$ipDNS1''\'' > /etc/resolv.conf\n\t\techo '\''nameserver '$ipDNS2''\'' >> /etc/resolv.conf' /tmp/boot/init
       }
     elif [[ "$IPStackType" == "IPv6Stack" ]]; then
+# Attention:
+# Configure networking in pure IPv6 or irregular IPv4 environment so that to let AlpineLinux netboot kernel to support to connect to the public network was not recognized by official at current(date 2023.08).
+# This is only belonged to an appertain of my ingenuity in this earth. I'm glad to introduce to you without any reservation that how I was accomplished to dealing with it.
+# By using "ip link set IPv6 network adaper", "ip -6 add IPv6 address and subnet", "ip -6 route add..." are similar with handling irregular IPv4s.
+# For pure IPv6 stack, static network configure method, we need to generate a nonexistent IPv4 configurations to make a cheat to let AlpineLinux to initiate network service.
+# For pure IPv6 stack, dhcp network configure method, in most of these environments, upstream networking topology may also has a IPv4 dhcp configuration but server won't get any public IPv4 address acrossing IPv4 route,
+# so we need to add IPv6 hijack commands after IPv4 dhcp configure method context after comment of "# automatic configuration" in function of "configure_ip()".
+# About deciding to write which different contents of "ip=..." in grub section, "ip=dhcp" is for IPv6 automatic method, for IPv6 manual method is like "ip=172.25.255.72:::255.255.255.0::eth0:::", no matter for menuentry of grub1 or grub2 format are all applicable.
+# All of these deceptions of above are only for let AlpineLinux netboot kernel to creating IPv6 network successfully during a temporary AlpineLinux environment in RAM
+# when installed as a formal AlpineLinux or Ubuntu or Windows, the networking configure files will be all rewritten so that the "fakeIpv4 ", etc. have no negative impacts to these finally installed target systems.
       if [[ "$Network6Config" == "isStatic" ]]; then
         fakeIpv4="172.25.255.72"
         fakeIpMask="255.255.255.0"
