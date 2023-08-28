@@ -176,6 +176,10 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
+**--networkstack "ipv4" or "ipv6" or "dual"**: To specify one supported IP stack manually by reading related configurations instead of checking connectivity of IP stacks, "ipv4" is for IPv4 stack, "dual" is for IPv4 and IPv6 stack. To make sure the parameter of corresponded stack must has specify configurations in system before assign it.
+<br />
+<br />
+
 **--ip-addr "IPv4 address"**: It must be added with --ip-gate and --ip-mask together, in this situation, --network "static/manual" is automatically assigned.
 <br />
 <br />
@@ -239,6 +243,8 @@ For Ubuntu, official recommend mirror lists are here:
 **-setdisk "a name of one disk or all"**: If your machine has 2 or more hard drives, and every hard drive want to format during the installation, you can assign -setdisk "all" to enable it, data is invaluable, you should deal with them carefully! or you can allow system to be installed on one disk like "vdc" or "/dev/sdb", This parameter is only suitable for Debian/Redhat series and conflicts with "-raid".
 <br />
 <br />
+
+**-partition "mbr" or "gpt"**: Default is "mbr", ext4 file system with mbr partition table, if assign "gpt", the partition method will be as xfs file system with gpt partition table, this is only valid for Debian series, single hard drive formatting environment, not suitable for Raid.
 
 **-version 32/i386 or 64/amd64 or arm/arm64**: OS bit. Program will automatically detect and redirect the CPU architecture from your machine to new system which would be installed, if you aren't known it well, don't assign it!
 <br />
