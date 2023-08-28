@@ -168,6 +168,14 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
+**-setdisk "a name of one disk or all"**: If your machine has 2 or more hard drives, and every hard drive want to format during the installation, you can assign -setdisk "all" to enable it, data is invaluable, you should deal with them carefully! or you can allow system to be installed on one disk like "vdc" or "/dev/sdb", This parameter is only suitable for Debian/Redhat series and conflicts with "-raid".
+<br />
+<br />
+
+**-partition "mbr" or "gpt"**: Default is "mbr", ext4 file system with mbr partition table, if assign "gpt", the partition method will be as xfs file system with gpt partition table. This is only valid for Debian series, single hard drive formatting environment, not suitable for Raid.
+<br />
+<br />
+
 **--nomemcheck**: Disable memory check by force so that you can install any OS on any size of the memory in target machine, whether installation will succeed is not guaranteed.
 <br />
 <br />
@@ -239,12 +247,6 @@ For Ubuntu, official recommend mirror lists are here:
 **-firmware**: Specify drivers for Debian and Kali to support old hardwares, if your server location is in mainland China, program will switch to mirror of 'University of Science and Technology of China(https://mirrors.ustc.edu.cn/debian-cdimage/)' for downloading more quickly, default mirror is from http://cdimage.debian.org/cdimage/.
 <br />
 <br />
-
-**-setdisk "a name of one disk or all"**: If your machine has 2 or more hard drives, and every hard drive want to format during the installation, you can assign -setdisk "all" to enable it, data is invaluable, you should deal with them carefully! or you can allow system to be installed on one disk like "vdc" or "/dev/sdb", This parameter is only suitable for Debian/Redhat series and conflicts with "-raid".
-<br />
-<br />
-
-**-partition "mbr" or "gpt"**: Default is "mbr", ext4 file system with mbr partition table, if assign "gpt", the partition method will be as xfs file system with gpt partition table, this is only valid for Debian series, single hard drive formatting environment, not suitable for Raid.
 
 **-version 32/i386 or 64/amd64 or arm/arm64**: OS bit. Program will automatically detect and redirect the CPU architecture from your machine to new system which would be installed, if you aren't known it well, don't assign it!
 <br />
