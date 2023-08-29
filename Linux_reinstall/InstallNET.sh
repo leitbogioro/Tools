@@ -81,6 +81,7 @@ export GRUBVER=''
 export VER=''
 export setCMD=""
 export setConsole=''
+export setFail2ban=''
 export setAutoConfig='1'
 export FirmwareImage=''
 export AddNum='1'
@@ -231,6 +232,11 @@ while [[ $# -ge 1 ]]; do
       shift
       setMotd='1'
       ;;
+    --fail2ban)
+      shift
+      setFail2ban="$1"
+      shift
+      ;;
     --setdns)
       shift
       setDns='1'
@@ -282,7 +288,7 @@ while [[ $# -ge 1 ]]; do
       IncFirmware="1"
       shift
       ;;
-    -cloudimage)
+    -cloudkernel)
       shift
       setCloudKernel="$1"
       shift
@@ -1019,6 +1025,13 @@ function checkMem() {
         }
       fi
     }
+    if [[ "$TotalMem1" -le "1740800" || "$TotalMem2" -le "1740800" ]]; then
+      setFail2banStatus="0"
+      [[ "$setFail2ban" == "1" ]] && setFail2banStatus="1"
+    else
+      [[ "$setFail2ban" == "0" ]] && setFail2banStatus="0" || setFail2banStatus="1"
+    fi
+    [[ "$linux_relese" == 'debian' && "$DebianDistNum" -le "8" ]] && setFail2banStatus="0"
   }
 }
 
@@ -2167,9 +2180,13 @@ function DebianModifiedPreseed() {
 # Reference: https://wonderwall.hatenablog.com/entry/2016/03/23/232634
     VimIndentEolStart="$1 sed -i 's/set compatible/set nocompatible/g' /etc/vim/vimrc.tiny; $1 sed -i '/set nocompatible/a\set backspace=2' /etc/vim/vimrc.tiny;"
     [[ "$DebianVimVer" == "" ]] && { VimSupportCopy=""; VimIndentEolStart=""; }
+# Fail2ban configurations.
+# Reference: https://github.com/fail2ban/fail2ban/issues/2756
+#            https://www.mail-archive.com/debian-bugs-dist@lists.debian.org/msg1879390.html
+    [[ "$setFail2banStatus" == "1" ]] && { EnableFail2ban="$1 sed -i '/^\[Definition\]/a allowipv6 = auto' /etc/fail2ban/fail2ban.conf; $1 sed -ri 's/^backend = auto/backend = systemd/g' /etc/fail2ban/jail.conf; $1 update-rc.d fail2ban enable; $1 /etc/init.d/fail2ban restart;"; fail2banComponent="fail2ban"; }
     AptUpdating="$1 apt update -y;"
 # pre-install some commonly used software.
-    InstallComponents="$1 apt install apt-transport-https ca-certificates cron curl dnsutils dpkg fail2ban file lrzsz lsb-release net-tools sudo vim wget -y;"
+    InstallComponents="$1 apt install apt-transport-https ca-certificates cron curl dnsutils dpkg ${fail2banComponent} file lrzsz lsb-release net-tools sudo vim wget -y;"
 # In Debian 9 and former, some certificates are expired.
     DisableCertExpiredCheck="$1 sed -i '/^mozilla\/DST_Root_CA_X3/s/^/!/' /etc/ca-certificates.conf; $1 update-ca-certificates -f;"
     if [[ "$IsCN" == "cn" ]]; then
@@ -2262,10 +2279,6 @@ function DebianModifiedPreseed() {
       ReviseMOTD="$1 sed -ri 's/Debian/Kali/g' /etc/update-motd.d/00-header;"
       SupportZSH="$1 apt install zsh -y; $1 chsh -s /bin/zsh; $1 rm -rf /root/.bashrc.original;"
     }
-# Fail2ban configurations.
-# Reference: https://github.com/fail2ban/fail2ban/issues/2756
-#            https://www.mail-archive.com/debian-bugs-dist@lists.debian.org/msg1879390.html
-    EnableFail2ban="$1 sed -i '/^\[Definition\]/a allowipv6 = auto' /etc/fail2ban/fail2ban.conf; $1 sed -ri 's/^backend = auto/backend = systemd/g' /etc/fail2ban/jail.conf; $1 update-rc.d fail2ban enable; $1 /etc/init.d/fail2ban restart;"
 # For some cloud providers which servers boot from their own grub2 bootloader first by force, not boot from grub in harddisk of our own servers directly,
 # we need to creat a soft link for grub2 from grub1 to make sure the first reboot after installation won't meet a fatal.
 # In this situation, the partition table and filesystem of the newly installed OS must be "mbr" and "ext4".
@@ -3552,6 +3565,12 @@ echo "HostName  "${HostName} >> \$sysroot/root/alpine.config
 
 # To determine whether in virtual or physical machine
 echo "virtualizationStatus  "${virtualizationStatus} >> \$sysroot/root/alpine.config
+
+# To determine whether configure fail2ban
+echo "setFail2banStatus  "${setFail2banStatus} >> \$sysroot/root/alpine.config
+
+# To determine whether to delete motd of original system
+echo "setMotd  "${setMotd} >> \$sysroot/root/alpine.config
 
 # To determine dd image url
 echo "DDURL  "${DDURL} >> \$sysroot/root/alpine.config
