@@ -63,10 +63,13 @@ export setRaid=''
 export setDisk=''
 export partitionTable='mbr'
 export setMemCheck='1'
+export setCloudKernel=''
 export isMirror='0'
 export FindDists='0'
 export setFileType=''
 export loaderMode='0'
+export setMotd=''
+export setDns=''
 export LANG="en_US.UTF-8"
 export IncFirmware='0'
 export SpikCheckDIST='0'
@@ -224,6 +227,14 @@ while [[ $# -ge 1 ]]; do
       shift
       loaderMode='1'
       ;;
+    --motd)
+      shift
+      setMotd='1'
+      ;;
+    --setdns)
+      shift
+      setDns='1'
+      ;;
     -mirror)
       shift
       isMirror='1'
@@ -269,6 +280,11 @@ while [[ $# -ge 1 ]]; do
     -firmware)
       shift
       IncFirmware="1"
+      shift
+      ;;
+    -cloudimage)
+      shift
+      setCloudKernel="$1"
       shift
       ;;
     -filetype)
@@ -2153,8 +2169,7 @@ function DebianModifiedPreseed() {
     [[ "$DebianVimVer" == "" ]] && { VimSupportCopy=""; VimIndentEolStart=""; }
     AptUpdating="$1 apt update -y;"
 # pre-install some commonly used software.
-    # InstallComponents="$1 apt install sudo apt-transport-https bc binutils ca-certificates cron curl debian-keyring debian-archive-keyring dnsutils dosfstools dpkg efibootmgr ethtool fail2ban file figlet iputils-tracepath jq lrzsz libnet-ifconfig-wrapper-perl lsof libnss3 lsb-release mtr-tiny mlocate netcat-openbsd net-tools ncdu nmap ntfs-3g parted psmisc python3 socat sosreport subnetcalc tcpdump telnet traceroute unzip unrar-free uuid-runtime vim vim-gtk3 wget xz-utils -y;"
-    InstallComponents="$1 apt install apt-transport-https ca-certificates cron curl dnsutils dpkg fail2ban file lrzsz lsb-release net-tools sudo traceroute unzip vim wget xz-utils -y;"
+    InstallComponents="$1 apt install apt-transport-https ca-certificates cron curl dnsutils dpkg fail2ban file lrzsz lsb-release net-tools sudo vim wget -y;"
 # In Debian 9 and former, some certificates are expired.
     DisableCertExpiredCheck="$1 sed -i '/^mozilla\/DST_Root_CA_X3/s/^/!/' /etc/ca-certificates.conf; $1 update-ca-certificates -f;"
     if [[ "$IsCN" == "cn" ]]; then
@@ -2163,18 +2178,16 @@ function DebianModifiedPreseed() {
 # Need to install "resolvconf" manually after all installation ended, logged into new system.
 # DNS server validation must setting up in installed system, can't in preseeding!
 # Set China DNS server from Tencent Cloud and Alibaba Cloud permanently.
-      SetDNS="CNResolvHead"
-      DnsChangePermanently="$1 mkdir -p /etc/resolvconf/resolv.conf.d/; $1 wget --no-check-certificate -qO /etc/resolvconf/resolv.conf.d/head 'https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Debian/network/${SetDNS}';"
+      [[ "$setDns" == "1" ]] && SetDNS="CNResolvHead" DnsChangePermanently="$1 mkdir -p /etc/resolvconf/resolv.conf.d/; $1 wget --no-check-certificate -qO /etc/resolvconf/resolv.conf.d/head 'https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Debian/network/${SetDNS}';" || DnsChangePermanently=""
 # Modify logging in welcome information(Message Of The Day) of Debian and make it more pretty.
-      ModifyMOTD="$1 rm -rf /etc/update-motd.d/ /etc/motd /run/motd.dynamic; $1 mkdir -p /etc/update-motd.d/; $1 wget --no-check-certificate -qO /etc/update-motd.d/00-header 'https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Debian/updatemotd/00-header'; $1 wget --no-check-certificate -qO /etc/update-motd.d/10-sysinfo 'https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Debian/updatemotd/10-sysinfo'; $1 wget --no-check-certificate -qO /etc/update-motd.d/90-footer 'https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Debian/updatemotd/90-footer'; $1 chmod +x /etc/update-motd.d/00-header; $1 chmod +x /etc/update-motd.d/10-sysinfo; $1 chmod +x /etc/update-motd.d/90-footer;"
+      [[ "$setMotd" == "1" ]] && ModifyMOTD="$1 rm -rf /etc/update-motd.d/ /etc/motd /run/motd.dynamic; $1 mkdir -p /etc/update-motd.d/; $1 wget --no-check-certificate -qO /etc/update-motd.d/00-header 'https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Debian/updatemotd/00-header'; $1 wget --no-check-certificate -qO /etc/update-motd.d/10-sysinfo 'https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Debian/updatemotd/10-sysinfo'; $1 wget --no-check-certificate -qO /etc/update-motd.d/90-footer 'https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Debian/updatemotd/90-footer'; $1 chmod +x /etc/update-motd.d/00-header; $1 chmod +x /etc/update-motd.d/10-sysinfo; $1 chmod +x /etc/update-motd.d/90-footer;" || ModifyMOTD=""
 # Change "security.debian.org" to "mirrors.tuna.tsinghua.edu.cn". Reference: https://mirrors.tuna.tsinghua.edu.cn/help/debian/
       ChangeSecurityMirror="$1 sed -i 's/security.debian.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list;"
     else
       ChangeBashrc="$1 rm -rf /root/.bashrc; $1 wget --no-check-certificate -qO /root/.bashrc 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Debian/.bashrc';"
 # Set DNS server from Cloudflare and Google permanently.
-      SetDNS="NomalResolvHead"
-      DnsChangePermanently="$1 mkdir -p /etc/resolvconf/resolv.conf.d/; $1 wget --no-check-certificate -qO /etc/resolvconf/resolv.conf.d/head 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Debian/network/${SetDNS}';"
-      ModifyMOTD="$1 rm -rf /etc/update-motd.d/ /etc/motd /run/motd.dynamic; $1 mkdir -p /etc/update-motd.d/; $1 wget --no-check-certificate -qO /etc/update-motd.d/00-header 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Debian/updatemotd/00-header'; $1 wget --no-check-certificate -qO /etc/update-motd.d/10-sysinfo 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Debian/updatemotd/10-sysinfo'; $1 wget --no-check-certificate -qO /etc/update-motd.d/90-footer 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Debian/updatemotd/90-footer'; $1 chmod +x /etc/update-motd.d/00-header; $1 chmod +x /etc/update-motd.d/10-sysinfo; $1 chmod +x /etc/update-motd.d/90-footer;"
+      [[ "$setDns" == "1" ]] && SetDNS="NomalResolvHead" DnsChangePermanently="$1 mkdir -p /etc/resolvconf/resolv.conf.d/; $1 wget --no-check-certificate -qO /etc/resolvconf/resolv.conf.d/head 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Debian/network/${SetDNS}';" || DnsChangePermanently=""
+      [[ "$setMotd" == "1" ]] && ModifyMOTD="$1 rm -rf /etc/update-motd.d/ /etc/motd /run/motd.dynamic; $1 mkdir -p /etc/update-motd.d/; $1 wget --no-check-certificate -qO /etc/update-motd.d/00-header 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Debian/updatemotd/00-header'; $1 wget --no-check-certificate -qO /etc/update-motd.d/10-sysinfo 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Debian/updatemotd/10-sysinfo'; $1 wget --no-check-certificate -qO /etc/update-motd.d/90-footer 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Debian/updatemotd/90-footer'; $1 chmod +x /etc/update-motd.d/00-header; $1 chmod +x /etc/update-motd.d/10-sysinfo; $1 chmod +x /etc/update-motd.d/90-footer;" || ModifyMOTD=""
       ChangeSecurityMirror=""
     fi
 # For multiple interfaces environment, if the interface which is configurated by "auto", regardless of it is plugged by internet cable, 
@@ -2264,6 +2277,19 @@ function DebianModifiedPreseed() {
 
 function DebianPreseedProcess() {
   if [[ "$setAutoConfig" == "1" ]]; then
+# Debian linux cloud kernel only include drivers of network adapter can reduce resource usage for most virtual servers.
+# If target system need to set a raid recipe, to make sure to support more disk controllers, cloud kernel should not be installed.
+# Reference: https://docs.software-univention.de/installation-4.4.pdf
+#            https://unix.stackexchange.com/questions/639608/difference-between-debians-linux-image-cloud-amd64-and-linux-image-amd64
+    addCloudKernelCmd="d-i base-installer/kernel/image string"
+    if [[ "$setCloudKernel" == "" ]]; then
+      [[ -n "$virtWhat" ]] && {
+        [[ "$linux_relese" == 'debian' && "$DebianDistNum" -ge "11" || "$linux_relese" == 'kali' ]] && AddCloudKernel="$addCloudKernelCmd linux-image-cloud-$VER" || AddCloudKernel=""
+      }
+    elif [[ "$setCloudKernel" == "1" ]]; then
+      [[ "$linux_relese" == 'debian' && "$DebianDistNum" -ge "11" || "$linux_relese" == 'kali' ]] && AddCloudKernel="$addCloudKernelCmd linux-image-cloud-$VER" || AddCloudKernel=""
+    fi
+    [[ -n "$setRaid" ]] && AddCloudKernel=""
     ddWindowsEarlyCommandsOfAnna='anna-install libfuse2-udeb fuse-udeb ntfs-3g-udeb libcrypto3-udeb libpcre2-8-0-udeb libssl3-udeb libuuid1-udeb zlib1g-udeb wget-udeb'
     tmpDdWinsEarlyCommandsOfAnna="$ddWindowsEarlyCommandsOfAnna"
 # Default to make a GPT partition to support 3TB hard drive or larger.
@@ -2387,6 +2413,9 @@ d-i apt-setup/non-free-firmware boolean true
 d-i apt-setup/cdrom/set-first boolean false
 d-i apt-setup/cdrom/set-next boolean false
 d-i apt-setup/cdrom/set-failed boolean false
+
+### Configure cloud kernel
+${AddCloudKernel}
 
 ### Network configuration
 d-i netcfg/choose_interface select $interfaceSelect
@@ -3434,7 +3463,18 @@ elif [[ "$linux_relese" == 'alpinelinux' ]]; then
       fi
       sed -i '/'"$hackIpv6Context"'/a\\t\tdepmod\n\t\tmodprobe ipv6\n\t\tip link set dev '$interface6' up\n\t\tip -6 addr add '$ip6Addr'/'$actualIp6Prefix' dev '$interface6'\n\t\tip -6 route add '$ip6Gate' dev '$interface6'\n\t\tip -6 route add default via '$ip6Gate' dev '$interface6' onlink\n\t\techo '\''nameserver '$ip6DNS1''\'' > /etc/resolv.conf\n\t\techo '\''nameserver '$ip6DNS2''\'' >> /etc/resolv.conf' /tmp/boot/init
     fi
-    [[ -z "$virtWhat" ]] && virtualizationStatus='0' || virtualizationStatus='1'
+    if [[ "$setCloudKernel" == "" ]]; then
+      [[ -n "$virtWhat" ]] && virtualizationStatus='1' || virtualizationStatus='0'
+    elif [[ "$setCloudKernel" == "1" ]]; then
+      virtualizationStatus='1'
+    fi
+    if [[ "$setMotd" == "1" ]]; then
+      ModifyMOTD=`echo -e "rm -rf \\\$sysroot/etc/motd
+wget --no-check-certificate -O \\\$sysroot/etc/profile.d/motd.sh \${AlpineMotd}
+chmod a+x \\\$sysroot/etc/profile.d/motd.sh"`
+    else
+      ModifyMOTD=""
+    fi
 # All the following steps are processed in the temporary Alpine Linux.
     cat <<EOF | sed -i "${AlpineInitLineNum}r /dev/stdin" /tmp/boot/init
 # Download "interfaces" templates and replace IP details.
@@ -3446,9 +3486,7 @@ wget --no-check-certificate -O \$sysroot/etc/resolv.conf ${AlpineDnsFile}
 chmod a+x \$sysroot/etc/resolv.conf
 
 # Add customized motd
-rm -rf \$sysroot/etc/motd
-wget --no-check-certificate -O \$sysroot/etc/profile.d/motd.sh ${AlpineMotd}
-chmod a+x \$sysroot/etc/profile.d/motd.sh
+${ModifyMOTD}
 
 # Creat a modify initial file.
 echo '' > \$sysroot/root/alpine.config
