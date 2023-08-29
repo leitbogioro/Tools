@@ -34,6 +34,7 @@ actualIp6Prefix=$(grep "actualIp6Prefix" $confFile | awk '{print $2}')
 ip6Gate=$(grep "ip6Gate" $confFile | awk '{print $2}')
 HostName=$(grep "HostName" $confFile | awk '{print $2}')
 virtualizationStatus=$(grep "virtualizationStatus" $confFile | awk '{print $2}')
+setFail2banStatus=$(grep "setFail2banStatus" $confFile | awk '{print $2}')
 
 # Setting Alpine Linux by "setup-alpine" will enable the following services
 # https://github.com/alpinelinux/alpine-conf/blob/c5131e9a038b09881d3d44fb35e86851e406c756/setup-alpine.in#L189
@@ -116,12 +117,15 @@ sed -ri 's/ash/bash/g' /etc/passwd
 
 # Insall more components.
 apk update
-apk add bind-tools curl dhcpcd e2fsprogs fail2ban grep grub lsblk lsof net-tools udev util-linux vim wget
-
+if [[ "$setFail2banStatus" == "1" ]]; then
+  apk add bind-tools curl dhcpcd e2fsprogs fail2ban grep grub lsblk lsof net-tools udev util-linux vim wget
 # Config fail2ban
-sed -i '/^\[Definition\]/a allowipv6 = auto' /etc/fail2ban/fail2ban.conf
-rc-update add fail2ban
-/etc/init.d/fail2ban start
+  sed -i '/^\[Definition\]/a allowipv6 = auto' /etc/fail2ban/fail2ban.conf
+  rc-update add fail2ban
+  /etc/init.d/fail2ban start
+else
+  apk add bind-tools curl dhcpcd e2fsprogs grep grub lsblk lsof net-tools udev util-linux vim wget
+fi
 
 # Use kernel "virt" if be executed on virtual machine.
 cp /etc/apk/world /tmp/world.old
