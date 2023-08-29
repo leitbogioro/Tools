@@ -39,7 +39,7 @@ If you need to add other parameters, version number must be assigned!
 <b>Kali can be installed and run in OracleCloud Ampere A1 ARM64 machine successfully but there are not any output results in VNC screen, just waiting patiently after installation has been finished!</b>
 ### Alpine Linux Edge
 <pre><code>bash InstallNET.sh -alpine</code></pre>
-<b>Alpine Linux can't boot with IPv6 address in iPXE mode. IPv4 or BiStack server, either of IPv4 or IPv6 dhcp and static can be boot with IPv4 by iPXE and IPv6 can be configurated correctly at the end of system automatic un-attended installation, Alpine Linux is a kind of light Linux release and it's friendly to low memory machine, even 384mb and lower can be executed, but the installation process is unfriendly to low memory because all files will write to the memory and them will write to hard drive at last. 1gb machine have no problem, but it can't install on 768mb or lower machine!</b>
+<b>Alpine Linux is a kind of light Linux release and it's friendly to low memory machine, even 384mb and lower can be executed, but the installation process is unfriendly to low memory because all files will write to the memory and them will write to hard drive at last. 1gb machine have no problem, but it can't install on 768mb or lower machine!</b>
 ### CentOS 9 stream
 <pre><code>bash InstallNET.sh -centos</code></pre>
 ### AlmaLinux 9
