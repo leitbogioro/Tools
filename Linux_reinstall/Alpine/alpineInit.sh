@@ -132,8 +132,7 @@ cp /etc/apk/world /tmp/world.old
 [[ "$virtualizationStatus" == "1" ]] && kernelOpt="-k virt" || kernelOpt="-k lts"
 
 # Make a blank motd to avoid Alpine Linux writes a new one.
-rm -rf /etc/motd
-touch /etc/motd
+[[ "$setMotd" == "1" ]] && { rm -rf /etc/motd; touch /etc/motd; }
 
 # Install to hard drive.
 export BOOTLOADER="grub"
