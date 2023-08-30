@@ -1037,10 +1037,10 @@ function checkMem() {
 }
 
 function checkVirt() {
-  virtType=""
-  for Count in $(dmidecode -s system-manufacturer | awk '{print $1}' | sed 's/[A-Z]/\l&/g') $(systemd-detect-virt | sed 's/[A-Z]/\l&/g') $(lscpu | grep -i "hypervisor vendor" | cut -d ':' -f 2 | sed 's/^[ \t]*//g' | sed 's/[A-Z]/\l&/g'); do
-    virtType+="$Count"
-  done
+  # virtType=""
+  # for Count in $(dmidecode -s system-manufacturer | awk '{print $1}' | sed 's/[A-Z]/\l&/g') $(systemd-detect-virt | sed 's/[A-Z]/\l&/g') $(lscpu | grep -i "hypervisor vendor" | cut -d ':' -f 2 | sed 's/^[ \t]*//g' | sed 's/[A-Z]/\l&/g'); do
+    # virtType+="$Count"
+  # done
   virtWhat=$(virt-what)
 }
 
@@ -2712,9 +2712,13 @@ getUserTimeZone "/root/timezonelists" "https://api.ip.sb/geoip/" "http://ifconfi
 echo -ne "\n${aoiBlue}# User Timezone${plain}\n\n"
 echo "$TimeZone"
 
-[[ -z "$tmpWORD" || "$linux_relese" == 'alpinelinux' || "$targetRelese" == 'Ubuntu' ]] && tmpWORD='LeitboGi0ro'
-myPASSWORD=$(openssl passwd -1 ''$tmpWORD'')
-[[ -z "$myPASSWORD" ]] && myPASSWORD='$1$OCy2O5bt$m2N6XMgFUwCn/2PPP114J/'
+if [[ -z "$tmpWORD" || "$linux_relese" == 'alpinelinux' || "$targetRelese" == 'Ubuntu' ]]; then
+  tmpWORD='LeitboGi0ro'
+  myPASSWORD='$1$OCy2O5bt$m2N6XMgFUwCn/2PPP114J/'
+else
+  myPASSWORD=$(openssl passwd -1 ''$tmpWORD'')
+fi
+
 echo -ne "\n${aoiBlue}# SSH or RDP Port, Username and Password${plain}\n\n"
 if [[ "$targetRelese" == 'Windows' && "$tmpURL" == "" || "$tmpURL" =~ "dl.lamp.sh" ]]; then
   echo "3389"
