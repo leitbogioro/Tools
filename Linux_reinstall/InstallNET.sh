@@ -49,7 +49,7 @@ export IncDisk=''
 export interface=''
 export interfaceSelect=''
 export setInterfaceName='0'
-export autoPlugAdapter='0'
+export autoPlugAdapter='1'
 export IsCN=''
 export Relese=''
 export sshPORT=''
@@ -2284,7 +2284,7 @@ function DebianModifiedPreseed() {
 # In this situation, the partition table and filesystem of the newly installed OS must be "mbr" and "ext4".
 # This case has been occurred in these cloud providers such as "app.cloudcone.com", "www.readyidc.com".
     CreateSoftLinkToGrub2FromGrub1="$1 ln -s /boot/grub/ /boot/grub2;"
-    export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${VimIndentEolStart} ${DnsChangePermanently} ${ModifyMOTD} ${ChangeSecurityMirror} ${AutoPlugInterfaces} ${BurnIrregularIpv4Gate} ${BurnIrregularIpv6Gate} ${SupportIPv6orIPv4} ${ReplaceActualIpPrefix} ${EnableSSH} ${ReviseMOTD} ${SupportZSH} ${EnableFail2ban} ${CreateSoftLinkToGrub2FromGrub1}"
+    export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${VimIndentEolStart} ${DnsChangePermanently} ${ModifyMOTD} ${ChangeSecurityMirror} ${BurnIrregularIpv4Gate} ${BurnIrregularIpv6Gate} ${SupportIPv6orIPv4} ${ReplaceActualIpPrefix} ${AutoPlugInterfaces} ${EnableSSH} ${ReviseMOTD} ${SupportZSH} ${EnableFail2ban} ${CreateSoftLinkToGrub2FromGrub1}"
   fi
 }
 
