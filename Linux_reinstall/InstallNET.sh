@@ -1037,10 +1037,10 @@ function checkMem() {
 }
 
 function checkVirt() {
-  # virtType=""
-  # for Count in $(dmidecode -s system-manufacturer | awk '{print $1}' | sed 's/[A-Z]/\l&/g') $(systemd-detect-virt | sed 's/[A-Z]/\l&/g') $(lscpu | grep -i "hypervisor vendor" | cut -d ':' -f 2 | sed 's/^[ \t]*//g' | sed 's/[A-Z]/\l&/g'); do
-    # virtType+="$Count"
-  # done
+  virtType=""
+  for Count in $(dmidecode -s system-manufacturer | awk '{print $1}' | sed 's/[A-Z]/\l&/g') $(systemd-detect-virt | sed 's/[A-Z]/\l&/g') $(lscpu | grep -i "hypervisor vendor" | cut -d ':' -f 2 | sed 's/^[ \t]*//g' | sed 's/[A-Z]/\l&/g'); do
+    virtType+="$Count"
+  done
   virtWhat=$(virt-what)
 }
 
@@ -2714,7 +2714,7 @@ echo "$TimeZone"
 
 if [[ -z "$tmpWORD" || "$linux_relese" == 'alpinelinux' || "$targetRelese" == 'Ubuntu' ]]; then
   tmpWORD='LeitboGi0ro'
-  myPASSWORD='$1$OCy2O5bt$m2N6XMgFUwCn/2PPP114J/'
+  myPASSWORD='$1$0rZQ5Uwi$gx1MoUpYXfX2Ufso5ePBU1'
 else
   myPASSWORD=$(openssl passwd -1 ''$tmpWORD'')
 fi
