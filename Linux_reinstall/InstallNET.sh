@@ -222,7 +222,8 @@ while [[ $# -ge 1 ]]; do
       ;;
     --autoplugadapter)
       shift
-      autoPlugAdapter='1'
+      autoPlugAdapter="$1"
+      shift
       ;;
     --loader)
       shift
