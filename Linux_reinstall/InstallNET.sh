@@ -2148,13 +2148,14 @@ function checkDHCP() {
   [[ "$Network6Config" == "" ]] && Network6Config="isStatic"
 }
 
-# $1 is "$tmpDHCP".
+# $1 is "$tmpDHCP", $2 is "$virtWhat".
+# For GCP, network config method for netboot kernel must be static. 
 function setDhcpOrStatic() {
   [[ "$1" == "dhcp" || "$1" == "auto" || "$1" == "automatic" || "$1" == "true" || "$1" == "yes" || "$1" == "1" ]] && {
     Network4Config="isDHCP"
     Network6Config="isDHCP"
   }
-  [[ "$1" == "static" || "$1" == "manual" || "$1" == "none" || "$1" == "false" || "$1" == "no" || "$1" == "0" ]] && {
+  [[ "$1" == "static" || "$1" == "manual" || "$1" == "none" || "$1" == "false" || "$1" == "no" || "$1" == "0" || "$2" =~ "google" ]] && {
     Network4Config="isStatic"
     Network6Config="isStatic"
   }
@@ -2647,7 +2648,7 @@ ip6DNS=$(checkDNS "$ip6DNS")
 if [[ -n "$ipAddr" && -n "$ipMask" && -n "$ipGate" ]] && [[ -z "$ip6Addr" && -z "$ip6Mask" && -z "$ip6Gate" ]]; then
   setNet='1'
   checkDHCP "$CurrentOS" "$CurrentOSVer" "$IPStackType"
-  setDhcpOrStatic "$tmpDHCP"
+  setDhcpOrStatic "$tmpDHCP" "$virtWhat"
   Network4Config="isStatic"
   acceptIPv4AndIPv6SubnetValue "$ipMask" ""
   [[ "$IPStackType" != "IPv4Stack" ]] && getIPv6Address
@@ -2660,7 +2661,7 @@ elif [[ -n "$ipAddr" && -n "$ipMask" && -n "$ipGate" ]] && [[ -n "$ip6Addr" && -
 elif [[ -z "$ipAddr" && -z "$ipMask" && -z "$ipGate" ]] && [[ -n "$ip6Addr" && -n "$ip6Mask" && -n "$ip6Gate" ]]; then
   setNet='1'
   checkDHCP "$CurrentOS" "$CurrentOSVer" "$IPStackType"
-  setDhcpOrStatic "$tmpDHCP"
+  setDhcpOrStatic "$tmpDHCP" "$virtWhat"
   Network6Config="isStatic"
   acceptIPv4AndIPv6SubnetValue "" "$ip6Mask"
   getIPv4Address
@@ -2668,7 +2669,7 @@ fi
 
 if [[ "$setNet" == "0" ]]; then
   checkDHCP "$CurrentOS" "$CurrentOSVer" "$IPStackType"
-  setDhcpOrStatic "$tmpDHCP"
+  setDhcpOrStatic "$tmpDHCP" "$virtWhat"
   getIPv4Address
   [[ "$IPStackType" != "IPv4Stack" ]] && getIPv6Address
   if [[ "$IPStackType" == "BiStack" && "$i6AddrNum" -ge "2" ]]; then
