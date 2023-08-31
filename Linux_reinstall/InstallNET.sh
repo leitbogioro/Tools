@@ -2889,7 +2889,7 @@ if [[ -n "$tmpDIST" ]]; then
       DIST="$DISTCheck"
     fi
     [[ -z "$DIST" ]] && {
-      echo -ne '\nThe dists version not found in this mirror, Please check it! \n\n'
+      echo -ne "\nThe dists version not found in this mirror, Please check it! \n\n"
       bash $0 error
       exit 1
     }
@@ -2932,10 +2932,10 @@ fi
 [[ "$setNetbootXyz" == "1" ]] && SpikCheckDIST="1"
 if [[ "$SpikCheckDIST" == '0' ]]; then
   echo -ne "\n${aoiBlue}# Check DIST${plain}\n"
-  DistsList="$(wget --no-check-certificate -qO- "$LinuxMirror/dists/" |grep -o 'href=.*/"' |cut -d'"' -f2 |sed '/-\|old\|Debian\|experimental\|stable\|test\|sid\|devel/d' |grep '^[^/]' |sed -n '1h;1!H;$g;s/\n//g;s/\//\;/g;$p')"
-  [[ "$linux_relese" == 'kali' ]] && DistsList="$(wget --no-check-certificate -qO- "$LinuxMirror/dists/" | grep -o 'href=.*/"' | cut -d'"' -f2 | grep '^[^/]' | sed -n '1h;1!H;$g;s/\n//g;s/\//\;/g;$p')"
-  [[ "$linux_relese" == 'alpinelinux' ]] && DistsList="$(wget --no-check-certificate -qO- "$LinuxMirror/" | grep -o 'href=.*/"' | cut -d'"' -f2 | grep '^[^/]' | sed -n '1h;1!H;$g;s/\n//g;s/\//\;/g;$p')"
-  for CheckDEB in `echo "$DistsList" |sed 's/;/\n/g'`
+  [[ "$linux_relese" == 'debian' ]] && DistsList="$(wget --no-check-certificate -qO- "$LinuxMirror/dists/" | grep -o 'href=.*/"' | cut -d'"' -f2 | sed '/-\|old\|README\|Debian\|experimental\|stable\|test\|sid\|devel/d' | grep '^[^/]' | sed -n '1h;1!H;$g;s/\n//g;s/\//\;/g;$p')"
+  [[ "$linux_relese" == 'kali' ]] && DistsList="$(wget --no-check-certificate -qO- "$LinuxMirror/dists/" | grep -o 'href=.*/"' | cut -d'"' -f2 | sed '/debian\|only\|last\|edge/d' | grep '^[^/]' | sed -n '1h;1!H;$g;s/\n//g;s/\//\;/g;$p')"
+  [[ "$linux_relese" == 'alpinelinux' ]] && DistsList="$(wget --no-check-certificate -qO- "$LinuxMirror/" | grep -o 'href=.*/"' | cut -d'"' -f2 | sed '/-/d' | grep '^[^/]' | sed -n '1h;1!H;$g;s/\n//g;s/\//\;/g;$p')"
+  for CheckDEB in `echo "$DistsList" | sed 's/;/\n/g'`
     do
 # In some mirror, the value of parameter "DistsList" is "?C=N;O=Dbookworm;bullseye;buster;http:;;wisepoint.jp;product;wpshibb;"
 # The second item in "DistsList" which is splited by ";" is O=Dbookworm.
@@ -2943,7 +2943,7 @@ if [[ "$SpikCheckDIST" == '0' ]]; then
       [[ "$CheckDEB" =~ "$DIST" ]] && FindDists='1' && break;
     done
   [[ "$FindDists" == '0' ]] && {
-    echo -ne '\n[${red}Error${plain}] The dists version not found, Please check it! \n\n'
+    echo -ne "\n[${red}Error${plain}] The dists version not found, Please check it! \n\n"
     exit 1
   }
   echo -e "\nSuccess"
