@@ -2124,6 +2124,7 @@ function checkDHCP() {
         Network4Config="isDHCP"
         [[ `timeout 4s grep -iw "iface" $NetCfgWhole | grep -iw "$interface6" | grep -iw "inet6" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
       fi
+# Configure method in OVH can't boot with dhcp.
       [[ -n $(grep "accept_ra" $NetCfgWhole) ]] && { Network4Config="isStatic"; Network6Config="isStatic"; }
     elif [[ "$1" == 'Ubuntu' && "$networkManagerType" == "netplan" ]]; then
 # For netplan(Ubuntu 18 and later), if network configuration is Static whether IPv4 or IPv6.
