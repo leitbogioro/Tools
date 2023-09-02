@@ -858,6 +858,8 @@ function getUserTimeZone() {
   if [[ ! "$TimeZone" =~ ^[a-zA-Z] ]]; then
     loginUser=`who am i | awk '{print $1}' | sed 's/(//g' | sed 's/)//g'`
     [[ -z "$loginUser" ]] && loginUser="root"
+# "azureuser" can't be shown compeletely in output of "netstat" and it's the default username in official template of Azure.
+    [[ "${#loginUser}" -ge "7" ]] && loginUser=`echo ${loginUser:0:7}`
 # Alpine Linux doesn't support "who am i".
 # In some situations, there are several users with different IPs to connect to server by ssh service,
 # So we need to filter a list of "Send-Q" and IPs from netstat and sort from largest to smallest by "Sent-Q" to ensure which IP is the current user,
