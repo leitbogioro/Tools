@@ -24,7 +24,7 @@ Debian series(Debian / Ubuntu / Kali):
 <pre><code>apt install wget -y</code></pre>
 RedHat series, only based on RedHat 7+, grub2(CentOS / AlmaLinux / CloudLinux / RockyLinux / OracleLinux / Fedora / VzLinux / ScientificOS / RedHat Enterprise Linux / Tencent OpenCloudOS / AWS AmazonLinux / AlibabaCloudLinux or AliyunLinux / OpenAnolis):
 <pre><code>yum install wget -y</code></pre>
-or:
+or (for Redhat 8+):
 <pre><code>dnf install wget -y</code></pre>
 Alpine Linux:
 <pre><code>apk update</code></pre>
