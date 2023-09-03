@@ -18,7 +18,7 @@ Switch to the default direction of the root user
 <pre><code>cd ~</code></pre>
 And then continue to download and execute this script.
 
-## Dependences && Supporting the following OS list to install to the OS that script supported:
+## Dependences and OSs are supporting at the following list to install to the OS that script supported:
 Debian series(Debian / Ubuntu / Kali):
 <pre><code>apt update -y</code></pre>
 <pre><code>apt install wget -y</code></pre>
