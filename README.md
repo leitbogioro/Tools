@@ -18,11 +18,6 @@ Switch to the default direction of the root user
 <pre><code>cd ~</code></pre>
 And then continue to download and execute this script.
 
-## Download:
-<pre><code>wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh</code></pre>
-Servers in mainland of China:
-<pre><code>wget --no-check-certificate -qO InstallNET.sh 'https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh</code></pre>
-
 ## Dependences && Supporting the following OS list to install to the OS that script supported:
 Debian series(Debian / Ubuntu / Kali):
 <pre><code>apt update -y</code></pre>
@@ -35,6 +30,11 @@ Alpine Linux:
 <pre><code>apk update</code></pre>
 <pre><code>apk add bash wget</code></pre>
 <pre><code>sed -i 's/root:\/bin\/ash/root:\/bin\/bash/g' /etc/passwd</code></pre>
+
+## Download:
+<pre><code>wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh</code></pre>
+Servers in mainland of China:
+<pre><code>wget --no-check-certificate -qO InstallNET.sh 'https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh</code></pre>
 
 ## Quickly start
 If you need to add other parameters, version number must be assigned!
