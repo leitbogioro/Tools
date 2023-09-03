@@ -12,9 +12,9 @@ Something about scripts
 
 ![5](5.png)
 
-## If you are not a root user, try to:
+## If you are not a root user, try to execute the following those to switch to get root user permissions:
 <pre><code>sudo -s</code></pre>
-Switch to the default direction of the root user"
+Switch to the default direction of the root user
 <pre><code>cd ~</code></pre>
 And then continue to download and execute this script.
 
