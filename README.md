@@ -22,7 +22,7 @@ And then continue to download and execute this script.
 Debian series(Debian / Ubuntu / Kali):
 <pre><code>apt update -y</code></pre>
 <pre><code>apt install wget -y</code></pre>
-RedHat series, only based on RedHat 7+, grub2(CentOS / AlmaLinux / RockyLinux / OracleLinux / Fedora / VzLinux / ScientificOS / RedHat Enterprise Linux / Tencent OpenCloudOS / AWS AmazonLinux / AlibabaCloudLinux or AliyunLinux / OpenAnolis):
+RedHat series, only based on RedHat 7+, grub2(CentOS / AlmaLinux / CloudLinux / RockyLinux / OracleLinux / Fedora / VzLinux / ScientificOS / RedHat Enterprise Linux / Tencent OpenCloudOS / AWS AmazonLinux / AlibabaCloudLinux or AliyunLinux / OpenAnolis):
 <pre><code>yum install wget -y</code></pre>
 or:
 <pre><code>dnf install wget -y</code></pre>
