@@ -1355,7 +1355,7 @@ function checkWarp() {
       done
     }
     [[ "$sysctlWarpProcess" -gt "0" || "$rcWarpProcess" -gt "0" ]] && warpStatic="1"
-  }  
+  }
   [[ "$warpStatic" == "1" ]] && {
     [[ -z "$ipGate" ]] && IPStackType="IPv6Stack"
     [[ -z "$ip6Gate" ]] && IPStackType="IPv4Stack"
