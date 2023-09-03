@@ -12,6 +12,12 @@ Something about scripts
 
 ![5](5.png)
 
+## If you are not a root user, try to:
+<pre><code>sudo -s</code></pre>
+Switch to the default direction of the root user"
+<pre><code>cd ~</code></pre>
+And then continue to download and execute this script.
+
 ## Download:
 <pre><code>wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh</code></pre>
 Servers in mainland of China:
