@@ -12,7 +12,7 @@ Something about scripts
 
 ![5](5.png)
 
-## If you are not a root user, try to execute the following those to switch to get root user permissions:
+## If you are not a root user, try to execute the following commands to switch to get root user permission:
 <pre><code>sudo -s</code></pre>
 Switch to the default direction of the root user
 <pre><code>cd ~</code></pre>
