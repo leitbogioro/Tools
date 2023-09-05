@@ -2309,7 +2309,7 @@ function DebianPreseedProcess() {
     elif [[ "$setCloudKernel" == "1" ]]; then
       [[ "$linux_relese" == 'debian' && "$DebianDistNum" -ge "11" || "$linux_relese" == 'kali' ]] && AddCloudKernel="$addCloudKernelCmd linux-image-cloud-$VER" || AddCloudKernel=""
     fi
-    [[ -n "$setRaid" ]] && AddCloudKernel=""
+    [[ -n "$setRaid" || "$ddMode" == '1' ]] && AddCloudKernel=""
     ddWindowsEarlyCommandsOfAnna='anna-install libfuse2-udeb fuse-udeb ntfs-3g-udeb libcrypto3-udeb libpcre2-8-0-udeb libssl3-udeb libuuid1-udeb zlib1g-udeb wget-udeb'
     tmpDdWinsEarlyCommandsOfAnna="$ddWindowsEarlyCommandsOfAnna"
 # Default to make a GPT partition to support 3TB hard drive or larger.
