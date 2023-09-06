@@ -186,7 +186,7 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**-cloudkernel**: Replace formal linux kernel to cloud kernel because numerous hardware drivers like printers, scanners, sound cards, usb controllers etc. which are not necessary in environment of virtual machines of Cloud Computing Platforms and these will be eliminated in the latter aims to help reducing space occupation of memory and hard drive. In situation of raid and dd mode, installing cloud kernel will be disabled. -cloudkernel "0" is to disable installing linux cloud kernel by force, -cloudkernel "1" is to enable installing linux cloud kernel by force.
+**-cloudkernel**: Replace formal linux kernel to cloud kernel because numerous hardware drivers like printers, scanners, sound cards, usb controllers etc. which are not necessary in environment of virtual machines of Cloud Computing Platforms and these will be eliminated in the latter aims to help reducing space occupation of memory and hard drive. In situation of raid and dd mode, installing cloud kernel will be disabled. -cloudkernel "0" is to disable installing linux cloud kernel by force, -cloudkernel "1" is to enable installing linux cloud kernel by force. This option is only valid for installing to Debian 11+/Kali/AlpineLinux.
 <br />
 <br />
 
