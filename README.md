@@ -186,6 +186,10 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
+**-cloudkernel**: Replace formal linux kernel to cloud kernel because numerous hardware drivers like printers, scanners, sound cards, usb controllers etc. which are not necessary in environment of virtual machines of Cloud Computing Platforms and these will be eliminated in the latter aims to help reducing space occupation of memory and hard drive. In situation of raid and dd mode, installing cloud kernel will be disabled. -cloudkernel "0" is to disable installing linux cloud kernel by force, -cloudkernel "1" is to enable installing linux cloud kernel by force.
+<br />
+<br />
+
 **--network "dhcp/auto" or "static/manual"**: Default to use DHCP to finish network configuration. If your cloud provider is a small or middle merchant, the network of your machine may be static so you need to add it. it is equal with add --ip-addr "" --ip-mask "" --ip-gate "", if you add this, don't distribute the following three items again! It must be added in the last of the command.
 <br />
 <br />
@@ -238,7 +242,15 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**--autoplugadapter**: Only valid for Debian/Kali, when add this, the valid interface config method in /etc/network/interfaces will be replaced from "allow-hotplug" to "auto". For multiple interfaces environment, if the interface which is configurated by "auto", regardless of it is plugged by internet cable, Debian/Kali will continuously try to wake and start up it contains with dhcp even timeout. Set up with "allow-hotplug(default setting by Debian/Kali installer)" will skip this problem, but if one interface has more than 1 IP or it will connect to another network bridge, when system restarted, the interfaces' initialization will be failed, in most of VPS environments, the interfaces of machine should be stable, so replace the default from "allow-hotplug" to "auto" for interfaces config method is a better idea, but it causes some server spending a long time to boot up(try to activate all internet adapters and waiting dhcp fatal time).
+**--autoplugadapter**: Only valid for Debian/Kali, the connection method of network adapter will be replaced from "allow-hotplug" to "auto" in /etc/network/interfaces. --autoplugadapter "0" is disabled by force, --autoplugadapter "1" is enabled, it's enabled by default. When add this, for multiple interfaces environment, if the interface which is configurated by "auto", regardless of it is plugged by internet cable, Debian/Kali will continuously try to wake and start up it contains with dhcp even timeout. Set up with "allow-hotplug(default setting by Debian/Kali installer)" will skip this problem, but if one interface has more than 1 IP or it will connect to another network bridge, when system restarted, the interfaces' initialization will be failed, in most of VPS environments, the interfaces of machine should be stable, so replace the default from "allow-hotplug" to "auto" for interfaces config method is a better idea, but it causes some server spending a long time to boot up(try to activate all internet adapters and waiting dhcp fatal time).
+<br />
+<br />
+
+**--motd**: Enable to insert a set of modified MOTD(message of the day) scripts for a convenience to check executing status of a server when connecting by ssh shell, default is disabled.
+<br />
+<br />
+
+**--fail2ban**: Install and configure fail2ban to prevent from suspicious ssh port blastings. To reduce occupation of the memory, those servers which memory are less than 2GB will disabled automatically. --fail2ban "0" is disabled by force, --fail2ban "1" is enabled by force.This option is only valid for Debian/Kali/AlpineLinux. 
 <br />
 <br />
 
