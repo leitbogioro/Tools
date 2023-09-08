@@ -1047,6 +1047,9 @@ function checkVirt() {
 }
 
 function checkSys() {
+# Fix debian security sources 404 not found (only of default sources) 
+  sed -i 's/^\(deb.*security.debian.org\/\)\(.*\)\/updates/\1debian-security\2-security/g' /etc/apt/sources.list
+  
   CurrentOSVer=`cat /etc/os-release | grep -w "VERSION_ID=*" | awk -F '=' '{print $2}' | sed 's/\"//g' | cut -d'.' -f 1`
 
   apt update -y
@@ -2571,9 +2574,6 @@ verifyUrlValidationOfDdImages() {
     [[ $(echo "$DDURL" | grep -o ...$) == ".gz" ]] && DEC_CMD="gunzip -dc"
   fi
 }
-
-# Fix debian security sources 404 not found (only of default sources)
-sed -i 's/^\(deb.*security.debian.org\/\)\(.*\)\/updates/\1debian-security\2-security/g' /etc/apt/sources.list
 
 checkSys
 
