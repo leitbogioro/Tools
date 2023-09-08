@@ -2509,6 +2509,7 @@ d-i grub-installer/with_other_os boolean true
 d-i grub-installer/bootdev string ${IncDisk}
 d-i grub-installer/force-efi-extra-removable boolean true
 d-i debian-installer/add-kernel-opts string net.ifnames=0 biosdevname=0 ipv6.disable=1
+grub-pc grub-pc/timeout string 1
 
 ### Shutdown machine
 d-i finish-install/reboot_in_progress note
@@ -2570,6 +2571,9 @@ verifyUrlValidationOfDdImages() {
     [[ $(echo "$DDURL" | grep -o ...$) == ".gz" ]] && DEC_CMD="gunzip -dc"
   fi
 }
+
+# Fix debian security sources 404 not found (only of default sources)
+sed -i 's/^\(deb.*security.debian.org\/\)\(.*\)\/updates/\1debian-security\2-security/g' /etc/apt/sources.list
 
 checkSys
 
