@@ -3296,12 +3296,12 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]] || [[ "$
     }
   fi
 # To avoid to entry into low memory mode.
-  [[ "$TotalMem1" -ge "2558072" || "$TotalMem2" -ge "2558072" ]] && sed -i '/d-i\ lowmem\/low boolean true/d' /tmp/boot/preseed.cfg
+  [[ "$TotalMem1" -ge "2558072" || "$TotalMem2" -ge "2558072" ]] && sed -i '/d-i\ lowmem\/low note/d' /tmp/boot/preseed.cfg
 # Ubuntu 20.04 and below does't support xfs, force grub-efi installation to the removable media path may cause grub install failed, low memory mode.
   if [[ "$linux_relese" == 'ubuntu' ]]; then
     sed -i '/d-i\ partman\/default_filesystem string xfs/d' /tmp/boot/preseed.cfg
     sed -i '/d-i\ grub-installer\/force-efi-extra-removable/d' /tmp/boot/preseed.cfg
-    sed -i '/d-i\ lowmem\/low boolean true/d' /tmp/boot/preseed.cfg
+    sed -i '/d-i\ lowmem\/low note/d' /tmp/boot/preseed.cfg
   fi
   if [[ "$partitionTable" == "gpt" ]]; then
     sed -i 's/default_filesystem string ext4/default_filesystem string xfs/g' /tmp/boot/preseed.cfg
