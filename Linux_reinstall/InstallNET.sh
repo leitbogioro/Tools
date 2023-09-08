@@ -2415,7 +2415,7 @@ d-i console-setup/layoutcode string us
 d-i keyboard-configuration/xkb-keymap string us
 
 ### Low memory mode
-d-i lowmem/low boolean true
+d-i lowmem/low note
 
 ### Disable security, updates and backports
 d-i apt-setup/services-select multiselect
