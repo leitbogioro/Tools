@@ -2739,7 +2739,7 @@ fi
 
 setDisk=$(echo "$setDisk" | sed 's/[A-Z]/\l&/g')
 getDisk "$setDisk"
-echo -ne "\n${aoiBlue}# Installing Disks${plain}\n\n"
+echo -ne "\n${aoiBlue}# Installing and Formatting Disks${plain}\n\n"
 [[ "$setDisk" == "all" || -n "$setRaid" ]] && echo "$AllDisks" || echo "$IncDisk"
 
 echo -ne "\n${aoiBlue}# Motherboard Firmware${plain}\n\n"
