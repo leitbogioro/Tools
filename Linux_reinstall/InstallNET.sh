@@ -1953,7 +1953,7 @@ function getInterface() {
         networkManagerType="netplan"
         tmpNetCfgFiles=""
         for Count in $readNetplan; do
-          tmpNetCfgFiles+=$(echo -e "\n"`grep -wrl "network" | grep -wrl "ethernets" | grep -wrl "$interface4\|$interface6" | grep -wrl "version" "$Count" 2>/dev/null`)
+          tmpNetCfgFiles+=$(echo -e "\n"`grep -wrl "network" | grep -wrl "ethernets" | grep -wrl "$interface4\|$interface6" "$Count" 2>/dev/null`)
         done
         getLargestOrSmallestFile "$tmpNetCfgFiles" "sort -hr"
         NetCfgFile="$FileName"
@@ -2134,8 +2134,7 @@ function checkDHCP() {
 # But if is DHCP, dhcp(4 or 6): yes or true is necessary.
 # Typical format of dhcp status in "*.yaml" is "dhcp4/6: true/false" or "dhcp4/6: yes/no".
 # The raw sample processed by function "parseYaml" is: " network_ethernets_enp1s0_dhcp4="true" network_ethernets_enp1s0_dhcp6="true" ".
-      dhcp4Status=$(parseYaml "$NetCfgWhole" | grep "$interface4" | grep "dhcp")
-      dhcp6Status=$(parseYaml "$NetCfgWhole" | grep "$interface6" | grep "dhcp")
+      [[ ! -z "$NetCfgWhole" ]] && { dhcp4Status=$(parseYaml "$NetCfgWhole" | grep "$interface4" | grep "dhcp"); dhcp6Status=$(parseYaml "$NetCfgWhole" | grep "$interface6" | grep "dhcp"); }
       if [[ "$3" == "IPv4Stack" ]]; then
         Network6Config="isDHCP"
         [[ "$dhcp4Status" =~ "dhcp4=\"true\"" || "$dhcp4Status" =~ "dhcp4=\"yes\"" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
@@ -3265,11 +3264,11 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]] || [[ "$
     sed -i '/netcfg\/confirm_static/d' /tmp/boot/preseed.cfg
   fi
 # If server has only one disk, lv/vg/pv volumes removement by force should be disallowed, it may causes partitioner continuous execution but not finished.
-  if [[ "$disksNum" -le "1" || "$setDisk" != "all" || -n "$setRaid" ]]; then
+  if [[ "$disksNum" -le "1" || -n "$setRaid" ]]; then
     sed -i 's/lvremove --select all -ff -y;//g' /tmp/boot/preseed.cfg
     sed -i 's/vgremove --select all -ff -y;//g' /tmp/boot/preseed.cfg
     sed -i 's/pvremove \/dev\/\* -ff -y;//g' /tmp/boot/preseed.cfg
-  elif [[ "$disksNum" -gt "1" && "$setDisk" == "all" ]]; then
+  elif [[ "$disksNum" -ge "2" ]]; then
 # Some virtual machines will hanging on partition step if execute pvremove.
     [[ -z "$virtWhat" ]] || sed -i 's/pvremove \/dev\/\* -ff -y;//g' /tmp/boot/preseed.cfg
   fi
