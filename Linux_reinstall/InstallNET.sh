@@ -2509,7 +2509,7 @@ d-i grub-installer/with_other_os boolean true
 d-i grub-installer/bootdev string ${IncDisk}
 d-i grub-installer/force-efi-extra-removable boolean true
 d-i debian-installer/add-kernel-opts string net.ifnames=0 biosdevname=0 ipv6.disable=1
-grub-pc grub-pc/timeout string 1
+grub-pc grub-pc/timeout string 2
 
 ### Shutdown machine
 d-i finish-install/reboot_in_progress note
