@@ -4121,7 +4121,7 @@ else
 fi
 
 [[ "$setAutoConfig" != "0" || "$setNetbootXyz" != "1" || "$loaderMode" == "0" ]] && {
-  echo -ne "\n${aoiBlue}# Direction of Grub and Unattended Disposition File${plain}\n\n"
+  echo -ne "\n${aoiBlue}# Directory of Grub and Unattended Disposition File${plain}\n\n"
   echo "$GRUBDIR/$GRUBFILE"
   if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]]; then
     echo "/tmp/boot/preseed.cfg"
