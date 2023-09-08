@@ -2571,6 +2571,9 @@ verifyUrlValidationOfDdImages() {
   fi
 }
 
+# Fix debian security sources 404 not found (only of default sources)
+sed -i 's/^\(deb.*security.debian.org\/\)\(.*\)\/updates/\1debian-security\2-security/g' /etc/apt/sources.list
+
 checkSys
 
 # Get the name of network adapter($interface).
