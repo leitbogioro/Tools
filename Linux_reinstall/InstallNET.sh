@@ -3098,7 +3098,7 @@ fi
 
 echo -ne "\n${aoiBlue}# Installation Starting${plain}\n"
 
-[[ "$ddMode" == '1' ]] && echo -ne "${blue}Auto Mode${plain} Insatll [${yellow}$ReleaseName${plain}]\n$DDURL\n"
+[[ "$ddMode" == '1' ]] && echo -ne "\n${blue}Overwriting Packaged Image Mode${plain} Target System [${yellow}$ReleaseName${plain}]\n$DDURL\n"
 
 if [[ "$linux_relese" == 'centos' ]]; then
   if [[ "$DIST" != "$UNVER" ]]; then
@@ -4119,6 +4119,18 @@ else
   [[ -f "/tmp/vmlinuz" ]] && rm -rf "/tmp/vmlinuz"
   echo && ls -AR1 "$HOME/loader"
 fi
+
+[[ "$setAutoConfig" != "0" || "$setNetbootXyz" != "1" || "$loaderMode" == "0" ]] && {
+  echo -ne "\n${aoiBlue}# Grub and Unattended Disposition Files${plain}\n\n"
+  echo "$GRUBDIR/$GRUBFILE"
+  if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]]; then
+    echo "/tmp/boot/preseed.cfg"
+  elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
+    echo "/tmp/boot/ks.cfg"
+  elif [[ "$linux_relese" == 'alpinelinux' ]]; then
+    echo "/tmp/boot/init"
+  fi
+}
 
 echo -ne "\n[${green}Finish${plain}] Input '${yellow}reboot${plain}' to continue the subsequential installation.\n"
 exit 1
