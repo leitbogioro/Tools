@@ -641,7 +641,7 @@ function ipv4SubnetCertificate() {
 # So in summary of the IPv4 sample in above, we should assign subnet mask "128.0.0.1"(prefix "1") for it.
 }
 
-# $1 is "$setDisk"
+# $1 is "$setDisk", $2 is "linux_relese"
 function getDisk() {
 # $disks is definited as the default disk, if server has 2 and more disks, the first disk will be responsible of the grub booting.
   rootPart=`lsblk -ip | grep -v "fd[0-9]*\|sr[0-9]*\|ram[0-9]*\|loop[0-9]*" | sed 's/[[:space:]]*$//g' | grep -w "part /\|part /boot" | head -n 1 | cut -d' ' -f1 | sed 's/..//'`
@@ -694,6 +694,11 @@ function getDisk() {
 # Allow user to install system to one disk manually.
   [[ -n "$1" && "$1" =~ ^[a-z0-9]+$ && "$1" != "all" ]] && {
     [[ "$1" =~ "/dev/" ]] && IncDisk="$1" || IncDisk="/dev/$1"
+  }
+
+# Remove all lvm volumes by force for Debian and Kali.
+  [[ -z "$1" && "$disksNum" -ge "2" && -n $(lsblk -ip | awk '{print $6}' | grep -io "lvm") ]] && {
+    [[ "$2" == 'debian' || "$2" == 'kali' ]] && setDisk="all"
   }
 }
 
@@ -2313,8 +2318,8 @@ function DebianPreseedProcess() {
     elif [[ "$setCloudKernel" == "1" ]]; then
       [[ "$linux_relese" == 'debian' && "$DebianDistNum" -ge "11" || "$linux_relese" == 'kali' ]] && AddCloudKernel="$addCloudKernelCmd linux-image-cloud-$VER" || AddCloudKernel=""
     fi
-# Despite VMware is a kind of virtualization but Cloud kernel isn't suitable for it otherwise Debian series will meet a fatal when booting into the newly installed system.
-    [[ -n "$setRaid" || "$ddMode" == '1' || -n `echo $virtWhat | grep -io 'vmware'` ]] && AddCloudKernel=""
+# Despite VMware and Virtualbox are some kinds of virtualizations but Cloud kernel isn't suitable for them otherwise Debian series will meet a fatal when booting into the newly installed system.
+    [[ -n "$setRaid" || "$ddMode" == '1' || -n `echo $virtWhat | grep -io 'vmware\|virtualbox'` ]] && AddCloudKernel=""
     ddWindowsEarlyCommandsOfAnna='anna-install libfuse2-udeb fuse-udeb ntfs-3g-udeb libcrypto3-udeb libpcre2-8-0-udeb libssl3-udeb libuuid1-udeb zlib1g-udeb wget-udeb'
     tmpDdWinsEarlyCommandsOfAnna="$ddWindowsEarlyCommandsOfAnna"
 # Default to make a GPT partition to support 3TB hard drive or larger.
@@ -2746,7 +2751,7 @@ else
 fi
 
 setDisk=$(echo "$setDisk" | sed 's/[A-Z]/\l&/g')
-getDisk "$setDisk"
+getDisk "$setDisk" "$linux_relese"
 echo -ne "\n${aoiBlue}# Installing and Formatting Disks${plain}\n\n"
 [[ "$setDisk" == "all" || -n "$setRaid" ]] && echo "$AllDisks" || echo "$IncDisk"
 
