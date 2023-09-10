@@ -2130,7 +2130,7 @@ function checkDHCP() {
         [[ `timeout 4s grep -iw "iface" $NetCfgWhole | grep -iw "$interface6" | grep -iw "inet6" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
       fi
 # Configure method in OVH can't boot with dhcp.
-      [[ -n $(grep "accept_ra" $NetCfgWhole) ]] && { Network4Config="isStatic"; Network6Config="isStatic"; }
+      [[ -n $(timeout 4s grep "accept_ra" $NetCfgWhole) ]] && { Network4Config="isStatic"; Network6Config="isStatic"; }
     elif [[ "$1" == 'Ubuntu' && "$networkManagerType" == "netplan" ]]; then
 # For netplan(Ubuntu 18 and later), if network configuration is Static whether IPv4 or IPv6.
 # in "*.yaml" config file, dhcp(4 or 6): no or false doesn't exist is allowed.
@@ -2162,7 +2162,7 @@ function setDhcpOrStatic() {
     Network4Config="isDHCP"
     Network6Config="isDHCP"
   }
-  [[ "$1" == "static" || "$1" == "manual" || "$1" == "none" || "$1" == "false" || "$1" == "no" || "$1" == "0" || "$2" =~ "google" ]] && {
+  [[ "$1" == "static" || "$1" == "manual" || "$1" == "none" || "$1" == "false" || "$1" == "no" || "$1" == "0" || -n `echo $2 | grep -io 'google'` ]] && {
     Network4Config="isStatic"
     Network6Config="isStatic"
   }
@@ -2311,7 +2311,8 @@ function DebianPreseedProcess() {
     elif [[ "$setCloudKernel" == "1" ]]; then
       [[ "$linux_relese" == 'debian' && "$DebianDistNum" -ge "11" || "$linux_relese" == 'kali' ]] && AddCloudKernel="$addCloudKernelCmd linux-image-cloud-$VER" || AddCloudKernel=""
     fi
-    [[ -n "$setRaid" || "$ddMode" == '1' ]] && AddCloudKernel=""
+# Despite VMware is a kind of virtualization but Cloud kernel isn't suitable for it otherwise Debian series will meet a fatal when booting into the newly installed system.
+    [[ -n "$setRaid" || "$ddMode" == '1' || -n `echo $virtWhat | grep -io 'vmware'` ]] && AddCloudKernel=""
     ddWindowsEarlyCommandsOfAnna='anna-install libfuse2-udeb fuse-udeb ntfs-3g-udeb libcrypto3-udeb libpcre2-8-0-udeb libssl3-udeb libuuid1-udeb zlib1g-udeb wget-udeb'
     tmpDdWinsEarlyCommandsOfAnna="$ddWindowsEarlyCommandsOfAnna"
 # Default to make a GPT partition to support 3TB hard drive or larger.
@@ -2512,6 +2513,7 @@ d-i grub-installer/with_other_os boolean true
 d-i grub-installer/bootdev string ${IncDisk}
 d-i grub-installer/force-efi-extra-removable boolean true
 d-i debian-installer/add-kernel-opts string net.ifnames=0 biosdevname=0 ipv6.disable=1
+grub-pc grub-pc/hidden_timeout boolean false
 grub-pc grub-pc/timeout string 2
 
 ### Shutdown machine
@@ -3267,16 +3269,17 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]] || [[ "$
     sed -i '/netcfg\/get_.*/d' /tmp/boot/preseed.cfg
     sed -i '/netcfg\/confirm_static/d' /tmp/boot/preseed.cfg
   fi
+  [[ "$partitionTable" == "gpt" ]] && sed -i 's/default_filesystem string ext4/default_filesystem string xfs/g' /tmp/boot/preseed.cfg
 # If server has only one disk, lv/vg/pv volumes removement by force should be disallowed, it may causes partitioner continuous execution but not finished.
-  if [[ "$disksNum" -le "1" || -n "$setRaid" ]]; then
+  if [[ "$disksNum" -le "1" || "$setDisk" != "all" || -n "$setRaid" ]]; then
     sed -i 's/lvremove --select all -ff -y;//g' /tmp/boot/preseed.cfg
     sed -i 's/vgremove --select all -ff -y;//g' /tmp/boot/preseed.cfg
     sed -i 's/pvremove \/dev\/\* -ff -y;//g' /tmp/boot/preseed.cfg
-  elif [[ "$disksNum" -ge "2" ]]; then
+  elif [[ "$disksNum" -ge "2" && "$setDisk" == "all" ]]; then
 # Some virtual machines will hanging on partition step if execute pvremove.
     [[ -z "$virtWhat" ]] || sed -i 's/pvremove \/dev\/\* -ff -y;//g' /tmp/boot/preseed.cfg
   fi
-  if [[ "$disksNum" -gt "1" ]] && [[ -n "$setRaid" ]]; then
+  if [[ "$disksNum" -ge "2" ]] && [[ -n "$setRaid" ]]; then
     sed -i 's/d-i partman\/early_command.*//g' /tmp/boot/preseed.cfg
     sed -ri "/d-i grub-installer\/bootdev.*/c\d-i grub-installer\/bootdev string $AllDisks" /tmp/boot/preseed.cfg
   fi
@@ -3302,9 +3305,6 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]] || [[ "$
     sed -i '/d-i\ partman\/default_filesystem string xfs/d' /tmp/boot/preseed.cfg
     sed -i '/d-i\ grub-installer\/force-efi-extra-removable/d' /tmp/boot/preseed.cfg
     sed -i '/d-i\ lowmem\/low note/d' /tmp/boot/preseed.cfg
-  fi
-  if [[ "$partitionTable" == "gpt" ]]; then
-    sed -i 's/default_filesystem string ext4/default_filesystem string xfs/g' /tmp/boot/preseed.cfg
   fi
 # Kali preseed.cfg reference:
 # https://github.com/iesplin/kali-preseed/blob/master/preseed/core-minimal.cfg
