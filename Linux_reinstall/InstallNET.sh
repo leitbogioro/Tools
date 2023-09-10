@@ -2293,7 +2293,9 @@ function DebianModifiedPreseed() {
 # In this situation, the partition table and filesystem of the newly installed OS must be "mbr" and "ext4".
 # This case has been occurred in these cloud providers such as "app.cloudcone.com", "www.readyidc.com".
     CreateSoftLinkToGrub2FromGrub1="$1 ln -s /boot/grub/ /boot/grub2;"
-    export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${VimIndentEolStart} ${DnsChangePermanently} ${ModifyMOTD} ${ChangeSecurityMirror} ${BurnIrregularIpv4Gate} ${BurnIrregularIpv6Gate} ${SupportIPv6orIPv4} ${ReplaceActualIpPrefix} ${AutoPlugInterfaces} ${EnableSSH} ${ReviseMOTD} ${SupportZSH} ${EnableFail2ban} ${CreateSoftLinkToGrub2FromGrub1}"
+# Statement of "grub-pc/timeout" in "preseed.cfg" is only valid for BIOS.
+    [[ "$EfiSupport" == "enabled" ]] && SetGrubTimeout="$1 sed -ri 's/GRUB_TIMEOUT=5/GRUB_TIMEOUT=3/g' /etc/default/grub; $1 sed -ri 's/set timeout=5/set timeout=3/g' /boot/grub/grub.cfg;" || SetGrubTimeout=""
+    export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${VimIndentEolStart} ${DnsChangePermanently} ${ModifyMOTD} ${ChangeSecurityMirror} ${BurnIrregularIpv4Gate} ${BurnIrregularIpv6Gate} ${SupportIPv6orIPv4} ${ReplaceActualIpPrefix} ${AutoPlugInterfaces} ${EnableSSH} ${ReviseMOTD} ${SupportZSH} ${EnableFail2ban} ${CreateSoftLinkToGrub2FromGrub1} ${SetGrubTimeout}"
   fi
 }
 
@@ -2514,7 +2516,7 @@ d-i grub-installer/bootdev string ${IncDisk}
 d-i grub-installer/force-efi-extra-removable boolean true
 d-i debian-installer/add-kernel-opts string net.ifnames=0 biosdevname=0 ipv6.disable=1
 grub-pc grub-pc/hidden_timeout boolean false
-grub-pc grub-pc/timeout string 2
+grub-pc grub-pc/timeout string 3
 
 ### Shutdown machine
 d-i finish-install/reboot_in_progress note
