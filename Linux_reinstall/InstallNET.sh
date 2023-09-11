@@ -2121,37 +2121,39 @@ function checkDHCP() {
           [[ `timeout 4s sed -n "$NetCfg6LineNum"p $NetCfgWhole` == "method=auto" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
         fi
       fi
-    elif [[ "$1" == 'Debian' ]] || [[ "$1" == 'Kali' ]] || [[ "$1" == 'Ubuntu' && "$networkManagerType" == "ifupdown" ]] || [[ "$1" == 'AlpineLinux' ]]; then
+    elif [[ "$1" == 'Debian' ]] || [[ "$1" == 'Kali' ]] || [[ "$1" == 'Ubuntu' ]] || [[ "$1" == 'AlpineLinux' ]]; then
+      if [[ "$networkManagerType" == "ifupdown" ]]; then
 # Debian network configs may be deposited in the following directions.
 # /etc/network/interfaces or /etc/network/interfaces.d/interface or /run/network/interfaces.d/interface
-      if [[ "$3" == "IPv4Stack" ]]; then
-        Network6Config="isDHCP"
-        [[ `timeout 4s grep -iw "iface" $NetCfgWhole | grep -iw "$interface4" | grep -iw "inet" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
-      elif [[ "$3" == "BiStack" ]]; then
-        [[ `timeout 4s grep -iw "iface" $NetCfgWhole | grep -iw "$interface4" | grep -iw "inet" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
-        [[ `timeout 4s grep -iw "iface" $NetCfgWhole | grep -iw "$interface6" | grep -iw "inet6" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
-      elif [[ "$3" == "IPv6Stack" ]]; then
-        Network4Config="isDHCP"
-        [[ `timeout 4s grep -iw "iface" $NetCfgWhole | grep -iw "$interface6" | grep -iw "inet6" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
-      fi
+        if [[ "$3" == "IPv4Stack" ]]; then
+          Network6Config="isDHCP"
+          [[ `timeout 4s grep -iw "iface" $NetCfgWhole | grep -iw "$interface4" | grep -iw "inet" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
+        elif [[ "$3" == "BiStack" ]]; then
+          [[ `timeout 4s grep -iw "iface" $NetCfgWhole | grep -iw "$interface4" | grep -iw "inet" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
+          [[ `timeout 4s grep -iw "iface" $NetCfgWhole | grep -iw "$interface6" | grep -iw "inet6" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
+        elif [[ "$3" == "IPv6Stack" ]]; then
+          Network4Config="isDHCP"
+          [[ `timeout 4s grep -iw "iface" $NetCfgWhole | grep -iw "$interface6" | grep -iw "inet6" | grep -ic "auto\|dhcp"` -ge "1" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
+        fi
 # Configure method in OVH can't boot with dhcp.
-      [[ -n $(timeout 4s grep "accept_ra" $NetCfgWhole) ]] && { Network4Config="isStatic"; Network6Config="isStatic"; }
-    elif [[ "$1" == 'Ubuntu' && "$networkManagerType" == "netplan" ]]; then
+        [[ -n $(timeout 4s grep "accept_ra" $NetCfgWhole) ]] && { Network4Config="isStatic"; Network6Config="isStatic"; }
+      elif [[ "$networkManagerType" == "netplan" ]]; then
 # For netplan(Ubuntu 18 and later), if network configuration is Static whether IPv4 or IPv6.
 # in "*.yaml" config file, dhcp(4 or 6): no or false doesn't exist is allowed.
 # But if is DHCP, dhcp(4 or 6): yes or true is necessary.
 # Typical format of dhcp status in "*.yaml" is "dhcp4/6: true/false" or "dhcp4/6: yes/no".
 # The raw sample processed by function "parseYaml" is: " network_ethernets_enp1s0_dhcp4="true" network_ethernets_enp1s0_dhcp6="true" ".
-      [[ ! -z "$NetCfgWhole" ]] && { dhcp4Status=$(parseYaml "$NetCfgWhole" | grep "$interface4" | grep "dhcp"); dhcp6Status=$(parseYaml "$NetCfgWhole" | grep "$interface6" | grep "dhcp"); }
-      if [[ "$3" == "IPv4Stack" ]]; then
-        Network6Config="isDHCP"
-        [[ "$dhcp4Status" =~ "dhcp4=\"true\"" || "$dhcp4Status" =~ "dhcp4=\"yes\"" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
-      elif [[ "$3" == "BiStack" ]]; then
-        [[ "$dhcp4Status" =~ "dhcp4=\"true\"" || "$dhcp4Status" =~ "dhcp4=\"yes\"" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
-        [[ "$dhcp6Status" =~ "dhcp6=\"true\"" || "$dhcp6Status" =~ "dhcp6=\"yes\"" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
-      elif [[ "$3" == "IPv6Stack" ]]; then
-        Network4Config="isDHCP"
-        [[ "$dhcp6Status" =~ "dhcp6=\"true\"" || "$dhcp6Status" =~ "dhcp6=\"yes\"" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
+        [[ ! -z "$NetCfgWhole" ]] && { dhcp4Status=$(parseYaml "$NetCfgWhole" | grep "$interface4" | grep "dhcp"); dhcp6Status=$(parseYaml "$NetCfgWhole" | grep "$interface6" | grep "dhcp"); }
+        if [[ "$3" == "IPv4Stack" ]]; then
+          Network6Config="isDHCP"
+          [[ "$dhcp4Status" =~ "dhcp4=\"true\"" || "$dhcp4Status" =~ "dhcp4=\"yes\"" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
+        elif [[ "$3" == "BiStack" ]]; then
+          [[ "$dhcp4Status" =~ "dhcp4=\"true\"" || "$dhcp4Status" =~ "dhcp4=\"yes\"" ]] && Network4Config="isDHCP" || Network4Config="isStatic"
+          [[ "$dhcp6Status" =~ "dhcp6=\"true\"" || "$dhcp6Status" =~ "dhcp6=\"yes\"" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
+        elif [[ "$3" == "IPv6Stack" ]]; then
+          Network4Config="isDHCP"
+          [[ "$dhcp6Status" =~ "dhcp6=\"true\"" || "$dhcp6Status" =~ "dhcp6=\"yes\"" ]] && Network6Config="isDHCP" || Network6Config="isStatic"
+        fi
       fi
     fi
     rm -rf "$tmpNetcfgDir"
