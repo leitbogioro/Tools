@@ -1154,7 +1154,9 @@ function checkSys() {
   fi
 
 # Remove "inetutils-ping" because it does not support "ping -4" or "ping -6".
-  apt purge inetutils-ping -y
+# "kexec-tools" is also need to be removed because in environment of official template of Debian 12 on Tencent Cloud, whether it is executing on instance of "Lighthouse" or "CVM"(Cloud Virtual Machine).
+# This component may cause the menuentry of grub which we had generated and wrote can't be booted successfully when rebooting the system.
+  apt purge inetutils-ping kexec-tools -y
 # Debian like linux OS necessary components.
   apt install cpio curl dnsutils efibootmgr fdisk file gzip iputils-ping jq net-tools openssl subnetcalc tuned virt-what wget xz-utils -y
 
