@@ -2468,7 +2468,7 @@ d-i mirror/http/proxy string
 ### Account setup
 d-i passwd/root-login boolean ture
 d-i passwd/make-user boolean false
-d-i passwd/root-password-crypted password $myPASSWORD
+d-i passwd/root-password-crypted password ${myPASSWORD}
 d-i user-setup/allow-password-weak boolean true
 d-i user-setup/encrypt-home boolean false
 
@@ -2737,9 +2737,9 @@ echo "$TimeZone"
 
 if [[ -z "$tmpWORD" || "$linux_relese" == 'alpinelinux' || "$targetRelese" == 'Ubuntu' ]]; then
   tmpWORD='LeitboGi0ro'
-  myPASSWORD='$1$0rZQ5Uwi$gx1MoUpYXfX2Ufso5ePBU1'
+  myPASSWORD='$6$qE9Lqgrd0QTOq46i$YMECmKvIw2SeBP4X411I0ZWmtyMsRcBi4Rxu7HYRsqdwqSApi6zjds5UJyM4HrAoBcuLBmjPyLatGydulmCDb0'
 else
-  myPASSWORD=$(openssl passwd -1 ''$tmpWORD'')
+  myPASSWORD=$(openssl passwd -6 ''$tmpWORD'')
 fi
 
 echo -ne "\n${aoiBlue}# SSH or RDP Port, Username and Password${plain}\n\n"
@@ -3700,7 +3700,7 @@ ${RepoAppStream}
 ${RepoEpel}
 
 # Root password
-rootpw --iscrypted $myPASSWORD
+rootpw --iscrypted ${myPASSWORD}
 
 # System authorization information
 ${AuthMethod}
