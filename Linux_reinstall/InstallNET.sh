@@ -944,6 +944,7 @@ function checkGrub() {
       break
     fi
   done
+  GRUBDIR=`echo $GRUBDIR | awk '{print $1}'`
   if [[ -z "$GRUBFILE" ]] || [[ `grep -c "insmod*" $GRUBDIR$GRUBFILE` == "0" ]]; then
     for Count in "$1" "$2" "$3"; do
 # Don't support grub1 of CentOS/Redhat Enterprise Linux/Oracle Linux 6.x
