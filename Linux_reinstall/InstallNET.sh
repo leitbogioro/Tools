@@ -442,8 +442,10 @@ function selectMirror() {
 
 function getIPv4Address() {
 # Differences from scope link, scope host and scope global of IPv4, reference: https://qiita.com/testnin2/items/7490ff01a4fe1c7ad61f
-  iAddr=`ip -4 addr show | grep -wA 5 "$interface" | grep -wv "lo\|host" | grep -w "inet" | grep -w "scope global*\|link*" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
-  [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && iAddr=`ip -4 addr show | grep -wA 5 "$interface4" | grep -wv "lo\|host" | grep -w "inet" | grep -w "scope global*\|link*" | head -n 1 | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+  allI4Addrs=`ip -4 addr show | grep -wA 256 "$interface4" | grep -wv "lo\|host" | grep -w "inet" | grep -w "scope global*\|link*" | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+  iAddr=`echo "$allI4Addrs" | head -n 1`
+  iAddrNum=`echo "$allI4Addrs" | wc -l`
+  collectAllIpv4Addresses "$iAddrNum"
   ipAddr=`echo ${iAddr} | cut -d'/' -f1`
   ipPrefix=`echo ${iAddr} | cut -d'/' -f2`
   ipMask=`netmask "$ipPrefix"`
@@ -1424,7 +1426,7 @@ function ultimateFormatOfIpv6() {
 
 function getIPv6Address() {
 # Differences from scope link, scope host and scope global of IPv6, reference: https://qiita.com/_dakc_/items/4eefa443306860bdcfde
-  allI6Addrs=`ip -6 addr show | grep -wA 65536 "$interface\|$interface6" | grep -wv "lo" | grep -wv "link\|host" | grep -w "inet6" | grep "scope" | grep "global" | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print $1}'`
+  allI6Addrs=`ip -6 addr show | grep -wA 256 "$interface6" | grep -wv "lo" | grep -wv "link\|host" | grep -w "inet6" | grep "scope" | grep "global" | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print $1}'`
   i6Addr=`echo "$allI6Addrs" | head -n 1`
   i6AddrNum=`echo "$allI6Addrs" | wc -l`
   collectAllIpv6Addresses "$i6AddrNum"
@@ -1581,6 +1583,41 @@ function ipv6SubnetCalc() {
   ip6Subnet=`echo ${ip6Subnet%?}`
 }
 
+# $1 is "$iAddrNum".
+function collectAllIpv4Addresses() {
+  [[ "$1" -ge "2" && "$IPStackType" != "IPv6Stack" ]] && {
+    Network4Config="isStatic"
+    iAddrs=()
+    for tmpIp in $allI4Addrs; do
+      iAddrs[${#iAddrs[@]}]=$tmpIp
+    done
+  }
+}
+
+# $1 is "$iAddrNum", $2 is "in-target", $3 is 'netconfig file'.
+function writeMultipleIpv4Addresses() {
+  [[ "$1" -ge "2" && "$IPStackType" != "IPv6Stack" ]] && {
+    if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]]; then
+      unset iAddrs[0]
+      for writeIps in ${iAddrs[@]}; do
+        ipAddrItem="up ip addr add $writeIps dev $interface4"
+        tmpWriteIpsCmd+=''$2' sed -i '\''$a\\t'$ipAddrItem''\'' '$3'; '
+      done
+      writeIpsCmd=$(echo $tmpWriteIpsCmd)
+      SupportMultipleIPv4="$writeIpsCmd"
+    elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
+      for (( tmpIpIndex="0"; tmpIpIndex<"$1"; tmpIpIndex++ )); do
+        writeIps="${iAddrs[$tmpIpIndex]}"
+        ipv4AddressOrder=$(expr $tmpIpIndex + 1)
+        ipAddrItem+='address'$ipv4AddressOrder'='$writeIps','$ipGate'\n'
+      done
+      ipAddrItem=$(echo ''$ipAddrItem'' | sed 's/..$//')
+      deleteOriginalIpv4Coning='sed -ri '\''/address1.*/d'\'' '$3''
+      addIpv4AddrsForRedhat='sed -i '\''/\[ipv4\]/a\'$ipAddrItem''\'' '$3''
+    fi
+  }
+}
+
 # $1 is "$i6AddrNum".
 function collectAllIpv6Addresses() {
   [[ "$1" -ge "2" && "$IPStackType" != "IPv4Stack" ]] && {
@@ -1697,12 +1734,12 @@ function writeMultipleIpv6Addresses() {
       writeIp6GateCmd=''$2' sed -i '\''$a\\tup ip -6 route add '$ip6Gate' dev '$interface6''\'' '$3'; '$2' sed -i '\''$a\\tup ip -6 route add default via '$ip6Gate' dev '$interface6''\'' '$3';'
       addIpv6DnsForPreseed=''$2' sed -ri '\''s/'$ipDNS'/'$ipDNS' '$ip6DNS'/g'\'' '$3';'
       preferIpv6Access=''$2' sed -i '\''$alabel 2002::/16'\'' /etc/gai.conf; '$2' sed -i '\''$alabel 2001:0::/32'\'' /etc/gai.conf;'
-      SupportIPv6orIPv4=''$writeIp6sCmd' '$writeIp6GateCmd' '$addIpv6DnsForPreseed' '$preferIpv6Access''
+      SupportMultipleIPv6=''$writeIp6sCmd' '$writeIp6GateCmd' '$addIpv6DnsForPreseed' '$preferIpv6Access''
       [[ "$IPStackType" == "IPv6Stack" ]] && SupportIPv6orIPv4=''$writeIp6sCmd' '$preferIpv6Access''
       [[ "$IPStackType" == "BiStack" && -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && {
         addIpv6Adapter=''$2' sed -i '\''$a\ '\'' '$3'; '$2' sed -i '\''$aallow-hotplug '$interface6''\'' '$3';'
         addFirstIpv6Config=''$2' sed -i '\''$aiface '$interface6' inet6 static'\'' '$3'; '$2' sed -i '\''$a\\taddress '$i6Addr''\'' '$3'; '$2' sed -i '\''$a\\tgateway '$ip6Gate''\'' '$3'; '$2' sed -i '\''$a\\tdns-nameservers '$ip6DNS''\'' '$3';'
-        SupportIPv6orIPv4=''$addIpv6Adapter' '$addFirstIpv6Config' '$writeIp6sCmd' '$preferIpv6Access''
+        SupportMultipleIPv6=''$addIpv6Adapter' '$addFirstIpv6Config' '$writeIp6sCmd' '$preferIpv6Access''     
       }
     elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
 # The following strategy of adding multiple IPv6 addresses with subnet, gateway and DNS parameters is only suitable for
@@ -2179,7 +2216,7 @@ function setDhcpOrStatic() {
   }
 }
 
-# $1 is "in-target"
+# $1 is "in-target", $2 is "/etc/network/interfaces".
 function DebianModifiedPreseed() {
   if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]]; then
 # Must use ";" instead of using "&&", "echo -e" etc to combine multiple commands, or write text in files, recommend sed.
@@ -2232,7 +2269,7 @@ function DebianModifiedPreseed() {
 # Set up with "allow-hotplug(default setting by Debian/Kali installer)" will skip this problem, but if one interface has more than 1 IP or it will connect to
 # another network bridge, when system restarted, the interfaces' initialization will be failed, in most of VPS environments, the interfaces of machine should be stable,
 # so replace the default from "allow-hotplug" to "auto" for interfaces config method is a better idea?
-    [[ "$autoPlugAdapter" == "1" ]] && AutoPlugInterfaces="$1 sed -ri \"s/allow-hotplug $interface4/auto $interface4/g\" /etc/network/interfaces; $1 sed -ri \"s/allow-hotplug $interface6/auto $interface6/g\" /etc/network/interfaces;" || AutoPlugInterfaces=""
+    [[ "$autoPlugAdapter" == "1" ]] && AutoPlugInterfaces="$1 sed -ri \"s/allow-hotplug $interface4/auto $interface4/g\" $2; $1 sed -ri \"s/allow-hotplug $interface6/auto $interface6/g\" $2;" || AutoPlugInterfaces=""
 # If the network config type of server is DHCP and it have both public IPv4 and IPv6 address,
 # Debian install program even get nerwork config with DHCP, but after log into new system,
 # only the IPv4 of the server has been configurated.
@@ -2241,42 +2278,43 @@ function DebianModifiedPreseed() {
     SupportIPv6orIPv4=""
     ReplaceActualIpPrefix=""
     if [[ "$IPStackType" == "IPv4Stack" ]]; then
-      [[ "$BurnIrregularIpv4Status" == "1" ]] && BurnIrregularIpv4Gate="$1 sed -i '\$a\\\tgateway $actualIp4Gate' /etc/network/interfaces;"
+      [[ "$BurnIrregularIpv4Status" == "1" ]] && BurnIrregularIpv4Gate="$1 sed -i '\$a\\\tgateway $actualIp4Gate' $2;"
 # This IPv4Stack machine should be setting as IPv4 network accessing priority.
       SupportIPv6orIPv4="$1 sed -i '\$aprecedence ::ffff:0:0/96' /etc/gai.conf;"
-      ReplaceActualIpPrefix="$1 sed -ri \"s/address $ipAddr\/$ipPrefix/address $ipAddr\/$actualIp4Prefix/g\" /etc/network/interfaces;"
+      ReplaceActualIpPrefix="$1 sed -ri \"s/address $ipAddr\/$ipPrefix/address $ipAddr\/$actualIp4Prefix/g\" $2;"
+      [[ "$iAddrNum" -ge "2" ]] && { writeMultipleIpv4Addresses "$iAddrNum" "$1" ''$2''; SupportIPv6orIPv4="$SupportMultipleIPv4"; }
     elif [[ "$IPStackType" == "BiStack" ]]; then
 # Enable IPv4 dhcp or static configurations.
       if [[ "$BiStackPreferIpv6Status" == "1" ]]; then
         if [[ "$Network4Config" == "isDHCP" ]]; then
-          SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
-          [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && SupportIPv6orIPv4="$1 sed -i '\$a\ ' /etc/network/interfaces; $1 sed -i '\$aallow-hotplug $interface4' /etc/network/interfaces; $1 sed -i '\$aiface $interface4 inet dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
-          ReplaceActualIpPrefix="$1 sed -ri \"s/address $ip6Addr\/$ip6Mask/address $ip6Addr\/$actualIp6Prefix/g\" /etc/network/interfaces;"
+          SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet dhcp' $2; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
+          [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && SupportIPv6orIPv4="$1 sed -i '\$a\ ' $2; $1 sed -i '\$aallow-hotplug $interface4' $2; $1 sed -i '\$aiface $interface4 inet dhcp' $2; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
+          ReplaceActualIpPrefix="$1 sed -ri \"s/address $ip6Addr\/$ip6Mask/address $ip6Addr\/$actualIp6Prefix/g\" $2;"
         elif [[ "$Network4Config" == "isStatic" ]]; then
-          SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet static' /etc/network/interfaces; $1 sed -i '\$a\\\taddress $ipAddr' /etc/network/interfaces; $1 sed -i '\$a\\\tnetmask $MASK' /etc/network/interfaces; $1 sed -i '\$a\\\tgateway $GATE' /etc/network/interfaces; $1 sed -i '\$a\\\tdns-nameservers $ipDNS' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
-          [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && SupportIPv6orIPv4="$1 sed -i '\$a\ ' /etc/network/interfaces; $1 sed -i '\$aallow-hotplug $interface4' /etc/network/interfaces; $1 sed -i '\$aiface $interface4 inet static' /etc/network/interfaces; $1 sed -i '\$a\\\taddress $ipAddr' /etc/network/interfaces; $1 sed -i '\$a\\\tnetmask $MASK' /etc/network/interfaces; $1 sed -i '\$a\\\tgateway $GATE' /etc/network/interfaces; $1 sed -i '\$a\\\tdns-nameservers $ipDNS' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
-          ReplaceActualIpPrefix="$1 sed -ri \"s/address $ip6Addr\/$ip6Mask/address $ip6Addr\/$actualIp6Prefix/g\" /etc/network/interfaces; $1 sed -ri \"s/netmask $MASK/netmask $actualIp4Subnet/g\" /etc/network/interfaces;"
+          SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet static' $2; $1 sed -i '\$a\\\taddress $ipAddr' $2; $1 sed -i '\$a\\\tnetmask $MASK' $2; $1 sed -i '\$a\\\tgateway $GATE' $2; $1 sed -i '\$a\\\tdns-nameservers $ipDNS' $2; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
+          [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && SupportIPv6orIPv4="$1 sed -i '\$a\ ' $2; $1 sed -i '\$aallow-hotplug $interface4' $2; $1 sed -i '\$aiface $interface4 inet static' $2; $1 sed -i '\$a\\\taddress $ipAddr' $2; $1 sed -i '\$a\\\tnetmask $MASK' $2; $1 sed -i '\$a\\\tgateway $GATE' $2; $1 sed -i '\$a\\\tdns-nameservers $ipDNS' $2; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
+          ReplaceActualIpPrefix="$1 sed -ri \"s/address $ip6Addr\/$ip6Mask/address $ip6Addr\/$actualIp6Prefix/g\" $2; $1 sed -ri \"s/netmask $MASK/netmask $actualIp4Subnet/g\" $2;"
         fi
       else
-        [[ "$BurnIrregularIpv4Status" == "1" ]] && BurnIrregularIpv4Gate="$1 sed -i '\$a\\\tgateway $actualIp4Gate' /etc/network/interfaces;"
+        [[ "$BurnIrregularIpv4Status" == "1" ]] && BurnIrregularIpv4Gate="$1 sed -i '\$a\\\tgateway $actualIp4Gate' $2;"
         if [[ "$Network6Config" == "isDHCP" ]]; then
 # Enable IPv6 dhcp and set prefer IPv6 access for BiStack or IPv6Stack machine: add "label 2002::/16", "label 2001:0::/32" in last line of the "/etc/gai.conf"
-          SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
-          [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && SupportIPv6orIPv4="$1 sed -i '\$a\ ' /etc/network/interfaces; $1 sed -i '\$aallow-hotplug $interface6' /etc/network/interfaces; $1 sed -i '\$aiface $interface6 inet6 dhcp' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
-          ReplaceActualIpPrefix="$1 sed -ri \"s/address $ipAddr\/$ipPrefix/address $ipAddr\/$actualIp4Prefix/g\" /etc/network/interfaces;"
+          SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet6 dhcp' $2; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
+          [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && SupportIPv6orIPv4="$1 sed -i '\$a\ ' $2; $1 sed -i '\$aallow-hotplug $interface6' $2; $1 sed -i '\$aiface $interface6 inet6 dhcp' $2; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
+          ReplaceActualIpPrefix="$1 sed -ri \"s/address $ipAddr\/$ipPrefix/address $ipAddr\/$actualIp4Prefix/g\" $2;"
         elif [[ "$Network6Config" == "isStatic" ]]; then
-          SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet6 static' /etc/network/interfaces; $1 sed -i '\$a\\\taddress $ip6Addr' /etc/network/interfaces; $1 sed -i '\$a\\\tnetmask $ip6Mask' /etc/network/interfaces; $1 sed -i '\$a\\\tgateway $ip6Gate' /etc/network/interfaces; $1 sed -i '\$a\\\tdns-nameservers $ip6DNS' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
-          [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && SupportIPv6orIPv4="$1 sed -i '\$a\ ' /etc/network/interfaces; $1 sed -i '\$aallow-hotplug $interface6' /etc/network/interfaces; $1 sed -i '\$aiface $interface6 inet6 static' /etc/network/interfaces; $1 sed -i '\$a\\\taddress $ip6Addr' /etc/network/interfaces; $1 sed -i '\$a\\\tnetmask $ip6Mask' /etc/network/interfaces; $1 sed -i '\$a\\\tgateway $ip6Gate' /etc/network/interfaces; $1 sed -i '\$a\\\tdns-nameservers $ip6DNS' /etc/network/interfaces; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
-          ReplaceActualIpPrefix="$1 sed -ri \"s/address $ipAddr\/$ipPrefix/address $ipAddr\/$actualIp4Prefix/g\" /etc/network/interfaces; $1 sed -ri \"s/netmask $ip6Mask/netmask $actualIp6Prefix/g\" /etc/network/interfaces;"
+          SupportIPv6orIPv4="$1 sed -i '\$aiface $interface inet6 static' $2; $1 sed -i '\$a\\\taddress $ip6Addr' $2; $1 sed -i '\$a\\\tnetmask $ip6Mask' $2; $1 sed -i '\$a\\\tgateway $ip6Gate' $2; $1 sed -i '\$a\\\tdns-nameservers $ip6DNS' $2; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
+          [[ -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && SupportIPv6orIPv4="$1 sed -i '\$a\ ' $2; $1 sed -i '\$aallow-hotplug $interface6' $2; $1 sed -i '\$aiface $interface6 inet6 static' $2; $1 sed -i '\$a\\\taddress $ip6Addr' $2; $1 sed -i '\$a\\\tnetmask $ip6Mask' $2; $1 sed -i '\$a\\\tgateway $ip6Gate' $2; $1 sed -i '\$a\\\tdns-nameservers $ip6DNS' $2; $1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
+          ReplaceActualIpPrefix="$1 sed -ri \"s/address $ipAddr\/$ipPrefix/address $ipAddr\/$actualIp4Prefix/g\" $2; $1 sed -ri \"s/netmask $ip6Mask/netmask $actualIp6Prefix/g\" $2;"
         fi
       fi
-      writeMultipleIpv6Addresses "$i6AddrNum" "$1" '/etc/network/interfaces'
+      [[ "$iAddrNum" -ge "2" || "$i6AddrNum" -ge "2" ]] && { writeMultipleIpv4Addresses "$iAddrNum" "$1" ''$2''; writeMultipleIpv6Addresses "$i6AddrNum" "$1" ''$2''; SupportIPv6orIPv4="$SupportMultipleIPv4 $SupportMultipleIPv6"; }
     elif [[ "$IPStackType" == "IPv6Stack" ]]; then
-      [[ "$BurnIrregularIpv6Status" == "1" ]] && BurnIrregularIpv6Gate="$1 sed -i '\$a\\\tgateway $ip6Gate' /etc/network/interfaces;"
+      [[ "$BurnIrregularIpv6Status" == "1" ]] && BurnIrregularIpv6Gate="$1 sed -i '\$a\\\tgateway $ip6Gate' $2;"
 # This IPv6Stack machine should be setting as IPv6 network accessing priority.
       SupportIPv6orIPv4="$1 sed -i '\$alabel 2002::/16' /etc/gai.conf; $1 sed -i '\$alabel 2001:0::/32' /etc/gai.conf;"
-      ReplaceActualIpPrefix="$1 sed -ri \"s/address $ip6Addr\/$ip6Mask/address $ip6Addr\/$actualIp6Prefix/g\" /etc/network/interfaces;"
-      writeMultipleIpv6Addresses "$i6AddrNum" "$1" '/etc/network/interfaces'
+      ReplaceActualIpPrefix="$1 sed -ri \"s/address $ip6Addr\/$ip6Mask/address $ip6Addr\/$actualIp6Prefix/g\" $2;"
+      [[ "$i6AddrNum" -ge "2" ]] && { writeMultipleIpv6Addresses "$i6AddrNum" "$1" ''$2''; SupportIPv6orIPv4="$SupportMultipleIPv6"; }
     fi
 # a typical network configuration sample of IPv6 static for Debian:
 # iface eth0 inet static
@@ -2417,7 +2455,7 @@ function DebianPreseedProcess() {
 # d-i netcfg/get_nameservers string $ipDNS/$ip6DNS
 # d-i netcfg/no_default_route boolean true
 # d-i netcfg/confirm_static boolean true
-    DebianModifiedPreseed "in-target"
+    DebianModifiedPreseed "in-target" "/etc/network/interfaces"
     cat >/tmp/boot/preseed.cfg<<EOF
 ### Unattended Installation
 d-i auto-install/enable boolean true
@@ -2695,7 +2733,7 @@ if [[ "$setNet" == "0" ]]; then
   setDhcpOrStatic "$tmpDHCP" "$virtWhat"
   getIPv4Address
   [[ "$IPStackType" != "IPv4Stack" ]] && getIPv6Address
-  if [[ "$IPStackType" == "BiStack" && "$i6AddrNum" -ge "2" ]]; then
+  if [[ "$IPStackType" == "BiStack" && "$iAddrNum" -ge "2" || "$i6AddrNum" -ge "2" ]]; then
     if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]] || [[ "$linux_relese" == 'alpinelinux' ]]; then
       Network4Config="isStatic"
     fi
@@ -3647,6 +3685,7 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
 # For IPv6 only network environment, no matter dhcp or static, IPv4 configuration must be disabled(--noipv4),
 # in this situation, CentOS 7 doesn't accept any IPv4 DNS value.
 # Reference: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/system_design_guide/kickstart-commands-and-options-reference_system-design-guide#network_kickstart-commands-for-network-configuration
+  writeMultipleIpv4Addresses "$iAddrNum" "" '/etc/NetworkManager/system-connections/'$interface'.nmconnection'
   writeMultipleIpv6Addresses "$i6AddrNum" "" '/etc/NetworkManager/system-connections/'$interface'.nmconnection'
   if [[ "$IPStackType" == "IPv4Stack" ]]; then
     if [[ "$Network4Config" == "isDHCP" ]]; then
@@ -3791,6 +3830,10 @@ echo -ne "[DEFAULT]\nbanaction = firewallcmd-ipset\nbackend = systemd\n\n[sshd]\
 touch /var/log/fail2ban.log
 sed -i -E 's/^(logtarget =).*/\1 \/var\/log\/fail2ban.log/' /etc/fail2ban/fail2ban.conf
 systemctl enable fail2ban
+
+# Add multiple IPv4 addresses
+${deleteOriginalIpv4Coning}
+${addIpv4AddrsForRedhat}
 
 # Add multiple IPv6 addresses
 ${deleteOriginalIpv6Coning}
