@@ -71,6 +71,7 @@ export loaderMode='0'
 export setMotd=''
 export setDns=''
 export LANG="en_US.UTF-8"
+export LANGUAGE="en_US:en"
 export IncFirmware='0'
 export SpikCheckDIST='0'
 export UNKNOWHW='0'
