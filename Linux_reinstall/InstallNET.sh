@@ -1739,7 +1739,7 @@ function writeMultipleIpv6Addresses() {
       [[ "$IPStackType" == "BiStack" && -n "$interface4" && -n "$interface6" && "$interface4" != "$interface6" ]] && {
         addIpv6Adapter=''$2' sed -i '\''$a\ '\'' '$3'; '$2' sed -i '\''$aallow-hotplug '$interface6''\'' '$3';'
         addFirstIpv6Config=''$2' sed -i '\''$aiface '$interface6' inet6 static'\'' '$3'; '$2' sed -i '\''$a\\taddress '$i6Addr''\'' '$3'; '$2' sed -i '\''$a\\tgateway '$ip6Gate''\'' '$3'; '$2' sed -i '\''$a\\tdns-nameservers '$ip6DNS''\'' '$3';'
-        SupportMultipleIPv6=''$addIpv6Adapter' '$addFirstIpv6Config' '$writeIp6sCmd' '$preferIpv6Access''     
+        SupportMultipleIPv6=''$addIpv6Adapter' '$addFirstIpv6Config' '$writeIp6sCmd' '$preferIpv6Access''
       }
     elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
 # The following strategy of adding multiple IPv6 addresses with subnet, gateway and DNS parameters is only suitable for
