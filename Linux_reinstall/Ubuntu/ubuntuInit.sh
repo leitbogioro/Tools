@@ -42,6 +42,7 @@ HostName=$(grep "HostName" $confFile | awk '{print $2}')
 DDURL=$(grep "DDURL" $confFile | awk '{print $2}')
 targetLinuxMirror=$(grep "targetLinuxMirror" $confFile | awk '{print $2}')
 cloudInitUrl=$(grep "cloudInitUrl" $confFile | awk '{print $2}')
+setFail2banStatus=$(grep "setFail2banStatus" $confFile | awk '{print $2}')
 
 # Reset configurations of repositories
 true >/etc/apk/repositories
@@ -108,6 +109,14 @@ echo 'datasource_list: [ NoCloud, None ]' > /mnt/etc/cloud/cloud.cfg.d/90_dpkg.c
 [[ "$setIPv6" == "0" ]] && {
   sed -ri 's/GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0"/GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0 ipv6.disable=1"/g' /mnt/etc/default/grub
   sed -ri 's/ro net.ifnames=0 biosdevname=0/ro net.ifnames=0 biosdevname=0 ipv6.disable=1/g' /mnt/boot/grub/grub.cfg
+}
+
+# disable installing fail2ban
+[[ "$setFail2banStatus" != "1" ]] && {
+  sed -ri 's/dnsutils fail2ban/dnsutils/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg 
+  sed -i '/\/etc\/fail2ban/d' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+  sed -i '/fail2ban enable/d' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+  sed -i '/fail2ban restart/d' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
 }
 
 # Reboot, the system in the memory will all be written to the hard drive.
