@@ -79,7 +79,7 @@ sed -ri 's/MASK/'${MASK}'/g' /etc/network/interfaces
 sed -ri 's/netmask '${MASK}'/netmask '${actualIp4Subnet}'/g' /etc/network/interfaces
 sed -ri 's/GATE/'${GATE}'/g' /etc/network/interfaces
 if [[ "$iAddrNum" -ge "2" ]]; then
-  echo -e ${writeIpsCmd} >> /etc/network/interfaces
+  echo -e "${writeIpsCmd}" >> /etc/network/interfaces
 fi
 sed -ri 's/ip6Addr/'${ip6Addr}'/g' /etc/network/interfaces
 sed -ri 's/ip6Mask/'${ip6Mask}'/g' /etc/network/interfaces
