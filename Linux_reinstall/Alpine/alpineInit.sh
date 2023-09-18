@@ -28,6 +28,8 @@ IPv4=$(grep "IPv4" $confFile | awk '{print $2}')
 MASK=$(grep "MASK" $confFile | awk '{print $2}')
 actualIp4Subnet=$(grep "actualIp4Subnet" $confFile | awk '{print $2}')
 GATE=$(grep "GATE" $confFile | awk '{print $2}')
+iAddrNum=$(grep "iAddrNum" $confFile | awk '{print $2}')
+writeIpsCmd=$(grep "writeIpsCmd" $confFile | sed -e 's/writeIpsCmd  //g')
 ip6Addr=$(grep "ip6Addr" $confFile | awk '{print $2}')
 ip6Mask=$(grep "ip6Mask" $confFile | awk '{print $2}')
 actualIp6Prefix=$(grep "actualIp6Prefix" $confFile | awk '{print $2}')
@@ -76,6 +78,9 @@ sed -ri 's/IPv4/'${IPv4}'/g' /etc/network/interfaces
 sed -ri 's/MASK/'${MASK}'/g' /etc/network/interfaces
 sed -ri 's/netmask '${MASK}'/netmask '${actualIp4Subnet}'/g' /etc/network/interfaces
 sed -ri 's/GATE/'${GATE}'/g' /etc/network/interfaces
+if [[ "$iAddrNum" -ge "2" ]]; then
+  echo -e ${writeIpsCmd} >> /etc/network/interfaces
+fi
 sed -ri 's/ip6Addr/'${ip6Addr}'/g' /etc/network/interfaces
 sed -ri 's/ip6Mask/'${ip6Mask}'/g' /etc/network/interfaces
 sed -ri 's/netmask '${ip6Mask}'/netmask '${actualIp6Prefix}'/g' /etc/network/interfaces
