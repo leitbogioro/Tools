@@ -114,7 +114,7 @@ sed -ri 's/ip6DNS2/'${ip6DNS2}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
 
 # Disable any datahouse
 # Reference: https://github.com/canonical/cloud-init/issues/3772
-echo 'datasource_list: [NoCloud]' > /mnt/etc/cloud/cloud.cfg.d/90_dpkg.cfg
+echo 'datasource_list: [ NoCloud, None ]' > /mnt/etc/cloud/cloud.cfg.d/90_dpkg.cfg
 
 # disable IPv6
 [[ "$setIPv6" == "0" ]] && {
