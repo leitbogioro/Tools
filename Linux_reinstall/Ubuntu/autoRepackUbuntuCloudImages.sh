@@ -17,8 +17,8 @@ for distName in "jammy" "focal"; do
     mount /dev/mapper/$mapperDevice /mnt
     sed -ri 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0"/g' /mnt/etc/default/grub
     sed -ri 's/cloudimg-rootfs ro/cloudimg-rootfs ro net.ifnames=0 biosdevname=0/g' /mnt/boot/grub/grub.cfg
-    sed -ri 's/GRUB_TIMEOUT=0/GRUB_TIMEOUT=3/g' /mnt/etc/default/grub
-    sed -ri 's/set timeout=0/set timeout=3/g' /mnt/boot/grub/grub.cfg
+    # sed -ri 's/GRUB_TIMEOUT=0/GRUB_TIMEOUT=3/g' /mnt/etc/default/grub
+    # sed -ri 's/set timeout=0/set timeout=3/g' /mnt/boot/grub/grub.cfg
     umount /mnt
     kpartx -dv $loopDevice
     losetup -d $loopDevice
