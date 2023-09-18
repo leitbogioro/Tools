@@ -1605,6 +1605,12 @@ function writeMultipleIpv4Addresses() {
       done
       writeIpsCmd=$(echo $tmpWriteIpsCmd)
       SupportMultipleIPv4="$writeIpsCmd"
+    elif [[ "$targetRelese" == 'Ubuntu' ]]; then
+      for writeIps in ${iAddrs[@]}; do
+        ipAddrItem="$writeIps"
+        tmpWriteIpsCmd+=''$ipAddrItem','
+      done
+      writeIpsCmd=$(echo ''$tmpWriteIpsCmd'' | sed 's/.$//')
     elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
       for (( tmpIpIndex="0"; tmpIpIndex<"$1"; tmpIpIndex++ )); do
         writeIps="${iAddrs[$tmpIpIndex]}"
@@ -1741,6 +1747,12 @@ function writeMultipleIpv6Addresses() {
         addFirstIpv6Config=''$2' sed -i '\''$aiface '$interface6' inet6 static'\'' '$3'; '$2' sed -i '\''$a\\taddress '$i6Addr''\'' '$3'; '$2' sed -i '\''$a\\tgateway '$ip6Gate''\'' '$3'; '$2' sed -i '\''$a\\tdns-nameservers '$ip6DNS''\'' '$3';'
         SupportMultipleIPv6=''$addIpv6Adapter' '$addFirstIpv6Config' '$writeIp6sCmd' '$preferIpv6Access''
       }
+    elif [[ "$targetRelese" == 'Ubuntu' ]]; then
+      for writeIp6s in ${i6Addrs[@]}; do
+        ip6AddrItem="$writeIp6s"
+        tmpWriteIp6sCmd+=''$ip6AddrItem','
+      done
+      writeIp6sCmd=$(echo ''$tmpWriteIp6sCmd'' | sed 's/.$//')
     elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
 # The following strategy of adding multiple IPv6 addresses with subnet, gateway and DNS parameters is only suitable for
 # Redhat series(9+, Fedora 30+) which are using "NetworkManager" to manage the configurations of the networking by default.
@@ -3542,6 +3554,8 @@ elif [[ "$linux_relese" == 'alpinelinux' ]]; then
       fi
       sed -i '/'"$hackIpv6Context"'/a\\t\tdepmod\n\t\tmodprobe ipv6\n\t\tip link set dev '$interface6' up\n\t\tip -6 addr add '$ip6Addr'/'$actualIp6Prefix' dev '$interface6'\n\t\tip -6 route add '$ip6Gate' dev '$interface6'\n\t\tip -6 route add default via '$ip6Gate' dev '$interface6' onlink\n\t\techo '\''nameserver '$ip6DNS1''\'' > /etc/resolv.conf\n\t\techo '\''nameserver '$ip6DNS2''\'' >> /etc/resolv.conf' /tmp/boot/init
     fi
+    writeMultipleIpv4Addresses "$iAddrNum"
+    writeMultipleIpv6Addresses "$i6AddrNum"
     if [[ "$setCloudKernel" == "" ]]; then
       [[ -n "$virtWhat" ]] && virtualizationStatus='1' || virtualizationStatus='0'
     elif [[ "$setCloudKernel" == "1" ]]; then
@@ -3614,6 +3628,8 @@ echo "actualIp4Gate  "${actualIp4Gate} >> \$sysroot/root/alpine.config
 echo "BurnIrregularIpv4Status  "${BurnIrregularIpv4Status} >> \$sysroot/root/alpine.config
 echo "ipDNS1  "${ipDNS1} >> \$sysroot/root/alpine.config
 echo "ipDNS2  "${ipDNS2} >> \$sysroot/root/alpine.config
+echo "iAddrNum  "${iAddrNum} >> \$sysroot/root/alpine.config
+echo "writeIpsCmd  "${writeIpsCmd} >> \$sysroot/root/alpine.config
 
 # To determine Ipv6 static config
 echo "ip6Addr  "${ip6Addr} >> \$sysroot/root/alpine.config
@@ -3622,6 +3638,8 @@ echo "actualIp6Prefix  "${actualIp6Prefix} >> \$sysroot/root/alpine.config
 echo "ip6Gate  "${ip6Gate} >> \$sysroot/root/alpine.config
 echo "ip6DNS1  "${ip6DNS1} >> \$sysroot/root/alpine.config
 echo "ip6DNS2  "${ip6DNS2} >> \$sysroot/root/alpine.config
+echo "i6AddrNum  "${i6AddrNum} >> \$sysroot/root/alpine.config
+echo "writeIp6sCmd  "${writeIp6sCmd} >> \$sysroot/root/alpine.config
 
 # To determine whether to disable IPv6 modules
 echo "setIPv6  "${setIPv6} >> \$sysroot/root/alpine.config
