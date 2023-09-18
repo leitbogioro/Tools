@@ -34,6 +34,8 @@ ip6Addr=$(grep "ip6Addr" $confFile | awk '{print $2}')
 ip6Mask=$(grep "ip6Mask" $confFile | awk '{print $2}')
 actualIp6Prefix=$(grep "actualIp6Prefix" $confFile | awk '{print $2}')
 ip6Gate=$(grep "ip6Gate" $confFile | awk '{print $2}')
+i6AddrNum=$(grep "i6AddrNum" $confFile | awk '{print $2}')
+writeIp6sCmd=$(grep "writeIp6sCmd" $confFile | sed -e 's/writeIpsCmd  //g')
 HostName=$(grep "HostName" $confFile | awk '{print $2}')
 virtualizationStatus=$(grep "virtualizationStatus" $confFile | awk '{print $2}')
 setFail2banStatus=$(grep "setFail2banStatus" $confFile | awk '{print $2}')
@@ -85,6 +87,9 @@ sed -ri 's/ip6Addr/'${ip6Addr}'/g' /etc/network/interfaces
 sed -ri 's/ip6Mask/'${ip6Mask}'/g' /etc/network/interfaces
 sed -ri 's/netmask '${ip6Mask}'/netmask '${actualIp6Prefix}'/g' /etc/network/interfaces
 sed -ri 's/ip6Gate/'${ip6Gate}'/g' /etc/network/interfaces
+if [[ "$i6AddrNum" -ge "2" ]]; then
+  echo -e "${writeIp6sCmd}" >> /etc/network/interfaces
+fi
 # Restoring access permission.
 chmod a+x /etc/network/interfaces
 # Enable IPv6
