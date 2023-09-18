@@ -1611,6 +1611,13 @@ function writeMultipleIpv4Addresses() {
         tmpWriteIpsCmd+=''$ipAddrItem','
       done
       writeIpsCmd=$(echo ''$tmpWriteIpsCmd'' | sed 's/.$//')
+    elif [[ "$linux_relese" == 'alpinelinux' ]]; then
+      unset iAddrs[0]
+      for writeIps in ${iAddrs[@]}; do
+        ipAddrItem="up ip addr add $writeIps dev $interface4"
+        tmpWriteIpsCmd+='\t'$ipAddrItem'\n'
+      done
+      writeIpsCmd=$(echo $tmpWriteIpsCmd | sed 's/..$//')
     elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
       for (( tmpIpIndex="0"; tmpIpIndex<"$1"; tmpIpIndex++ )); do
         writeIps="${iAddrs[$tmpIpIndex]}"
@@ -1753,6 +1760,22 @@ function writeMultipleIpv6Addresses() {
         tmpWriteIp6sCmd+=''$ip6AddrItem','
       done
       writeIp6sCmd=$(echo ''$tmpWriteIp6sCmd'' | sed 's/.$//')
+    elif [[ "$linux_relese" == 'alpinelinux' ]]; then
+      [[ "$IPStackType" == "IPv6Stack" ]] && unset i6Addrs[$mainIp6Index]
+      for writeIp6s in ${i6Addrs[@]}; do
+        if [[ "$IPStackType" == "BiStack" ]]; then
+          ip6AddrItem="up ip addr add $writeIp6s dev $interface6"
+          tmpWriteIp6sCmd+='\t'$ip6AddrItem'\n'
+        elif [[ "$IPStackType" == "IPv6Stack" ]]; then
+          ip6AddrItem="up ip -6 addr add $writeIp6s dev $interface6"
+          tmpWriteIp6sCmd+='\t'$ip6AddrItem'\n'
+        fi
+      done
+      if [[ "$IPStackType" == "BiStack" ]]; then
+        writeIp6sCmd=''$tmpWriteIp6sCmd'\tup ip -6 route add '$ip6Gate' dev '$interface6'\n\tup ip -6 route add default via '$ip6Gate' dev '$interface6''
+      elif [[ "$IPStackType" == "IPv6Stack" ]]; then
+        writeIp6sCmd=$(echo $tmpWriteIp6sCmd | sed 's/..$//')
+      fi
     elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
 # The following strategy of adding multiple IPv6 addresses with subnet, gateway and DNS parameters is only suitable for
 # Redhat series(9+, Fedora 30+) which are using "NetworkManager" to manage the configurations of the networking by default.
@@ -3489,6 +3512,9 @@ elif [[ "$linux_relese" == 'alpinelinux' ]]; then
       elif [[ "$Network4Config" == "isStatic" ]] && [[ "$Network6Config" == "isStatic" ]]; then
         [[ "$IsCN" == "cn" ]] && AlpineNetworkConf="$alpineNetcfgMirrorCn""ipv4_ipv6_static_interfaces" || AlpineNetworkConf="$alpineNetcfgMirror""ipv4_ipv6_static_interfaces"
       fi
+      [[ "$iAddrNum" -ge "2" || "$i6AddrNum" -ge "2" ]] && {
+        [[ "$IsCN" == "cn" ]] && AlpineNetworkConf="$alpineNetcfgMirrorCn""ipv4_static_interfaces" || AlpineNetworkConf="$alpineNetcfgMirror""ipv4_static_interfaces"
+      }
       [[ "$targetRelese" == 'Ubuntu' ]] && {
         if [[ "$Network4Config" == "isDHCP" ]] && [[ "$Network6Config" == "isDHCP" ]]; then
           [[ "$IsCN" == "cn" ]] && cloudInitUrl="$ubuntuCloudinitMirrorCn""dhcp_interfaces.cfg" || cloudInitUrl="$ubuntuCloudinitMirror""dhcp_interfaces.cfg"
@@ -3629,7 +3655,7 @@ echo "BurnIrregularIpv4Status  "${BurnIrregularIpv4Status} >> \$sysroot/root/alp
 echo "ipDNS1  "${ipDNS1} >> \$sysroot/root/alpine.config
 echo "ipDNS2  "${ipDNS2} >> \$sysroot/root/alpine.config
 echo "iAddrNum  "${iAddrNum} >> \$sysroot/root/alpine.config
-echo "writeIpsCmd  "${writeIpsCmd} >> \$sysroot/root/alpine.config
+echo "writeIpsCmd  "'''${writeIpsCmd}''' >> \$sysroot/root/alpine.config
 
 # To determine Ipv6 static config
 echo "ip6Addr  "${ip6Addr} >> \$sysroot/root/alpine.config
@@ -3639,7 +3665,7 @@ echo "ip6Gate  "${ip6Gate} >> \$sysroot/root/alpine.config
 echo "ip6DNS1  "${ip6DNS1} >> \$sysroot/root/alpine.config
 echo "ip6DNS2  "${ip6DNS2} >> \$sysroot/root/alpine.config
 echo "i6AddrNum  "${i6AddrNum} >> \$sysroot/root/alpine.config
-echo "writeIp6sCmd  "${writeIp6sCmd} >> \$sysroot/root/alpine.config
+echo "writeIp6sCmd  "'''${writeIp6sCmd}''' >> \$sysroot/root/alpine.config
 
 # To determine whether to disable IPv6 modules
 echo "setIPv6  "${setIPv6} >> \$sysroot/root/alpine.config
