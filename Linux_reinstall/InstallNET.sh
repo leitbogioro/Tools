@@ -442,7 +442,7 @@ function selectMirror() {
 
 function getIPv4Address() {
 # Differences from scope link, scope host and scope global of IPv4, reference: https://qiita.com/testnin2/items/7490ff01a4fe1c7ad61f
-  allI4Addrs=`ip -4 addr show | grep -wA 256 "$interface4" | grep -wv "lo\|host" | grep -w "inet" | grep -w "scope global*\|link*" | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+  allI4Addrs=`ip -4 addr show | grep -wA 1024 "$interface4" | grep -wv "lo\|host" | grep -w "inet" | grep -w "scope global*\|link*" | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
   iAddr=`echo "$allI4Addrs" | head -n 1`
   iAddrNum=`echo "$allI4Addrs" | wc -l`
   collectAllIpv4Addresses "$iAddrNum"
@@ -1426,7 +1426,7 @@ function ultimateFormatOfIpv6() {
 
 function getIPv6Address() {
 # Differences from scope link, scope host and scope global of IPv6, reference: https://qiita.com/_dakc_/items/4eefa443306860bdcfde
-  allI6Addrs=`ip -6 addr show | grep -wA 256 "$interface6" | grep -wv "lo" | grep -wv "link\|host" | grep -w "inet6" | grep "scope" | grep "global" | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print $1}'`
+  allI6Addrs=`ip -6 addr show | grep -wA 32768 "$interface6" | grep -wv "lo" | grep -wv "link\|host" | grep -w "inet6" | grep "scope" | grep "global" | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print $1}'`
   i6Addr=`echo "$allI6Addrs" | head -n 1`
   i6AddrNum=`echo "$allI6Addrs" | wc -l`
   collectAllIpv6Addresses "$i6AddrNum"
