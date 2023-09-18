@@ -31,6 +31,8 @@ actualIp4Prefix=$(grep "actualIp4Prefix" $confFile | awk '{print $2}')
 GATE=$(grep "GATE" $confFile | awk '{print $2}')
 ipDNS1=$(grep "ipDNS1" $confFile | awk '{print $2}')
 ipDNS2=$(grep "ipDNS2" $confFile | awk '{print $2}')
+iAddrNum=$(grep "iAddrNum" $confFile | awk '{print $2}')
+writeIpsCmd=$(grep "writeIpsCmd" $confFile | awk '{print $2}')
 ip6Addr=$(grep "ip6Addr" $confFile | awk '{print $2}')
 ip6Mask=$(grep "ip6Mask" $confFile | awk '{print $2}')
 actualIp6Prefix=$(grep "actualIp6Prefix" $confFile | awk '{print $2}')
@@ -87,10 +89,13 @@ sed -ri 's/sshPORT/'${sshPORT}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
 sed -ri 's/TimeZone/'${TimeZone1}'\/'${TimeZone2}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
 sed -ri 's/targetLinuxMirror/'${targetLinuxMirror}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
 sed -ri 's/networkAdapter/'${networkAdapter}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-sed -ri 's/IPv4/'${IPv4}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-sed -ri 's/MASK/'${MASK}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-sed -ri 's/ipPrefix/'${ipPrefix}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-sed -ri "s/${IPv4}\/${ipPrefix}/${IPv4}\/${actualIp4Prefix}/g" /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+if [[ "$iAddrNum" -ge "2" ]]; then
+  sed -ri 's#IPv4/ipPrefix#'${writeIpsCmd}'#g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+else
+  sed -ri 's/IPv4/'${IPv4}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+  sed -ri 's/ipPrefix/'${ipPrefix}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+  sed -ri "s/${IPv4}\/${ipPrefix}/${IPv4}\/${actualIp4Prefix}/g" /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+fi
 sed -ri 's/GATE/'${GATE}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
 sed -ri 's/ipDNS1/'${ipDNS1}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
 sed -ri 's/ipDNS2/'${ipDNS2}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
