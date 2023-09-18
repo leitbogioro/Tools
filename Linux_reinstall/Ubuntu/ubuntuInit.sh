@@ -39,6 +39,8 @@ actualIp6Prefix=$(grep "actualIp6Prefix" $confFile | awk '{print $2}')
 ip6Gate=$(grep "ip6Gate" $confFile | awk '{print $2}')
 ip6DNS1=$(grep "ip6DNS1" $confFile | awk '{print $2}')
 ip6DNS2=$(grep "ip6DNS2" $confFile | awk '{print $2}')
+i6AddrNum=$(grep "i6AddrNum" $confFile | awk '{print $2}')
+writeIp6sCmd=$(grep "writeIp6sCmd" $confFile | awk '{print $2}')
 setIPv6=$(grep "setIPv6" $confFile | awk '{print $2}')
 HostName=$(grep "HostName" $confFile | awk '{print $2}')
 DDURL=$(grep "DDURL" $confFile | awk '{print $2}')
@@ -99,9 +101,13 @@ fi
 sed -ri 's/GATE/'${GATE}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
 sed -ri 's/ipDNS1/'${ipDNS1}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
 sed -ri 's/ipDNS2/'${ipDNS2}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-sed -ri 's/ip6Addr/'${ip6Addr}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-sed -ri 's/ip6Mask/'${ip6Mask}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-sed -ri "s/${ip6Addr}\/${ip6Mask}/${ip6Addr}\/${actualIp6Prefix}/g" /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+if [[ "$i6AddrNum" -ge "2" ]]; then
+  sed -ri 's#ip6Addr/ip6Mask#'${writeIp6sCmd}'#g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+else
+  sed -ri 's/ip6Addr/'${ip6Addr}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+  sed -ri 's/ip6Mask/'${ip6Mask}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+  sed -ri "s/${ip6Addr}\/${ip6Mask}/${ip6Addr}\/${actualIp6Prefix}/g" /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+fi
 sed -ri 's/ip6Gate/'${ip6Gate}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
 sed -ri 's/ip6DNS1/'${ip6DNS1}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
 sed -ri 's/ip6DNS2/'${ip6DNS2}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
