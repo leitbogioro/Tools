@@ -10,7 +10,7 @@ rm -f /etc/runlevels/default/local
 
 # Install necessary components.
 apk update
-apk add bash coreutils sed
+apk add bash coreutils grep sed
 
 # Get Alpine Linux configurations.
 confFile="/root/alpine.config"
@@ -138,15 +138,15 @@ sed -ri 's/ash/bash/g' /etc/passwd
 # Insall more components.
 apk update
 if [[ "$setFail2banStatus" == "1" && "$lowMemMode" != "1" ]]; then
-  apk add bind-tools curl e2fsprogs fail2ban grep grub lsblk lsof net-tools udev util-linux vim wget
+  apk add bind-tools curl e2fsprogs fail2ban grub lsblk lsof net-tools udev util-linux vim wget
 # Config fail2ban
   sed -i '/^\[Definition\]/a allowipv6 = auto' /etc/fail2ban/fail2ban.conf
   rc-update add fail2ban
   /etc/init.d/fail2ban start
 elif [[ "$lowMemMode" == "1" ]]; then
-  apk add bind-tools grep grub net-tools udev util-linux
+  apk add bind-tools grub net-tools udev util-linux
 else
-  apk add bind-tools curl e2fsprogs grep grub lsblk lsof net-tools udev util-linux vim wget
+  apk add bind-tools curl e2fsprogs grub lsblk lsof net-tools udev util-linux vim wget
 fi
 
 # Make a blank motd to avoid Alpine Linux writes a new one.
