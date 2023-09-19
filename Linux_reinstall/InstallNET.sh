@@ -1926,7 +1926,6 @@ function getInterface() {
   echo "$interface" > /dev/null
   getArrItemIdx "${Interfaces[*]}" "$interface4"
   interface4DeviceOrder="$index"
-  echo $interface4DeviceOrder
   getArrItemIdx "${Interfaces[*]}" "$interface6"
   interface6DeviceOrder="$index"
 # Some templates of cloud provider like Bandwagonhosts, Ubuntu 22.04, may modify parameters in " GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0" " in /etc/default/grub
