@@ -442,7 +442,8 @@ function selectMirror() {
 
 function getIPv4Address() {
 # Differences from scope link, scope host and scope global of IPv4, reference: https://qiita.com/testnin2/items/7490ff01a4fe1c7ad61f
-  allI4Addrs=`ip -4 addr show | grep -wA 1024 "$interface4" | grep -wv "lo\|host" | grep -w "inet" | grep -w "scope global*\|link*" | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+  allI4Addrs=`ip -4 addr show | grep -wA 1024 "$interface4" | grep -w "$interface4" | grep -wv "lo\|host" | grep -w "inet" | grep -w "scope global*\|link*" | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+  [[ -z "$allI4Addrs" ]] && allI4Addrs=`ip -4 addr show | grep -wA 1024 "$interface4" | grep -wv "lo\|host" | grep -w "inet" | grep -w "scope global*\|link*" | awk -F " " '{for (i=2;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
   iAddr=`echo "$allI4Addrs" | head -n 1`
   iAddrNum=`echo "$allI4Addrs" | wc -l`
   collectAllIpv4Addresses "$iAddrNum"
@@ -1180,7 +1181,7 @@ function checkSys() {
 # We need to change the source from http://mirror.centos.org to http://vault.centos.org to make repository is still available.
 # Reference: https://techglimpse.com/solve-failed-synchronize-cache-repo-appstream/
 #            https://qiita.com/yamada-hakase/items/cb1b6124e11ca65e2a2b
-    if [[ `grep -i "failed to synchronize" /root/yum_execute.log` || `grep -i "no urls in mirrorlist" /root/yum_execute.log` ]]; then
+    if [[ `grep -i "failed to synchronize\|failed to download\|no urls in mirrorlist" /root/yum_execute.log` ]]; then
       if [[ "$CurrentOS" == "CentOS" ]]; then
         cd /etc/yum.repos.d/
         sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
@@ -1432,9 +1433,9 @@ function getIPv6Address() {
   collectAllIpv6Addresses "$i6AddrNum"
   ip6Addr=`echo ${i6Addr} | cut -d'/' -f1`
   ip6Mask=`echo ${i6Addr} | cut -d'/' -f2`
-  ip6Gate=`ip -6 route show default | grep -iv "warp\|wgcf\|wg[0-9]\|docker[0-9]" | grep -w "$interface\|$interface6" | grep -w "via" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
+  ip6Gate=`ip -6 route show default | grep -iv "warp\|wgcf\|wg[0-9]\|docker[0-9]" | grep -w "$interface6" | grep -w "via" | grep "dev" | head -n 1 | awk -F " " '{for (i=3;i<=NF;i++)printf("%s ", $i);print ""}' | awk '{print$1}'`
 # Get real IPv6 subnet of current System
-  actualIp6Prefix=`ip -6 route show | grep -iv "warp\|wgcf\|wg[0-9]\|docker[0-9]" | grep -w "$interface\|$interface6" | grep -v "default" | grep -v "multicast" | grep -P '../[0-9]{1,3}' | head -n 1 | awk '{print $1}' | awk -F '/' '{print $2}'`
+  actualIp6Prefix=`ip -6 route show | grep -iv "warp\|wgcf\|wg[0-9]\|docker[0-9]" | grep -w "$interface6" | grep -v "default" | grep -v "multicast" | grep -P '../[0-9]{1,3}' | head -n 1 | awk '{print $1}' | awk -F '/' '{print $2}'`
   [[ -z "$actualIp6Prefix" || "$i6AddrNum" -ge "2" ]] && actualIp6Prefix="$ip6Mask"
   transferIPv6AddressFormat "$ip6Addr" "$ip6Gate"
 }
@@ -1896,7 +1897,7 @@ function getInterface() {
 # Ubuntu 18.04 and later version, using netplan to replace legacy ifupdown, the network config file is in /etc/netplan/
   interface=""
   Interfaces=()
-  allInterfaces=`cat /proc/net/dev | grep ':' | cut -d':' -f1 | sed 's/\s//g' | grep -iv '^lo\|^sit\|^stf\|^gif\|^dummy\|^vmnet\|^vir\|^gre\|^ipip\|^ppp\|^bond\|^tun\|^tap\|^ip6gre\|^ip6tnl\|^teql\|^ocserv\|^vpn\|^warp\|^wgcf\|^wg\|^docker'`
+  allInterfaces=`cat /proc/net/dev | grep ':' | cut -d':' -f1 | sed 's/\s//g' | grep -iv '^lo\|^sit\|^stf\|^gif\|^dummy\|^vmnet\|^vir\|^gre\|^ipip\|^ppp\|^bond\|^tun\|^tap\|^ip6gre\|^ip6tnl\|^teql\|^ocserv\|^vpn\|^warp\|^wgcf\|^wg\|^docker' | sort -n`
   for interfaceItem in $allInterfaces; do
     Interfaces[${#Interfaces[@]}]=$interfaceItem
   done
@@ -1925,6 +1926,7 @@ function getInterface() {
   echo "$interface" > /dev/null
   getArrItemIdx "${Interfaces[*]}" "$interface4"
   interface4DeviceOrder="$index"
+  echo $interface4DeviceOrder
   getArrItemIdx "${Interfaces[*]}" "$interface6"
   interface6DeviceOrder="$index"
 # Some templates of cloud provider like Bandwagonhosts, Ubuntu 22.04, may modify parameters in " GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0" " in /etc/default/grub
