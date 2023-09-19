@@ -41,12 +41,6 @@ virtualizationStatus=$(grep "virtualizationStatus" $confFile | awk '{print $2}')
 setFail2banStatus=$(grep "setFail2banStatus" $confFile | awk '{print $2}')
 setMotd=$(grep "setMotd" $confFile | awk '{print $2}')
 
-# Setting Alpine Linux by "setup-alpine" will enable the following services
-# https://github.com/alpinelinux/alpine-conf/blob/c5131e9a038b09881d3d44fb35e86851e406c756/setup-alpine.in#L189
-acpid | default
-crond | default
-seedrng | boot
-
 # Reset configurations of repositories
 true >/etc/apk/repositories
 setup-apkrepos $LinuxMirror/$alpineVer/main
@@ -67,6 +61,11 @@ sed -ri 's/^#?Port.*/Port '${sshPORT}'/g' /etc/ssh/sshd_config
 
 # Network configurations.
 # https://wiki.alpinelinux.org/wiki/Configure_Networking
+#
+# Config dhcpcd
+apk add dhcpcd
+sed -i '/^slaac private/s/^/#/' /etc/dhcpcd.conf
+sed -i '/^#slaac hwaddr/s/^#//' /etc/dhcpcd.conf
 # Setup adapter.
 setup-interfaces -a
 # Generate network file of "/etc/network/interfaces"
@@ -120,8 +119,17 @@ setup-ntp chrony || true
 # this settings will be copied to the new system,
 # but the new system boot from initramfs chroot can detect rtc hardwa1 correctly,
 # so we use hwclock manually to fix it.
-rc-update del swclock boot
+rc-update del swclock boot || true
 rc-update add hwclock boot
+
+# Setting Alpine Linux by "setup-alpine" will enable the following services
+# https://github.com/alpinelinux/alpine-conf/blob/c5131e9a038b09881d3d44fb35e86851e406c756/setup-alpine.in#L189
+# acpid | default
+# crond | default
+# seedrng | boot
+[[ -e /dev/input/event0 ]] && rc-update add acpid
+rc-update add crond
+rc-update add seedrng boot
 
 # Replace "ash" to "bash" as the default shell of the Alpine Linux.
 sed -ri 's/ash/bash/g' /etc/passwd
@@ -129,25 +137,24 @@ sed -ri 's/ash/bash/g' /etc/passwd
 # Insall more components.
 apk update
 if [[ "$setFail2banStatus" == "1" ]]; then
-  apk add bind-tools curl dhcpcd e2fsprogs fail2ban grep grub lsblk lsof net-tools udev util-linux vim wget
+  apk add bind-tools curl e2fsprogs fail2ban grep grub lsblk lsof net-tools udev util-linux vim wget
 # Config fail2ban
   sed -i '/^\[Definition\]/a allowipv6 = auto' /etc/fail2ban/fail2ban.conf
   rc-update add fail2ban
   /etc/init.d/fail2ban start
 else
-  apk add bind-tools curl dhcpcd e2fsprogs grep grub lsblk lsof net-tools udev util-linux vim wget
+  apk add bind-tools curl e2fsprogs grep grub lsblk lsof net-tools udev util-linux vim wget
 fi
-
-# Use kernel "virt" if be executed on virtual machine.
-cp /etc/apk/world /tmp/world.old
-[[ "$virtualizationStatus" == "1" ]] && kernelOpt="-k virt" || kernelOpt="-k lts"
 
 # Make a blank motd to avoid Alpine Linux writes a new one.
 [[ "$setMotd" == "1" ]] && { rm -rf /etc/motd; touch /etc/motd; }
 
+# Use kernel "virt" if be executed on virtual machine.
+[[ "$virtualizationStatus" == "1" ]] && kernelType="virt" || kernelType="lts"
+
 # Install to hard drive.
 export BOOTLOADER="grub"
-printf 'y' | setup-disk -m sys $kernelOpt -s 0 $IncDisk
+printf 'y' | setup-disk -m sys -k $kernelType -s 0 $IncDisk
 
 # Reboot, the system in the memory will all be written to the hard drive.
 exec reboot
