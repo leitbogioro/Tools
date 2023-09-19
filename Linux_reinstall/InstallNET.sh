@@ -1182,7 +1182,7 @@ function checkSys() {
 # We need to change the source from http://mirror.centos.org to http://vault.centos.org to make repository is still available.
 # Reference: https://techglimpse.com/solve-failed-synchronize-cache-repo-appstream/
 #            https://qiita.com/yamada-hakase/items/cb1b6124e11ca65e2a2b
-    if [[ `grep -i "failed to synchronize\|failed to download\|no urls in mirrorlist" /root/yum_execute.log` ]]; then
+    if [[ `grep -i "failed to\|no urls in mirrorlist" /root/yum_execute.log` ]]; then
       if [[ "$CurrentOS" == "CentOS" ]]; then
         cd /etc/yum.repos.d/
         sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
