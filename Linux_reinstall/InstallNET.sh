@@ -1028,14 +1028,15 @@ function checkMem() {
     [[ "$1" == 'alpinelinux' || "$3" == 'Ubuntu' ]] && {
       if [[ "$3" == 'Ubuntu' ]]; then
         [[ "$TotalMem1" -le "447664" || "$TotalMem2" -le "447664" ]] && {
-          echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 0.5GB!\n"
+          echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 512MB!\n"
           exit 1
         }
       elif [[ "$1" == 'alpinelinux' ]]; then
-        [[ "$TotalMem1" -le "895328" || "$TotalMem2" -le "895328" ]] && {
-          echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 1GB!\n"
+        [[ "$TotalMem1" -le "671496" || "$TotalMem2" -le "671496" ]] && {
+          echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 768MB!\n"
           exit 1
         }
+        [[ "$TotalMem1" -le "895328" || "$TotalMem2" -le "895328" ]] && lowMemMode="1"
       fi
     }
     if [[ "$TotalMem1" -le "1740800" || "$TotalMem2" -le "1740800" ]]; then
@@ -3682,6 +3683,9 @@ echo "setFail2banStatus  "${setFail2banStatus} >> \$sysroot/root/alpine.config
 
 # To determine whether to delete motd of original system
 echo "setMotd  "${setMotd} >> \$sysroot/root/alpine.config
+
+# To determine whether low memory mode so that reduce preconditioning components to make sure installation succeed on 768MB and lower.
+echo "lowMemMode  "${lowMemMode} >> \$sysroot/root/alpine.config
 
 # To determine dd image url
 echo "DDURL  "${DDURL} >> \$sysroot/root/alpine.config
