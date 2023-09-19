@@ -10,7 +10,7 @@ rm -f /etc/runlevels/default/local
 
 # Install necessary components.
 apk update
-apk add bash coreutils sed
+apk add bash coreutils grep sed
 
 # Get Windows static networking configurations.
 confFile="/root/alpine.config"
