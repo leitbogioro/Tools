@@ -1164,7 +1164,7 @@ function checkSys() {
 # This component may cause the menuentry of grub which we had generated and wrote can't be booted successfully when rebooting the system.
   apt purge inetutils-ping kexec-tools -y
 # Debian like linux OS necessary components.
-  apt install cpio curl dnsutils efibootmgr fdisk file gzip iputils-ping jq net-tools openssl subnetcalc tuned virt-what wget xz-utils -y
+  apt install cpio curl dmidecode dnsutils efibootmgr fdisk file gzip iputils-ping jq net-tools openssl subnetcalc tuned virt-what wget xz-utils -y
 
 # Redhat like Linux OS prefer to use dnf instead of yum because former has a higher execute efficiency.
   yum install epel-release -y
@@ -1174,7 +1174,7 @@ function checkSys() {
 # Reference: https://anatolinicolae.com/failed-loading-plugin-osmsplugin-no-module-named-librepo/
     [[ "$CurrentOS" == "CentOS" && "$CurrentOSVer" == "8" ]] && dnf install python3-librepo -y
 # Redhat like linux OS necessary components.
-    dnf install bind-utils cpio curl dnsutils efibootmgr file gzip ipcalc jq net-tools openssl redhat-lsb syslinux tuned util-linux virt-what wget xz --skip-broken -y
+    dnf install bind-utils cpio curl dmidecode dnsutils efibootmgr file gzip ipcalc jq net-tools openssl redhat-lsb syslinux tuned util-linux virt-what wget xz --skip-broken -y
     # dnf update -y
   else
     yum install dnf -y > /root/yum_execute.log 2>&1
@@ -1194,11 +1194,11 @@ function checkSys() {
 # Run dnf update and install components.
 # In official template of AlmaLinux 9 of Linode, "tuned" must be installed otherwise "grub2-mkconfig" can't work formally.
 # Reference: https://phanes.silogroup.org/fips-disa-stig-hardening-on-centos9/
-      dnf install bind-utils cpio curl dnsutils efibootmgr file gzip ipcalc jq net-tools openssl redhat-lsb syslinux tuned util-linux virt-what wget xz --skip-broken -y
+      dnf install bind-utils cpio curl dmidecode dnsutils efibootmgr file gzip ipcalc jq net-tools openssl redhat-lsb syslinux tuned util-linux virt-what wget xz --skip-broken -y
       # dnf update -y
 # Oracle Linux 7 doesn't support DNF.
     elif [[ `grep -i "no package" /root/yum_execute.log` ]]; then
-      yum install bind-utils cpio curl dnsutils efibootmgr file gzip ipcalc jq net-tools openssl redhat-lsb syslinux tuned util-linux virt-what wget xz --skip-broken -y
+      yum install bind-utils cpio curl dmidecode dnsutils efibootmgr file gzip ipcalc jq net-tools openssl redhat-lsb syslinux tuned util-linux virt-what wget xz --skip-broken -y
       # yum update -y
     fi
     rm -rf /root/yum_execute.log
@@ -1216,7 +1216,7 @@ function checkSys() {
     # [[ ! `grep -i "testing" /etc/apk/repositories` ]] && sed -i '$a\http://ftp.udx.icscoe.jp/Linux/alpine/edge/testing' /etc/apk/repositories
 # Alpine Linux use "apk" as package management.
     apk update
-    apk add bash bind-tools coreutils cpio curl efibootmgr file gawk grep gzip ipcalc jq lsblk net-tools openssl sed shadow tzdata util-linux virt-what wget xz
+    apk add bash bind-tools coreutils cpio curl dmidecode efibootmgr file gawk grep gzip ipcalc jq lsblk net-tools openssl sed shadow tzdata util-linux virt-what wget xz
 # Use bash to replace ash.
     sed -i 's/root:\/bin\/ash/root:\/bin\/bash/g' /etc/passwd
   }
