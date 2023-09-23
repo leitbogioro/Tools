@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # kpartx and qumu-utils are required
-apt install cron kpartx mount qemu-utils -y
+apt install cron kpartx mount qemu-utils xz-utils -y
 # get valid loop device
 loopDevice=$(echo $(losetup -f))
 loopDeviceNum=$(echo $(losetup -f) | cut -d'/' -f 3)
@@ -22,14 +22,18 @@ for distName in "jammy" "focal"; do
     umount /mnt
     kpartx -dv $loopDevice
     losetup -d $loopDevice
+    xz -z -1 -T 0 /root/$fileName.raw
+    mv /root/$fileName.raw.xz /root/$fileName.xz
+    rm -rf $websiteDir/$fileName.xz
+    mv /root/$fileName.xz $websiteDir/$fileName.xz
     rm -rf $websiteDir/$fileName.raw
-    mv /root/$fileName.raw $websiteDir/$fileName.raw
+    rm -rf /root/$fileName.raw
     rm -rf /root/$fileName.img
   done
 done
 
 # write crontab task
 if [[ ! `grep -i "autorepackubuntucloudimages" /etc/crontab` ]]; then
-  sed -i '$i 30 4    * * 0   root    bash /root/autoRepackUbuntuCloudImages.sh' /etc/crontab
+  sed -i '$i 30 4 10-16,24-30 * 5   root    bash /root/autoRepackUbuntuCloudImages.sh' /etc/crontab
   /etc/init.d/cron restart
 fi
