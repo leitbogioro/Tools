@@ -3088,15 +3088,11 @@ if [[ "$ddMode" == '1' ]]; then
     fi
     if [[ "$tmpURL" == "" ]]; then
       tmpURL="https://cloud-images.a.disk.re/Ubuntu/"
+      setFileType="xz"
+      verifyUrlValidationOfDdImages "$tmpURL$finalDIST-server-cloudimg-$ubuntuVER.""$setFileType"
+    else
+      verifyUrlValidationOfDdImages "$tmpURL"
     fi
-    echo "$tmpURL" | grep -q '^http://\|^ftp://\|^https://'
-    [[ $? -ne '0' ]] && echo -ne "\n[${red}Error${plain}] Please input a vaild URL, only support http://, ftp:// and https:// ! \n" && exit 1
-    tmpURLCheck=$(echo $(curl -s -I -X GET $tmpURL) | grep -wi "http/[0-9]*" | awk '{print $2}')
-    [[ -z "$tmpURLCheck" || ! "$tmpURLCheck" =~ ^[0-9]+$ ]] && {
-      echo -ne "\n[${red}Error${plain}] The mirror of DD images is temporarily unavailable!\n"
-      exit 1
-    }
-    DDURL="$tmpURL$finalDIST-server-cloudimg-$ubuntuVER.raw"
     ReleaseName="$targetRelese $finalDIST $ubuntuVER"
   elif [[ "$targetRelese" == 'Windows' ]]; then
 # If the range of IPv4 address is too narrow, it will cause IPv4 address and subnet are added with a fatal by using "CMD(*.bat script)" of
@@ -3630,7 +3626,7 @@ echo "windowsStaticConfigCmd  "${windowsStaticConfigCmd} >> \$sysroot/root/alpin
 # To determine Windows network IPv4 static or dhcp.
 echo "Network4Config  "${Network4Config} >> \$sysroot/root/alpine.config
 
-# To determine Windows dd package decompress method.
+# To determine dd package decompress method.
 echo "DEC_CMD  "${DEC_CMD} >> \$sysroot/root/alpine.config
 
 # To determine timezone.
