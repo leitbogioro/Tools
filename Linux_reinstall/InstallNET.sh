@@ -3818,7 +3818,7 @@ ${SetTimeZone}
 ${NetConfigManually}
 
 # System bootloader configuration
-bootloader --location=mbr --boot-drive=${ksIncDisk} --append="rhgb quiet crashkernel=auto net.ifnames=0 biosdevname=0 ipv6.disable=1"
+bootloader --location=mbr --boot-drive=${ksIncDisk} --append="rhgb quiet crashkernel=no net.ifnames=0 biosdevname=0 ipv6.disable=1"
 
 # Clear the Master Boot Record
 zerombr
