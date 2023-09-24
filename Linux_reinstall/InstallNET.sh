@@ -3862,9 +3862,10 @@ sed -ri "/^#?PasswordAuthentication.*/c\PasswordAuthentication yes" /etc/ssh/ssh
 
 # Change ssh port
 sed -ri "/^#?Port.*/c\Port ${sshPORT}" /etc/ssh/sshd_config
-rm -rf /etc/firewalld/zones/public.xml
-wget --no-check-certificate -qO /etc/firewalld/zones/public.xml '$FirewallRule'
-sed -ri 's/port=""/port="${sshPORT}"/g' /etc/firewalld/zones/public.xml
+
+# Add new ssh port for firewalld
+sed -i '6i \ \ <port port="${sshPORT}" protocol="tcp"/>' /etc/firewalld/zones/public.xml
+sed -i '7i \ \ <port port="${sshPORT}" protocol="udp"/>' /etc/firewalld/zones/public.xml
 firewall-cmd --reload
 
 # Write fail2ban config
