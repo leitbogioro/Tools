@@ -3803,6 +3803,10 @@ keyboard us
 # SELinux configuration
 selinux --disabled
 
+# Kdump configuration
+%addon com_redhat_kdump --disable
+%end
+
 # Use text install
 text
 
