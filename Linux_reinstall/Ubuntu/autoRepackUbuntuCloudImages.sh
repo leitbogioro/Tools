@@ -2,16 +2,18 @@
 #
 # kpartx and qumu-utils are required
 apt update -y
-apt install cron kpartx mount qemu-utils xz-utils -y
+apt install axel cron kpartx mount qemu-utils xz-utils -y
 # get valid loop device
 loopDevice=$(echo $(losetup -f))
 loopDeviceNum=$(echo $(losetup -f) | cut -d'/' -f 3)
-websiteDir="/www/wwwroot/cloud-images.a.disk.re/Ubuntu"
+linuxName="Ubuntu"
+websiteDir="/www/wwwroot/cloud-images.a.disk.re/$linuxName"
+[[ ! -d "$websiteDir" ]] && mkdir -p "$websiteDir"
 
 for distName in "jammy" "focal"; do
-  for archVer in "amd64" "arm64"; do
-    fileName="$distName-server-cloudimg-$archVer"
-    wget --no-check-certificate -qO /root/$fileName.img "https://cloud-images.ubuntu.com/$distName/current/$fileName.img"
+  for archType in "amd64" "arm64"; do
+    fileName="$distName-server-cloudimg-$archType"
+    axel -n 16 -k -q -o /root/$fileName.img "https://cloud-images.ubuntu.com/$distName/current/$fileName.img"
     qemu-img convert -f qcow2 -O raw /root/$fileName.img /root/$fileName.raw
     losetup $loopDevice /root/$fileName.raw
     mapperDevice=$(kpartx -av $loopDevice | grep "$loopDeviceNum" | head -n 1 | awk '{print $3}')
