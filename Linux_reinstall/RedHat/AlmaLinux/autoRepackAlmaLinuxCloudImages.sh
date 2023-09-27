@@ -40,6 +40,6 @@ done
 
 # write crontab task
 if [[ ! `grep -i "autorepackalmalinuxcloudimages" /etc/crontab` ]]; then
-  sed -i '$i 0 6 1-7 * 7   root    bash /root/autoRepackAlmaLinuxCloudImages.sh' /etc/crontab
+  sed -i '$i 0 6 1-7 2,4,6,8,10,12 7   root    bash /root/autoRepackAlmaLinuxCloudImages.sh' /etc/crontab
   /etc/init.d/cron restart
 fi
