@@ -2621,7 +2621,7 @@ EOF
   fi
 }
 
-alpineInstallOrDdAdditionalFiles() {
+function alpineInstallOrDdAdditionalFiles() {
   AlpineInitFile="$1"
   AlpineDnsFile="$2"
   AlpineMotd="$3"
@@ -2643,7 +2643,7 @@ alpineInstallOrDdAdditionalFiles() {
 }
 
 # $1 is "$tmpURL".
-verifyUrlValidationOfDdImages() {
+function verifyUrlValidationOfDdImages() {
   echo "$1" | grep -q '^http://\|^ftp://\|^https://'
   [[ $? -ne '0' ]] && echo -ne "\n[${red}Error${plain}] Please input a vaild URL, only support http://, ftp:// and https:// ! \n" && exit 1
   tmpURLCheck=$(echo $(curl -s -I -X GET $1) | grep -wi "http/[0-9]*" | awk '{print $2}')
