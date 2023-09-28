@@ -17,6 +17,7 @@ confFile="/root/alpine.config"
 
 # Read configs from initial file.
 IncDisk=$(grep "IncDisk" $confFile | awk '{print $2}')
+LinuxMirror=$(grep -w "LinuxMirror" $confFile | awk '{print $2}')
 alpineVer=$(grep "alpineVer" $confFile | awk '{print $2}')
 TimeZone1=$(grep "TimeZone" $confFile | awk '{print $2}' | cut -d'/' -f 1)
 TimeZone2=$(grep "TimeZone" $confFile | awk '{print $2}' | cut -d'/' -f 2)
