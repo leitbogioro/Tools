@@ -67,7 +67,7 @@ apk update
 apk add ca-certificates e2fsprogs hdparm multipath-tools parted util-linux wget xz
 
 # start dd
-wget --no-check-certificate -qO- "$DDURL" | $DEC_CMD | dd of="$IncDisk"
+wget --no-check-certificate --report-speed=bits --tries=0 -O- "$DDURL" | $DEC_CMD | dd of="$IncDisk" status=progress
 
 # get valid loop device
 loopDevice=$(echo $(losetup -f))
