@@ -13,7 +13,8 @@ apk update
 apk add coreutils grep sed
 
 # Get Ubuntu Linux configurations.
-confFile="/root/alpine.config"
+confFile='/root/alpine.config'
+cloudInitFile='/mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg'
 
 # Read configs from initial file.
 IncDisk=$(grep "IncDisk" $confFile | awk '{print $2}')
@@ -66,70 +67,79 @@ hwclock -s
 apk update
 apk add ca-certificates e2fsprogs hdparm multipath-tools parted util-linux wget xz
 
-# start dd
+# Start dd.
 wget --no-check-certificate --report-speed=bits --tries=0 --timeout=1 --wait=1 -O- "$DDURL" | $DEC_CMD | dd of="$IncDisk" status=progress
 
-# get valid loop device
+# Get a valid loop device.
 loopDevice=$(echo $(losetup -f))
 loopDeviceNum=$(echo $(losetup -f) | cut -d'/' -f 3)
 
-# make a soft link between valid loop device and disk
+# Make a soft link between valid loop device and disk.
 losetup $loopDevice $IncDisk
 
-# get mapper partition
+# Get mapper partition.
 mapperDevice=$(kpartx -av $loopDevice | grep "$loopDeviceNum" | head -n 1 | awk '{print $3}')
 
-# mount Ubuntu dd partition to /mnt
+# Mount Ubuntu dd partition to "/mnt".
 mount /dev/mapper/$mapperDevice /mnt
 
-# download cloud init file
-wget --no-check-certificate -qO /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg ''$cloudInitUrl''
+# Download cloud init file.
+wget --no-check-certificate -qO $cloudInitFile ''$cloudInitUrl''
 
-# user config
-sed -ri 's/HostName/'${HostName}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-sed -ri 's/tmpWORD/'${tmpWORD}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-sed -ri 's/sshPORT/'${sshPORT}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-sed -ri 's/TimeZone/'${TimeZone1}'\/'${TimeZone2}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-sed -ri 's/targetLinuxMirror/'${targetLinuxMirror}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-sed -ri 's/networkAdapter/'${networkAdapter}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+# User config.
+sed -ri 's/HostName/'${HostName}'/g' $cloudInitFile
+sed -ri 's/tmpWORD/'${tmpWORD}'/g' $cloudInitFile
+sed -ri 's/sshPORT/'${sshPORT}'/g' $cloudInitFile
+sed -ri 's/TimeZone/'${TimeZone1}'\/'${TimeZone2}'/g' $cloudInitFile
+sed -ri 's/targetLinuxMirror/'${targetLinuxMirror}'/g' $cloudInitFile
+sed -ri 's/networkAdapter/'${networkAdapter}'/g' $cloudInitFile
 if [[ "$iAddrNum" -ge "2" ]]; then
-  sed -ri 's#IPv4/ipPrefix#'${writeIpsCmd}'#g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+  sed -ri 's#IPv4/ipPrefix#'${writeIpsCmd}'#g' $cloudInitFile
 else
-  sed -ri 's/IPv4/'${IPv4}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-  sed -ri 's/ipPrefix/'${ipPrefix}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-  sed -ri "s/${IPv4}\/${ipPrefix}/${IPv4}\/${actualIp4Prefix}/g" /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+  sed -ri 's/IPv4/'${IPv4}'/g' $cloudInitFile
+  sed -ri 's/ipPrefix/'${ipPrefix}'/g' $cloudInitFile
+  sed -ri "s/${IPv4}\/${ipPrefix}/${IPv4}\/${actualIp4Prefix}/g" $cloudInitFile
 fi
-sed -ri 's/GATE/'${GATE}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-sed -ri 's/ipDNS1/'${ipDNS1}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-sed -ri 's/ipDNS2/'${ipDNS2}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+sed -ri 's/GATE/'${GATE}'/g' $cloudInitFile
+sed -ri 's/ipDNS1/'${ipDNS1}'/g' $cloudInitFile
+sed -ri 's/ipDNS2/'${ipDNS2}'/g' $cloudInitFile
 if [[ "$i6AddrNum" -ge "2" ]]; then
-  sed -ri 's#ip6Addr/ip6Mask#'${writeIp6sCmd}'#g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+  sed -ri 's#ip6Addr/ip6Mask#'${writeIp6sCmd}'#g' $cloudInitFile
 else
-  sed -ri 's/ip6Addr/'${ip6Addr}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-  sed -ri 's/ip6Mask/'${ip6Mask}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-  sed -ri "s/${ip6Addr}\/${ip6Mask}/${ip6Addr}\/${actualIp6Prefix}/g" /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+  sed -ri 's/ip6Addr/'${ip6Addr}'/g' $cloudInitFile
+  sed -ri 's/ip6Mask/'${ip6Mask}'/g' $cloudInitFile
+  sed -ri "s/${ip6Addr}\/${ip6Mask}/${ip6Addr}\/${actualIp6Prefix}/g" $cloudInitFile
 fi
-sed -ri 's/ip6Gate/'${ip6Gate}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-sed -ri 's/ip6DNS1/'${ip6DNS1}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-sed -ri 's/ip6DNS2/'${ip6DNS2}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+sed -ri 's/ip6Gate/'${ip6Gate}'/g' $cloudInitFile
+sed -ri 's/ip6DNS1/'${ip6DNS1}'/g' $cloudInitFile
+sed -ri 's/ip6DNS2/'${ip6DNS2}'/g' $cloudInitFile
 
 # Disable any datahouse
 # Reference: https://github.com/canonical/cloud-init/issues/3772
 echo 'datasource_list: [ NoCloud, None ]' > /mnt/etc/cloud/cloud.cfg.d/90_dpkg.cfg
 
-# disable IPv6
+# Disable IPv6.
 [[ "$setIPv6" == "0" ]] && {
   sed -ri 's/GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0"/GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0 ipv6.disable=1"/g' /mnt/etc/default/grub
   sed -ri 's/ro net.ifnames=0 biosdevname=0/ro net.ifnames=0 biosdevname=0 ipv6.disable=1/g' /mnt/boot/grub/grub.cfg
 }
 
-# disable installing fail2ban
+# Permit root user login by password.
+sed -ri 's/^#?PermitRootLogin.*/PermitRootLogin yes/g' /mnt/etc/ssh/sshd_config
+sed -ri 's/^#?PasswordAuthentication.*/PasswordAuthentication yes/g' /mnt/etc/ssh/sshd_config
+
+# Disable installing fail2ban.
 [[ "$setFail2banStatus" != "1" ]] && {
-  sed -ri 's/dnsutils fail2ban/dnsutils/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg 
-  sed -i '/\/etc\/fail2ban/d' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-  sed -i '/fail2ban enable/d' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-  sed -i '/fail2ban restart/d' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+  sed -ri 's/dnsutils fail2ban/dnsutils/g' $cloudInitFile 
+  sed -i '/\/etc\/fail2ban/d' $cloudInitFile
+  sed -i '/fail2ban enable/d' $cloudInitFile
+  sed -i '/fail2ban restart/d' $cloudInitFile
 }
+
+# Umount mounted directory and loop device.
+umount /mnt
+kpartx -dv $loopDevice
+losetup -d $loopDevice
 
 # Reboot, the system in the memory will all be written to the hard drive.
 exec reboot
