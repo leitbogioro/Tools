@@ -295,6 +295,11 @@ while [[ $# -ge 1 ]]; do
       setCloudKernel="$1"
       shift
       ;;
+    --cloudimage)
+      shift
+      useCloudImage="1"
+      shift
+      ;;
     -filetype)
       shift
       setFileType="$1"
@@ -704,6 +709,8 @@ function getDisk() {
   [[ -z "$1" && "$disksNum" -ge "2" && -n $(lsblk -ip | awk '{print $6}' | grep -io "lvm") ]] && {
     [[ "$2" == 'debian' || "$2" == 'kali' ]] && setDisk="all"
   }
+  
+  diskCapacity=$(lsblk -ipb | grep -w "$IncDisk" | awk {'print $4'})
 }
 
 function diskType() {
@@ -949,7 +956,7 @@ function checkGrub() {
     fi
   done
   GRUBDIR=`echo $GRUBDIR | awk '{print $1}'`
-  if [[ -z "$GRUBFILE" ]] || [[ `grep -c "insmod*" $GRUBDIR$GRUBFILE` == "0" ]]; then
+  if [[ -z "$GRUBFILE" ]] || [[ `grep -c "insmod*" $GRUBDIR$GRUBFILE` == "0" ]] || [[ -n "$GRUBFILE" && `grep -c "insmod*" $GRUBDIR$GRUBFILE` != "0" && "$EfiSupport" == "disabled" ]]; then
     for Count in "$1" "$2" "$3"; do
 # Don't support grub1 of CentOS/Redhat Enterprise Linux/Oracle Linux 6.x
       if [[ -f "$Count""$4" ]] && [[ `grep -c "insmod*" $Count$4` -ge "1" ]]; then
@@ -1001,16 +1008,26 @@ function checkMem() {
 # They never optimize or improve it, just tell users they need to pay more to expand their hardware performance and adjust to the endless demand of them. it's not a correct decision. 
   [[ "$setMemCheck" == '1' ]] && {
     [[ "$1" == 'fedora' || "$1" == 'rockylinux' || "$1" == 'almalinux' || "$1" == 'centos' ]] && {
+      [[ "$TotalMem1" -le "447664" || "$TotalMem2" -le "447664" ]] && {
+        echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 512MB!\n"
+        exit 1
+      }
       if [[ "$1" == 'rockylinux' || "$1" == 'almalinux' || "$1" == 'centos' ]]; then
         if [[ "$2" == "8" ]] || [[ "$1" == 'centos' && "$2" -ge "9" ]]; then
           [[ "$TotalMem1" -le "2198342" || "$TotalMem2" -le "2198342" ]] && {
-            echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 2.5GB!\n"
-            exit 1
+            echo -ne "\n[${red}Warning${plain}] Minimum system memory requirement is 2.5GB for kickstart native method."
+            if [[ "$2" == "8" ]]; then
+              echo -ne "\nSwitching to ${yellow}Rocky $2${plain} ${blue}Cloud Init${plain} Installation... \n"
+              lowMemMode="1"
+            elif [[ "$1" == 'centos' && "$2" -ge "9" ]]; then
+              [[ "$TotalMem1" -ge "2000682" || "$TotalMem2" -ge "2000682" ]] && { echo -ne "\nSwitching ${blue}Redhat distribution${plain}... \n"; switchRedhatDIST="1"; } || { echo -ne "\nSwitching to ${blue}Cloud Init${plain} Installation... \n"; lowMemMode="1"; }
+            fi
           }
         elif [[ "$2" -ge "9" ]]; then
-          [[ "$TotalMem1" -le "1740800" || "$TotalMem2" -le "1740800" ]] && {
-            echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 2GB!\n"
-            exit 1
+          [[ "$TotalMem1" -le "2000682" || "$TotalMem2" -le "2000682" ]] && {
+            echo -ne "\n[${red}Warning${plain}] Minimum system memory requirement is 2GB for ${blue}Kickstart${plain} native method."
+            echo -ne "\nSwitching to ${blue}Cloud Init${plain} Installation... \n"
+            lowMemMode="1"
           }
         elif [[ "$2" == "7" ]]; then
           [[ "$TotalMem1" -le "1319006" || "$TotalMem2" -le "1319006" ]] && {
@@ -1058,6 +1075,14 @@ function checkVirt() {
 }
 
 function checkSys() {
+# Allocate 512MB swap to provent yum dead.
+  if [[ ! -e "/swapspace" ]]; then
+    fallocate -l 512M /swapspace
+    chmod 600 /swapspace
+    mkswap /swapspace
+    swapon /swapspace
+  fi
+
 # Fix debian security sources 404 not found (only of default sources) 
   sed -i 's/^\(deb.*security.debian.org\/\)\(.*\)\/updates/\1debian-security\2-security/g' /etc/apt/sources.list
   
@@ -1220,6 +1245,169 @@ function checkSys() {
 # Use bash to replace ash.
     sed -i 's/root:\/bin\/ash/root:\/bin\/bash/g' /etc/passwd
   }
+}
+
+function checkVER() {
+# Get architecture of current os automatically
+  ArchName=`uname -m`
+  [[ -z "$ArchName" ]] && ArchName=$(echo `hostnamectl status | grep "Architecture" | cut -d':' -f 2`)
+  case $ArchName in arm64) VER="arm64";; aarch64) VER="aarch64";; x86|i386|i686) VER="i386";; x86_64) VER="x86_64";; x86-64) VER="x86-64";; amd64) VER="amd64";; *) VER="";; esac
+# Exchange architecture name
+  if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ "$linux_relese" == 'kali' ]]; then
+# In debian 12, the result of "uname -m" is "x86_64";
+# the result of "echo `hostnamectl status | grep "Architecture" | cut -d':' -f 2`" is "x86-64"
+    if [[ "$VER" == "x86_64" ]] || [[ "$VER" == "x86-64" ]]; then
+      VER="amd64"
+    elif [[ "$VER" == "aarch64" ]]; then
+      VER="arm64"
+    fi
+  elif [[ "$linux_relese" == 'alpinelinux' ]] || [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
+    if [[ "$VER" == "amd64" ]] || [[ "$VER" == "x86-64" ]]; then
+      VER="x86_64"
+    elif [[ "$VER" == "arm64" ]]; then
+      VER="aarch64"
+    fi
+  fi
+
+# Check and exchange input architecture name
+  tmpVER="$(echo "$tmpVER" |sed -r 's/(.*)/\L\1/')"
+  if [[ -n "$tmpVER" ]]; then
+    case "$tmpVER" in
+      i386|i686|x86|32)
+        VER="i386"
+        ;;
+      amd64|x86_64|x64|64)
+        [[ "$linux_relese" == 'alpinelinux' ]] || [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]] && VER='x86_64' || VER='amd64'
+        ;;
+      aarch64|arm64|arm)
+        [[ "$linux_relese" == 'alpinelinux' ]] || [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]] && VER='aarch64' || VER='arm64'
+        ;;
+      *)
+        VER=''
+        ;;
+    esac
+  fi
+
+  [[ ! -n "$VER" ]] && {
+    echo -ne "\n[${red}Error${plain}] Unknown architecture.\n"
+    bash $0 error
+    exit 1
+  }
+}
+
+function checkDIST() {
+  if [[ "$Relese" == 'Debian' ]]; then
+    SpikCheckDIST='0'
+    DIST="$(echo "$tmpDIST" |sed -r 's/(.*)/\L\1/')"
+    DebianDistNum="${DIST}"
+    echo "$DIST" |grep -q '[0-9]'
+    [[ $? -eq '0' ]] && {
+      isDigital="$(echo "$DIST" |grep -o '[\.0-9]\{1,\}' |sed -n '1h;1!H;$g;s/\n//g;$p' |cut -d'.' -f1)";
+      [[ -n $isDigital ]] && {
+        [[ "$isDigital" == '7' ]] && DIST='wheezy'
+        [[ "$isDigital" == '8' ]] && DIST='jessie'
+        [[ "$isDigital" == '9' ]] && DIST='stretch'
+        [[ "$isDigital" == '10' ]] && DIST='buster'
+        [[ "$isDigital" == '11' ]] && DIST='bullseye'
+        [[ "$isDigital" == '12' ]] && DIST='bookworm'
+        [[ "$isDigital" == '13' ]] && DIST='trixie'
+        # [[ "$isDigital" == '14' ]] && DIST='forky'
+# Debian releases TBA reference: https://wiki.debian.org/DebianReleases
+#                                https://en.wikipedia.org/wiki/Debian_version_history#Release_table
+      }
+    }
+    LinuxMirror=$(selectMirror "$Relese" "$DIST" "$VER" "$tmpMirror")
+  fi
+  if [[ "$Relese" == 'Kali' ]]; then
+    SpikCheckDIST='0'
+    DIST="$(echo "$tmpDIST" |sed -r 's/(.*)/\L\1/')"
+    [[ ! "$DIST" =~ "kali-" ]] && DIST="kali-""$DIST"
+# Kali Linux releases reference: https://www.kali.org/releases/
+    LinuxMirror=$(selectMirror "$Relese" "$DIST" "$VER" "$tmpMirror")
+  fi
+  if [[ "$Relese" == 'AlpineLinux' ]]; then
+    SpikCheckDIST='0'
+    DIST="$(echo "$tmpDIST" |sed -r 's/(.*)/\L\1/')"
+# Recommend "edge" version of Alpine Linux to make sure to keep always updating.
+    AlpineVer1=`echo "$DIST" | sed 's/[a-z][A-Z]*//g' | cut -d"." -f 1`
+    AlpineVer2=`echo "$DIST" | sed 's/[a-z][A-Z]*//g' | cut -d"." -f 2`
+    if [[ "$AlpineVer1" -lt "3" || "$AlpineVer2" -le "15" ]] && [[ "$DIST" != "edge" ]]; then
+      echo -ne "\n[${red}Warning${plain}] $Relese $DIST is not supported!\n"
+      exit 1
+    fi
+    [[ "$DIST" != "edge" && ! "$DIST" =~ "v" ]] && DIST="v""$DIST"
+# Alpine Linux releases reference: https://alpinelinux.org/releases/
+    LinuxMirror=$(selectMirror "$Relese" "$DIST" "$VER" "$tmpMirror")
+  fi
+  if [[ "$Relese" == 'CentOS' ]] || [[ "$Relese" == 'RockyLinux' ]] || [[ "$Relese" == 'AlmaLinux' ]] || [[ "$Relese" == 'Fedora' ]]; then
+    SpikCheckDIST='1'
+    DISTCheck="$(echo "$tmpDIST" |grep -o '[\.0-9]\{1,\}' |head -n1)"
+    RedHatSeries=`echo "$tmpDIST" | cut -d"." -f 1 | cut -d"-" -f 1`
+# CentOS and CentOS stream releases history:
+# https://endoflife.date/centos
+    if [[ "$linux_relese" == 'centos' ]]; then
+      [[ "$RedHatSeries" =~ [0-9]{${#1}} ]] && {
+        if [[ "$RedHatSeries" == "6" ]]; then
+          DISTCheck="6.10"
+          echo -ne "\n[${red}Warning${plain}] $Relese $DISTCheck is not supported!\n"
+          exit 1
+        elif [[ "$RedHatSeries" == "7" ]]; then
+          DISTCheck="7.9.2009"
+        elif [[ "$RedHatSeries" -ge "8" ]] && [[ ! "$RedHatSeries" =~ "-stream" ]]; then
+          DISTCheck="$RedHatSeries""-stream"
+        elif [[ "$RedHatSeries" -le "5" ]]; then
+          echo -ne "\n[${red}Warning${plain}] $Relese $DISTCheck is not supported!\n"
+        else
+          echo -ne "\n[${red}Error${plain}] Invaild $DIST! version!\n"
+        fi
+      }
+      LinuxMirror=$(selectMirror "$Relese" "$DISTCheck" "$VER" "$tmpMirror")
+      DIST="$DISTCheck"
+    fi
+    if [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
+      [[ "$RedHatSeries" =~ [0-9]{${#1}} ]] && {
+# RockyLinux releases history:
+# https://wiki.rockylinux.org/rocky/version/
+# AlmaLinux releases history:
+# https://wiki.almalinux.org/release-notes/
+        if [[ "$linux_relese" == 'rockylinux' || "$linux_relese" == 'almalinux' ]] && [[ "$RedHatSeries" -le "7" ]]; then
+          echo -ne "\n[${red}Warning${plain}] $Relese $DISTCheck is not supported!\n"
+          exit 1
+# Fedora releases history:
+# https://en.wikipedia.org/wiki/Fedora_Linux_release_history
+        elif [[ "$linux_relese" == 'fedora' ]] && [[ "$RedHatSeries" -le "36" ]]; then
+          echo -ne "\n[${red}Warning${plain}] $Relese $DISTCheck is not supported!\n"
+          exit 1
+        fi
+      }
+      LinuxMirror=$(selectMirror "$Relese" "$DISTCheck" "$VER" "$tmpMirror")
+      DIST="$DISTCheck"
+    fi
+    [[ -z "$DIST" ]] && {
+      echo -ne "\nThe dists version not found in this mirror, Please check it! \n\n"
+      bash $0 error
+      exit 1
+    }
+    if [[ "$linux_relese" == 'centos' ]] && [[ "$RedHatSeries" -le "7" ]]; then
+      wget --no-check-certificate -qO- "$LinuxMirror/$DIST/os/$VER/.treeinfo" | grep -q 'general'
+      [[ $? != '0' ]] && {
+        echo -ne "\n[${red}Warning${plain}] $Relese $DISTCheck was not found in this mirror, Please change mirror try again!\n"
+        exit 1
+      }
+    elif [[ "$linux_relese" == 'centos' && "$RedHatSeries" -ge "8" ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]]; then
+      wget --no-check-certificate -qO- "$LinuxMirror/$DIST/BaseOS/$VER/os/media.repo" | grep -q 'mediaid'
+      [[ $? != '0' ]] && {
+        echo -ne "\n[${red}Warning${plain}] $Relese $DISTCheck was not found in this mirror, Please change mirror try again!\n"
+        exit 1
+      }
+    elif [[ "$linux_relese" == 'fedora' ]]; then
+      wget --no-check-certificate -qO- "$LinuxMirror/releases/$DIST/Server/$VER/os/media.repo" | grep -q 'mediaid'
+      [[ $? != '0' ]] && {
+        echo -ne "\n[${red}Warning${plain}] $Relese $DISTCheck was not found in this mirror, Please change mirror try again!\n"
+        exit 1
+      }
+    fi    
+  fi
 }
 
 # $1 is "$ipAddr", $2 is "$ip6Addr"
@@ -2635,6 +2823,10 @@ function alpineInstallOrDdAdditionalFiles() {
     AlpineInitFile="$6"
     AlpineInitFileName="ubuntuConf.start"
     [[ "$setIPv6" == "0" ]] && setIPv6="0" || setIPv6="1"
+  elif [[ "$targetRelese" == 'AlmaLinux' || "$targetRelese" == 'Rocky' ]]; then
+    AlpineInitFile="$9"
+    AlpineInitFileName="rhelConf.start"
+    [[ "$setIPv6" == "0" ]] && setIPv6="0" || setIPv6="1"
   elif [[ "$targetRelese" == 'Windows' ]]; then
     AlpineInitFile="$7"
     AlpineInitFileName="windowsConf.start"
@@ -2713,8 +2905,59 @@ if [[ "$loaderMode" == "0" ]]; then
   fi
 fi
 
+clear
+
+[[ -z "$tmpDIST" ]] && {
+  [ "$Relese" == 'Debian' ] && tmpDIST='12'
+  [ "$Relese" == 'Kali' ] && tmpDIST='rolling'
+  [ "$Relese" == 'AlpineLinux' ] && tmpDIST='edge'
+  [ "$Relese" == 'CentOS' ] && tmpDIST='9'
+  [ "$Relese" == 'RockyLinux' ] && tmpDIST='9'
+  [ "$Relese" == 'AlmaLinux' ] && tmpDIST='9'
+  [ "$Relese" == 'Fedora' ] && tmpDIST='38'
+}
+[[ -z "$finalDIST" ]] && {
+  [ "$targetRelese" == 'Ubuntu' ] && finalDIST='22.04'
+  [ "$targetRelese" == 'Windows' ] && finalDIST='server 2022'
+}
+
+[[ -n "$Relese" ]] || Relese='Debian'
+linux_relese=$(echo "$Relese" |sed 's/\ //g' |sed -r 's/(.*)/\L\1/')
+
+checkVER
+if [[ -n "$tmpDIST" ]]; then
+  checkDIST
+fi
+
+# RAM of RedHat series is 2GB required at least for native install, for dd is 512MB.
+[[ "$setNetbootXyz" == "0" ]] && {
+  checkMem "$linux_relese" "$RedHatSeries" "$targetRelese"
+  Add_OPTION="$Add_OPTION $lowmemLevel"
+  [[ "$switchRedhatDIST" == "1" ]] && { Relese='AlmaLinux'; linux_relese='almalinux'; }
+  checkDIST
+}
+
+[[ "$lowMemMode" == '1' || "$useCloudImage" == "1" ]] && {
+  if [[ "$linux_relese" == 'rockylinux' || "$linux_relese" == 'almalinux' || "$linux_relese" == 'centos' ]]; then
+    if [[ "$RedHatSeries" == "8" ]]; then
+      targetRelese='Rocky'
+      [[ "$IPStackType" == "IPv6Stack" ]] && { echo -ne "\n[${red}Warning${plain}] ${yellow}$targetRelese $RedHatSeries${plain} doesn't support ${blue}$IPStackType${plain}."; echo -ne "\nSwitching to ${blue}AlmaLinux 9${plain} Distribution... \n"; linux_relese='almalinux'; RedHatSeries="9"; }
+    fi
+    if [[ "$linux_relese" == 'centos' && "$RedHatSeries" -ge "9" ]]; then
+      targetRelese='AlmaLinux'
+    elif [[ "$RedHatSeries" -ge "9" ]]; then
+      if [[ "$linux_relese" == 'almalinux' ]]; then
+        targetRelese='AlmaLinux'
+      elif [[ "$linux_relese" == 'rockylinux' ]]; then
+        targetRelese='Rocky'
+      fi
+    fi
+    ddMode='1'
+  fi
+}
+
 [[ "$ddMode" == '1' ]] && {
-  if [[ "$targetRelese" == 'Ubuntu' ]] || [[ "$targetRelese" == 'Windows' ]]; then
+  if [[ "$targetRelese" == 'Ubuntu' ]] || [[ "$targetRelese" == 'Windows' ]] || [[ "$targetRelese" == 'AlmaLinux' ]] || [[ "$targetRelese" == 'Rocky' ]]; then
     Relese='AlpineLinux'
     tmpDIST='edge'
     if [[ "$targetRelese" == 'Windows' ]]; then
@@ -2727,12 +2970,26 @@ fi
     Relese='Debian'
     tmpDIST='12'
   fi
+  linux_relese=$(echo "$Relese" |sed 's/\ //g' |sed -r 's/(.*)/\L\1/')
+  checkVER
+  checkDIST
 }
 
-[[ -n "$Relese" ]] || Relese='Debian'
-linux_relese=$(echo "$Relese" |sed 's/\ //g' |sed -r 's/(.*)/\L\1/')
+[[ -z "$LinuxMirror" ]] && {
+  echo -ne "\n[${red}Error${plain}] Invaild mirror! \n"
+  [ "$Relese" == 'Debian' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://www.debian.org/mirror/list\n\n"
+  [ "$Relese" == 'Ubuntu' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://launchpad.net/ubuntu/+archivemirrors\n\n"
+  [ "$Relese" == 'Kali' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://http.kali.org/README.mirrorlist\n\n"
+  [ "$Relese" == 'AlpineLinux' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://mirrors.alpinelinux.org/\n\n"
+  [ "$Relese" == 'CentOS' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://www.centos.org/download/mirrors/\n\n"
+  [ "$Relese" == 'RockyLinux' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://mirrors.rockylinux.org/mirrormanager/mirrors\n\n"
+  [ "$Relese" == 'AlmaLinux' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://mirrors.almalinux.org/\n\n"
+  [ "$Relese" == 'Fedora' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://mirrors.fedoraproject.org/\n\n"
+  # bash $0 error
+  exit 1
+}
 
-clear && echo -ne "\n${aoiBlue}# Check Dependence${plain}\n\n"
+echo -ne "\n${aoiBlue}# Check Dependence${plain}\n\n"
 
 dependence awk,basename,cat,cpio,curl,cut,dig,dirname,file,find,grep,gzip,iconv,ip,lsblk,openssl,sed,wget,xz;
 
@@ -2834,200 +3091,14 @@ fi
 
 setDisk=$(echo "$setDisk" | sed 's/[A-Z]/\l&/g')
 getDisk "$setDisk" "$linux_relese"
+if [[ "$targetRelese" == 'AlmaLinux' ]] || [[ "$targetRelese" == 'Rocky' ]]; then
+  [[ "$diskCapacity" -lt "10737418240" ]] && { echo -ne "\n[${red}Error${plain}] Minimum system hard drive requirement is 10GB! \n\n"; exit 1; }
+fi
 echo -ne "\n${aoiBlue}# Formatting and Installing Drives${plain}\n\n"
 [[ "$setDisk" == "all" || -n "$setRaid" ]] && echo "$AllDisks" || echo "$IncDisk"
 
 echo -ne "\n${aoiBlue}# Motherboard Firmware${plain}\n\n"
 [[ "$EfiSupport" == "enabled" ]] && echo "UEFI" || echo "BIOS"
-
-# Get architecture of current os automatically
-ArchName=`uname -m`
-[[ -z "$ArchName" ]] && ArchName=$(echo `hostnamectl status | grep "Architecture" | cut -d':' -f 2`)
-case $ArchName in arm64) VER="arm64";; aarch64) VER="aarch64";; x86|i386|i686) VER="i386";; x86_64) VER="x86_64";; x86-64) VER="x86-64";; amd64) VER="amd64";; *) VER="";; esac
-# Exchange architecture name
-if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ "$linux_relese" == 'kali' ]]; then
-# In debian 12, the result of "uname -m" is "x86_64";
-# the result of "echo `hostnamectl status | grep "Architecture" | cut -d':' -f 2`" is "x86-64"
-  if [[ "$VER" == "x86_64" ]] || [[ "$VER" == "x86-64" ]]; then
-    VER="amd64"
-  elif [[ "$VER" == "aarch64" ]]; then
-    VER="arm64"
-  fi
-elif [[ "$linux_relese" == 'alpinelinux' ]] || [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
-  if [[ "$VER" == "amd64" ]] || [[ "$VER" == "x86-64" ]]; then
-    VER="x86_64"
-  elif [[ "$VER" == "arm64" ]]; then
-    VER="aarch64"
-  fi
-fi
-
-# Check and exchange input architecture name
-tmpVER="$(echo "$tmpVER" |sed -r 's/(.*)/\L\1/')"
-if [[ -n "$tmpVER" ]]; then
-  case "$tmpVER" in
-    i386|i686|x86|32)
-      VER="i386"
-      ;;
-    amd64|x86_64|x64|64)
-      [[ "$linux_relese" == 'alpinelinux' ]] || [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]] && VER='x86_64' || VER='amd64'
-      ;;
-    aarch64|arm64|arm)
-      [[ "$linux_relese" == 'alpinelinux' ]] || [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]] && VER='aarch64' || VER='arm64'
-      ;;
-    *)
-      VER=''
-      ;;
-  esac
-fi
-
-[[ ! -n "$VER" ]] && {
-  echo -ne "\n[${red}Error${plain}] Unknown architecture.\n"
-  bash $0 error
-  exit 1
-}
-
-[[ -z "$tmpDIST" ]] && {
-  [ "$Relese" == 'Debian' ] && tmpDIST='12'
-  [ "$Relese" == 'Kali' ] && tmpDIST='rolling'
-  [ "$Relese" == 'AlpineLinux' ] && tmpDIST='edge'
-  [ "$Relese" == 'CentOS' ] && tmpDIST='9'
-  [ "$Relese" == 'RockyLinux' ] && tmpDIST='9'
-  [ "$Relese" == 'AlmaLinux' ] && tmpDIST='9'
-  [ "$Relese" == 'Fedora' ] && tmpDIST='38'
-}
-[[ -z "$finalDIST" ]] && {
-  [ "$targetRelese" == 'Ubuntu' ] && finalDIST='22.04'
-  [ "$targetRelese" == 'Windows' ] && finalDIST='server 2022'
-}
-
-if [[ -n "$tmpDIST" ]]; then
-  if [[ "$Relese" == 'Debian' ]]; then
-    SpikCheckDIST='0'
-    DIST="$(echo "$tmpDIST" |sed -r 's/(.*)/\L\1/')"
-    DebianDistNum="${DIST}"
-    echo "$DIST" |grep -q '[0-9]'
-    [[ $? -eq '0' ]] && {
-      isDigital="$(echo "$DIST" |grep -o '[\.0-9]\{1,\}' |sed -n '1h;1!H;$g;s/\n//g;$p' |cut -d'.' -f1)";
-      [[ -n $isDigital ]] && {
-        [[ "$isDigital" == '7' ]] && DIST='wheezy'
-        [[ "$isDigital" == '8' ]] && DIST='jessie'
-        [[ "$isDigital" == '9' ]] && DIST='stretch'
-        [[ "$isDigital" == '10' ]] && DIST='buster'
-        [[ "$isDigital" == '11' ]] && DIST='bullseye'
-        [[ "$isDigital" == '12' ]] && DIST='bookworm'
-        [[ "$isDigital" == '13' ]] && DIST='trixie'
-        # [[ "$isDigital" == '14' ]] && DIST='forky'
-# Debian releases TBA reference: https://wiki.debian.org/DebianReleases
-#                                https://en.wikipedia.org/wiki/Debian_version_history#Release_table
-      }
-    }
-    LinuxMirror=$(selectMirror "$Relese" "$DIST" "$VER" "$tmpMirror")
-  fi
-  if [[ "$Relese" == 'Kali' ]]; then
-    SpikCheckDIST='0'
-    DIST="$(echo "$tmpDIST" |sed -r 's/(.*)/\L\1/')"
-    [[ ! "$DIST" =~ "kali-" ]] && DIST="kali-""$DIST"
-# Kali Linux releases reference: https://www.kali.org/releases/
-    LinuxMirror=$(selectMirror "$Relese" "$DIST" "$VER" "$tmpMirror")
-  fi
-  if [[ "$Relese" == 'AlpineLinux' ]]; then
-    SpikCheckDIST='0'
-    DIST="$(echo "$tmpDIST" |sed -r 's/(.*)/\L\1/')"
-# Recommend "edge" version of Alpine Linux to make sure to keep always updating.
-    AlpineVer1=`echo "$DIST" | sed 's/[a-z][A-Z]*//g' | cut -d"." -f 1`
-    AlpineVer2=`echo "$DIST" | sed 's/[a-z][A-Z]*//g' | cut -d"." -f 2`
-    if [[ "$AlpineVer1" -lt "3" || "$AlpineVer2" -le "15" ]] && [[ "$DIST" != "edge" ]]; then
-      echo -ne "\n[${red}Warning${plain}] $Relese $DIST is not supported!\n"
-      exit 1
-    fi
-    [[ "$DIST" != "edge" && ! "$DIST" =~ "v" ]] && DIST="v""$DIST"
-# Alpine Linux releases reference: https://alpinelinux.org/releases/
-    LinuxMirror=$(selectMirror "$Relese" "$DIST" "$VER" "$tmpMirror")
-  fi
-  if [[ "$Relese" == 'CentOS' ]] || [[ "$Relese" == 'RockyLinux' ]] || [[ "$Relese" == 'AlmaLinux' ]] || [[ "$Relese" == 'Fedora' ]]; then
-    SpikCheckDIST='1'
-    DISTCheck="$(echo "$tmpDIST" |grep -o '[\.0-9]\{1,\}' |head -n1)"
-    RedHatSeries=`echo "$tmpDIST" | cut -d"." -f 1 | cut -d"-" -f 1`
-# CentOS and CentOS stream releases history:
-# https://endoflife.date/centos
-    if [[ "$linux_relese" == 'centos' ]]; then
-      [[ "$RedHatSeries" =~ [0-9]{${#1}} ]] && {
-        if [[ "$RedHatSeries" == "6" ]]; then
-          DISTCheck="6.10"
-          echo -ne "\n[${red}Warning${plain}] $Relese $DISTCheck is not supported!\n"
-          exit 1
-        elif [[ "$RedHatSeries" == "7" ]]; then
-          DISTCheck="7.9.2009"
-        elif [[ "$RedHatSeries" -ge "8" ]] && [[ ! "$RedHatSeries" =~ "-stream" ]]; then
-          DISTCheck="$RedHatSeries""-stream"
-        elif [[ "$RedHatSeries" -le "5" ]]; then
-          echo -ne "\n[${red}Warning${plain}] $Relese $DISTCheck is not supported!\n"
-        else
-          echo -ne "\n[${red}Error${plain}] Invaild $DIST! version!\n"
-        fi
-      }
-      LinuxMirror=$(selectMirror "$Relese" "$DISTCheck" "$VER" "$tmpMirror")
-      DIST="$DISTCheck"
-    fi
-    if [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
-      [[ "$RedHatSeries" =~ [0-9]{${#1}} ]] && {
-# RockyLinux releases history:
-# https://wiki.rockylinux.org/rocky/version/
-# AlmaLinux releases history:
-# https://wiki.almalinux.org/release-notes/
-        if [[ "$linux_relese" == 'rockylinux' || "$linux_relese" == 'almalinux' ]] && [[ "$RedHatSeries" -le "7" ]]; then
-          echo -ne "\n[${red}Warning${plain}] $Relese $DISTCheck is not supported!\n"
-          exit 1
-# Fedora releases history:
-# https://en.wikipedia.org/wiki/Fedora_Linux_release_history
-        elif [[ "$linux_relese" == 'fedora' ]] && [[ "$RedHatSeries" -le "36" ]]; then
-          echo -ne "\n[${red}Warning${plain}] $Relese $DISTCheck is not supported!\n"
-          exit 1
-        fi
-      }
-      LinuxMirror=$(selectMirror "$Relese" "$DISTCheck" "$VER" "$tmpMirror")
-      DIST="$DISTCheck"
-    fi
-    [[ -z "$DIST" ]] && {
-      echo -ne "\nThe dists version not found in this mirror, Please check it! \n\n"
-      bash $0 error
-      exit 1
-    }
-    if [[ "$linux_relese" == 'centos' ]] && [[ "$RedHatSeries" -le "7" ]]; then
-      wget --no-check-certificate -qO- "$LinuxMirror/$DIST/os/$VER/.treeinfo" | grep -q 'general'
-      [[ $? != '0' ]] && {
-        echo -ne "\n[${red}Warning${plain}] $Relese $DISTCheck was not found in this mirror, Please change mirror try again!\n"
-        exit 1
-      }
-    elif [[ "$linux_relese" == 'centos' && "$RedHatSeries" -ge "8" ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]]; then
-      wget --no-check-certificate -qO- "$LinuxMirror/$DIST/BaseOS/$VER/os/media.repo" | grep -q 'mediaid'
-      [[ $? != '0' ]] && {
-        echo -ne "\n[${red}Warning${plain}] $Relese $DISTCheck was not found in this mirror, Please change mirror try again!\n"
-        exit 1
-      }
-    elif [[ "$linux_relese" == 'fedora' ]]; then
-      wget --no-check-certificate -qO- "$LinuxMirror/releases/$DIST/Server/$VER/os/media.repo" | grep -q 'mediaid'
-      [[ $? != '0' ]] && {
-        echo -ne "\n[${red}Warning${plain}] $Relese $DISTCheck was not found in this mirror, Please change mirror try again!\n"
-        exit 1
-      }
-    fi    
-  fi
-fi
-
-[[ -z "$LinuxMirror" ]] && {
-  echo -ne "\n[${red}Error${plain}] Invaild mirror! \n"
-  [ "$Relese" == 'Debian' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://www.debian.org/mirror/list\n\n"
-  [ "$Relese" == 'Ubuntu' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://launchpad.net/ubuntu/+archivemirrors\n\n"
-  [ "$Relese" == 'Kali' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://http.kali.org/README.mirrorlist\n\n"
-  [ "$Relese" == 'AlpineLinux' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://mirrors.alpinelinux.org/\n\n"
-  [ "$Relese" == 'CentOS' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://www.centos.org/download/mirrors/\n\n"
-  [ "$Relese" == 'RockyLinux' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://mirrors.rockylinux.org/mirrormanager/mirrors\n\n"
-  [ "$Relese" == 'AlmaLinux' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://mirrors.almalinux.org/\n\n"
-  [ "$Relese" == 'Fedora' ] && echo -ne "${yellow}Please check mirror lists:${plain} https://mirrors.fedoraproject.org/\n\n"
-  # bash $0 error
-  exit 1
-}
 
 [[ "$setNetbootXyz" == "1" ]] && SpikCheckDIST="1"
 if [[ "$SpikCheckDIST" == '0' ]]; then
@@ -3087,13 +3158,28 @@ if [[ "$ddMode" == '1' ]]; then
       ubuntuVER="arm64"
     fi
     if [[ "$tmpURL" == "" ]]; then
-      tmpURL="https://cloud-images.a.disk.re/Ubuntu/"
+      tmpURL="https://cloud-images.a.disk.re/$targetRelese/"
       setFileType="xz"
-      verifyUrlValidationOfDdImages "$tmpURL$finalDIST-server-cloudimg-$ubuntuVER.""$setFileType"
+      packageName="$finalDIST-server-cloudimg-$ubuntuVER"
+      verifyUrlValidationOfDdImages "$tmpURL$packageName.$setFileType"
     else
       verifyUrlValidationOfDdImages "$tmpURL"
     fi
     ReleaseName="$targetRelese $finalDIST $ubuntuVER"
+  elif [[ "$targetRelese" == 'AlmaLinux' || "$targetRelese" == 'Rocky' ]]; then
+    if [[ "$tmpURL" == "" ]]; then
+      tmpURL="https://cloud-images.a.disk.re/$targetRelese/"
+      setFileType="xz"
+      if [[ "$targetRelese" == 'AlmaLinux' ]]; then
+        packageName="$targetRelese-$RedHatSeries-GenericCloud-latest.$VER"
+      elif [[ "$targetRelese" == 'Rocky' ]]; then
+        packageName="$targetRelese-$RedHatSeries-GenericCloud.latest.$VER"
+      fi
+      verifyUrlValidationOfDdImages "$tmpURL$packageName.$setFileType"
+    else
+      verifyUrlValidationOfDdImages "$tmpURL"
+    fi
+    ReleaseName="$targetRelese $RedHatSeries $VER"
   elif [[ "$targetRelese" == 'Windows' ]]; then
 # If the range of IPv4 address is too narrow, it will cause IPv4 address and subnet are added with a fatal by using "CMD(*.bat script)" of
 # "wmic nicconfig where ipenabled=true call enablestatic(%staticip%),(%subnetmask%)" on newly installed Windows OS.
@@ -3197,12 +3283,6 @@ if [[ "$linux_relese" == 'centos' ]]; then
   fi
 fi
 [[ "$setNetbootXyz" == "0" ]] && echo -ne "\n[${yellow}$Relese${plain}] [${yellow}$DIST${plain}] [${yellow}$VER${plain}] Downloading...\n" || echo -ne "\n[${yellow}netboot.xyz${plain}] Downloading...\n"
-
-# RAM of RedHat series is 2GB required at least.
-[[ "$setNetbootXyz" == "0" ]] && {
-  checkMem "$linux_relese" "$RedHatSeries" "$targetRelese"
-  Add_OPTION="$Add_OPTION $lowmemLevel"
-}
 
 if [[ "$setNetbootXyz" == "1" ]]; then
   [[ "$VER" == "x86_64" || "$VER" == "amd64" ]] && apt install grub-imageboot -y
@@ -3456,9 +3536,9 @@ elif [[ "$linux_relese" == 'alpinelinux' ]]; then
     AlpineInitLineNum=$(grep -E -n '^exec (/bin/busybox )?switch_root' /tmp/boot/init | cut -d: -f1)
     AlpineInitLineNum=$((AlpineInitLineNum - 1))
     if [[ "$IsCN" == "cn" ]]; then
-      alpineInstallOrDdAdditionalFiles "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/alpineInit.sh" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/resolv_cn.conf" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/motd.sh" "mirrors.ustc.edu.cn" "mirrors.tuna.tsinghua.edu.cn" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Ubuntu/ubuntuInit.sh" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Windows/windowsInit.sh" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Windows/SetupComplete.bat"
+      alpineInstallOrDdAdditionalFiles "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/alpineInit.sh" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/resolv_cn.conf" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/motd.sh" "mirrors.ustc.edu.cn" "mirrors.tuna.tsinghua.edu.cn" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Ubuntu/ubuntuInit.sh" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Windows/windowsInit.sh" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Windows/SetupComplete.bat" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/RedHat/RHELinit.sh"
     else
-      alpineInstallOrDdAdditionalFiles "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/alpineInit.sh" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/resolv.conf" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/motd.sh" "archive.ubuntu.com" "ports.ubuntu.com" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/ubuntuInit.sh" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Windows/windowsInit.sh" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Windows/SetupComplete.bat"
+      alpineInstallOrDdAdditionalFiles "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/alpineInit.sh" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/resolv.conf" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/motd.sh" "archive.ubuntu.com" "ports.ubuntu.com" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/ubuntuInit.sh" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Windows/windowsInit.sh" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Windows/SetupComplete.bat" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/RedHat/RHELinit.sh"
     fi
 # Cloud init configurate documents and resources:
 # Ubuntu cloud images:
@@ -3480,22 +3560,27 @@ elif [[ "$linux_relese" == 'alpinelinux' ]]; then
     alpineNetcfgMirrorCn="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/"
     alpineNetcfgMirror="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/"
     [[ "$targetRelese" == 'Ubuntu' ]] && { ubuntuCloudinitMirrorCn="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Ubuntu/CloudInit/"; ubuntuCloudinitMirror="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/CloudInit/"; }
+    [[ "$targetRelese" == 'AlmaLinux' || "$targetRelese" == 'Rocky' ]] && { rhelCloudinitMirrorCn="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/RedHat/CloudInit/"; rhelCloudinitMirror="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/RedHat/CloudInit/"; }
     if [[ "$IPStackType" == "IPv4Stack" ]]; then
       if [[ "$Network4Config" == "isDHCP" ]]; then
         if [[ "$IsCN" == "cn" ]]; then
           AlpineNetworkConf="$alpineNetcfgMirrorCn""ipv4_dhcp_interfaces"
           [[ "$targetRelese" == 'Ubuntu' ]] && cloudInitUrl="$ubuntuCloudinitMirrorCn""dhcp_interfaces.cfg"
+          [[ "$targetRelese" == 'AlmaLinux' || "$targetRelese" == 'Rocky' ]] && cloudInitUrl="$rhelCloudinitMirrorCn""dhcp_interfaces.cfg"
         else
           AlpineNetworkConf="$alpineNetcfgMirror""ipv4_dhcp_interfaces"
           [[ "$targetRelese" == 'Ubuntu' ]] && cloudInitUrl="$ubuntuCloudinitMirror""dhcp_interfaces.cfg"
+          [[ "$targetRelese" == 'AlmaLinux' || "$targetRelese" == 'Rocky' ]] && cloudInitUrl="$rhelCloudinitMirror""dhcp_interfaces.cfg"
         fi
       elif [[ "$Network4Config" == "isStatic" ]]; then
         if [[ "$IsCN" == "cn" ]]; then
           AlpineNetworkConf="$alpineNetcfgMirrorCn""ipv4_static_interfaces"
           [[ "$targetRelese" == 'Ubuntu' ]] && cloudInitUrl="$ubuntuCloudinitMirrorCn""ipv4_static_interfaces.cfg"
+          [[ "$targetRelese" == 'AlmaLinux' || "$targetRelese" == 'Rocky' ]] && cloudInitUrl="$rhelCloudinitMirrorCn""ipv4_static_interfaces.cfg"
         else
           AlpineNetworkConf="$alpineNetcfgMirror""ipv4_static_interfaces"
           [[ "$targetRelese" == 'Ubuntu' ]] && cloudInitUrl="$ubuntuCloudinitMirror""ipv4_static_interfaces.cfg"
+          [[ "$targetRelese" == 'AlmaLinux' || "$targetRelese" == 'Rocky' ]] && cloudInitUrl="$rhelCloudinitMirror""ipv4_static_interfaces.cfg"
         fi
       fi
       networkAdapter="$interface4"
@@ -3524,23 +3609,38 @@ elif [[ "$linux_relese" == 'alpinelinux' ]]; then
           [[ "$IsCN" == "cn" ]] && cloudInitUrl="$ubuntuCloudinitMirrorCn""ipv4_static_ipv6_static_interfaces.cfg" || cloudInitUrl="$ubuntuCloudinitMirror""ipv4_static_ipv6_static_interfaces.cfg"
         fi
       }
+      [[ "$targetRelese" == 'AlmaLinux' || "$targetRelese" == 'Rocky' ]] && {
+        if [[ "$Network4Config" == "isDHCP" ]] && [[ "$Network6Config" == "isDHCP" ]]; then
+          [[ "$IsCN" == "cn" ]] && cloudInitUrl="$rhelCloudinitMirrorCn""dhcp_interfaces.cfg" || cloudInitUrl="$rhelCloudinitMirror""dhcp_interfaces.cfg"
+        elif [[ "$Network4Config" == "isDHCP" ]] && [[ "$Network6Config" == "isStatic" ]]; then
+          [[ "$IsCN" == "cn" ]] && cloudInitUrl="$rhelCloudinitMirrorCn""ipv4_dhcp_ipv6_static_interfaces.cfg" || cloudInitUrl="$rhelCloudinitMirror""ipv4_dhcp_ipv6_static_interfaces.cfg"
+        elif [[ "$Network4Config" == "isStatic" ]] && [[ "$Network6Config" == "isDHCP" ]]; then
+          [[ "$IsCN" == "cn" ]] && cloudInitUrl="$rhelCloudinitMirrorCn""ipv4_static_ipv6_dhcp_interfaces.cfg" || cloudInitUrl="$rhelCloudinitMirror""ipv4_static_ipv6_dhcp_interfaces.cfg"
+        elif [[ "$Network4Config" == "isStatic" ]] && [[ "$Network6Config" == "isStatic" ]]; then
+          [[ "$IsCN" == "cn" ]] && cloudInitUrl="$rhelCloudinitMirrorCn""ipv4_static_ipv6_static_interfaces.cfg" || cloudInitUrl="$rhelCloudinitMirror""ipv4_static_ipv6_static_interfaces.cfg"
+        fi
+      }
       networkAdapter="$interface4"
     elif [[ "$IPStackType" == "IPv6Stack" ]]; then
       if [[ "$Network6Config" == "isDHCP" ]]; then
         if [[ "$IsCN" == "cn" ]]; then
           AlpineNetworkConf="$alpineNetcfgMirrorCn""ipv6_dhcp_interfaces"
           [[ "$targetRelese" == 'Ubuntu' ]] && cloudInitUrl="$ubuntuCloudinitMirrorCn""dhcp_interfaces.cfg"
+          [[ "$targetRelese" == 'AlmaLinux' || "$targetRelese" == 'Rocky' ]] && cloudInitUrl="$rhelCloudinitMirrorCn""dhcp_interfaces.cfg"
         else
           AlpineNetworkConf="$alpineNetcfgMirror""ipv6_dhcp_interfaces"
           [[ "$targetRelese" == 'Ubuntu' ]] && cloudInitUrl="$ubuntuCloudinitMirror""dhcp_interfaces.cfg"
+          [[ "$targetRelese" == 'AlmaLinux' || "$targetRelese" == 'Rocky' ]] && cloudInitUrl="$rhelCloudinitMirror""dhcp_interfaces.cfg"
         fi
       elif [[ "$Network6Config" == "isStatic" ]]; then
         if [[ "$IsCN" == "cn" ]]; then
           AlpineNetworkConf="$alpineNetcfgMirrorCn""ipv6_static_interfaces"
           [[ "$targetRelese" == 'Ubuntu' ]] && cloudInitUrl="$ubuntuCloudinitMirrorCn""ipv6_static_interfaces.cfg"
+          [[ "$targetRelese" == 'AlmaLinux' || "$targetRelese" == 'Rocky' ]] && cloudInitUrl="$rhelCloudinitMirrorCn""ipv6_static_interfaces.cfg"
         else
           AlpineNetworkConf="$alpineNetcfgMirror""ipv6_static_interfaces"
           [[ "$targetRelese" == 'Ubuntu' ]] && cloudInitUrl="$ubuntuCloudinitMirror""ipv6_static_interfaces.cfg"
+          [[ "$targetRelese" == 'AlmaLinux' || "$targetRelese" == 'Rocky' ]] && cloudInitUrl="$rhelCloudinitMirror""ipv6_static_interfaces.cfg"
         fi
       fi
       networkAdapter="$interface6"
@@ -4171,6 +4271,10 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
     [[ "$setInterfaceName" == "1" ]] && Add_OPTION="net.ifnames=0 biosdevname=0" || Add_OPTION=""
     [[ "$setIPv6" == "0" ]] && Add_OPTION="$Add_OPTION ipv6.disable=1" || Add_OPTION="$Add_OPTION"
 # Write menuentry to grub
+# Find existed boot entries: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/managing_monitoring_and_updating_the_kernel/configuring-kernel-command-line-parameters_managing-monitoring-and-updating-the-kernel#what-boot-entries-are_configuring-kernel-command-line-parameters
+    grub2Order=$(find /boot/loader/entries/ -maxdepth 1 -name "*.conf" | wc -l)
+# Make grub2 to prefer installation item to boot first.
+    sed -ri 's/GRUB_DEFAULT=.*/GRUB_DEFAULT='$grub2Order'/g' /etc/default/grub
     if [[ "$linux_relese" == 'ubuntu'  || "$linux_relese" == 'debian' || "$linux_relese" == 'kali' ]]; then
       BOOT_OPTION="auto=true $Add_OPTION hostname=$(hostname) domain=$linux_relese quiet"
     elif [[ "$linux_relese" == 'alpinelinux' ]]; then
@@ -4196,8 +4300,6 @@ $(cat /tmp/grub.new)
   initrd$BootHex $BootDIR/initrd.img
 }
 EOF
-# Make grub2 to prefer installation item to boot first.
-    sed -ri 's/GRUB_DEFAULT=0/GRUB_DEFAULT=saved/g' /etc/default/grub
 # Refreshing current system grub2 service
     grub2-mkconfig -o $GRUBDIR/$GRUBFILE >>/dev/null 2>&1
     grub2-set-default "Install $Relese $DIST $VER" >>/dev/null 2>&1
