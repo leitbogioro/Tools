@@ -2444,6 +2444,8 @@ function setDhcpOrStatic() {
 # $1 is "in-target", $2 is "/etc/network/interfaces".
 function DebianModifiedPreseed() {
   if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]]; then
+    debianConfFileDir="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Debian"
+    debianConfFileDirCn="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Debian"
 # Must use ";" instead of using "&&", "echo -e" etc to combine multiple commands, or write text in files, recommend sed.
 # Can't pass parameters correctly in preseed environment.
 # DebianVimVer=`ls -a /usr/share/vim | grep vim[0-9]`
@@ -2473,20 +2475,20 @@ function DebianModifiedPreseed() {
     DisableCertExpiredCheck="$1 sed -i '/^mozilla\/DST_Root_CA_X3/s/^/!/' /etc/ca-certificates.conf; $1 update-ca-certificates -f;"
     if [[ "$IsCN" == "cn" ]]; then
 # Modify /root/.bashrc to support colorful filename.
-      ChangeBashrc="$1 rm -rf /root/.bashrc; $1 wget --no-check-certificate -qO /root/.bashrc 'https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Debian/.bashrc';"
+      ChangeBashrc="$1 rm -rf /root/.bashrc; $1 wget --no-check-certificate -qO /root/.bashrc '${debianConfFileDirCn}/.bashrc';"
 # Need to install "resolvconf" manually after all installation ended, logged into new system.
 # DNS server validation must setting up in installed system, can't in preseeding!
 # Set China DNS server from Tencent Cloud and Alibaba Cloud permanently.
-      [[ "$setDns" == "1" ]] && SetDNS="CNResolvHead" DnsChangePermanently="$1 mkdir -p /etc/resolvconf/resolv.conf.d/; $1 wget --no-check-certificate -qO /etc/resolvconf/resolv.conf.d/head 'https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Debian/network/${SetDNS}';" || DnsChangePermanently=""
+      [[ "$setDns" == "1" ]] && SetDNS="CNResolvHead" DnsChangePermanently="$1 mkdir -p /etc/resolvconf/resolv.conf.d/; $1 wget --no-check-certificate -qO /etc/resolvconf/resolv.conf.d/head '${debianConfFileDirCn}/network/${SetDNS}';" || DnsChangePermanently=""
 # Modify logging in welcome information(Message Of The Day) of Debian and make it more pretty.
-      [[ "$setMotd" == "1" ]] && ModifyMOTD="$1 rm -rf /etc/update-motd.d/ /etc/motd /run/motd.dynamic; $1 mkdir -p /etc/update-motd.d/; $1 wget --no-check-certificate -qO /etc/update-motd.d/00-header 'https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Debian/updatemotd/00-header'; $1 wget --no-check-certificate -qO /etc/update-motd.d/10-sysinfo 'https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Debian/updatemotd/10-sysinfo'; $1 wget --no-check-certificate -qO /etc/update-motd.d/90-footer 'https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Debian/updatemotd/90-footer'; $1 chmod +x /etc/update-motd.d/00-header; $1 chmod +x /etc/update-motd.d/10-sysinfo; $1 chmod +x /etc/update-motd.d/90-footer;" || ModifyMOTD=""
+      [[ "$setMotd" == "1" ]] && ModifyMOTD="$1 rm -rf /etc/update-motd.d/ /etc/motd /run/motd.dynamic; $1 mkdir -p /etc/update-motd.d/; $1 wget --no-check-certificate -qO /etc/update-motd.d/00-header '${debianConfFileDirCn}/updatemotd/00-header'; $1 wget --no-check-certificate -qO /etc/update-motd.d/10-sysinfo '${debianConfFileDirCn}/updatemotd/10-sysinfo'; $1 wget --no-check-certificate -qO /etc/update-motd.d/90-footer '${debianConfFileDirCn}/updatemotd/90-footer'; $1 chmod +x /etc/update-motd.d/00-header; $1 chmod +x /etc/update-motd.d/10-sysinfo; $1 chmod +x /etc/update-motd.d/90-footer;" || ModifyMOTD=""
 # Change "security.debian.org" to "mirrors.tuna.tsinghua.edu.cn". Reference: https://mirrors.tuna.tsinghua.edu.cn/help/debian/
       ChangeSecurityMirror="$1 sed -i 's/security.debian.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list;"
     else
-      ChangeBashrc="$1 rm -rf /root/.bashrc; $1 wget --no-check-certificate -qO /root/.bashrc 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Debian/.bashrc';"
+      ChangeBashrc="$1 rm -rf /root/.bashrc; $1 wget --no-check-certificate -qO /root/.bashrc '${debianConfFileDir}/.bashrc';"
 # Set DNS server from Cloudflare and Google permanently.
-      [[ "$setDns" == "1" ]] && SetDNS="NomalResolvHead" DnsChangePermanently="$1 mkdir -p /etc/resolvconf/resolv.conf.d/; $1 wget --no-check-certificate -qO /etc/resolvconf/resolv.conf.d/head 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Debian/network/${SetDNS}';" || DnsChangePermanently=""
-      [[ "$setMotd" == "1" ]] && ModifyMOTD="$1 rm -rf /etc/update-motd.d/ /etc/motd /run/motd.dynamic; $1 mkdir -p /etc/update-motd.d/; $1 wget --no-check-certificate -qO /etc/update-motd.d/00-header 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Debian/updatemotd/00-header'; $1 wget --no-check-certificate -qO /etc/update-motd.d/10-sysinfo 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Debian/updatemotd/10-sysinfo'; $1 wget --no-check-certificate -qO /etc/update-motd.d/90-footer 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Debian/updatemotd/90-footer'; $1 chmod +x /etc/update-motd.d/00-header; $1 chmod +x /etc/update-motd.d/10-sysinfo; $1 chmod +x /etc/update-motd.d/90-footer;" || ModifyMOTD=""
+      [[ "$setDns" == "1" ]] && SetDNS="NomalResolvHead" DnsChangePermanently="$1 mkdir -p /etc/resolvconf/resolv.conf.d/; $1 wget --no-check-certificate -qO /etc/resolvconf/resolv.conf.d/head '${debianConfFileDir}/network/${SetDNS}';" || DnsChangePermanently=""
+      [[ "$setMotd" == "1" ]] && ModifyMOTD="$1 rm -rf /etc/update-motd.d/ /etc/motd /run/motd.dynamic; $1 mkdir -p /etc/update-motd.d/; $1 wget --no-check-certificate -qO /etc/update-motd.d/00-header '${debianConfFileDir}/updatemotd/00-header'; $1 wget --no-check-certificate -qO /etc/update-motd.d/10-sysinfo '${debianConfFileDir}/updatemotd/10-sysinfo'; $1 wget --no-check-certificate -qO /etc/update-motd.d/90-footer '${debianConfFileDir}/updatemotd/90-footer'; $1 chmod +x /etc/update-motd.d/00-header; $1 chmod +x /etc/update-motd.d/10-sysinfo; $1 chmod +x /etc/update-motd.d/90-footer;" || ModifyMOTD=""
       ChangeSecurityMirror=""
     fi
 # For multiple interfaces environment, if the interface which is configurated by "auto", regardless of it is plugged by internet cable, 
@@ -3804,7 +3806,6 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
   [[ "$IsCN" == "cn" ]] && RepoEpel="repo --name=epel --baseurl=http://mirrors.ustc.edu.cn/epel/${RedHatSeries}/Everything/${VER}" || RepoEpel="repo --name=epel --mirrorlist=https://mirrors.fedoraproject.org/mirrorlist?repo=epel-${RedHatSeries}&arch=${VER}"
   AuthMethod="authselect --useshadow --passalgo sha512"
   SetTimeZone="timezone --utc ${TimeZone}"
-  [[ "$IsCN" == "cn" ]] && FirewallRule="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/RedHat/RHEL9Public.xml" || FirewallRule="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/RedHat/RHEL9Public.xml"
   if [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]]; then
     if [[ "$RedHatSeries" -ge "8" ]]; then
       RedHatUrl="url --url=${LinuxMirror}/${DIST}/BaseOS/${VER}/os"
@@ -3816,7 +3817,6 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
       SetTimeZone="timezone --isUtc ${TimeZone}"
       RepoBase="repo --name=base --baseurl=${LinuxMirror}/${DIST}/os/${VER}"
       RepoAppStream="repo --name=updates --baseurl=${LinuxMirror}/${DIST}/updates/${VER}"
-      [[ "$IsCN" == "cn" ]] && FirewallRule="https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/RedHat/RHEL7Public.xml" || FirewallRule="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/RedHat/RHEL7Public.xml"
     fi
   elif [[ "$linux_relese" == 'fedora' ]]; then
     RedHatUrl="url --url=${LinuxMirror}/releases/${DIST}/Server/${VER}/os"
@@ -3957,8 +3957,7 @@ services --enabled=fail2ban,firewalld
 %post --interpreter=/bin/bash
 
 # Disable selinux
-sed -ri "/^#?SELINUX=permissive/c\SELINUX=disabled" /etc/selinux/config
-sed -ri "/^#?SELINUX=enforcing/c\SELINUX=disabled" /etc/selinux/config
+sed -ri "/^#?SELINUX=.*/c\SELINUX=disabled" /etc/selinux/config
 
 # Allow password login
 sed -ri "/^#?PermitRootLogin.*/c\PermitRootLogin yes" /etc/ssh/sshd_config
