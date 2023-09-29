@@ -10,7 +10,7 @@ rm -f /etc/runlevels/default/local
 
 # Install necessary components.
 apk update
-apk add bash coreutils grep sed
+apk add coreutils grep sed
 
 # Get Ubuntu Linux configurations.
 confFile="/root/alpine.config"
