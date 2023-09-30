@@ -137,7 +137,7 @@ sed -ri 's/^#?Port.*/Port sshPORT/g' /mnt/etc/ssh/sshd_config
   sed -i '/fail2ban restart/d' $cloudInitFile
 }
 
-# Hack cloud init.
+# Hack cloud init, this method is effective for versions from 22.1.8, 22.1.9 to 23.2.2.
 #
 # Some cloud providers will storage "meta-data", "network-config" and "user-data" in another hard drive with filesystem of iso like "sr0" or "sdb":
 #
