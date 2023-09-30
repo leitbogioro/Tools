@@ -125,7 +125,7 @@ sed -ri 's/^#?Port.*/Port '${sshPORT}'/g' /mnt/etc/ssh/sshd_config
 
 # Hack cloud init.
 # Note: this trick has a great effect on Ubuntu 20.04+, AlmaLinux / Rocky 9+ in almost any cloud platforms but unfortunately it 
-# is not suitable for Rocky 8 otherwise cloud init will meet a fatal may because of the version of python3.6(others are 3.9).
+# is not suitable for Rocky 8 otherwise cloud init will meet a fatal may because of the lower version of python3.6(others are 3.9).
 # More details: https://github.com/leitbogioro/Tools/blob/master/Linux_reinstall/Ubuntu/ubuntuInit.sh
 [[ "$RedHatSeries" -ge "9" ]] && {
   utilProgram=$(find /mnt/usr/lib/python* -name "util.py" | grep "cloudinit" | head -n 1)
