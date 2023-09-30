@@ -1795,7 +1795,7 @@ function writeMultipleIpv4Addresses() {
       done
       writeIpsCmd=$(echo $tmpWriteIpsCmd)
       SupportMultipleIPv4="$writeIpsCmd"
-    elif [[ "$targetRelese" == 'Ubuntu' ]]; then
+    elif [[ "$targetRelese" == 'Ubuntu' ]] || [[ "$targetRelese" == 'AlmaLinux' ]] || [[ "$targetRelese" == 'Rocky' ]]; then
       for writeIps in ${iAddrs[@]}; do
         ipAddrItem="$writeIps"
         tmpWriteIpsCmd+=''$ipAddrItem','
@@ -1944,7 +1944,7 @@ function writeMultipleIpv6Addresses() {
         addFirstIpv6Config=''$2' sed -i '\''$aiface '$interface6' inet6 static'\'' '$3'; '$2' sed -i '\''$a\\taddress '$i6Addr''\'' '$3'; '$2' sed -i '\''$a\\tgateway '$ip6Gate''\'' '$3'; '$2' sed -i '\''$a\\tdns-nameservers '$ip6DNS''\'' '$3';'
         SupportMultipleIPv6=''$addIpv6Adapter' '$addFirstIpv6Config' '$writeIp6sCmd' '$preferIpv6Access''
       }
-    elif [[ "$targetRelese" == 'Ubuntu' ]]; then
+    elif [[ "$targetRelese" == 'Ubuntu' ]] || [[ "$targetRelese" == 'AlmaLinux' ]] || [[ "$targetRelese" == 'Rocky' ]]; then
       for writeIp6s in ${i6Addrs[@]}; do
         ip6AddrItem="$writeIp6s"
         tmpWriteIp6sCmd+=''$ip6AddrItem','
@@ -3699,12 +3699,12 @@ chmod a+x \\\$sysroot/etc/profile.d/motd.sh"`
 # Download "interfaces" templates and replace IP details.
 wget --no-check-certificate -O \$sysroot/etc/network/tmp_interfaces ${AlpineNetworkConf}
 
-# Config nameservers
+# Config nameservers.
 rm -rf \$sysroot/etc/resolv.conf
 wget --no-check-certificate -O \$sysroot/etc/resolv.conf ${AlpineDnsFile}
 chmod a+x \$sysroot/etc/resolv.conf
 
-# Add customized motd
+# Add customized motd.
 ${ModifyMOTD}
 
 # Creat a modify initial file.
@@ -3716,8 +3716,11 @@ echo "IncDisk  "${IncDisk} >> \$sysroot/root/alpine.config
 # To determine mirror.
 echo "LinuxMirror  "${LinuxMirror} >> \$sysroot/root/alpine.config
 
-# To determine release of Alpine Linux
+# To determine release of Alpine Linux.
 echo "alpineVer  "${DIST} >> \$sysroot/root/alpine.config
+
+# To determine release of Redhat.
+echo "RedHatSeries  "${RedHatSeries} >> \$sysroot/root/alpine.config
 
 # To determine target system mirror.
 echo "targetLinuxMirror  "${targetLinuxMirror} >> \$sysroot/root/alpine.config
@@ -3743,7 +3746,7 @@ echo "sshPORT  "${sshPORT} >> \$sysroot/root/alpine.config
 # To determine network adapter name.
 echo "networkAdapter  "${networkAdapter} >> \$sysroot/root/alpine.config
 
-# To determine IPv4 static config
+# To determine IPv4 static config.
 echo "IPv4  "${IPv4} >> \$sysroot/root/alpine.config
 echo "MASK  "${MASK} >> \$sysroot/root/alpine.config
 echo "ipPrefix  "${ipPrefix} >> \$sysroot/root/alpine.config
@@ -3757,7 +3760,7 @@ echo "ipDNS2  "${ipDNS2} >> \$sysroot/root/alpine.config
 echo "iAddrNum  "${iAddrNum} >> \$sysroot/root/alpine.config
 echo "writeIpsCmd  "'''${writeIpsCmd}''' >> \$sysroot/root/alpine.config
 
-# To determine Ipv6 static config
+# To determine Ipv6 static config.
 echo "ip6Addr  "${ip6Addr} >> \$sysroot/root/alpine.config
 echo "ip6Mask  "${ip6Mask} >> \$sysroot/root/alpine.config
 echo "actualIp6Prefix  "${actualIp6Prefix} >> \$sysroot/root/alpine.config
@@ -3767,28 +3770,28 @@ echo "ip6DNS2  "${ip6DNS2} >> \$sysroot/root/alpine.config
 echo "i6AddrNum  "${i6AddrNum} >> \$sysroot/root/alpine.config
 echo "writeIp6sCmd  "'''${writeIp6sCmd}''' >> \$sysroot/root/alpine.config
 
-# To determine whether to disable IPv6 modules
+# To determine whether to disable IPv6 modules.
 echo "setIPv6  "${setIPv6} >> \$sysroot/root/alpine.config
 
-# To determine hostname
+# To determine hostname.
 echo "HostName  "${HostName} >> \$sysroot/root/alpine.config
 
-# To determine whether in virtual or physical machine
+# To determine whether in virtual or physical machine.
 echo "virtualizationStatus  "${virtualizationStatus} >> \$sysroot/root/alpine.config
 
-# To determine whether configure fail2ban
+# To determine whether configure fail2ban.
 echo "setFail2banStatus  "${setFail2banStatus} >> \$sysroot/root/alpine.config
 
-# To determine whether to delete motd of original system
+# To determine whether to delete motd of original system.
 echo "setMotd  "${setMotd} >> \$sysroot/root/alpine.config
 
 # To determine whether low memory mode so that reduce preconditioning components to make sure installation succeed on 768MB and lower.
 echo "lowMemMode  "${lowMemMode} >> \$sysroot/root/alpine.config
 
-# To determine dd image url
+# To determine dd image url.
 echo "DDURL  "${DDURL} >> \$sysroot/root/alpine.config
 
-# To determine cloud init url
+# To determine cloud init url.
 echo "cloudInitUrl  "${cloudInitUrl} >> \$sysroot/root/alpine.config
 
 # Download initial file.
