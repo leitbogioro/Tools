@@ -36,44 +36,44 @@ windowsStaticConfigCmd=$(grep "windowsStaticConfigCmd" $confFile | awk '{print $
 Network4Config=$(grep "Network4Config" $confFile | awk '{print $2}')
 DEC_CMD=$(grep "DEC_CMD" $confFile | awk '{print $2}')
 
-# Reset configurations of repositories
+# Reset configurations of repositories.
 true >/etc/apk/repositories
 setup-apkrepos $LinuxMirror/$alpineVer/main
 setup-apkcache /var/cache/apk
 
-# Add community mirror
+# Add community mirror.
 sed -i '$a\'$LinuxMirror'/'$alpineVer'/community' /etc/apk/repositories
 # Add edge testing to the repositories
 # sed -i '$a\'$LinuxMirror'/edge/testing' /etc/apk/repositories
 
-# Synchronize time from hardware
+# Synchronize time from hardware.
 hwclock -s
 
 # Install necessary components.
 apk update
-apk add ca-certificates e2fsprogs fuse gzip hdparm multipath-tools musl ntfs-3g parted util-linux wget xz
+apk add ca-certificates fuse gzip hdparm multipath-tools musl ntfs-3g util-linux wget xz
 
-# start dd
+# Start dd.
 wget --no-check-certificate --report-speed=bits --tries=0 --timeout=1 --wait=1 -O- "$DDURL" | $DEC_CMD | dd of="$IncDisk" status=progress
 
-# get valid loop device
+# Get valid loop device.
 loopDevice=$(echo $(losetup -f))
 loopDeviceNum=$(echo $(losetup -f) | cut -d'/' -f 3)
 
-# make a soft link between valid loop device and disk
+# Make a soft link between valid loop device and disk.
 losetup $loopDevice $IncDisk
 
-# get mapper partition
+# Get mapper partition.
 mapperDevice=$(kpartx -av $loopDevice | grep "$loopDeviceNum" | head -n 1 | awk '{print $3}')
 
-# mount Windows dd partition to /mnt
+# Mount Windows dd partition to /mnt .
 ntfs-3g /dev/mapper/$mapperDevice /mnt
 
-# download initiate file
+# Download initiate file.
 setupCompleteFile='/mnt/Users/Administrator/AppData/Roaming/Microsoft/Windows/Start Menu/Programs/Startup/SetupComplete.bat'
 wget --no-check-certificate -qO "$setupCompleteFile" ''$windowsStaticConfigCmd''
 
-# write static config script to setup step
+# Write static config script to setup step.
 if [[ "$Network4Config" == "isStatic" ]]; then
   sed -ri "s/IPv4/$IPv4/g" "$setupCompleteFile"
   sed -ri "s/actualIp4Subnet/$actualIp4Subnet/g" "$setupCompleteFile"
@@ -83,6 +83,11 @@ if [[ "$Network4Config" == "isStatic" ]]; then
 else
   sed -ri "s/setmode=on/setmode=off/g" "$setupCompleteFile"
 fi
+
+# Umount mounted directory and loop device.
+umount /mnt
+kpartx -dv $loopDevice
+losetup -d $loopDevice
 
 # Reboot, the system in the memory will all be written to the hard drive.
 exec reboot
