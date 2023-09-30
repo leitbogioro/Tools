@@ -47,6 +47,7 @@ HostName=$(grep "HostName" $confFile | awk '{print $2}')
 DDURL=$(grep "DDURL" $confFile | awk '{print $2}')
 DEC_CMD=$(grep "DEC_CMD" $confFile | awk '{print $2}')
 cloudInitUrl=$(grep "cloudInitUrl" $confFile | awk '{print $2}')
+RedHatSeries=$(grep "RedHatSeries" $confFile | awk '{print $2}')
 
 # Reset configurations of repositories.
 true >/etc/apk/repositories
@@ -123,9 +124,14 @@ sed -ri 's/^#?PasswordAuthentication.*/PasswordAuthentication yes/g' /mnt/etc/ss
 sed -ri 's/^#?Port.*/Port '${sshPORT}'/g' /mnt/etc/ssh/sshd_config
 
 # Hack cloud init.
-utilProgram=$(find /mnt/usr/lib/python* -name "util.py" | grep "cloudinit" | head -n 1)
-sed -ri 's/iso9660/osi9876/g' $utilProgram
-sed -ri 's#"blkid"#"echo"#g' $utilProgram
+# Note: this trick has a great effect on Ubuntu 20.04+, AlmaLinux / Rocky 9+ in almost any cloud platforms but unfortunately it 
+# is not suitable for Rocky 8 otherwise cloud init will meet a fatal may because of the version of python3.6(others are 3.9).
+# More details: https://github.com/leitbogioro/Tools/blob/master/Linux_reinstall/Ubuntu/ubuntuInit.sh
+[[ "$RedHatSeries" -ge "9" ]] && {
+  utilProgram=$(find /mnt/usr/lib/python* -name "util.py" | grep "cloudinit" | head -n 1)
+  sed -ri 's/iso9660/osi9876/g' $utilProgram
+  sed -ri 's#"blkid"#"echo"#g' $utilProgram
+}
 
 # Umount mounted directory and loop device.
 umount /mnt
