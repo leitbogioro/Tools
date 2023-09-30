@@ -1200,7 +1200,6 @@ function checkSys() {
     [[ "$CurrentOS" == "CentOS" && "$CurrentOSVer" == "8" ]] && dnf install python3-librepo -y
 # Redhat like linux OS necessary components.
     dnf install bind-utils cpio curl dmidecode dnsutils efibootmgr file gzip ipcalc jq net-tools openssl redhat-lsb syslinux tuned util-linux virt-what wget xz --skip-broken -y
-    # dnf update -y
   else
     yum install dnf -y > /root/yum_execute.log 2>&1
 # In some versions of CentOS 8 which are not subsumed into CentOS-stream are end of supporting by CentOS official, so the source is failure.
@@ -1220,11 +1219,9 @@ function checkSys() {
 # In official template of AlmaLinux 9 of Linode, "tuned" must be installed otherwise "grub2-mkconfig" can't work formally.
 # Reference: https://phanes.silogroup.org/fips-disa-stig-hardening-on-centos9/
       dnf install bind-utils cpio curl dmidecode dnsutils efibootmgr file gzip ipcalc jq net-tools openssl redhat-lsb syslinux tuned util-linux virt-what wget xz --skip-broken -y
-      # dnf update -y
 # Oracle Linux 7 doesn't support DNF.
     elif [[ `grep -i "no package" /root/yum_execute.log` ]]; then
       yum install bind-utils cpio curl dmidecode dnsutils efibootmgr file gzip ipcalc jq net-tools openssl redhat-lsb syslinux tuned util-linux virt-what wget xz --skip-broken -y
-      # yum update -y
     fi
     rm -rf /root/yum_execute.log
   fi
