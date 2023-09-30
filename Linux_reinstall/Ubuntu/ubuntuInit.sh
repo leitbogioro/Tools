@@ -89,7 +89,6 @@ wget --no-check-certificate -qO $cloudInitFile ''$cloudInitUrl''
 # User config.
 sed -ri 's/HostName/'${HostName}'/g' $cloudInitFile
 sed -ri 's/tmpWORD/'${tmpWORD}'/g' $cloudInitFile
-sed -ri 's/sshPORT/'${sshPORT}'/g' $cloudInitFile
 sed -ri 's/TimeZone/'${TimeZone1}'\/'${TimeZone2}'/g' $cloudInitFile
 sed -ri 's/targetLinuxMirror/'${targetLinuxMirror}'/g' $cloudInitFile
 sed -ri 's/networkAdapter/'${networkAdapter}'/g' $cloudInitFile
