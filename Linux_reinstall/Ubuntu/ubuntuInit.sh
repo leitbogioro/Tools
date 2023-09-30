@@ -50,17 +50,17 @@ targetLinuxMirror=$(grep "targetLinuxMirror" $confFile | awk '{print $2}')
 cloudInitUrl=$(grep "cloudInitUrl" $confFile | awk '{print $2}')
 setFail2banStatus=$(grep "setFail2banStatus" $confFile | awk '{print $2}')
 
-# Reset configurations of repositories
+# Reset configurations of repositories.
 true >/etc/apk/repositories
 setup-apkrepos $LinuxMirror/$alpineVer/main
 setup-apkcache /var/cache/apk
 
-# Add community mirror
+# Add community mirror.
 sed -i '$a\'$LinuxMirror'/'$alpineVer'/community' /etc/apk/repositories
 # Add edge testing to the repositories
 # sed -i '$a\'$LinuxMirror'/edge/testing' /etc/apk/repositories
 
-# Synchronize time from hardware
+# Synchronize time from hardware.
 hwclock -s
 
 # Install necessary components.
@@ -80,7 +80,7 @@ losetup $loopDevice $IncDisk
 # Get mapper partition.
 mapperDevice=$(kpartx -av $loopDevice | grep "$loopDeviceNum" | head -n 1 | awk '{print $3}')
 
-# Mount Ubuntu dd partition to "/mnt".
+# Mount Ubuntu dd partition to /mnt .
 mount /dev/mapper/$mapperDevice /mnt
 
 # Download cloud init file.
@@ -113,7 +113,7 @@ sed -ri 's/ip6Gate/'${ip6Gate}'/g' $cloudInitFile
 sed -ri 's/ip6DNS1/'${ip6DNS1}'/g' $cloudInitFile
 sed -ri 's/ip6DNS2/'${ip6DNS2}'/g' $cloudInitFile
 
-# Disable any datahouse
+# Disable any datahouse.
 # Reference: https://github.com/canonical/cloud-init/issues/3772
 echo 'datasource_list: [ NoCloud, None ]' > /mnt/etc/cloud/cloud.cfg.d/90_dpkg.cfg
 
@@ -136,7 +136,7 @@ sed -ri 's/^#?Port.*/Port '${sshPORT}'/g' /mnt/etc/ssh/sshd_config
   sed -i '/fail2ban restart/d' $cloudInitFile
 }
 
-# Hack cloud init, this method is effective for versions from 22.1.8, 22.1.9 to 23.2.2.
+# Hack cloud init, this method is effective for versions from 22.1.8, 22.1.9 to 23.2.2 .
 #
 # Some cloud providers will storage "meta-data", "network-config" and "user-data" in another hard drive with filesystem of iso like "sr0" or "sdb":
 #
