@@ -2888,10 +2888,12 @@ else
   fi
 fi
 
+clear
+
 # Disable SELinux
 [[ -f /etc/selinux/config ]] && {
-  SELinuxStatus=$(sestatus -v | grep "SELinux status:" | grep enabled)
-  [[ "$SELinuxStatus" != "" ]] && echo -ne "\n${aoiBlue}# Disabled SELinux${plain}" && setenforce 0
+  SELinuxStatus=$(sestatus -v | grep -i "selinux status:" | grep "enabled")
+  [[ "$SELinuxStatus" != "" ]] && { echo -ne "\n${aoiBlue}# Disabling SELinux${plain}\n"; setenforce 0 2>/dev/null; echo -e "\nSuccess"; }
 }
 
 [[ ! -d "/tmp/" ]] && mkdir /tmp
@@ -2903,8 +2905,6 @@ if [[ "$loaderMode" == "0" ]]; then
     exit 1
   fi
 fi
-
-clear
 
 [[ -z "$tmpDIST" ]] && {
   [ "$Relese" == 'Debian' ] && tmpDIST='12'
