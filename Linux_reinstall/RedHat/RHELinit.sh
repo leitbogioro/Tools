@@ -13,7 +13,8 @@ apk update
 apk add coreutils grep sed
 
 # Get RHEL Linux configurations.
-confFile="/root/alpine.config"
+confFile='/root/alpine.config'
+cloudInitFile='/mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg'
 
 # Read configs from initial file.
 IncDisk=$(grep "IncDisk" $confFile | awk '{print $2}')
@@ -62,61 +63,73 @@ hwclock -s
 
 # Install necessary components.
 apk update
-apk add ca-certificates hdparm multipath-tools parted util-linux wget xfsprogs xz
+apk add ca-certificates hdparm multipath-tools util-linux wget xfsprogs xz
 
-# start dd
+# Start dd.
 wget --no-check-certificate --report-speed=bits --tries=0 --timeout=1 --wait=1 -O- "$DDURL" | $DEC_CMD | dd of="$IncDisk" status=progress
 
-# get valid loop device
+# Get valid loop device.
 loopDevice=$(echo $(losetup -f))
 loopDeviceNum=$(echo $(losetup -f) | cut -d'/' -f 3)
 
-# make a soft link between valid loop device and disk
+# Make a soft link between valid loop device and disk.
 losetup $loopDevice $IncDisk
 
-# get mapper partition
+# Get mapper partition.
 mapperDevice=$(kpartx -av $loopDevice | grep "$loopDeviceNum" | sort -rn | sed -n '1p' | awk '{print $3}')
 
-# mount RHEL dd partition to /mnt
+# Mount RHEL dd partition to /mnt .
 mount /dev/mapper/$mapperDevice /mnt
 
-# download cloud init file
-wget --no-check-certificate -qO /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg ''$cloudInitUrl''
+# Download cloud init file.
+wget --no-check-certificate -qO $cloudInitFile ''$cloudInitUrl''
 
-# user config
-sed -ri 's/HostName/'${HostName}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-sed -ri 's/tmpWORD/'${tmpWORD}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-sed -ri 's/sshPORT/'${sshPORT}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-sed -ri 's/TimeZone/'${TimeZone1}'\/'${TimeZone2}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-sed -ri 's/networkAdapter/'${networkAdapter}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+# User config.
+sed -ri 's/HostName/'${HostName}'/g' $cloudInitFile
+sed -ri 's/tmpWORD/'${tmpWORD}'/g' $cloudInitFile
+sed -ri 's/TimeZone/'${TimeZone1}'\/'${TimeZone2}'/g' $cloudInitFile
+sed -ri 's/networkAdapter/'${networkAdapter}'/g' $cloudInitFile
 if [[ "$iAddrNum" -ge "2" ]]; then
-  sed -ri 's#IPv4/ipPrefix#'${writeIpsCmd}'#g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+  sed -ri 's#IPv4/ipPrefix#'${writeIpsCmd}'#g' $cloudInitFile
 else
-  sed -ri 's/IPv4/'${IPv4}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-  sed -ri 's/ipPrefix/'${ipPrefix}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-  sed -ri "s/${IPv4}\/${ipPrefix}/${IPv4}\/${actualIp4Prefix}/g" /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+  sed -ri 's/IPv4/'${IPv4}'/g' $cloudInitFile
+  sed -ri 's/ipPrefix/'${ipPrefix}'/g' $cloudInitFile
+  sed -ri "s/${IPv4}\/${ipPrefix}/${IPv4}\/${actualIp4Prefix}/g" $cloudInitFile
 fi
-sed -ri 's/GATE/'${GATE}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-sed -ri 's/ipDNS1/'${ipDNS1}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-sed -ri 's/ipDNS2/'${ipDNS2}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+sed -ri 's/GATE/'${GATE}'/g' $cloudInitFile
+sed -ri 's/ipDNS1/'${ipDNS1}'/g' $cloudInitFile
+sed -ri 's/ipDNS2/'${ipDNS2}'/g' $cloudInitFile
 if [[ "$i6AddrNum" -ge "2" ]]; then
-  sed -ri 's#ip6Addr/ip6Mask#'${writeIp6sCmd}'#g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+  sed -ri 's#ip6Addr/ip6Mask#'${writeIp6sCmd}'#g' $cloudInitFile
 else
-  sed -ri 's/ip6Addr/'${ip6Addr}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-  sed -ri 's/ip6Mask/'${ip6Mask}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-  sed -ri "s/${ip6Addr}\/${ip6Mask}/${ip6Addr}\/${actualIp6Prefix}/g" /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+  sed -ri 's/ip6Addr/'${ip6Addr}'/g' $cloudInitFile
+  sed -ri 's/ip6Mask/'${ip6Mask}'/g' $cloudInitFile
+  sed -ri "s/${ip6Addr}\/${ip6Mask}/${ip6Addr}\/${actualIp6Prefix}/g" $cloudInitFile
 fi
-sed -ri 's/ip6Gate/'${ip6Gate}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-sed -ri 's/ip6DNS1/'${ip6DNS1}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
-sed -ri 's/ip6DNS2/'${ip6DNS2}'/g' /mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg
+sed -ri 's/ip6Gate/'${ip6Gate}'/g' $cloudInitFile
+sed -ri 's/ip6DNS1/'${ip6DNS1}'/g' $cloudInitFile
+sed -ri 's/ip6DNS2/'${ip6DNS2}'/g' $cloudInitFile
 
-# disable SELinux permanently
+# Disable SELinux permanently.
 sed -ri 's/^SELINUX=.*/SELINUX=disabled/g' /mnt/etc/selinux/config
 
-# disable IPv6
-[[ "$setIPv6" == "0" ]] && {
-  sed -ri 's/net.ifnames=0 biosdevname=0/net.ifnames=0 biosdevname=0 ipv6.disable=1/g' /mnt/etc/default/grub
-}
+# Disable IPv6.
+[[ "$setIPv6" == "0" ]] && sed -ri 's/net.ifnames=0 biosdevname=0/net.ifnames=0 biosdevname=0 ipv6.disable=1/g' /mnt/etc/default/grub
+
+# Permit root user login by password, change ssh port.
+sed -ri 's/^#?PermitRootLogin.*/PermitRootLogin yes/g' /mnt/etc/ssh/sshd_config
+sed -ri 's/^#?PasswordAuthentication.*/PasswordAuthentication yes/g' /mnt/etc/ssh/sshd_config
+sed -ri 's/^#?Port.*/Port '${sshPORT}'/g' /mnt/etc/ssh/sshd_config
+
+# Hack cloud init.
+utilProgram=$(find /mnt/usr/lib/python* -name "util.py" | grep "cloudinit" | head -n 1)
+sed -ri 's/iso9660/osi9876/g' $utilProgram
+sed -ri 's/blkid/diklb/g' $utilProgram
+
+# Umount mounted directory and loop device.
+umount /mnt
+kpartx -dv $loopDevice
+losetup -d $loopDevice
 
 # Reboot, the system in the memory will all be written to the hard drive.
 exec reboot
