@@ -259,7 +259,7 @@ sed -ri 's/^#?Port.*/Port '${sshPORT}'/g' /mnt/etc/ssh/sshd_config
 
 utilProgram=$(find /mnt/usr/lib/python* -name "util.py" | grep "cloudinit" | head -n 1)
 sed -ri 's/iso9660/osi9876/g' $utilProgram
-sed -ri 's/blkid/diklb/g' $utilProgram
+sed -ri 's#"blkid"#"echo"#g' $utilProgram
 
 # Umount mounted directory and loop device.
 umount /mnt
