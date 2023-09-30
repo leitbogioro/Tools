@@ -127,7 +127,7 @@ echo 'datasource_list: [ NoCloud, None ]' > /mnt/etc/cloud/cloud.cfg.d/90_dpkg.c
 # Permit root user login by password, change ssh port.
 sed -ri 's/^#?PermitRootLogin.*/PermitRootLogin yes/g' /mnt/etc/ssh/sshd_config
 sed -ri 's/^#?PasswordAuthentication.*/PasswordAuthentication yes/g' /mnt/etc/ssh/sshd_config
-sed -ri 's/^#?Port.*/Port sshPORT/g' /mnt/etc/ssh/sshd_config
+sed -ri 's/^#?Port.*/Port '${sshPORT}'/g' /mnt/etc/ssh/sshd_config
 
 # Disable installing fail2ban.
 [[ "$setFail2banStatus" != "1" ]] && {
