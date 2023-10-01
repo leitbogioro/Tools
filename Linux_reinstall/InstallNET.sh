@@ -2821,6 +2821,7 @@ function alpineInstallOrDdAdditionalFiles() {
       targetLinuxSecurityMirror="${10}"
     elif [[ "$ubuntuVER" == "arm64" ]]; then
       targetLinuxMirror="$5"
+      targetLinuxSecurityMirror="$5"
     fi
     AlpineInitFile="$6"
     AlpineInitFileName="ubuntuConf.start"
