@@ -54,7 +54,7 @@ apk update
 apk add fuse gzip hdparm multipath-tools musl ntfs-3g util-linux wget xz
 
 # Start dd.
-wget --no-check-certificate --report-speed=bits --tries=0 --timeout=1 --wait=1 -O- "$DDURL" | $DEC_CMD | dd of="$IncDisk" status=progress
+wget --no-check-certificate --report-speed=bits --tries=0 --timeout=10 --wait=5 -O- "$DDURL" | $DEC_CMD | dd of="$IncDisk" status=progress
 
 # Get valid loop device.
 loopDevice=$(echo $(losetup -f))
