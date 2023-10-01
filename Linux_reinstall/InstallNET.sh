@@ -887,14 +887,14 @@ function getUserTimeZone() {
 # If some users are connecting to ssh service via private IPs, the actual location of this server may be the same as the public IP of this server like:
 # I created a virtual machine by VMware on my laptop and access it with as "192.168.0.217", to determine timezone of current user according to this IP is meaningless.
       [[ "$ipv4LocalOrPublicStatus" == '1' ]] && {
-        GuestIP=`timeout 0.3s dig -4 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
+        GuestIP=`timeout 0.3s dig -4 TXT +short o-o.myaddr.l.google.com @ns3.google.com | sed 's/\"//g'`
         [[ "$GuestIP" == "" ]] && GuestIP=`timeout 0.3s dig -4 TXT CH +short whoami.cloudflare @1.0.0.3 | sed 's/\"//g'`
       }
     else
       GuestIP=`netstat -naputeoW | grep -i 'established' | grep -i 'sshd: '$loginUser'' | grep -iw '^tcp6\|udp6' | awk '{print $3,$5}' | sort -t ' ' -k 1 -rn | awk '{print $2}' | head -n 1 | awk -F':' '{for (i=1;i<=NF-1;i++)printf("%s:", $i);print ""}' | sed 's/.$//'`
       checkIfIpv4AndIpv6IsLocalOrPublic "" "$GuestIP"
       [[ "$ipv6LocalOrPublicStatus" == '1' ]] && {
-        GuestIP=`timeout 0.3s dig -6 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
+        GuestIP=`timeout 0.3s dig -6 TXT +short o-o.myaddr.l.google.com @ns3.google.com | sed 's/\"//g'`
         [[ "$GuestIP" == "" ]] && GuestIP=`timeout 0.3s dig -6 TXT CH +short whoami.cloudflare @2606:4700:4700::1003 | sed 's/\"//g'`
       }
     fi
@@ -1411,12 +1411,12 @@ function checkDIST() {
 # "1.1.1.1" of CloudFlare was banned in mainland of China, "1.0.0.3" will meet the same death soon later, maybe.
 function checkIpv4OrIpv6() {
   for ((w=1; w<=2; w++)); do
-    IPv4DNSLookup=`timeout 0.3s dig -4 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
+    IPv4DNSLookup=`timeout 0.3s dig -4 TXT +short o-o.myaddr.l.google.com @ns3.google.com | sed 's/\"//g'`
     [[ "$IPv4DNSLookup" == "" ]] && IPv4DNSLookup=`timeout 0.3s dig -4 TXT CH +short whoami.cloudflare @1.0.0.3 | sed 's/\"//g'`
     [[ "$IPv4DNSLookup" != "" ]] && break
   done
   for ((x=1; x<=2; x++)); do
-    IPv6DNSLookup=`timeout 0.3s dig -6 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
+    IPv6DNSLookup=`timeout 0.3s dig -6 TXT +short o-o.myaddr.l.google.com @ns3.google.com | sed 's/\"//g'`
     [[ "$IPv6DNSLookup" == "" ]] && IPv6DNSLookup=`timeout 0.3s dig -6 TXT CH +short whoami.cloudflare @2606:4700:4700::1003 | sed 's/\"//g'`
     [[ "$IPv6DNSLookup" != "" ]] && break
   done
