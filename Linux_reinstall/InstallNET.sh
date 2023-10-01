@@ -888,14 +888,14 @@ function getUserTimeZone() {
 # I created a virtual machine by VMware on my laptop and access it with as "192.168.0.217", to determine timezone of current user according to this IP is meaningless.
       [[ "$ipv4LocalOrPublicStatus" == '1' ]] && {
         GuestIP=`timeout 0.3s dig -4 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
-        [[ "$GuestIP" == "" ]] && GuestIP=`timeout 0.3s dig -4 TXT CH +short whoami.cloudflare @1.1.1.1 | sed 's/\"//g'`
+        [[ "$GuestIP" == "" ]] && GuestIP=`timeout 0.3s dig -4 TXT CH +short whoami.cloudflare @1.0.0.3 | sed 's/\"//g'`
       }
     else
       GuestIP=`netstat -naputeoW | grep -i 'established' | grep -i 'sshd: '$loginUser'' | grep -iw '^tcp6\|udp6' | awk '{print $3,$5}' | sort -t ' ' -k 1 -rn | awk '{print $2}' | head -n 1 | awk -F':' '{for (i=1;i<=NF-1;i++)printf("%s:", $i);print ""}' | sed 's/.$//'`
       checkIfIpv4AndIpv6IsLocalOrPublic "" "$GuestIP"
       [[ "$ipv6LocalOrPublicStatus" == '1' ]] && {
         GuestIP=`timeout 0.3s dig -6 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
-        [[ "$GuestIP" == "" ]] && GuestIP=`timeout 0.3s dig -6 TXT CH +short whoami.cloudflare @2606:4700:4700::1111 | sed 's/\"//g'`
+        [[ "$GuestIP" == "" ]] && GuestIP=`timeout 0.3s dig -6 TXT CH +short whoami.cloudflare @2606:4700:4700::1003 | sed 's/\"//g'`
       }
     fi
     for Count in "$2$GuestIP" "$3$GuestIP" "$4$GuestIP" "$5$GuestIP/json/" "$6" "$7" "$8"; do
@@ -1408,15 +1408,16 @@ function checkDIST() {
 }
 
 # $1 is "$ipAddr", $2 is "$ip6Addr"
+# "1.1.1.1" of CloudFlare was banned in mainland of China, "1.0.0.3" will meet the same death soon later, maybe.
 function checkIpv4OrIpv6() {
   for ((w=1; w<=2; w++)); do
     IPv4DNSLookup=`timeout 0.3s dig -4 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
-    [[ "$IPv4DNSLookup" == "" ]] && IPv4DNSLookup=`timeout 0.3s dig -4 TXT CH +short whoami.cloudflare @1.1.1.1 | sed 's/\"//g'`
+    [[ "$IPv4DNSLookup" == "" ]] && IPv4DNSLookup=`timeout 0.3s dig -4 TXT CH +short whoami.cloudflare @1.0.0.3 | sed 's/\"//g'`
     [[ "$IPv4DNSLookup" != "" ]] && break
   done
   for ((x=1; x<=2; x++)); do
     IPv6DNSLookup=`timeout 0.3s dig -6 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g'`
-    [[ "$IPv6DNSLookup" == "" ]] && IPv6DNSLookup=`timeout 0.3s dig -6 TXT CH +short whoami.cloudflare @2606:4700:4700::1111 | sed 's/\"//g'`
+    [[ "$IPv6DNSLookup" == "" ]] && IPv6DNSLookup=`timeout 0.3s dig -6 TXT CH +short whoami.cloudflare @2606:4700:4700::1003 | sed 's/\"//g'`
     [[ "$IPv6DNSLookup" != "" ]] && break
   done
   for y in "$3" "$4" "$5" "$6"; do
@@ -2478,14 +2479,14 @@ function DebianModifiedPreseed() {
 # Set China DNS server from Tencent Cloud and Alibaba Cloud permanently.
       [[ "$setDns" == "1" ]] && SetDNS="CNResolvHead" DnsChangePermanently="$1 mkdir -p /etc/resolvconf/resolv.conf.d/; $1 wget --no-check-certificate -qO /etc/resolvconf/resolv.conf.d/head '${debianConfFileDirCn}/network/${SetDNS}';" || DnsChangePermanently=""
 # Modify logging in welcome information(Message Of The Day) of Debian and make it more pretty.
-      [[ "$setMotd" == "1" ]] && ModifyMOTD="$1 rm -rf /etc/update-motd.d/ /etc/motd /run/motd.dynamic; $1 mkdir -p /etc/update-motd.d/; $1 wget --no-check-certificate -qO /etc/update-motd.d/00-header '${debianConfFileDirCn}/updatemotd/00-header'; $1 wget --no-check-certificate -qO /etc/update-motd.d/10-sysinfo '${debianConfFileDirCn}/updatemotd/10-sysinfo'; $1 wget --no-check-certificate -qO /etc/update-motd.d/90-footer '${debianConfFileDirCn}/updatemotd/90-footer'; $1 chmod +x /etc/update-motd.d/00-header; $1 chmod +x /etc/update-motd.d/10-sysinfo; $1 chmod +x /etc/update-motd.d/90-footer;" || ModifyMOTD=""
+      [[ "$setMotd" == "1" ]] && { ModifyMOTD="$1 rm -rf /etc/update-motd.d/ /etc/motd /run/motd.dynamic; $1 mkdir -p /etc/update-motd.d/; $1 wget --no-check-certificate -qO /etc/update-motd.d/00-header '${debianConfFileDirCn}/updatemotd/00-header'; $1 wget --no-check-certificate -qO /etc/update-motd.d/10-sysinfo '${debianConfFileDirCn}/updatemotd/10-sysinfo'; $1 wget --no-check-certificate -qO /etc/update-motd.d/90-footer '${debianConfFileDirCn}/updatemotd/90-footer'; $1 chmod +x /etc/update-motd.d/00-header; $1 chmod +x /etc/update-motd.d/10-sysinfo; $1 chmod +x /etc/update-motd.d/90-footer;"; ChangeDigDnsForMotd="$1 sed -ri 's/1.1.1.1/1.0.0.3/g' /etc/update-motd.d/10-sysinfo; $1 sed -ri 's/1111/1003/g' /etc/update-motd.d/10-sysinfo;"; } || ModifyMOTD=""
 # Change "security.debian.org" to "mirrors.tuna.tsinghua.edu.cn". Reference: https://mirrors.tuna.tsinghua.edu.cn/help/debian/
       ChangeSecurityMirror="$1 sed -i 's/security.debian.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list;"
     else
       ChangeBashrc="$1 rm -rf /root/.bashrc; $1 wget --no-check-certificate -qO /root/.bashrc '${debianConfFileDir}/.bashrc';"
 # Set DNS server from Cloudflare and Google permanently.
       [[ "$setDns" == "1" ]] && SetDNS="NomalResolvHead" DnsChangePermanently="$1 mkdir -p /etc/resolvconf/resolv.conf.d/; $1 wget --no-check-certificate -qO /etc/resolvconf/resolv.conf.d/head '${debianConfFileDir}/network/${SetDNS}';" || DnsChangePermanently=""
-      [[ "$setMotd" == "1" ]] && ModifyMOTD="$1 rm -rf /etc/update-motd.d/ /etc/motd /run/motd.dynamic; $1 mkdir -p /etc/update-motd.d/; $1 wget --no-check-certificate -qO /etc/update-motd.d/00-header '${debianConfFileDir}/updatemotd/00-header'; $1 wget --no-check-certificate -qO /etc/update-motd.d/10-sysinfo '${debianConfFileDir}/updatemotd/10-sysinfo'; $1 wget --no-check-certificate -qO /etc/update-motd.d/90-footer '${debianConfFileDir}/updatemotd/90-footer'; $1 chmod +x /etc/update-motd.d/00-header; $1 chmod +x /etc/update-motd.d/10-sysinfo; $1 chmod +x /etc/update-motd.d/90-footer;" || ModifyMOTD=""
+      [[ "$setMotd" == "1" ]] && { ModifyMOTD="$1 rm -rf /etc/update-motd.d/ /etc/motd /run/motd.dynamic; $1 mkdir -p /etc/update-motd.d/; $1 wget --no-check-certificate -qO /etc/update-motd.d/00-header '${debianConfFileDir}/updatemotd/00-header'; $1 wget --no-check-certificate -qO /etc/update-motd.d/10-sysinfo '${debianConfFileDir}/updatemotd/10-sysinfo'; $1 wget --no-check-certificate -qO /etc/update-motd.d/90-footer '${debianConfFileDir}/updatemotd/90-footer'; $1 chmod +x /etc/update-motd.d/00-header; $1 chmod +x /etc/update-motd.d/10-sysinfo; $1 chmod +x /etc/update-motd.d/90-footer;"; ChangeDigDnsForMotd=""; } || ModifyMOTD=""
       ChangeSecurityMirror=""
     fi
 # For multiple interfaces environment, if the interface which is configurated by "auto", regardless of it is plugged by internet cable, 
@@ -2568,7 +2569,7 @@ function DebianModifiedPreseed() {
     CreateSoftLinkToGrub2FromGrub1="$1 ln -s /boot/grub/ /boot/grub2;"
 # Statement of "grub-pc/timeout" in "preseed.cfg" is only valid for BIOS.
     [[ "$EfiSupport" == "enabled" ]] && SetGrubTimeout="$1 sed -ri 's/GRUB_TIMEOUT=5/GRUB_TIMEOUT=3/g' /etc/default/grub; $1 sed -ri 's/set timeout=5/set timeout=3/g' /boot/grub/grub.cfg;" || SetGrubTimeout=""
-    export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${VimIndentEolStart} ${DnsChangePermanently} ${ModifyMOTD} ${ChangeSecurityMirror} ${BurnIrregularIpv4Gate} ${BurnIrregularIpv6Gate} ${SupportIPv6orIPv4} ${ReplaceActualIpPrefix} ${AutoPlugInterfaces} ${EnableSSH} ${ReviseMOTD} ${SupportZSH} ${EnableFail2ban} ${CreateSoftLinkToGrub2FromGrub1} ${SetGrubTimeout}"
+    export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${VimIndentEolStart} ${DnsChangePermanently} ${ModifyMOTD} ${ChangeDigDnsForMotd} ${ChangeSecurityMirror} ${BurnIrregularIpv4Gate} ${BurnIrregularIpv6Gate} ${SupportIPv6orIPv4} ${ReplaceActualIpPrefix} ${AutoPlugInterfaces} ${EnableSSH} ${ReviseMOTD} ${SupportZSH} ${EnableFail2ban} ${CreateSoftLinkToGrub2FromGrub1} ${SetGrubTimeout}"
   fi
 }
 
