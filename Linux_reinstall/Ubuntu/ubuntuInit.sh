@@ -47,6 +47,7 @@ HostName=$(grep "HostName" $confFile | awk '{print $2}')
 DDURL=$(grep "DDURL" $confFile | awk '{print $2}')
 DEC_CMD=$(grep "DEC_CMD" $confFile | awk '{print $2}')
 targetLinuxMirror=$(grep "targetLinuxMirror" $confFile | awk '{print $2}')
+targetLinuxSecurityMirror=$(grep "targetLinuxSecurityMirror" $confFile | awk '{print $2}')
 cloudInitUrl=$(grep "cloudInitUrl" $confFile | awk '{print $2}')
 setFail2banStatus=$(grep "setFail2banStatus" $confFile | awk '{print $2}')
 
@@ -91,6 +92,7 @@ sed -ri 's/HostName/'${HostName}'/g' $cloudInitFile
 sed -ri 's/tmpWORD/'${tmpWORD}'/g' $cloudInitFile
 sed -ri 's/TimeZone/'${TimeZone1}'\/'${TimeZone2}'/g' $cloudInitFile
 sed -ri 's/targetLinuxMirror/'${targetLinuxMirror}'/g' $cloudInitFile
+sed -ri 's/targetLinuxSecurityMirror/'${targetLinuxSecurityMirror}'/g' $cloudInitFile
 sed -ri 's/networkAdapter/'${networkAdapter}'/g' $cloudInitFile
 if [[ "$iAddrNum" -ge "2" ]]; then
   sed -ri 's#IPv4/ipPrefix#'${writeIpsCmd}'#g' $cloudInitFile
