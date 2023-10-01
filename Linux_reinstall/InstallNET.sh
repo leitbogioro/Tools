@@ -2888,16 +2888,6 @@ else
   fi
 fi
 
-clear
-
-# Disable SELinux
-[[ -f /etc/selinux/config ]] && {
-  SELinuxStatus=$(sestatus -v | grep -i "selinux status:" | grep "enabled")
-  [[ "$SELinuxStatus" != "" ]] && { echo -ne "\n${aoiBlue}# Disabling SELinux${plain}\n"; setenforce 0 2>/dev/null; echo -e "\nSuccess"; }
-}
-
-[[ ! -d "/tmp/" ]] && mkdir /tmp
-
 if [[ "$loaderMode" == "0" ]]; then
   checkGrub "/boot/grub/" "/boot/grub2/" "/etc/" "grub.cfg" "grub.conf" "/boot/efi/EFI/"
   if [[ -z "$GRUBTYPE" ]]; then
@@ -2905,6 +2895,16 @@ if [[ "$loaderMode" == "0" ]]; then
     exit 1
   fi
 fi
+
+clear
+
+[[ ! -d "/tmp/" ]] && mkdir /tmp
+
+# Disable SELinux
+[[ -f /etc/selinux/config ]] && {
+  SELinuxStatus=$(sestatus -v | grep -i "selinux status:" | grep "enabled")
+  [[ "$SELinuxStatus" != "" ]] && { echo -ne "\n${aoiBlue}# Disabling SELinux${plain}\n"; setenforce 0 2>/dev/null; echo -e "\nSuccess"; }
+}
 
 [[ -z "$tmpDIST" ]] && {
   [ "$Relese" == 'Debian' ] && tmpDIST='12'
