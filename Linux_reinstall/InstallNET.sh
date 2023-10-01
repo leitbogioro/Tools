@@ -2809,6 +2809,7 @@ EOF
   fi
 }
 
+# The parameter which be passed into the function after 10th order must be included with "{}".
 function alpineInstallOrDdAdditionalFiles() {
   AlpineInitFile="$1"
   AlpineDnsFile="$2"
@@ -2817,6 +2818,7 @@ function alpineInstallOrDdAdditionalFiles() {
   if [[ "$targetRelese" == 'Ubuntu' ]]; then
     if [[ "$ubuntuVER" == "amd64" ]]; then
       targetLinuxMirror="$4"
+      targetLinuxSecurityMirror="${10}"
     elif [[ "$ubuntuVER" == "arm64" ]]; then
       targetLinuxMirror="$5"
     fi
@@ -3536,9 +3538,9 @@ elif [[ "$linux_relese" == 'alpinelinux' ]]; then
     AlpineInitLineNum=$(grep -E -n '^exec (/bin/busybox )?switch_root' /tmp/boot/init | cut -d: -f1)
     AlpineInitLineNum=$((AlpineInitLineNum - 1))
     if [[ "$IsCN" == "cn" ]]; then
-      alpineInstallOrDdAdditionalFiles "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/alpineInit.sh" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/resolv_cn.conf" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/motd.sh" "mirrors.ustc.edu.cn" "mirrors.tuna.tsinghua.edu.cn" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Ubuntu/ubuntuInit.sh" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Windows/windowsInit.sh" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Windows/SetupComplete.bat" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/RedHat/RHELinit.sh"
+      alpineInstallOrDdAdditionalFiles "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/alpineInit.sh" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/network/resolv_cn.conf" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Alpine/motd.sh" "mirrors.ustc.edu.cn" "mirrors.tuna.tsinghua.edu.cn" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Ubuntu/ubuntuInit.sh" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Windows/windowsInit.sh" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/Windows/SetupComplete.bat" "https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/RedHat/RHELinit.sh" "mirrors.ustc.edu.cn"
     else
-      alpineInstallOrDdAdditionalFiles "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/alpineInit.sh" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/resolv.conf" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/motd.sh" "archive.ubuntu.com" "ports.ubuntu.com" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/ubuntuInit.sh" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Windows/windowsInit.sh" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Windows/SetupComplete.bat" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/RedHat/RHELinit.sh"
+      alpineInstallOrDdAdditionalFiles "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/alpineInit.sh" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/network/resolv.conf" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Alpine/motd.sh" "archive.ubuntu.com" "ports.ubuntu.com" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Ubuntu/ubuntuInit.sh" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Windows/windowsInit.sh" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Windows/SetupComplete.bat" "https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/RedHat/RHELinit.sh" "security.ubuntu.com"
     fi
 # Cloud init configurate documents and resources:
 # Ubuntu cloud images:
@@ -3722,6 +3724,9 @@ echo "RedHatSeries  "${RedHatSeries} >> \$sysroot/root/alpine.config
 
 # To determine target system mirror.
 echo "targetLinuxMirror  "${targetLinuxMirror} >> \$sysroot/root/alpine.config
+
+# To determine target system security mirror.
+echo "targetLinuxSecurityMirror  "${targetLinuxSecurityMirror} >> \$sysroot/root/alpine.config
 
 # To determine Windows network static config file.
 echo "windowsStaticConfigCmd  "${windowsStaticConfigCmd} >> \$sysroot/root/alpine.config
