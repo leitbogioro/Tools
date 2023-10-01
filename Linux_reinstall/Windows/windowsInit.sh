@@ -51,7 +51,7 @@ hwclock -s
 
 # Install necessary components.
 apk update
-apk add ca-certificates fuse gzip hdparm multipath-tools musl ntfs-3g util-linux wget xz
+apk add fuse gzip hdparm multipath-tools musl ntfs-3g util-linux wget xz
 
 # Start dd.
 wget --no-check-certificate --report-speed=bits --tries=0 --timeout=1 --wait=1 -O- "$DDURL" | $DEC_CMD | dd of="$IncDisk" status=progress
