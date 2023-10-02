@@ -38,5 +38,7 @@ done
 # write crontab task
 if [[ ! `grep -i "autorepackubuntucloudimages" /etc/crontab` ]]; then
   sed -i '$i 30 4 8-14,22-28 * */7   root    bash /root/autoRepackUbuntuCloudImages.sh' /etc/crontab
+  crontab -l
+  /etc/init.d/cron reload
   /etc/init.d/cron restart
 fi
