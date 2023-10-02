@@ -43,5 +43,7 @@ done
 # Schedule cronjob for the certain day in a week: https://blog.healthchecks.io/2022/09/schedule-cron-job-the-funky-way/
 if [[ ! `grep -i "autorepackalmalinuxcloudimages" /etc/crontab` ]]; then
   sed -i '$i 0 7 */100,1-7 * SUN   root    bash /root/autoRepackAlmaLinuxCloudImages.sh' /etc/crontab
+  crontab -l
+  /etc/init.d/cron reload
   /etc/init.d/cron restart
 fi
