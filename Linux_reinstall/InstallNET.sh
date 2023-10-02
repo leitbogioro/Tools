@@ -982,13 +982,21 @@ function checkGrub() {
 
 # $1 is $linux_relese, $2 is $RedHatSeries, $3 is $targetRelese
 function checkMem() {
-  TotalMem1=$(cat /proc/meminfo | grep "^MemTotal:" | sed 's/kb//i' | grep -o "[0-9]*" | awk -F' ' '{print $NF}')
-  TotalMem2=$(free -k | grep -wi "mem*" | awk '{printf $2}')
+# "dmesg" is most accurate to detect the actually valuable memory.
+# Reference: https://blog.csdn.net/imliuqun123/article/details/126120360
+# The constant ratio of threshold value(triggering the following conditions) and nominal value(the space of the memory which announced by cloud provider) is coefficient of "0.99".
+# If it can't be divisible by number "4", we'll take a value that is the multiple of 4 and litter less than the former one.
+  TotalMem=$(($(dmesg | grep -i 'memory' | grep -i 'available' | awk -F ':' '{print $2}' | awk '{print $1}' | cut -d '/' -f 2 | tr -d "a-zA-Z")/1024))
+# Alternate methods but not clearly accurate for example "kdump" service occupied a part of memory.
+  [[ -z "$TotalMem" ]] && TotalMem=$(lsmem -b | grep -i "online memory" | awk '{print $NF/1024/1024}')
+  [[ -z "$TotalMem" ]] && TotalMem=$(($(cat /proc/meminfo | grep "^MemTotal:" | sed 's/kb//i' | grep -o "[0-9]*" | awk -F' ' '{print $NF}')/1024))
+  [[ -z "$TotalMem" ]] && TotalMem=$(free -m | grep -wi "mem*" | awk '{printf $2}')
+  
 # In any servers that total memory below 2.5GB to install debian, the low memory installation will be force enabled, "lowmem=+0, 1 or 2" is only for Debian like, 0 is lowest, 1 is medium, 2 is the highest.
   [[ "$1" == 'debian' ]] || [[ "$1" == 'ubuntu' ]] || [[ "$1" == 'kali' ]] && {
-    [[ "$TotalMem1" -ge "2558072" || "$TotalMem2" -ge "2558072" ]] && lowmemLevel="" || lowmemLevel="lowmem=+1"
+    [[ "$TotalMem" -ge "2536" ]] && lowmemLevel="" || lowmemLevel="lowmem=+1"
     [[ "$setMemCheck" == '1' ]] && {
-      [[ "$TotalMem1" -le "329760" || "$TotalMem2" -le "329760" ]] && {
+      [[ "$TotalMem" -le "368" ]] && {
         echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 384MB!\n"
         exit 1
       }
@@ -1008,55 +1016,55 @@ function checkMem() {
 # They never optimize or improve it, just tell users they need to pay more to expand their hardware performance and adjust to the endless demand of them. it's not a correct decision. 
   [[ "$setMemCheck" == '1' ]] && {
     [[ "$1" == 'fedora' || "$1" == 'rockylinux' || "$1" == 'almalinux' || "$1" == 'centos' ]] && {
-      [[ "$TotalMem1" -le "447664" || "$TotalMem2" -le "447664" ]] && {
-        echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 512MB!\n"
+      [[ "$TotalMem" -le "492" ]] && {
+        echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 512 MB!\n"
         exit 1
       }
       if [[ "$1" == 'rockylinux' || "$1" == 'almalinux' || "$1" == 'centos' ]]; then
         if [[ "$2" == "8" ]] || [[ "$1" == 'centos' && "$2" -ge "9" ]]; then
-          [[ "$TotalMem1" -le "2198342" || "$TotalMem2" -le "2198342" ]] && {
-            echo -ne "\n[${red}Warning${plain}] Minimum system memory requirement is 2.5GB for kickstart native method."
+          [[ "$TotalMem" -le "2228" ]] && {
+            echo -ne "\n[${red}Warning${plain}] Minimum system memory requirement is 2.2 GB for ${blue}KickStart${plain} native method."
             if [[ "$2" == "8" ]]; then
-              echo -ne "\nSwitching to ${yellow}Rocky $2${plain} ${blue}Cloud Init${plain} Installation... \n"
+              echo -ne "\nSwitching to ${yellow}Rocky $2${plain} by ${blue}Cloud Init${plain} Installation... \n"
               lowMemMode="1"
             elif [[ "$1" == 'centos' && "$2" -ge "9" ]]; then
-              [[ "$TotalMem1" -ge "2000682" || "$TotalMem2" -ge "2000682" ]] && { echo -ne "\nSwitching ${blue}Redhat distribution${plain}... \n"; switchRedhatDIST="1"; } || { echo -ne "\nSwitching to ${blue}Cloud Init${plain} Installation... \n"; lowMemMode="1"; }
+              [[ "$TotalMem" -ge "2028" ]] && { echo -ne "\nSwitching to ${yellow}AlmaLinux $2${plain} distribution... \n"; switchRedhatDIST="1"; } || { echo -ne "\nSwitching to ${yellow}AlmaLinux $2${plain} by ${blue}Cloud Init${plain} Installation... \n"; lowMemMode="1"; }
             fi
           }
         elif [[ "$2" -ge "9" ]]; then
-          [[ "$TotalMem1" -le "2000682" || "$TotalMem2" -le "2000682" ]] && {
-            echo -ne "\n[${red}Warning${plain}] Minimum system memory requirement is 2GB for ${blue}Kickstart${plain} native method."
+          [[ "$TotalMem" -le "2028" ]] && {
+            echo -ne "\n[${red}Warning${plain}] Minimum system memory requirement is 2 GB for ${blue}Kickstart${plain} native method."
             echo -ne "\nSwitching to ${blue}Cloud Init${plain} Installation... \n"
             lowMemMode="1"
           }
         elif [[ "$2" == "7" ]]; then
-          [[ "$TotalMem1" -le "1319006" || "$TotalMem2" -le "1319006" ]] && {
-            echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 1.5GB!\n"
+          [[ "$TotalMem" -le "1520" ]] && {
+            echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 1.5 GB!\n"
             exit 1
           }
         fi
       elif [[ "$1" == 'fedora' ]]; then
-        [[ "$TotalMem1" -le "1740800" || "$TotalMem2" -le "1740800" ]] && {
-          echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 2GB!\n"
+        [[ "$TotalMem" -le "1724" ]] && {
+          echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 1.7 GB!\n"
           exit 1
         }
       fi
     }
     [[ "$1" == 'alpinelinux' || "$3" == 'Ubuntu' ]] && {
       if [[ "$3" == 'Ubuntu' ]]; then
-        [[ "$TotalMem1" -le "447664" || "$TotalMem2" -le "447664" ]] && {
-          echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 512MB!\n"
+        [[ "$TotalMem" -le "492" ]] && {
+          echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 512 MB!\n"
           exit 1
         }
       elif [[ "$1" == 'alpinelinux' ]]; then
-        [[ "$TotalMem1" -le "671496" || "$TotalMem2" -le "671496" ]] && {
-          echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 768MB!\n"
+        [[ "$TotalMem" -le "736" ]] && {
+          echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 768 MB!\n"
           exit 1
         }
-        [[ "$TotalMem1" -le "895328" || "$TotalMem2" -le "895328" ]] && lowMemMode="1"
+        [[ "$TotalMem" -le "1016" ]] && lowMemMode="1"
       fi
     }
-    if [[ "$TotalMem1" -le "1740800" || "$TotalMem2" -le "1740800" ]]; then
+    if [[ "$TotalMem" -le "2028" ]]; then
       setFail2banStatus="0"
       [[ "$setFail2ban" == "1" ]] && setFail2banStatus="1"
     else
@@ -1189,7 +1197,7 @@ function checkSys() {
 # This component may cause the menuentry of grub which we had generated and wrote can't be booted successfully when rebooting the system.
   apt purge inetutils-ping kexec-tools -y
 # Debian like linux OS necessary components.
-  apt install cpio curl dmidecode dnsutils efibootmgr fdisk file gzip iputils-ping jq net-tools openssl subnetcalc tuned virt-what wget xz-utils -y
+  apt install cpio curl dmidecode dnsutils efibootmgr fdisk file gzip iputils-ping jq net-tools openssl tuned util-linux virt-what wget xz-utils -y
 
 # Redhat like Linux OS prefer to use dnf instead of yum because former has a higher execute efficiency.
   yum install epel-release -y
@@ -1199,7 +1207,7 @@ function checkSys() {
 # Reference: https://anatolinicolae.com/failed-loading-plugin-osmsplugin-no-module-named-librepo/
     [[ "$CurrentOS" == "CentOS" && "$CurrentOSVer" == "8" ]] && dnf install python3-librepo -y
 # Redhat like linux OS necessary components.
-    dnf install bind-utils cpio curl dmidecode dnsutils efibootmgr file gzip ipcalc jq net-tools openssl redhat-lsb syslinux tuned util-linux virt-what wget xz --skip-broken -y
+    dnf install bind-utils cpio curl dmidecode dnsutils efibootmgr file gzip jq net-tools openssl redhat-lsb syslinux tuned util-linux virt-what wget xz --skip-broken -y
   else
     yum install dnf -y > /root/yum_execute.log 2>&1
 # In some versions of CentOS 8 which are not subsumed into CentOS-stream are end of supporting by CentOS official, so the source is failure.
@@ -1218,10 +1226,10 @@ function checkSys() {
 # Run dnf update and install components.
 # In official template of AlmaLinux 9 of Linode, "tuned" must be installed otherwise "grub2-mkconfig" can't work formally.
 # Reference: https://phanes.silogroup.org/fips-disa-stig-hardening-on-centos9/
-      dnf install bind-utils cpio curl dmidecode dnsutils efibootmgr file gzip ipcalc jq net-tools openssl redhat-lsb syslinux tuned util-linux virt-what wget xz --skip-broken -y
+      dnf install bind-utils cpio curl dmidecode dnsutils efibootmgr file gzip jq net-tools openssl redhat-lsb syslinux tuned util-linux virt-what wget xz --skip-broken -y
 # Oracle Linux 7 doesn't support DNF.
     elif [[ `grep -i "no package" /root/yum_execute.log` ]]; then
-      yum install bind-utils cpio curl dmidecode dnsutils efibootmgr file gzip ipcalc jq net-tools openssl redhat-lsb syslinux tuned util-linux virt-what wget xz --skip-broken -y
+      yum install bind-utils cpio curl dmidecode dnsutils efibootmgr file gzip jq net-tools openssl redhat-lsb syslinux tuned util-linux virt-what wget xz --skip-broken -y
     fi
     rm -rf /root/yum_execute.log
   fi
@@ -1238,7 +1246,7 @@ function checkSys() {
     # [[ ! `grep -i "testing" /etc/apk/repositories` ]] && sed -i '$a\http://ftp.udx.icscoe.jp/Linux/alpine/edge/testing' /etc/apk/repositories
 # Alpine Linux use "apk" as package management.
     apk update
-    apk add bash bind-tools coreutils cpio curl dmidecode efibootmgr file gawk grep gzip ipcalc jq lsblk net-tools openssl sed shadow tzdata util-linux virt-what wget xz
+    apk add bash bind-tools coreutils cpio curl dmidecode efibootmgr file gawk grep gzip jq lsblk net-tools openssl sed shadow tzdata util-linux virt-what wget xz
 # Use bash to replace ash.
     sed -i 's/root:\/bin\/ash/root:\/bin\/bash/g' /etc/passwd
   }
@@ -2940,6 +2948,8 @@ fi
   checkDIST
 }
 
+[[ -n "$TotalMem" ]] && { echo -ne "\n${aoiBlue}# System Memory${plain}\n"; echo -e "\n${TotalMem} MB"; }
+
 [[ "$lowMemMode" == '1' || "$useCloudImage" == "1" ]] && {
   if [[ "$linux_relese" == 'rockylinux' || "$linux_relese" == 'almalinux' || "$linux_relese" == 'centos' ]]; then
     if [[ "$RedHatSeries" == "8" ]]; then
@@ -3467,7 +3477,7 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]] || [[ "$
     }
   fi
 # To avoid to entry into low memory mode.
-  [[ "$TotalMem1" -ge "2558072" || "$TotalMem2" -ge "2558072" ]] && sed -i '/d-i\ lowmem\/low note/d' /tmp/boot/preseed.cfg
+  [[ -z "$lowmemLevel" ]] && sed -i '/d-i\ lowmem\/low note/d' /tmp/boot/preseed.cfg
 # Ubuntu 20.04 and below does't support xfs, force grub-efi installation to the removable media path may cause grub install failed, low memory mode.
   if [[ "$linux_relese" == 'ubuntu' ]]; then
     sed -i '/d-i\ partman\/default_filesystem string xfs/d' /tmp/boot/preseed.cfg
