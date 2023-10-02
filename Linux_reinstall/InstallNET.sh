@@ -1061,7 +1061,7 @@ function checkMem() {
           echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 768 MB!\n"
           exit 1
         }
-        [[ "$TotalMem" -le "1016" ]] && lowMemMode="1"
+        [[ "$TotalMem" -le "1012" ]] && lowMemMode="1"
       fi
     }
     if [[ "$TotalMem" -le "2028" ]]; then
@@ -3070,11 +3070,13 @@ echo -ne "\n[${yellow}Server Stack${plain}]  $IPStackType\n"
 [[ "$IPv4" && "$IPStackType" != "IPv6Stack" ]] && echo -e "[${yellow}IPv4  Subnet${plain}]  ""$actualIp4Subnet" || echo -e "[${yellow}IPv4  Subnet${plain}]  ""N/A"
 [[ "$IPv4" && "$IPStackType" != "IPv6Stack" ]] && echo -e "[${yellow}IPv4 Gateway${plain}]  ""$GATE" || echo -e "[${yellow}IPv4 Gateway${plain}]  ""N/A"
 [[ "$IPv4" && "$IPStackType" != "IPv6Stack" ]] && echo -e "[${yellow}IPv4     DNS${plain}]  ""$ipDNS" || echo -e "[${yellow}IPv4     DNS${plain}]  ""N/A"
+[[ "$IPv4" && "$IPStackType" != "IPv6Stack" ]] && echo -e "[${yellow}IPv4  Amount${plain}]  ""$iAddrNum" || echo -e "[${yellow}IPv4  Amount${plain}]  ""N/A"
 [[ "$IPStackType" != "IPv4Stack" ]] && echo -ne "\n[${yellow}IPv6  Method${plain}]  $Network6Config\n" || echo -ne "\n[${yellow}IPv6  Method${plain}]  N/A\n"
 [[ "$ip6Addr" && "$IPStackType" != "IPv4Stack" ]] && echo -e "[${yellow}IPv6 Address${plain}]  ""$ip6Addr" || echo -e "[${yellow}IPv6 Address${plain}]  ""N/A"
 [[ "$ip6Addr" && "$IPStackType" != "IPv4Stack" ]] && echo -e "[${yellow}IPv6  Subnet${plain}]  ""$actualIp6Prefix" || echo -e "[${yellow}IPv6  Subnet${plain}]  ""N/A"
 [[ "$ip6Addr" && "$IPStackType" != "IPv4Stack" ]] && echo -e "[${yellow}IPv6 Gateway${plain}]  ""$ip6Gate" || echo -e "[${yellow}IPv6 Gateway${plain}]  ""N/A"
 [[ "$ip6Addr" && "$IPStackType" != "IPv4Stack" ]] && echo -e "[${yellow}IPv6     DNS${plain}]  ""$ip6DNS" || echo -e "[${yellow}IPv6     DNS${plain}]  ""N/A"
+[[ "$ip6Addr" && "$IPStackType" != "IPv4Stack" ]] && echo -e "[${yellow}IPv6  Amount${plain}]  ""$i6AddrNum" || echo -e "[${yellow}IPv6  Amount${plain}]  ""N/A"
 
 getUserTimeZone "/root/timezonelists" "https://api.ip.sb/geoip/" "http://ifconfig.co/json?ip=" "http://ip-api.com/json/" "https://ipapi.co/" "YjNhNjAxNjY5YTFiNDI2MmFmOGYxYjJjZDk3ZjNiN2YK" "MmUxMjBhYmM0Y2Q4NDM1ZDhhMmQ5YzQzYzk4ZTZiZTEK" "NjBiMThjZWJlMWU1NGQ5NDg2YWY0MTgyMWM0ZTZiZDgK"
 [[ -z "$TimeZone" ]] && TimeZone="Asia/Tokyo"
