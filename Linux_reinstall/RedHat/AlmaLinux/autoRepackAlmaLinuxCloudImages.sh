@@ -39,7 +39,9 @@ for distNum in "9"; do
 done
 
 # write crontab task
+# Crontab simulator: https://crontab.guru/
+# Schedule cronjob for the certain day in a week: https://blog.healthchecks.io/2022/09/schedule-cron-job-the-funky-way/
 if [[ ! `grep -i "autorepackalmalinuxcloudimages" /etc/crontab` ]]; then
-  sed -i '$i 0 7 1-7 2,4,6,8,10,12 7   root    bash /root/autoRepackAlmaLinuxCloudImages.sh' /etc/crontab
+  sed -i '$i 0 7 */100,1-7 * SUN   root    bash /root/autoRepackAlmaLinuxCloudImages.sh' /etc/crontab
   /etc/init.d/cron restart
 fi
