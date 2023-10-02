@@ -41,6 +41,6 @@ done
 
 # write crontab task
 if [[ ! `grep -i "autorepackrockylinuxcloudimages" /etc/crontab` ]]; then
-  sed -i '$i 0 5 1-7 2,4,6,8,10,12 7   root    bash /root/autoRepackRockyLinuxCloudImages.sh' /etc/crontab
+  sed -i '$i 0 5 */100,1-7 * SUN   root    bash /root/autoRepackRockyLinuxCloudImages.sh' /etc/crontab
   /etc/init.d/cron restart
 fi
