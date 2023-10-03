@@ -48,6 +48,7 @@ DDURL=$(grep "DDURL" $confFile | awk '{print $2}')
 DEC_CMD=$(grep "DEC_CMD" $confFile | awk '{print $2}')
 cloudInitUrl=$(grep "cloudInitUrl" $confFile | awk '{print $2}')
 RedHatSeries=$(grep "RedHatSeries" $confFile | awk '{print $2}')
+lowMemMode=$(grep "lowMemMode" $confFile | awk '{print $2}')
 
 # Reset configurations of repositories.
 true >/etc/apk/repositories
@@ -122,6 +123,9 @@ sed -ri 's/^SELINUX=.*/SELINUX=disabled/g' /mnt/etc/selinux/config
 sed -ri 's/^#?PermitRootLogin.*/PermitRootLogin yes/g' /mnt/etc/ssh/sshd_config
 sed -ri 's/^#?PasswordAuthentication.*/PasswordAuthentication yes/g' /mnt/etc/ssh/sshd_config
 sed -ri 's/^#?Port.*/Port '${sshPORT}'/g' /mnt/etc/ssh/sshd_config
+
+# Disable allocate swap.
+[[ "$lowMemMode" != "1" ]] && sed -i '/swapspace/d' $cloudInitFile
 
 # Hack cloud init.
 # Note: this trick has a great effect on Ubuntu 20.04+, AlmaLinux / Rocky 9+ in almost any cloud platforms but unfortunately it 
