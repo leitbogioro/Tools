@@ -2824,10 +2824,10 @@ function alpineInstallOrDdAdditionalFiles() {
   AlpineMotd="$3"
   AlpineInitFileName="alpineConf.start"
   if [[ "$targetRelese" == 'Ubuntu' ]]; then
-    if [[ "$ubuntuVER" == "amd64" ]]; then
+    if [[ "$ubuntuArchitecture" == "amd64" ]]; then
       targetLinuxMirror="$4"
       targetLinuxSecurityMirror="${10}"
-    elif [[ "$ubuntuVER" == "arm64" ]]; then
+    elif [[ "$ubuntuArchitecture" == "arm64" ]]; then
       targetLinuxMirror="$5"
       targetLinuxSecurityMirror="$5"
     fi
@@ -3168,33 +3168,34 @@ if [[ "$ddMode" == '1' ]]; then
       }
     }
     if [[ "$VER" == "x86_64" ]] || [[ "$VER" == "x86-64" ]]; then
-      ubuntuVER="amd64"
+      ubuntuArchitecture="amd64"
     elif [[ "$VER" == "aarch64" ]]; then
-      ubuntuVER="arm64"
+      ubuntuArchitecture="arm64"
     fi
     if [[ "$tmpURL" == "" ]]; then
       tmpURL="https://cloud-images.a.disk.re/$targetRelese/"
       setFileType="xz"
-      packageName="$finalDIST-server-cloudimg-$ubuntuVER"
+      packageName="$finalDIST-server-cloudimg-$ubuntuArchitecture"
       verifyUrlValidationOfDdImages "$tmpURL$packageName.$setFileType"
     else
       verifyUrlValidationOfDdImages "$tmpURL"
     fi
-    ReleaseName="$targetRelese $finalDIST $ubuntuVER"
+    ReleaseName="$targetRelese $finalDIST $ubuntuArchitecture"
   elif [[ "$targetRelese" == 'AlmaLinux' || "$targetRelese" == 'Rocky' ]]; then
+    rhelArchitecture="$VER"
     if [[ "$tmpURL" == "" ]]; then
       tmpURL="https://cloud-images.a.disk.re/$targetRelese/"
       setFileType="xz"
       if [[ "$targetRelese" == 'AlmaLinux' ]]; then
-        packageName="$targetRelese-$RedHatSeries-GenericCloud-latest.$VER"
+        packageName="$targetRelese-$RedHatSeries-GenericCloud-latest.$rhelArchitecture"
       elif [[ "$targetRelese" == 'Rocky' ]]; then
-        packageName="$targetRelese-$RedHatSeries-GenericCloud.latest.$VER"
+        packageName="$targetRelese-$RedHatSeries-GenericCloud.latest.$rhelArchitecture"
       fi
       verifyUrlValidationOfDdImages "$tmpURL$packageName.$setFileType"
     else
       verifyUrlValidationOfDdImages "$tmpURL"
     fi
-    ReleaseName="$targetRelese $RedHatSeries $VER"
+    ReleaseName="$targetRelese $RedHatSeries $rhelArchitecture"
   elif [[ "$targetRelese" == 'Windows' ]]; then
 # If the range of IPv4 address is too narrow, it will cause IPv4 address and subnet are added with a fatal by using "CMD(*.bat script)" of
 # "wmic nicconfig where ipenabled=true call enablestatic(%staticip%),(%subnetmask%)" on newly installed Windows OS.
@@ -3540,6 +3541,7 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]] || [[ "$
     sed -i '/early_command string anna-install/d' /tmp/boot/preseed.cfg
   }
 elif [[ "$linux_relese" == 'alpinelinux' ]]; then
+  alpineArchitecture="$VER"
 # Hostname should not be "localhost"
   HostName=$(hostname)
   [[ "$HostName" == "" || "$HostName" == "localhost" ]] && {
@@ -3722,6 +3724,11 @@ ${ModifyMOTD}
 
 # Creat a modify initial file.
 echo '' > \$sysroot/root/alpine.config
+
+# To determine CPU architecture.
+echo "alpineArchitecture  "${alpineArchitecture} >> \$sysroot/root/alpine.config
+echo "ubuntuArchitecture  "${ubuntuArchitecture} >> \$sysroot/root/alpine.config
+echo "rhelArchitecture  "${rhelArchitecture} >> \$sysroot/root/alpine.config
 
 # To determine main hard drive.
 echo "IncDisk  "${IncDisk} >> \$sysroot/root/alpine.config
