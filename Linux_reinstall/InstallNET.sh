@@ -2979,7 +2979,7 @@ fi
           echo -ne "\n[${red}Error${plain}] Due to internal Cloud Init configurations existed on ${underLine}$cloudinitCdDrive${plain}, $targetRelese $RedHatSeries installation will meet a fatal."
         fi
         RedHatSeries="$(($RedHatSeries+1))"
-        echo -ne "\nTry to install ${yellow}AlmaLinux $RedHatSeries${plain} or ${yellow}Rocky $RedHatSeries${plain}!\n"
+        echo -ne "\nTry to install ${yellow}AlmaLinux $RedHatSeries${plain} or ${yellow}Rocky $RedHatSeries${plain} instead!\n"
         exit 1
       }
     fi
