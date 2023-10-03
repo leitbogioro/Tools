@@ -138,9 +138,9 @@ sed -ri 's/^#?Port.*/Port '${sshPORT}'/g' /mnt/etc/ssh/sshd_config
   sed -i '/fail2ban restart/d' $cloudInitFile
 }
 
-# Hack cloud init, this method is effective for versions from 22.1.8, 22.1.9 to 23.2.2 .
+# Hack cloud init, this method is effective for versions from 22.1.9 to 23.2.2 .
 #
-# Some cloud providers will storage "meta-data", "network-config" and "user-data" in another hard drive with filesystem of iso like "sr0" or "sdb":
+# Some cloud providers will storage a set of static cloud init configs which are including like "vendor-data", "meta-data", "network-config" and "user-data" in another hard drive with filesystem of iso like "sr0" or "sdb" etc. :
 #
 # [root@WIKIHOST-230702AJ306Z ~]# lsblk -ipf
 # NAME        FSTYPE  FSVER LABEL  UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
@@ -206,7 +206,7 @@ sed -ri 's/^#?Port.*/Port '${sshPORT}'/g' /mnt/etc/ssh/sshd_config
 # 2023-09-30 10:39:04,748 - subp.py[DEBUG]: Running command ['blkid', '-tLABEL_FATBOOT=cidata', '-odevice'] with allowed return codes [0, 2] (shell=False, capture=True)
 # 2023-09-30 10:39:04,836 - DataSourceNoCloud.py[DEBUG]: Attempting to use data from /dev/sdb
 #
-# The log generated in "Racknerd" which is using "SolusVM" to manage and initiate virtual machines without using cloud init, so there are no "user-data" in "/dev/vdb" or "/dev/sr1" etc.
+# The log generated in "Racknerd" which is using "SolusVM" panel to manage and initiate virtual machines without using cloud init, so there are no "user-data" in "/dev/vdb" or "/dev/sr1" etc.
 # and the initial of cloud init was not affected by items came from upstream cloud providers. Here is the record:
 #
 # 2023-09-29 21:37:54,936 - util.py[DEBUG]: Be similar with above and omitted.
@@ -218,8 +218,8 @@ sed -ri 's/^#?Port.*/Port '${sshPORT}'/g' /mnt/etc/ssh/sshd_config
 # 2023-09-29 21:37:55,254 - __init__.py[DEBUG]: Datasource DataSourceNoCloud [seed=None][dsmode=net] not updated for events: boot-new-instance
 # 2023-09-29 21:37:55,254 - handlers.py[DEBUG]: finish: init-local/search-NoCloud: SUCCESS: no local data found from DataSourceNoCloud
 #
-# I'm not very familiar with python, but I discovered that "subp.py" called "blkid" commands of bash and tried to found any valid cloud init configs if they were in iso drive
-# and then applied them on a very, very, very early stage. That's why we wrote our own cloud init configs by "99-fake_cloud.cfg" even through but it was not be executed completely.
+# I'm not quite familiar with python, but I discovered that "subp.py" called "blkid" commands of bash and tried to found any valid cloud init configs if they were in any filesystem of iso9660 drive
+# and then applied them on a very, very, very early stage. That's why we wrote our own cloud init configs into "99-fake_cloud.cfg" even through but it was not be executed completely.
 # We can also use "blkid" to repeat the behavior of cloud init, here are the results of those three machines:
 #
 # root@crunchbits-DualStackTest1:~# blkid -tTYPE=vfat -odevice
@@ -241,10 +241,10 @@ sed -ri 's/^#?Port.*/Port '${sshPORT}'/g' /mnt/etc/ssh/sshd_config
 # root@racknerd-20fb37:~# blkid -tTYPE=iso9660 -odevice
 # root@racknerd-20fb37:~# blkid -tLABEL=cidata -odevice
 #
-# We can make a obvious conclusion that when booting from a newly installed linux system which belongs to cloud image, cloud init will scan any valid iso hard drives and attempt to
-# find any existed valid cloud init configs which were named by "meta-data, user-data etc." and treat them as the prioritized configs so that this case contributes to bring a fatal for us
+# We can make a obvious conclusion that when booting from a newly installed linux system which belongs to cloud image, cloud init will scan any valid iso filesystem hard drives and attempt to
+# find any existed valid cloud init configs which were named by "meta-data, user-data etc." and treat them as the most prioritized configs so that this case contributes to bring a fatal for us
 # to use our own cloud init config whatever we put any commands in it even in "bootcmd:" because it was executed extremely later than those cloud inits which were storaged in iso drives.
-# I'm so confused that why Canonical has a almost maniacal passion and strange persistence with iso image not only on this but also on deleting compatible with Debian "preseed" unattended install method.
+# I'm so confused that why Canonical has a almost maniacal passion and strange persistence with iso image not only on this case but also on deleting compatible with Debian "preseed" unattended installation method.
 # They didn't intent to deliver a similar solution but told all individual users to install Ubuntu 22.04+ with downloading a huge iso image finally.
 # So fuck you son of bitch, Canonical!
 #
@@ -253,11 +253,11 @@ sed -ri 's/^#?Port.*/Port '${sshPORT}'/g' /mnt/etc/ssh/sshd_config
 # Due to dissimilar versions of python 3 and other factors, in different linux distributions of cloud images,
 # the directory which contains main programs of cloud init may not the same, for examples:
 #
-# Official cloud image of Ubuntu 22.03:
-# /usr/lib/python3/dist-packages/cloudinit/
+# Official cloud image of Ubuntu 22.04.3:
+# /usr/lib/python3/dist-packages/cloudinit/*
 #
 # Official cloud image of Rocky Linux 9.2:
-# /usr/lib/python3.9/site-packages/cloudinit/
+# /usr/lib/python3.9/site-packages/cloudinit/*
 
 utilProgram=$(find /mnt/usr/lib/python* -name "util.py" | grep "cloudinit" | head -n 1)
 sed -ri 's/iso9660/osi9876/g' $utilProgram
