@@ -89,5 +89,5 @@ umount /mnt
 kpartx -dv $loopDevice
 losetup -d $loopDevice
 
-# Reboot, the system in the memory will all be written to the hard drive.
+# Reboot, the temporary intermediary system of AlpineLinux which is executing in memory will be destroyed during the power down and then server will reboot to the newly system immediately.
 exec reboot
