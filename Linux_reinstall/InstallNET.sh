@@ -708,8 +708,25 @@ function getDisk() {
   [[ -z "$1" && "$disksNum" -ge "2" && -n $(lsblk -ip | awk '{print $6}' | grep -io "lvm") ]] && {
     [[ "$2" == 'debian' || "$2" == 'kali' ]] && setDisk="all"
   }
-  
+
   diskCapacity=$(lsblk -ipb | grep -w "$IncDisk" | awk {'print $4'})
+}
+
+# Check if there are several cloud init configs in CD drive.
+function detectCloudinit() {
+  internalCloudinitStatus="0"
+  [[ $(blkid -tTYPE=iso9660 -odevice) ]] && {
+    umount /mnt 2>/dev/null
+    for cloudinitCdDrive in $(blkid -tTYPE=iso9660 -odevice); do
+      mount $cloudinitCdDrive /mnt 2>/dev/null
+      [[ $(find /mnt -name "meta_data*" -print -or -name "user_data*" -print -or -name "meta-data*" -print -or -name "user-data*" -print) ]] && {
+        internalCloudinitStatus="1"
+        umount /mnt 2>/dev/null
+        break
+      }
+      umount /mnt 2>/dev/null
+    done
+  }
 }
 
 function diskType() {
@@ -2950,10 +2967,20 @@ fi
 [[ -n "$TotalMem" ]] && { echo -ne "\n${aoiBlue}# System Memory${plain}\n"; echo -e "\n${TotalMem} MB"; }
 
 [[ "$lowMemMode" == '1' || "$useCloudImage" == "1" ]] && {
+  detectCloudinit
   if [[ "$linux_relese" == 'rockylinux' || "$linux_relese" == 'almalinux' || "$linux_relese" == 'centos' ]]; then
     if [[ "$RedHatSeries" == "8" ]]; then
       targetRelese='Rocky'
-      [[ "$IPStackType" == "IPv6Stack" ]] && { echo -ne "\n[${red}Warning${plain}] ${yellow}$targetRelese $RedHatSeries${plain} doesn't support ${blue}$IPStackType${plain}."; echo -ne "\nSwitching to ${blue}AlmaLinux 9${plain} Distribution... \n"; linux_relese='almalinux'; RedHatSeries="9"; }
+      [[ "$IPStackType" == "IPv6Stack" || "$internalCloudinitStatus" == "1" ]] && {
+        if [[ "$IPStackType" == "IPv6Stack" ]]; then
+          echo -ne "\n[${red}Error${plain}] ${yellow}$targetRelese $RedHatSeries${plain} doesn't support ${blue}$IPStackType${plain}."
+        elif [[ "$internalCloudinitStatus" == "1" ]]; then
+          echo -ne "\n[${red}Error${plain}] Due to internal Cloud Init configurations existed on ${underLine}$cloudinitCdDrive${plain}, $targetRelese $RedHatSeries installation will meet a fatal."
+        fi
+        RedHatSeries="$(($RedHatSeries+1))"
+        echo -ne "\nTry to install ${yellow}AlmaLinux $RedHatSeries${plain} or ${yellow}Rocky $RedHatSeries${plain}!\n"
+        exit 1
+      }
     fi
     if [[ "$linux_relese" == 'centos' && "$RedHatSeries" -ge "9" ]]; then
       targetRelese='AlmaLinux'
