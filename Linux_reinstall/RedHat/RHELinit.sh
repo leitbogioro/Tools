@@ -125,7 +125,7 @@ sed -ri 's/^#?PasswordAuthentication.*/PasswordAuthentication yes/g' /mnt/etc/ss
 sed -ri 's/^#?Port.*/Port '${sshPORT}'/g' /mnt/etc/ssh/sshd_config
 
 # Disable allocate swap.
-# Note: Swap allowcation in "runcmd:" stage during execution of Cloud Init on aarch64 CPU architecture would cause a fatal because of "cloud-final.service" runs failed.
+# Note: Swap allowcation in "runcmd:" stage during execution of cloud init on aarch64 CPU architecture would cause a fatal because of "cloud-final.service" runs failed.
 [[ "$lowMemMode" != "1" ]] && sed -i '/swapspace/d' $cloudInitFile
 
 # Hack cloud init.
