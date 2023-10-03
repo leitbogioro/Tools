@@ -709,6 +709,7 @@ function getDisk() {
     [[ "$2" == 'debian' || "$2" == 'kali' ]] && setDisk="all"
   }
 
+# Redhat cloud init install needs at least 10GB drive space.
   diskCapacity=$(lsblk -ipb | grep -w "$IncDisk" | awk {'print $4'})
 }
 
