@@ -17,6 +17,7 @@ confFile='/root/alpine.config'
 cloudInitFile='/mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg'
 
 # Read configs from initial file.
+rhelArchitecture=$(grep "rhelArchitecture" $confFile | awk '{print $2}')
 IncDisk=$(grep "IncDisk" $confFile | awk '{print $2}')
 LinuxMirror=$(grep -w "LinuxMirror" $confFile | awk '{print $2}')
 alpineVer=$(grep "alpineVer" $confFile | awk '{print $2}')
@@ -126,7 +127,7 @@ sed -ri 's/^#?Port.*/Port '${sshPORT}'/g' /mnt/etc/ssh/sshd_config
 
 # Disable allocate swap.
 # Note: Swap allowcation in "runcmd:" stage during execution of cloud init on aarch64 CPU architecture would cause a fatal because of "cloud-final.service" runs failed.
-[[ "$lowMemMode" != "1" ]] && sed -i '/swapspace/d' $cloudInitFile
+[[ "$lowMemMode" != "1" || "$rhelArchitecture" == "aarch64" ]] && sed -i '/swapspace/d' $cloudInitFile
 
 # Hack cloud init.
 # Note: this trick has a great effect on Ubuntu 20.04+, AlmaLinux / Rocky 9+ in almost any cloud platforms but unfortunately it 
