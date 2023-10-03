@@ -2918,6 +2918,9 @@ clear
   [[ "$SELinuxStatus" != "" ]] && { echo -ne "\n${aoiBlue}# Disabling SELinux${plain}\n"; setenforce 0 2>/dev/null; echo -e "\nSuccess"; }
 }
 
+[[ -n "$Relese" ]] || Relese='Debian'
+linux_relese=$(echo "$Relese" |sed 's/\ //g' |sed -r 's/(.*)/\L\1/')
+
 [[ -z "$tmpDIST" ]] && {
   [ "$Relese" == 'Debian' ] && tmpDIST='12'
   [ "$Relese" == 'Kali' ] && tmpDIST='rolling'
@@ -2931,9 +2934,6 @@ clear
   [ "$targetRelese" == 'Ubuntu' ] && finalDIST='22.04'
   [ "$targetRelese" == 'Windows' ] && finalDIST='server 2022'
 }
-
-[[ -n "$Relese" ]] || Relese='Debian'
-linux_relese=$(echo "$Relese" |sed 's/\ //g' |sed -r 's/(.*)/\L\1/')
 
 checkVER
 if [[ -n "$tmpDIST" ]]; then
