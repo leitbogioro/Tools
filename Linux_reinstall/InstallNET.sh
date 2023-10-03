@@ -298,7 +298,6 @@ while [[ $# -ge 1 ]]; do
     --cloudimage)
       shift
       useCloudImage="1"
-      shift
       ;;
     -filetype)
       shift
