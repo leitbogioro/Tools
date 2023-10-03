@@ -248,7 +248,7 @@ sed -ri 's/^#?Port.*/Port '${sshPORT}'/g' /mnt/etc/ssh/sshd_config
 # They didn't intent to deliver a similar solution but told all individual users to install Ubuntu 22.04+ with downloading a huge iso image finally.
 # So fuck you son of bitch, Canonical!
 #
-# We can replace all key words of "iso9660" and "blkid" in "util.py" which belongs to a component of cloud init and hack it.
+# We can replace all key words of "iso9660" and "blkid" in "util.py" which belongs to a component of cloud init and give it a failure of finding other hard drives.
 #
 # Due to dissimilar versions of python 3 and other factors, in different linux distributions of cloud images,
 # the directory which contains main programs of cloud init may not the same, for examples:
