@@ -997,6 +997,7 @@ function checkGrub() {
   fi
 }
 
+# For AWS arm64, console=tty0 console=ttyS0,115200n8 must be added to menuentry of the grub.
 function checkConsole() {
   for ttyItems in "console=tty" "console=ttyS"; do
     [[ $(grep "$ttyItems" $GRUBDIR/$GRUBFILE) ]] && {
@@ -1043,7 +1044,7 @@ function checkMem() {
 # They never optimize or improve it, just tell users they need to pay more to expand their hardware performance and adjust to the endless demand of them. it's not a correct decision. 
   [[ "$setMemCheck" == '1' ]] && {
     [[ "$1" == 'fedora' || "$1" == 'rockylinux' || "$1" == 'almalinux' || "$1" == 'centos' ]] && {
-      [[ "$TotalMem" -le "462" ]] && {
+      [[ "$TotalMem" -le "452" ]] && {
         echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 512 MB!\n"
         exit 1
       }
@@ -1079,7 +1080,7 @@ function checkMem() {
     }
     [[ "$1" == 'alpinelinux' || "$3" == 'Ubuntu' ]] && {
       if [[ "$3" == 'Ubuntu' ]]; then
-        [[ "$TotalMem" -le "462" ]] && {
+        [[ "$TotalMem" -le "452" ]] && {
           echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 512 MB!\n"
           exit 1
         }
