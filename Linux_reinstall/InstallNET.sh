@@ -997,6 +997,16 @@ function checkGrub() {
   fi
 }
 
+function checkConsole() {
+  for ttyItems in "console=tty" "console=ttyS"; do
+    [[ $(grep "$ttyItems" $GRUBDIR/$GRUBFILE) ]] && {
+      ttyConsole+="${ttyItems}0 "
+    }
+  done
+  ttyConsole=$(echo "$ttyConsole" | sed 's/.$//')
+  [[ "$ttyConsole" =~ "ttyS" ]] && ttyConsole="$ttyConsole,115200n8"
+}
+
 # $1 is $linux_relese, $2 is $RedHatSeries, $3 is $targetRelese
 function checkMem() {
 # "dmesg" is most accurate to detect the actually valuable memory.
@@ -2923,6 +2933,7 @@ if [[ "$loaderMode" == "0" ]]; then
     echo -ne "\n[${red}Error${plain}] Not Found grub.\n"
     exit 1
   fi
+  checkConsole
 fi
 
 clear
@@ -4185,6 +4196,7 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
     fi
     [[ "$setAutoConfig" == "0" ]] && sed -i 's/inst.ks=file:\/\/ks.cfg//' $GRUBDIR/$GRUBFILE
     
+    [[ -n "$ttyConsole" ]] && BOOT_OPTION="$BOOT_OPTION $ttyConsole"
     [ -n "$setConsole" ] && BOOT_OPTION="$BOOT_OPTION --- console=$setConsole"
   
     [[ "$Type" == 'InBoot' ]] && {
@@ -4345,6 +4357,7 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
       ipv6ForRedhatGrub
       BOOT_OPTION="inst.ks=file://ks.cfg $Add_OPTION inst.nomemcheck quiet $ipv6StaticConfForKsGrub"
     fi
+    [[ -n "$ttyConsole" ]] && BOOT_OPTION="$BOOT_OPTION $ttyConsole"
     [[ "$setAutoConfig" == "0" ]] && sed -i 's/inst.ks=file:\/\/ks.cfg//' $GRUBDIR/$GRUBFILE
     cat >> /etc/grub.d/40_custom <<EOF
 menuentry 'Install $Relese $DIST $VER' --class $linux_relese --class gnu-linux --class gnu --class os {
