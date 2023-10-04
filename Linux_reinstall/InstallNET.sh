@@ -2970,6 +2970,10 @@ fi
 [[ "$lowMemMode" == '1' || "$useCloudImage" == "1" ]] && {
   detectCloudinit
   if [[ "$linux_relese" == 'rockylinux' || "$linux_relese" == 'almalinux' || "$linux_relese" == 'centos' ]]; then
+    if [[ "$RedHatSeries" == "7" ]]; then
+      echo -ne "\n[${red}Error${plain}] There were no suitable Cloud Images for ${yellow}$Relese $RedHatSeries${plain}!\n"
+      exit 1
+    fi
     if [[ "$RedHatSeries" == "8" ]]; then
       targetRelese='Rocky'
       [[ "$IPStackType" == "IPv6Stack" || "$internalCloudinitStatus" == "1" ]] && {
