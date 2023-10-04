@@ -997,7 +997,7 @@ function checkGrub() {
   fi
 }
 
-# For AWS arm64, console=tty0 console=ttyS0,115200n8 must be added to menuentry of the grub.
+# For AWS arm64, "console=tty0 console=ttyS0,115200n8" must be added to menuentry of the grub.
 function checkConsole() {
   for ttyItems in "console=tty" "console=ttyS"; do
     [[ $(grep "$ttyItems" $GRUBDIR/$GRUBFILE) ]] && {
