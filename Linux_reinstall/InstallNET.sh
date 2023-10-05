@@ -1030,7 +1030,7 @@ function checkMem() {
   [[ "$1" == 'debian' ]] || [[ "$1" == 'ubuntu' ]] || [[ "$1" == 'kali' ]] && {
     [[ "$TotalMem" -ge "2536" ]] && lowmemLevel="" || lowmemLevel="lowmem=+1"
     [[ "$setMemCheck" == '1' ]] && {
-      [[ "$TotalMem" -le "368" ]] && {
+      [[ "$TotalMem" -le "336" ]] && {
         echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 384MB!\n"
         exit 1
       }
@@ -3954,9 +3954,9 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
     FormatDisk="autopart"
   }
   setRaidRecipe "$setRaid" "$disksNum" "$AllDisks" "$linux_relese"
-if [[ "$setAutoConfig" == "1" ]]; then
   cat >/tmp/boot/ks.cfg<<EOF
 # platform x86, AMD64, or Intel EM64T, or ARM aarch64
+
 # Firewall configuration
 firewall --enabled --ssh
 
@@ -4024,7 +4024,6 @@ fail2ban
 file
 lrzsz
 net-tools
-traceroute
 vim
 wget
 xz
@@ -4032,7 +4031,7 @@ xz
 %end
 
 # Enable services
-services --enabled=fail2ban,firewalld
+# services --enabled=
 
 # All modified command should only be executed between %post and %end location!
 %post --interpreter=/bin/bash
@@ -4043,23 +4042,27 @@ sed -ri "/^#?SELINUX=.*/c\SELINUX=disabled" /etc/selinux/config
 # Allow password login
 sed -ri "/^#?PermitRootLogin.*/c\PermitRootLogin yes" /etc/ssh/sshd_config
 sed -ri "/^#?PasswordAuthentication.*/c\PasswordAuthentication yes" /etc/ssh/sshd_config
-
 # Change ssh port
 sed -ri "/^#?Port.*/c\Port ${sshPORT}" /etc/ssh/sshd_config
+# Enable ssh service
+systemctl enable sshd
+systemctl restart sshd
 
 # Add new ssh port for firewalld
 sed -i '6i \ \ <port port="${sshPORT}" protocol="tcp"/>' /etc/firewalld/zones/public.xml
 sed -i '7i \ \ <port port="${sshPORT}" protocol="udp"/>' /etc/firewalld/zones/public.xml
+# Reload firewalld service
 firewall-cmd --reload
 
-# Write fail2ban config
+# Generate Fail2Ban config
 touch /etc/fail2ban/jail.d/local.conf
 echo -ne "[DEFAULT]\nbanaction = firewallcmd-ipset\nbackend = systemd\n\n[sshd]\nenabled = true" > /etc/fail2ban/jail.d/local.conf
-
-# Fail2ban config
+# Allow Fail2Ban to access logs
 touch /var/log/fail2ban.log
 sed -i -E 's/^(logtarget =).*/\1 \/var\/log\/fail2ban.log/' /etc/fail2ban/fail2ban.conf
+# Enable Fail2Ban service
 systemctl enable fail2ban
+systemctl restart fail2ban
 
 # Add multiple IPv4 addresses
 ${deleteOriginalIpv4Coning}
@@ -4078,12 +4081,13 @@ rm -rf /root/original-ks.cfg
 %end
 
 EOF
-fi
 # If network adapter is not redirected, delete this setting to new system.
   [[ "$setInterfaceName" == "0" ]] && sed -i 's/ net.ifnames=0 biosdevname=0//g' /tmp/boot/ks.cfg
 # Support to add --setipv6 "0" to disable IPv6 modules permanently.
   [[ "$setIPv6" == "1" ]] && sed -i 's/ipv6.disable=1//g' /tmp/boot/ks.cfg
-  
+# Support to disable fail2ban manually.
+  [[ "$setFail2banStatus" == "0" ]] && sed -i "/fail2ban/d" /tmp/boot/ks.cfg
+
   [[ "$UNKNOWHW" == '1' ]] && sed -i 's/^unsupported_hardware/#unsupported_hardware/g' /tmp/boot/ks.cfg
   [[ "$(echo "$DIST" |grep -o '^[0-9]\{1\}')" == '5' ]] && sed -i '0,/^%end/s//#%end/' /tmp/boot/ks.cfg
 fi
@@ -4353,7 +4357,9 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
     [[ "$setIPv6" == "0" ]] && Add_OPTION="$Add_OPTION ipv6.disable=1" || Add_OPTION="$Add_OPTION"
 # Write menuentry to grub
 # Find existed boot entries: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/managing_monitoring_and_updating_the_kernel/configuring-kernel-command-line-parameters_managing-monitoring-and-updating-the-kernel#what-boot-entries-are_configuring-kernel-command-line-parameters
-    grub2Order=$(find /boot/loader/entries/ -maxdepth 1 -name "*.conf" | wc -l)
+# There is no directory of "/boot/loader/entries/" in CentOS 7.
+    grub2Order=$(find /boot/loader/entries/ -maxdepth 1 -name "*.conf" 2>/dev/null | wc -l)
+    [[ "$grub2Order" != "0" ]] || grub2Order="saved"
 # Make grub2 to prefer installation item to boot first.
     sed -ri 's/GRUB_DEFAULT=.*/GRUB_DEFAULT='$grub2Order'/g' /etc/default/grub
     if [[ "$linux_relese" == 'ubuntu'  || "$linux_relese" == 'debian' || "$linux_relese" == 'kali' ]]; then
