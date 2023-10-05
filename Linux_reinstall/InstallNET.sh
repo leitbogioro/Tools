@@ -998,18 +998,19 @@ function checkGrub() {
 }
 
 # $1 is "$VER".
-# For AWS arm64, "console=tty0 console=ttyS0,115200n8" must be added to menuentry of the grub.
+# For AWS arm64, "console=tty1 console=ttyS0,115200n8" must be added to menuentry of the grub.
 # Note: this is not suitable for amd64 architecture otherwise it will cause boot with "RETBleed attacks, data leaks possible!".
+# Arm64 instances of Oracle Cloud need "console=tty1".
 function checkConsole() {
   for ttyItems in "console=tty" "console=ttyS"; do
     [[ $(grep "$ttyItems" $GRUBDIR/$GRUBFILE) ]] && {
       ttyConsole+="${ttyItems}0 "
     }
   done
-  ttyConsole=$(echo "$ttyConsole" | sed 's/.$//')
+  ttyConsole=$(echo "$ttyConsole" | sed 's/.$//' | sed 's/tty0/tty1/g')
   [[ "$ttyConsole" =~ "ttyS" ]] && { 
     [[ "$1" == "aarch64" || "$1" == "arm64" ]] && ttyConsole="$ttyConsole,115200n8" || ttyConsole=""
-    grubSerialConsoleProperties="console=tty0 console=ttyS0,115200 earlyprintk=ttyS0,115200 consoleblank=0"
+    grubSerialConsoleProperties="console=tty1 console=ttyS0,115200 earlyprintk=ttyS0,115200 consoleblank=0"
   }
 }
 
