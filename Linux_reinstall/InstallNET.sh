@@ -429,7 +429,7 @@ function selectMirror() {
   mirrorStatus=0
   declare -A MirrorBackup
   if [[ "$IsCN" == "cn" ]]; then
-    MirrorBackup=(["debian0"]="" ["debian1"]="http://ftp.cn.debian.org/debian" ["debian2"]="http://mirror.nju.edu.cn/debian" ["debian3"]="http://mirrors.ustc.edu.cn/debian" ["debian4"]="https://mirrors.aliyun.com/debian-archive/debian" ["ubuntu0"]="" ["ubuntu1"]="https://mirrors.ustc.edu.cn/ubuntu" ["ubuntu2"]="http://mirrors.xjtu.edu.cn/ubuntu" ["kali0"]="" ["kali1"]="https://mirrors.tuna.tsinghua.edu.cn/kali" ["kali2"]="http://mirrors.zju.edu.cn/kali" ["alpinelinux0"]="" ["alpinelinux1"]="http://mirror.nju.edu.cn/alpine" ["alpinelinux2"]="http://mirrors.tuna.tsinghua.edu.cn/alpine" ["centos0"]="" ["centos1"]="https://mirrors.ustc.edu.cn/centos-stream" ["centos2"]="https://mirrors.bfsu.edu.cn/centos-stream" ["centos3"]="https://mirrors.tuna.tsinghua.edu.cn/centos" ["centos4"]="http://mirror.nju.edu.cn/centos-altarch" ["centos5"]="https://mirrors.tuna.tsinghua.edu.cn/centos-vault" ["fedora0"]="" ["fedora1"]="https://mirrors.tuna.tsinghua.edu.cn/fedora" ["fedora2"]="https://mirrors.bfsu.edu.cn/fedora" ["rockylinux0"]="" ["rockylinux1"]="http://mirror.nju.edu.cn/rocky" ["rockylinux2"]="http://mirrors.sdu.edu.cn/rocky" ["almalinux0"]="" ["almalinux1"]="https://mirror.sjtu.edu.cn/almalinux" ["almalinux2"]="http://mirrors.neusoft.edu.cn/almalinux")
+    MirrorBackup=(["debian0"]="" ["debian1"]="http://mirrors.ustc.edu.cn/debian" ["debian2"]="http://mirror.nju.edu.cn/debian" ["debian3"]="http://mirrors.ustc.edu.cn/debian" ["debian4"]="https://mirrors.aliyun.com/debian-archive/debian" ["ubuntu0"]="" ["ubuntu1"]="https://mirrors.ustc.edu.cn/ubuntu" ["ubuntu2"]="http://mirrors.xjtu.edu.cn/ubuntu" ["kali0"]="" ["kali1"]="https://mirrors.tuna.tsinghua.edu.cn/kali" ["kali2"]="http://mirrors.zju.edu.cn/kali" ["alpinelinux0"]="" ["alpinelinux1"]="http://mirror.nju.edu.cn/alpine" ["alpinelinux2"]="http://mirrors.tuna.tsinghua.edu.cn/alpine" ["centos0"]="" ["centos1"]="https://mirrors.ustc.edu.cn/centos-stream" ["centos2"]="https://mirrors.bfsu.edu.cn/centos-stream" ["centos3"]="https://mirrors.tuna.tsinghua.edu.cn/centos" ["centos4"]="http://mirror.nju.edu.cn/centos-altarch" ["centos5"]="https://mirrors.tuna.tsinghua.edu.cn/centos-vault" ["fedora0"]="" ["fedora1"]="https://mirrors.tuna.tsinghua.edu.cn/fedora" ["fedora2"]="https://mirrors.bfsu.edu.cn/fedora" ["rockylinux0"]="" ["rockylinux1"]="http://mirror.nju.edu.cn/rocky" ["rockylinux2"]="http://mirrors.sdu.edu.cn/rocky" ["almalinux0"]="" ["almalinux1"]="https://mirror.sjtu.edu.cn/almalinux" ["almalinux2"]="http://mirrors.neusoft.edu.cn/almalinux")
   else
     MirrorBackup=(["debian0"]="" ["debian1"]="http://deb.debian.org/debian" ["debian2"]="http://mirrors.ocf.berkeley.edu/debian" ["debian3"]="http://ftp.yz.yamagata-u.ac.jp/pub/linux/debian" ["debian4"]="http://archive.debian.org/debian" ["ubuntu0"]="" ["ubuntu1"]="http://archive.ubuntu.com/ubuntu" ["ubuntu2"]="http://ports.ubuntu.com" ["kali0"]="" ["kali1"]="https://mirrors.ocf.berkeley.edu/kali" ["kali2"]="http://ftp.yz.yamagata-u.ac.jp/pub/linux/kali" ["alpinelinux0"]="" ["alpinelinux1"]="http://dl-cdn.alpinelinux.org/alpine" ["alpinelinux2"]="https://mirrors.edge.kernel.org/alpine" ["centos0"]="" ["centos1"]="http://mirror.stream.centos.org" ["centos2"]="http://mirrors.ocf.berkeley.edu/centos-stream" ["centos3"]="http://mirror.centos.org/centos" ["centos4"]="http://mirror.centos.org/altarch" ["centos5"]="http://vault.centos.org" ["fedora0"]="" ["fedora1"]="http://mirrors.rit.edu/fedora/fedora/linux" ["fedora2"]="http://ftp.iij.ad.jp/pub/linux/Fedora/fedora/linux" ["rockylinux0"]="" ["rockylinux1"]="http://download.rockylinux.org/pub/rocky" ["rockylinux2"]="http://mirrors.iu13.net/rocky" ["almalinux0"]="" ["almalinux1"]="http://repo.almalinux.org/almalinux" ["almalinux2"]="http://ftp.iij.ad.jp/pub/linux/almalinux")
   fi
@@ -997,7 +997,9 @@ function checkGrub() {
   fi
 }
 
+# $1 is "$VER".
 # For AWS arm64, "console=tty0 console=ttyS0,115200n8" must be added to menuentry of the grub.
+# Note: this is not suitable for amd64 architecture otherwise it will cause boot with "RETBleed attacks, data leaks possible!".
 function checkConsole() {
   for ttyItems in "console=tty" "console=ttyS"; do
     [[ $(grep "$ttyItems" $GRUBDIR/$GRUBFILE) ]] && {
@@ -1005,7 +1007,10 @@ function checkConsole() {
     }
   done
   ttyConsole=$(echo "$ttyConsole" | sed 's/.$//')
-  [[ "$ttyConsole" =~ "ttyS" ]] && ttyConsole="$ttyConsole,115200n8"
+  [[ "$ttyConsole" =~ "ttyS" ]] && { 
+    [[ "$1" == "aarch64" || "$1" == "arm64" ]] && ttyConsole="$ttyConsole,115200n8" || ttyConsole=""
+    grubSerialConsoleProperties="console=tty0 console=ttyS0,115200 earlyprintk=ttyS0,115200 consoleblank=0"
+  }
 }
 
 # $1 is $linux_relese, $2 is $RedHatSeries, $3 is $targetRelese
@@ -2516,14 +2521,11 @@ function DebianModifiedPreseed() {
       [[ "$setDns" == "1" ]] && SetDNS="CNResolvHead" DnsChangePermanently="$1 mkdir -p /etc/resolvconf/resolv.conf.d/; $1 wget --no-check-certificate -qO /etc/resolvconf/resolv.conf.d/head '${debianConfFileDirCn}/network/${SetDNS}';" || DnsChangePermanently=""
 # Modify logging in welcome information(Message Of The Day) of Debian and make it more pretty.
       [[ "$setMotd" == "1" ]] && ModifyMOTD="$1 rm -rf /etc/update-motd.d/ /etc/motd /run/motd.dynamic; $1 mkdir -p /etc/update-motd.d/; $1 wget --no-check-certificate -qO /etc/update-motd.d/00-header '${debianConfFileDirCn}/updatemotd/00-header'; $1 wget --no-check-certificate -qO /etc/update-motd.d/10-sysinfo '${debianConfFileDirCn}/updatemotd/10-sysinfo'; $1 wget --no-check-certificate -qO /etc/update-motd.d/90-footer '${debianConfFileDirCn}/updatemotd/90-footer'; $1 chmod +x /etc/update-motd.d/00-header; $1 chmod +x /etc/update-motd.d/10-sysinfo; $1 chmod +x /etc/update-motd.d/90-footer;" || ModifyMOTD=""
-# Change "security.debian.org" to "mirrors.tuna.tsinghua.edu.cn". Reference: https://mirrors.tuna.tsinghua.edu.cn/help/debian/
-      ChangeSecurityMirror="$1 sed -i 's/security.debian.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list;"
     else
       ChangeBashrc="$1 rm -rf /root/.bashrc; $1 wget --no-check-certificate -qO /root/.bashrc '${debianConfFileDir}/.bashrc';"
 # Set DNS server from Cloudflare and Google permanently.
       [[ "$setDns" == "1" ]] && SetDNS="NomalResolvHead" DnsChangePermanently="$1 mkdir -p /etc/resolvconf/resolv.conf.d/; $1 wget --no-check-certificate -qO /etc/resolvconf/resolv.conf.d/head '${debianConfFileDir}/network/${SetDNS}';" || DnsChangePermanently=""
       [[ "$setMotd" == "1" ]] && ModifyMOTD="$1 rm -rf /etc/update-motd.d/ /etc/motd /run/motd.dynamic; $1 mkdir -p /etc/update-motd.d/; $1 wget --no-check-certificate -qO /etc/update-motd.d/00-header '${debianConfFileDir}/updatemotd/00-header'; $1 wget --no-check-certificate -qO /etc/update-motd.d/10-sysinfo '${debianConfFileDir}/updatemotd/10-sysinfo'; $1 wget --no-check-certificate -qO /etc/update-motd.d/90-footer '${debianConfFileDir}/updatemotd/90-footer'; $1 chmod +x /etc/update-motd.d/00-header; $1 chmod +x /etc/update-motd.d/10-sysinfo; $1 chmod +x /etc/update-motd.d/90-footer;" || ModifyMOTD=""
-      ChangeSecurityMirror=""
     fi
 # For multiple interfaces environment, if the interface which is configurated by "auto", regardless of it is plugged by internet cable, 
 # Debian/Kali will continuously try to wake and start up it contains with dhcp even timeout.
@@ -2605,12 +2607,16 @@ function DebianModifiedPreseed() {
     CreateSoftLinkToGrub2FromGrub1="$1 ln -s /boot/grub/ /boot/grub2;"
 # Statement of "grub-pc/timeout" in "preseed.cfg" is only valid for BIOS.
     [[ "$EfiSupport" == "enabled" ]] && SetGrubTimeout="$1 sed -ri 's/GRUB_TIMEOUT=5/GRUB_TIMEOUT=3/g' /etc/default/grub; $1 sed -ri 's/set timeout=5/set timeout=3/g' /boot/grub/grub.cfg;" || SetGrubTimeout=""
-    export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${VimIndentEolStart} ${DnsChangePermanently} ${ModifyMOTD} ${ChangeSecurityMirror} ${BurnIrregularIpv4Gate} ${BurnIrregularIpv6Gate} ${SupportIPv6orIPv4} ${ReplaceActualIpPrefix} ${AutoPlugInterfaces} ${EnableSSH} ${ReviseMOTD} ${SupportZSH} ${EnableFail2ban} ${CreateSoftLinkToGrub2FromGrub1} ${SetGrubTimeout}"
+    export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${VimIndentEolStart} ${DnsChangePermanently} ${ModifyMOTD} ${BurnIrregularIpv4Gate} ${BurnIrregularIpv6Gate} ${SupportIPv6orIPv4} ${ReplaceActualIpPrefix} ${AutoPlugInterfaces} ${EnableSSH} ${ReviseMOTD} ${SupportZSH} ${EnableFail2ban} ${CreateSoftLinkToGrub2FromGrub1} ${SetGrubTimeout}"
   fi
 }
 
 function DebianPreseedProcess() {
   if [[ "$setAutoConfig" == "1" ]]; then
+# Debian security mirror of Tsinghua University: https://mirrors.tuna.tsinghua.edu.cn/help/debian/
+    if [[ "$linux_relese" == 'debian' ]]; then
+      [[ "$IsCN" == "cn" ]] && debianSecurityMirror="mirrors.tuna.tsinghua.edu.cn" || debianSecurityMirror="security.debian.org"
+    fi
 # Debian linux cloud kernel only include drivers of network adapter can reduce resource usage for most virtual servers.
 # If target system need to set a raid recipe, to make sure to support more disk controllers, cloud kernel should not be installed.
 # Reference: https://docs.software-univention.de/installation-4.4.pdf
@@ -2733,11 +2739,14 @@ d-i keyboard-configuration/xkb-keymap string us
 ### Low memory mode
 d-i lowmem/low note
 
-### Disable security, updates and backports
-d-i apt-setup/services-select multiselect
+### Select security, updates and backports
+d-i apt-setup/services-select multiselect security, updates
 
-### Disable source repositories
-d-i apt-setup/enable-source-repositories boolean false
+### Configure source repositories
+d-i apt-setup/enable-source-repositories boolean true
+
+### Security setup
+d-i apt-setup/security_host string ${debianSecurityMirror}
 
 ### Enable contrib, non-free and non-free firmware
 d-i apt-setup/contrib boolean true
@@ -2824,7 +2833,7 @@ d-i grub-installer/only_debian boolean true
 d-i grub-installer/with_other_os boolean true
 d-i grub-installer/bootdev string ${IncDisk}
 d-i grub-installer/force-efi-extra-removable boolean true
-d-i debian-installer/add-kernel-opts string net.ifnames=0 biosdevname=0 ipv6.disable=1
+d-i debian-installer/add-kernel-opts string net.ifnames=0 biosdevname=0 ipv6.disable=1 $grubSerialConsoleProperties
 grub-pc grub-pc/hidden_timeout boolean false
 grub-pc grub-pc/timeout string 3
 
@@ -2928,25 +2937,6 @@ else
   fi
 fi
 
-if [[ "$loaderMode" == "0" ]]; then
-  checkGrub "/boot/grub/" "/boot/grub2/" "/etc/" "grub.cfg" "grub.conf" "/boot/efi/EFI/"
-  if [[ -z "$GRUBTYPE" ]]; then
-    echo -ne "\n[${red}Error${plain}] Not Found grub.\n"
-    exit 1
-  fi
-  checkConsole
-fi
-
-clear
-
-[[ ! -d "/tmp/" ]] && mkdir /tmp
-
-# Disable SELinux
-[[ -f /etc/selinux/config ]] && {
-  SELinuxStatus=$(sestatus -v | grep -i "selinux status:" | grep "enabled")
-  [[ "$SELinuxStatus" != "" ]] && { echo -ne "\n${aoiBlue}# Disabling SELinux${plain}\n"; setenforce 0 2>/dev/null; echo -e "\nSuccess"; }
-}
-
 [[ -n "$Relese" ]] || Relese='Debian'
 linux_relese=$(echo "$Relese" |sed 's/\ //g' |sed -r 's/(.*)/\L\1/')
 
@@ -2968,6 +2958,25 @@ checkVER
 if [[ -n "$tmpDIST" ]]; then
   checkDIST
 fi
+
+if [[ "$loaderMode" == "0" ]]; then
+  checkGrub "/boot/grub/" "/boot/grub2/" "/etc/" "grub.cfg" "grub.conf" "/boot/efi/EFI/"
+  if [[ -z "$GRUBTYPE" ]]; then
+    echo -ne "\n[${red}Error${plain}] Not Found grub.\n"
+    exit 1
+  fi
+  checkConsole "$VER"
+fi
+
+clear
+
+[[ ! -d "/tmp/" ]] && mkdir /tmp
+
+# Disable SELinux
+[[ -f /etc/selinux/config ]] && {
+  SELinuxStatus=$(sestatus -v | grep -i "selinux status:" | grep "enabled")
+  [[ "$SELinuxStatus" != "" ]] && { echo -ne "\n${aoiBlue}# Disabling SELinux${plain}\n"; setenforce 0 2>/dev/null; echo -e "\nSuccess"; }
+}
 
 # RAM of RedHat series is 2GB required at least for native install, for dd is 512MB.
 [[ "$setNetbootXyz" == "0" ]] && {
@@ -3541,12 +3550,14 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]] || [[ "$
     sed -i 's/include string openssh-server/include string kali-linux-core openssh-server/g' /tmp/boot/preseed.cfg
     sed -i 's/d-i grub-installer\/with_other_os boolean true//g' /tmp/boot/preseed.cfg
   fi
-# Disable get security updates for those versions of Debian which were 'EOL'(9 and former in 2023.07) or Kali.
-  if [[ "$linux_relese" != 'kali' ]]; then
-    if [[ "$linux_relese" == 'debian' && "$DebianDistNum" -ge "10" ]]; then
-      sed -i '/d-i\ apt-setup\/services-select multiselect/d' /tmp/boot/preseed.cfg
-      sed -i '/d-i\ apt-setup\/enable-source-repositories boolean false/d' /tmp/boot/preseed.cfg
-    fi
+# Disable get security updates for those versions of Debian which were 'EOL'(9 and former in 2023.07) and Kali.
+  if [[ "$linux_relese" == 'kali' ]]; then
+    sed -ri 's/services-select multiselect security, updates/services-select multiselect updates/g' /tmp/boot/preseed.cfg
+    sed -i '/d-i\ apt-setup\/security_host string/d' /tmp/boot/preseed.cfg
+  elif [[ "$linux_relese" == 'debian' && "$DebianDistNum" -le "9" ]]; then
+    sed -ri 's/services-select multiselect security, updates/services-select multiselect/g' /tmp/boot/preseed.cfg
+    sed -ri 's/enable-source-repositories boolean true/enable-source-repositories boolean false/g' /tmp/boot/preseed.cfg
+    sed -i '/d-i\ apt-setup\/security_host string/d' /tmp/boot/preseed.cfg
   fi
 # Static network environment doesn't support ntp clock setup.
   if [[ "$Network4Config" == "isStatic" ]] || [[ "$Network6Config" == "isStatic" ]]; then
@@ -3991,7 +4002,7 @@ ${SetTimeZone}
 ${NetConfigManually}
 
 # System bootloader configuration
-bootloader --location=mbr --boot-drive=${ksIncDisk} --append="rhgb quiet crashkernel=0 net.ifnames=0 biosdevname=0 ipv6.disable=1"
+bootloader --location=mbr --boot-drive=${ksIncDisk} --append="rhgb quiet crashkernel=0 net.ifnames=0 biosdevname=0 ipv6.disable=1 $grubSerialConsoleProperties"
 
 # Clear the Master Boot Record
 zerombr
