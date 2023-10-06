@@ -2837,7 +2837,7 @@ d-i grub-installer/only_debian boolean true
 d-i grub-installer/with_other_os boolean true
 d-i grub-installer/bootdev string ${IncDisk}
 d-i grub-installer/force-efi-extra-removable boolean true
-d-i debian-installer/add-kernel-opts string net.ifnames=0 biosdevname=0 ipv6.disable=1 $serialConsolePropertiesForGrub
+d-i debian-installer/add-kernel-opts string net.ifnames=0 biosdevname=0 ipv6.disable=1 ${serialConsolePropertiesForGrub}
 grub-pc grub-pc/hidden_timeout boolean false
 grub-pc grub-pc/timeout string 3
 
@@ -4006,7 +4006,7 @@ ${SetTimeZone}
 ${NetConfigManually}
 
 # System bootloader configuration
-bootloader --location=mbr --boot-drive=${ksIncDisk} --append="rhgb quiet crashkernel=0 net.ifnames=0 biosdevname=0 ipv6.disable=1 $serialConsolePropertiesForGrub"
+bootloader --location=mbr --boot-drive=${ksIncDisk} --append="rhgb quiet crashkernel=0 net.ifnames=0 biosdevname=0 ipv6.disable=1 ${serialConsolePropertiesForGrub}"
 
 # Clear the Master Boot Record
 zerombr
