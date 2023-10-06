@@ -998,9 +998,11 @@ function checkGrub() {
 }
 
 # $1 is "$VER".
-# For AWS arm64, "console=tty1 console=ttyS0,115200n8" must be added to menuentry of the grub.
-# Note: this is not suitable for amd64 architecture otherwise it will cause boot with "RETBleed attacks, data leaks possible!".
-# Arm64 instances of Oracle Cloud need "console=tty1".
+# For AWS arm64, "console=tty1 console=ttyS0,115200n8" must be added to menuentry of the grub in order to successfully rebooting to the netboot installer kernel and viewing graphis on serial console.
+# Note: When booting into a new grub menuentry that we generated, this is not suitable for amd64 architecture otherwise it will cause boot with "RETBleed attacks, data leaks possible!" and failed.
+#       Arm64 instances of Oracle Cloud need "console=tty1".
+#       Guest video display will be disabled on VNC of Oracle Cloud if arm64 cloud kernel installed.
+#       Native Debian installation and generic cloud image of Debian will boot failed on arm64 instance of AWS EC2 because of missing drivers of ssd.
 function checkConsole() {
   for ttyItems in "console=tty" "console=ttyS"; do
     [[ $(grep "$ttyItems" $GRUBDIR/$GRUBFILE) ]] && {
@@ -1010,7 +1012,7 @@ function checkConsole() {
   ttyConsole=$(echo "$ttyConsole" | sed 's/.$//' | sed 's/tty0/tty1/g')
   [[ "$ttyConsole" =~ "ttyS" ]] && { 
     [[ "$1" == "aarch64" || "$1" == "arm64" ]] && ttyConsole="$ttyConsole,115200n8" || ttyConsole=""
-    grubSerialConsoleProperties="console=tty1 console=ttyS0,115200 earlyprintk=ttyS0,115200 consoleblank=0"
+    serialConsolePropertiesForGrub="console=tty1 console=ttyS0,115200n8 earlyprintk=ttyS0,115200n8 consoleblank=0"
   }
 }
 
@@ -1257,6 +1259,7 @@ function checkSys() {
       fi
       yum install epel-release -y
       yum install dnf -y
+      dnf makecache
 # Run dnf update and install components.
 # In official template of AlmaLinux 9 of Linode, "tuned" must be installed otherwise "grub2-mkconfig" can't work formally.
 # Reference: https://phanes.silogroup.org/fips-disa-stig-hardening-on-centos9/
@@ -2834,7 +2837,7 @@ d-i grub-installer/only_debian boolean true
 d-i grub-installer/with_other_os boolean true
 d-i grub-installer/bootdev string ${IncDisk}
 d-i grub-installer/force-efi-extra-removable boolean true
-d-i debian-installer/add-kernel-opts string net.ifnames=0 biosdevname=0 ipv6.disable=1 $grubSerialConsoleProperties
+d-i debian-installer/add-kernel-opts string net.ifnames=0 biosdevname=0 ipv6.disable=1 $serialConsolePropertiesForGrub
 grub-pc grub-pc/hidden_timeout boolean false
 grub-pc grub-pc/timeout string 3
 
@@ -4003,7 +4006,7 @@ ${SetTimeZone}
 ${NetConfigManually}
 
 # System bootloader configuration
-bootloader --location=mbr --boot-drive=${ksIncDisk} --append="rhgb quiet crashkernel=0 net.ifnames=0 biosdevname=0 ipv6.disable=1 $grubSerialConsoleProperties"
+bootloader --location=mbr --boot-drive=${ksIncDisk} --append="rhgb quiet crashkernel=0 net.ifnames=0 biosdevname=0 ipv6.disable=1 $serialConsolePropertiesForGrub"
 
 # Clear the Master Boot Record
 zerombr
