@@ -79,7 +79,7 @@ loopDeviceNum=$(echo $(losetup -f) | cut -d'/' -f 3)
 losetup $loopDevice $IncDisk
 
 # Get mapper partition.
-mapperDevice=$(kpartx -av $loopDevice | grep "$loopDeviceNum" | sort -rn | sed -n '1p' | awk '{print $3}')
+mapperDevice=$(kpartx -av $loopDevice | grep "$loopDeviceNum" | head -n 1 | awk '{print $3}')
 
 # Mount Ubuntu dd partition to /mnt .
 mount /dev/mapper/$mapperDevice /mnt
