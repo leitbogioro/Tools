@@ -1003,6 +1003,11 @@ function checkGrub() {
 #       Arm64 instances of Oracle Cloud need "console=tty1".
 #       Guest video display will be disabled on VNC of Oracle Cloud if arm64 cloud kernel installed.
 #       Native Debian installation and generic cloud image of Debian will boot failed on arm64 instance of AWS EC2 because of missing drivers of ssd.
+#
+# Serial console parameters of default grub in official cloud images of several linux distributions:
+# Debian 12 amd64:           console=tty0 console=ttyS0,115200 earlyprintk=ttyS0,115200 consoleblank=0
+# AlmaLinux 9.2 arm64:       console=tty0 console=ttyS0,115200n8
+# Ubuntu 20.04+ amd/arm64:   console=tty1 console=ttyS0
 function checkConsole() {
   for ttyItems in "console=tty" "console=ttyS"; do
     [[ $(grep "$ttyItems" $GRUBDIR/$GRUBFILE) ]] && {
