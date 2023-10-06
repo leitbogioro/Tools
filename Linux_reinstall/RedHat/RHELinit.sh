@@ -120,6 +120,9 @@ sed -ri 's/^SELINUX=.*/SELINUX=disabled/g' /mnt/etc/selinux/config
 # Disable IPv6.
 [[ "$setIPv6" == "0" ]] && sed -ri 's/net.ifnames=0 biosdevname=0/net.ifnames=0 biosdevname=0 ipv6.disable=1/g' /mnt/etc/default/grub
 
+# Add tty console for grub.
+sed -ri 's/console=tty0/console=tty1/g' /mnt/etc/default/grub
+
 # Permit root user login by password, change ssh port.
 sed -ri 's/^#?PermitRootLogin.*/PermitRootLogin yes/g' /mnt/etc/ssh/sshd_config
 sed -ri 's/^#?PasswordAuthentication.*/PasswordAuthentication yes/g' /mnt/etc/ssh/sshd_config
