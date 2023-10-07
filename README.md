@@ -269,7 +269,7 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 
 **-lang or -language "cn / en / jp"**:
-This option is to set language of dd images of Windows like: -windows 10 -lang "en", cn is simplified Chinese, en is English, jp is Japanese, default is cn.
+This option is to set language of dd images of Windows like: -windows 10 -lang "en", cn is simplified Chinese, en is English, jp is Japanese, default is cn. It's not valid for Linux distributions.
 <br />
 <br />
 
