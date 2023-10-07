@@ -2814,7 +2814,7 @@ d-i apt-setup/enable-source-repositories boolean true
 ### Security setup
 d-i apt-setup/security_host string ${debianSecurityMirror}
 
-### Enable contrib, non-free and non-free firmware
+### Config contrib, non-free and non-free firmware
 d-i apt-setup/contrib boolean true
 d-i apt-setup/non-free boolean true
 d-i apt-setup/non-free-firmware boolean true
@@ -2838,7 +2838,6 @@ ${BurnIrregularIpv6ByForce}
 d-i mirror/country string manual
 d-i mirror/http/hostname string $MirrorHost
 d-i mirror/http/directory string $MirrorFolder
-d-i mirror/http/proxy string
 
 ### Account setup
 d-i passwd/root-login boolean ture
@@ -3482,7 +3481,7 @@ elif [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [
 	wget --no-check-certificate -qO '/tmp/vmlinuz' "$VmLinuzUrl"
 	[[ $? -ne '0' ]] && echo -ne "\n[${red}Error${plain}] Download 'vmlinuz' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
 	MirrorHost="$(echo "$LinuxMirror" | awk -F'://|/' '{print $2}')"
-	MirrorFolder="$(echo "$LinuxMirror" | awk -F''${MirrorHost}'' '{print $2}')"
+	MirrorFolder="$(echo "$LinuxMirror" | awk -F''${MirrorHost}'' '{print $2}')/"
 	[ -n "$MirrorFolder" ] || MirrorFolder="/"
 elif [[ "$linux_relese" == 'alpinelinux' ]]; then
 	InitrdUrl="${LinuxMirror}/${DIST}/releases/${VER}/netboot/initramfs-lts"
