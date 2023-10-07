@@ -1280,7 +1280,7 @@ function checkSys() {
 			dnf install bind-utils cpio curl dmidecode dnsutils efibootmgr file gzip jq net-tools openssl redhat-lsb syslinux tuned util-linux virt-what wget xz --skip-broken -y
 			# Oracle Linux 7 doesn't support DNF.
 		elif [[ $(grep -i "no package" /root/yum_execute.log) ]]; then
-  			yum makecache
+			yum makecache
 			yum install bind-utils cpio curl dmidecode dnsutils efibootmgr file gzip jq net-tools openssl redhat-lsb syslinux tuned util-linux virt-what wget xz --skip-broken -y
 		fi
 		rm -rf /root/yum_execute.log
