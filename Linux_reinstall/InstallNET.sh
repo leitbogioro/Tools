@@ -90,7 +90,7 @@ export DebianModifiedProcession=''
 
 while [[ $# -ge 1 ]]; do
 	case $1 in
-	-version)
+	-architecture)
 		shift
 		tmpVER="$1"
 		shift
@@ -309,7 +309,7 @@ while [[ $# -ge 1 ]]; do
 		sshPORT="$1"
 		shift
 		;;
-	-pwd)
+	-pwd | -password)
 		shift
 		tmpWORD="$1"
 		shift
