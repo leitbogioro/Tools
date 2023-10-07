@@ -334,7 +334,7 @@ while [[ $# -ge 1 ]]; do
 		;;
 	*)
 		if [[ "$1" != 'error' ]]; then echo -ne "\nInvaild option: '$1'\n\n"; fi
-		echo -ne " Usage:\n\tbash $(basename $0)\t-debian       [${underLine}${yellow}dists-name${plain}]\n\t\t\t\t-ubuntu       [${underLine}dists-name${plain}]\n\t\t\t\t-kali         [${underLine}dists-name${plain}]\n\t\t\t\t-alpine       [${underLine}dists-name${plain}]\n\t\t\t\t-centos       [${underLine}dists-name${plain}]\n\t\t\t\t-rockylinux   [${underLine}dists-name${plain}]\n\t\t\t\t-almalinux    [${underLine}dists-name${plain}]\n\t\t\t\t-fedora       [${underLine}dists-name${plain}]\n\t\t\t\t-version      [32/i386|64/${underLine}${yellow}amd64${plain}|arm/${underLine}${yellow}arm64${plain}] [${underLine}${yellow}dists-verison${plain}]\n\t\t\t\t--ip-addr/--ip-gate/--ip-mask\n\t\t\t\t-apt/-yum/-mirror\n\t\t\t\t-dd/--image\n\t\t\t\t-pwd          [linux password]\n\t\t\t\t-port         [linux ssh port]\n"
+		echo -ne " Usage:\n\tbash $(basename $0)\t-debian       [${underLine}${yellow}dists-name${plain}]\n\t\t\t\t-ubuntu       [${underLine}dists-name${plain}]\n\t\t\t\t-kali         [${underLine}dists-name${plain}]\n\t\t\t\t-alpine       [${underLine}dists-name${plain}]\n\t\t\t\t-centos       [${underLine}dists-name${plain}]\n\t\t\t\t-rockylinux   [${underLine}dists-name${plain}]\n\t\t\t\t-almalinux    [${underLine}dists-name${plain}]\n\t\t\t\t-fedora       [${underLine}dists-name${plain}]\n\t\t\t\t-architecture [32/i386|64/${underLine}${yellow}amd64${plain}|arm/${underLine}${yellow}arm64${plain}] [${underLine}${yellow}dists-verison${plain}]\n\t\t\t\t--ip-addr/--ip-gate/--ip-mask\n\t\t\t\t-apt/-yum/-mirror\n\t\t\t\t-dd/--image\n\t\t\t\t-pwd          [linux password]\n\t\t\t\t-port         [linux ssh port]\n"
 		exit 1
 		;;
 	esac
