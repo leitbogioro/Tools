@@ -268,6 +268,11 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
+**-lang or -language "cn / en / jp"**:
+This option is to set language of dd images of Windows like: -windows 10 -lang "en", cn is simplified Chinese, en is English, jp is Japanese, default is cn.
+<br />
+<br />
+
 **-architecture 32/i386 or 64/amd64 or arm/arm64**: OS bit. Program will automatically detect and redirect the CPU architecture from your machine to new system which would be installed, if you aren't known it well, don't assign it!
 <br />
 <br />
