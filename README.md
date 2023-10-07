@@ -252,7 +252,7 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**--fail2ban**: Install and configure fail2ban to prevent from suspicious ssh port blastings. To reduce occupation of the memory, those servers which memory are less than 2GB will disabled automatically. --fail2ban "0" is disabled by force, --fail2ban "1" is enabled by force.This option is only valid for Debian/Kali/AlpineLinux. 
+**--fail2ban**: Install and configure fail2ban to prevent from suspicious ssh port blastings. To reduce occupation of the memory, those servers which memory are less than 2GB will disabled automatically. --fail2ban "0" is disabled by force, --fail2ban "1" is enabled by force.
 <br />
 <br />
 
@@ -260,7 +260,7 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**-allbymyself**: Install OS supported by this script manually, must have VNC.
+**-allbymyself**: Install OS supported by this script manually, must have VNC, this option is not valid for Redhat series.
 <br />
 <br />
 
