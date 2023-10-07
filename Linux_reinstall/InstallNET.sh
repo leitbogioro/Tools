@@ -1254,6 +1254,7 @@ function checkSys() {
 	if [[ $? -eq 0 ]]; then
 		# To avoid "Failed loading plugin "osmsplugin": No module named 'librepo'"
 		# Reference: https://anatolinicolae.com/failed-loading-plugin-osmsplugin-no-module-named-librepo/
+		dnf makecache
 		[[ "$CurrentOS" == "CentOS" && "$CurrentOSVer" == "8" ]] && dnf install python3-librepo -y
 		# Redhat like linux OS necessary components.
 		dnf install bind-utils cpio curl dmidecode dnsutils efibootmgr file gzip jq net-tools openssl redhat-lsb syslinux tuned util-linux virt-what wget xz --skip-broken -y
