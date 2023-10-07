@@ -156,7 +156,7 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**-pwd/-password ''**: you can pre-specify ssh password of system, native installation methods for Redhat series, Debian/Kali/AlpineLinux could be supported, not suitable for those os which are installed by "Over writing packaged image(dd) mode" method like Ubuntu, Redhat installations in low memory environments. A couple of apostrophe to including password is recommend, if there are further  apostrophes in the password, you should use " '\ " to replace the original apostrophe to prevent it's not be expressed and handled in the shell! **default is 'LeitboGi0ro'**.
+**-pwd/-password ''**: you can pre-specify ssh password for system. Native installation methods for Redhat series, Debian/Kali/AlpineLinux could be supported, not suitable for those os which will be installed by "Over writing packaged images mode"(dd) method like Ubuntu, Redhat installations in environments of low memory capacity. A couple of apostrophe to including password is recommend, if there are further apostrophes in the password, you should use " '\ " to replace the original apostrophe to prevent it's could not be expressed and handled correctly in the shell! **default is 'LeitboGi0ro'**.
 <br />
 <br />
 
@@ -196,7 +196,7 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**--networkstack "ipv4" or "ipv6" or "dual"**: To specify one supported IP stack manually by reading related configurations instead of checking connectivity of IP stacks, "ipv4" is for IPv4 stack, "dual" is for IPv4 and IPv6 stack. To make sure the parameter of corresponded stack must has specify configurations in system before assign it.
+**--networkstack "ipv4", "ipv6" or "dual"**: To specify one supported IP stack manually by reading related configurations instead of checking connectivity of IP stacks, "ipv4" is for IPv4 stack, "dual" is for IPv4 and IPv6 stack. To make sure the parameter of corresponded stack must has specify configurations in system before assign it.
 <br />
 <br />
 
@@ -268,12 +268,12 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**-lang or -language "cn / en / jp"**:
+**-lang/-language "cn, en or jp"**:
 This option is to set language of dd images of Windows like: -windows 10 -lang "en", cn is simplified Chinese, en is English, jp is Japanese, default is cn. It's not valid for Linux distributions.
 <br />
 <br />
 
-**-architecture 32/i386 or 64/amd64 or arm/arm64**: OS bit. Program will automatically detect and redirect the CPU architecture from your machine to new system which would be installed, if you aren't known it well, don't assign it!
+**-architecture "32/i386 or 64/amd64 or arm/arm64"**: OS bit. Program will automatically detect and redirect the CPU architecture from your machine to new system which would be installed, if you aren't known it well, don't assign it!
 <br />
 <br />
 
