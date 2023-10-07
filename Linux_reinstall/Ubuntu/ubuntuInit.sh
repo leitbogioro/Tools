@@ -59,17 +59,17 @@ setup-apkcache /var/cache/apk
 # Add community mirror.
 sed -i '$a\'$LinuxMirror'/'$alpineVer'/community' /etc/apk/repositories
 # Add edge testing to the repositories
-# sed -i '$a\'$LinuxMirror'/edge/testing' /etc/apk/repositories
+sed -i '$a\'$LinuxMirror'/edge/testing' /etc/apk/repositories
 
 # Synchronize time from hardware.
 hwclock -s
 
 # Install necessary components.
 apk update
-apk add hdparm multipath-tools util-linux wget xz
+apk add hdparm multipath-tools util-linux wget2 xz
 
 # Start dd.
-wget --no-check-certificate --report-speed=bits --tries=0 --timeout=10 --wait=5 -O- "$DDURL" | $DEC_CMD | dd of="$IncDisk" status=progress
+wget2 --check-certificate=no --max-threads=16 --progress=bar --tries=0 --timeout=10 --wait=5 --report-speed=bytes -O- "$DDURL" | $DEC_CMD | dd of="$IncDisk" status=progress
 
 # Get a valid loop device.
 loopDevice=$(echo $(losetup -f))
@@ -85,7 +85,7 @@ mapperDevice=$(kpartx -av $loopDevice | grep "$loopDeviceNum" | head -n 1 | awk 
 mount /dev/mapper/$mapperDevice /mnt
 
 # Download cloud init file.
-wget --no-check-certificate -qO $cloudInitFile ''$cloudInitUrl''
+wget2 --check-certificate=no -qO $cloudInitFile ''$cloudInitUrl''
 
 # User config.
 sed -ri 's/HostName/'${HostName}'/g' $cloudInitFile
