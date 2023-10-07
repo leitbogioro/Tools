@@ -156,7 +156,7 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**-pwd or -password ''**: you can pre-specify ssh password of system, both Redhat series or Debian series could be supported, **default is 'LeitboGi0ro'**.
+**-pwd/-password ''**: you can pre-specify ssh password of system, native installation methods for Redhat series, Debian/Kali/AlpineLinux could be supported, not suitable for those os which are installed by "Over writing packaged image(dd) mode" method like Ubuntu, Redhat installations in low memory environments. A couple of apostrophe to including password is recommend, if there are further  apostrophes in the password, you should use " '\ " to replace the original apostrophe to prevent it's not be expressed and handled in the shell! **default is 'LeitboGi0ro'**.
 <br />
 <br />
 
