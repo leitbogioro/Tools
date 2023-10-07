@@ -799,10 +799,10 @@ d-i mdadm/boot_degraded boolean true")
 d-i partman-auto-raid/recipe string     \
     1  $2 0 ext4 /boot $AllDisksPart2 . \
     $1 $2 0 ext4 /     $AllDisksPart3 .
-d-i partman-auto/expert_recipe string multiraid ::                                                                \
+d-i partman-auto/expert_recipe string multiraid ::                                                            \
     1075 100 2150 free \$bootable{ } \$primary{ } method{ efi } \$iflabel{ gpt } \$reusemethod{ } format{ } . \
-    269  150 538  raid                \$primary{ } method{ raid } .                                              \
-    100  200 -1   raid                \$primary{ } method{ raid } .
+    269  150 538  raid               \$primary{ } method{ raid } .                                            \
+    100  200 -1   raid               \$primary{ } method{ raid } .
 d-i partman-efi/non_efi_system boolean true
 d-i partman-partitioning/choose_label select gpt
 d-i partman-partitioning/default_label string gpt")
@@ -812,9 +812,9 @@ d-i partman-partitioning/default_label string gpt")
 d-i partman-auto-raid/recipe string     \
     1  $2 0 ext4 /boot $AllDisksPart1 . \
     $1 $2 0 ext4 /     $AllDisksPart2 .
-d-i partman-auto/expert_recipe string multiraid ::                   \
+d-i partman-auto/expert_recipe string multiraid ::                 \
     1075 100 2150 raid \$bootable{ } \$primary{ } method{ raid } . \
-    100  200 -1   raid                \$primary{ } method{ raid } .
+    100  200 -1   raid               \$primary{ } method{ raid } .
 ")
 			fi
 			# Reference: https://github.com/airium/Linux-Reinstall/blob/master/install-raid0.sh
