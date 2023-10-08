@@ -825,7 +825,6 @@ d-i partman-auto/expert_recipe string multiraid ::                 \
 			#            https://lala.im/7911.html
 			#            https://github.com/office-itou/Linux/blob/master/installer/source/preseed_debian.cfg
 			#            https://qiita.com/YasuhiroABE/items/ff233459035d8187263d
-			#
 		elif [[ "$4" == 'centos' ]] || [[ "$4" == 'rockylinux' ]] || [[ "$4" == 'almalinux' ]] || [[ "$4" == 'fedora' ]]; then
 			tmpKsAllDisks=$(echo "$3" | sed 's/\/dev\///g')
 			ksRaidVolumes=()
