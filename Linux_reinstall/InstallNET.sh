@@ -1015,16 +1015,19 @@ function checkGrub() {
 # AlmaLinux 9.2 arm64:       console=tty0 console=ttyS0,115200n8
 # Ubuntu 20.04+ amd/arm64:   console=tty1 console=ttyS0
 function checkConsole() {
-	for ttyItems in "console=tty" "console=ttyS"; do
+	for ttyItems in "console=tty" "console=ttyAMA" "console=ttyS"; do
 		[[ $(grep "$ttyItems" $GRUBDIR/$GRUBFILE) ]] && {
 			ttyConsole+="${ttyItems}0 "
 		}
 	done
 	ttyConsole=$(echo "$ttyConsole" | sed 's/.$//' | sed 's/tty0/tty1/g')
-	[[ "$ttyConsole" =~ "ttyS" ]] && {
+	if [[ "$ttyConsole" =~ "ttyS" ]]; then
+		serialConsolePropertiesForGrub="$ttyConsole earlyprintk=ttyS0,115200n8 consoleblank=0"
 		[[ "$1" == "aarch64" || "$1" == "arm64" ]] && ttyConsole="$ttyConsole,115200n8" || ttyConsole=""
-		serialConsolePropertiesForGrub="console=tty1 console=ttyS0,115200n8 earlyprintk=ttyS0,115200n8 consoleblank=0"
-	}
+	elif [[ "$ttyConsole" =~ "ttyAMA" ]]; then
+		serialConsolePropertiesForGrub="$ttyConsole"
+		[[ "$1" == "aarch64" || "$1" == "arm64" ]] && ttyConsole="$ttyConsole" || ttyConsole=""
+	fi
 }
 
 # $1 is $linux_relese, $2 is $RedHatSeries, $3 is $targetRelese
@@ -2325,12 +2328,12 @@ function getInterface() {
 				tmpNetCfgFiles=""
 				for Count in $readIfupdown; do
 					if [[ "$IPStackType" == "IPv4Stack" ]]; then
-						NetCfgFiles=$(grep -wrl 'iface' | grep -wrl "auto\|dhcp\|static\|manual" | grep -wrl 'inet\|ip addr\|ip route' "$Count""/" 2>/dev/null | grep -v "if-*" | grep -v "state" | grep -v "helper" | grep -v "template")
+						NetCfgFiles=$(timeout 4s grep -wrl 'iface' | grep -wrl "auto\|dhcp\|static\|manual" | grep -wrl 'inet\|ip addr\|ip route' "$Count""/" 2>/dev/null | grep -v "if-*" | grep -v "state" | grep -v "helper" | grep -v "template")
 					elif [[ "$IPStackType" == "BiStack" ]] || [[ "$IPStackType" == "IPv6Stack" ]]; then
-						NetCfgFiles=$(grep -wrl 'iface' | grep -wrl "auto\|dhcp\|static\|manual" | grep -wrl 'inet\|ip addr\|ip route\|inet6\|ip -6' "$Count""/" 2>/dev/null | grep -v "if-*" | grep -v "state" | grep -v "helper" | grep -v "template")
+						NetCfgFiles=$(timeout 4s grep -wrl 'iface' | grep -wrl "auto\|dhcp\|static\|manual" | grep -wrl 'inet\|ip addr\|ip route\|inet6\|ip -6' "$Count""/" 2>/dev/null | grep -v "if-*" | grep -v "state" | grep -v "helper" | grep -v "template")
 					fi
 					for Files in $NetCfgFiles; do
-						if [[ $(grep -w "$interface4\|$interface6" "$Files") != "" ]]; then
+						if [[ $(timeout 4s grep -w "$interface4\|$interface6" "$Files") != "" ]]; then
 							tmpNetCfgFiles+=$(echo -e "\n""$Files")
 						fi
 					done
