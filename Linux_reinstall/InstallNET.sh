@@ -314,6 +314,11 @@ while [[ $# -ge 1 ]]; do
 		tmpWORD="$1"
 		shift
 		;;
+	-hostname)
+		shift
+		tmpHostName="$1"
+		shift
+		;;
 	--setipv6)
 		shift
 		tmpSetIPv6="$1"
@@ -334,7 +339,7 @@ while [[ $# -ge 1 ]]; do
 		;;
 	*)
 		if [[ "$1" != 'error' ]]; then echo -ne "\nInvaild option: '$1'\n\n"; fi
-		echo -ne " Usage:\n\tbash $(basename $0)\t-debian       [${underLine}${yellow}dists-name${plain}]\n\t\t\t\t-ubuntu       [${underLine}dists-name${plain}]\n\t\t\t\t-kali         [${underLine}dists-name${plain}]\n\t\t\t\t-alpine       [${underLine}dists-name${plain}]\n\t\t\t\t-centos       [${underLine}dists-name${plain}]\n\t\t\t\t-rockylinux   [${underLine}dists-name${plain}]\n\t\t\t\t-almalinux    [${underLine}dists-name${plain}]\n\t\t\t\t-fedora       [${underLine}dists-name${plain}]\n\t\t\t\t-windows      [${underLine}dists-name${plain}]\n\t\t\t\t-architecture [32/i386|64/${underLine}${yellow}amd64${plain}|arm/${underLine}${yellow}arm64${plain}] [${underLine}${yellow}dists-verison${plain}]\n\t\t\t\t--ip-addr/--ip-gate/--ip-mask\n\t\t\t\t-apt/-yum/-mirror\n\t\t\t\t-dd/--image\n\t\t\t\t-pwd          [linux password]\n\t\t\t\t-port         [linux ssh port]\n"
+		echo -ne " Usage:\n\tbash $(basename $0)\t-debian          [${underLine}${yellow}dists-name${plain}]\n\t\t\t\t-ubuntu          [${underLine}dists-name${plain}]\n\t\t\t\t-kali            [${underLine}dists-name${plain}]\n\t\t\t\t-alpine          [${underLine}dists-name${plain}]\n\t\t\t\t-centos          [${underLine}dists-name${plain}]\n\t\t\t\t-rockylinux      [${underLine}dists-name${plain}]\n\t\t\t\t-almalinux       [${underLine}dists-name${plain}]\n\t\t\t\t-fedora          [${underLine}dists-name${plain}]\n\t\t\t\t-windows         [${underLine}dists-name${plain}]\n\t\t\t\t-architecture    [32/i386|64/${underLine}${yellow}amd64${plain}|arm/${underLine}${yellow}arm64${plain}]\n\t\t\t\t--ip-addr/--ip-gate/--ip-mask\n\t\t\t\t-apt/-yum/-mirror\n\t\t\t\t-dd/--image      [image-url]\n\t\t\t\t-pwd             [linux-password]\n\t\t\t\t-port            [linux-ssh-port]\n"
 		exit 1
 		;;
 	esac
@@ -3580,6 +3585,7 @@ done
 [[ "$COMPTYPE" == 'gzip' ]] && UNCOMP='gzip -d'
 $UNCOMP </tmp/$NewIMG | cpio --extract --make-directories --preserve-modification-time >>/dev/null 2>&1
 
+[[ -n "$tmpHostName" ]] && HostName="$tmpHostName" || HostName=$(hostname)
 if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
 	DebianPreseedProcess
 	if [[ "$loaderMode" != "0" ]] && [[ "$setNet" == '0' ]]; then
@@ -3683,7 +3689,6 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]] || [[ "$
 elif [[ "$linux_relese" == 'alpinelinux' ]]; then
 	alpineArchitecture="$VER"
 	# Hostname should not be "localhost"
-	HostName=$(hostname)
 	[[ "$HostName" == "" || "$HostName" == "localhost" ]] && {
 		[[ -n "$targetRelese" ]] && HostName="$targetRelese" || HostName="AlpineLinux"
 	}
@@ -4006,28 +4011,28 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
 	writeMultipleIpv6Addresses "$i6AddrNum" "" '/etc/NetworkManager/system-connections/'$interface'.nmconnection'
 	if [[ "$IPStackType" == "IPv4Stack" ]]; then
 		if [[ "$Network4Config" == "isDHCP" ]]; then
-			NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=auto --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
+			NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=auto --nameserver=$ipDNS,$ip6DNS --hostname=$HostName --onboot=on"
 		elif [[ "$Network4Config" == "isStatic" ]]; then
-			NetConfigManually="network --device=$interface --bootproto=static --ip=$IPv4 --netmask=$actualIp4Subnet --gateway=$GATE --ipv6=auto --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
+			NetConfigManually="network --device=$interface --bootproto=static --ip=$IPv4 --netmask=$actualIp4Subnet --gateway=$GATE --ipv6=auto --nameserver=$ipDNS,$ip6DNS --hostname=$HostName --onboot=on"
 		fi
 	elif [[ "$IPStackType" == "BiStack" ]]; then
 		if [[ "$Network4Config" == "isDHCP" ]] && [[ "$Network6Config" == "isDHCP" ]]; then
-			NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=auto --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
+			NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=auto --nameserver=$ipDNS,$ip6DNS --hostname=$HostName --onboot=on"
 		elif [[ "$Network4Config" == "isDHCP" ]] && [[ "$Network6Config" == "isStatic" ]]; then
-			NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=$ip6Addr/$actualIp6Prefix --ipv6gateway=$ip6Gate --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
+			NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=$ip6Addr/$actualIp6Prefix --ipv6gateway=$ip6Gate --nameserver=$ipDNS,$ip6DNS --hostname=$HostName --onboot=on"
 			# By adding multiple IPv6 addresses is only support these servers which are configurated in IPv4 networking in temporary environment of anaconda during the installation at current.
-			[[ "$i6AddrNum" -ge "2" ]] && NetConfigManually="network --device=$interface --bootproto=dhcp --nameserver=$ipDNS --hostname=$(hostname) --onboot=on"
+			[[ "$i6AddrNum" -ge "2" ]] && NetConfigManually="network --device=$interface --bootproto=dhcp --nameserver=$ipDNS --hostname=$HostName --onboot=on"
 		elif [[ "$Network4Config" == "isStatic" ]] && [[ "$Network6Config" == "isDHCP" ]]; then
-			NetConfigManually="network --device=$interface --bootproto=static --ip=$IPv4 --netmask=$actualIp4Subnet --gateway=$GATE --ipv6=auto --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
+			NetConfigManually="network --device=$interface --bootproto=static --ip=$IPv4 --netmask=$actualIp4Subnet --gateway=$GATE --ipv6=auto --nameserver=$ipDNS,$ip6DNS --hostname=$HostName --onboot=on"
 		elif [[ "$Network4Config" == "isStatic" ]] && [[ "$Network6Config" == "isStatic" ]]; then
-			NetConfigManually="network --device=$interface --bootproto=static --ip=$IPv4 --netmask=$actualIp4Subnet --gateway=$GATE --ipv6=$ip6Addr/$actualIp6Prefix --ipv6gateway=$ip6Gate --nameserver=$ipDNS,$ip6DNS --hostname=$(hostname) --onboot=on"
-			[[ "$i6AddrNum" -ge "2" ]] && NetConfigManually="network --device=$interface --bootproto=static --ip=$IPv4 --netmask=$actualIp4Subnet --gateway=$GATE --nameserver=$ipDNS --hostname=$(hostname) --onboot=on"
+			NetConfigManually="network --device=$interface --bootproto=static --ip=$IPv4 --netmask=$actualIp4Subnet --gateway=$GATE --ipv6=$ip6Addr/$actualIp6Prefix --ipv6gateway=$ip6Gate --nameserver=$ipDNS,$ip6DNS --hostname=$HostName --onboot=on"
+			[[ "$i6AddrNum" -ge "2" ]] && NetConfigManually="network --device=$interface --bootproto=static --ip=$IPv4 --netmask=$actualIp4Subnet --gateway=$GATE --nameserver=$ipDNS --hostname=$HostName --onboot=on"
 		fi
 	elif [[ "$IPStackType" == "IPv6Stack" ]]; then
 		if [[ "$Network6Config" == "isDHCP" ]]; then
-			NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=auto --nameserver=$ip6DNS --hostname=$(hostname) --onboot=on --activate --noipv4"
+			NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=auto --nameserver=$ip6DNS --hostname=$HostName --onboot=on --activate --noipv4"
 		elif [[ "$Network6Config" == "isStatic" ]]; then
-			NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=$ip6Addr/$actualIp6Prefix --ipv6gateway=$ip6Gate --nameserver=$ip6DNS --hostname=$(hostname) --onboot=on --activate --noipv4"
+			NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=$ip6Addr/$actualIp6Prefix --ipv6gateway=$ip6Gate --nameserver=$ip6DNS --hostname=$HostName --onboot=on --activate --noipv4"
 		fi
 	fi
 	# Recipes for part disk in BIOS or UEFI manually.
@@ -4277,7 +4282,7 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
 		if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [[ "$linux_relese" == 'kali' ]]; then
 			# The method for Debian series installer to search network adapter automatically is to set "d-i netcfg/choose_interface select auto" in preseed file.
 			# The same behavior for grub2.
-			BOOT_OPTION="auto=true $Add_OPTION hostname=$(hostname) domain=$linux_relese quiet"
+			BOOT_OPTION="auto=true $Add_OPTION hostname=$HostName domain=$linux_relese quiet"
 		elif [[ "$linux_relese" == 'alpinelinux' ]]; then
 			# Reference: https://wiki.alpinelinux.org/wiki/PXE_boot
 			# IPv4 dhcp config:
@@ -4453,8 +4458,8 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
 		[[ "$grub2Order" != "0" ]] || grub2Order="saved"
 		# Make grub2 to prefer installation item to boot first.
 		sed -ri 's/GRUB_DEFAULT=.*/GRUB_DEFAULT='$grub2Order'/g' /etc/default/grub
-		if [[ "$linux_relese" == 'ubuntu' || "$linux_relese" == 'debian' || "$linux_relese" == 'kali' ]]; then
-			BOOT_OPTION="auto=true $Add_OPTION hostname=$(hostname) domain=$linux_relese quiet"
+    if [[ "$linux_relese" == 'ubuntu' || "$linux_relese" == 'debian' || "$linux_relese" == 'kali' ]]; then
+			BOOT_OPTION="auto=true $Add_OPTION hostname=$HostName domain=$linux_relese quiet"
 		elif [[ "$linux_relese" == 'alpinelinux' ]]; then
 			if [[ "$IPStackType" == "BiStack" || "$IPStackType" == "IPv4Stack" ]]; then
 				[[ "$Network4Config" == "isStatic" ]] && Add_OPTION="ip=$IPv4::$GATE:$MASK::$interface4::$ipDNS:" || Add_OPTION="ip=dhcp"
