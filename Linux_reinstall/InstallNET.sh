@@ -1253,12 +1253,10 @@ function checkSys() {
 	apt install cpio curl dmidecode dnsutils efibootmgr fdisk file gzip iputils-ping jq net-tools openssl tuned util-linux virt-what wget xz-utils -y
 
 	# Redhat like Linux OS prefer to use dnf instead of yum because former has a higher execute efficiency.
-	yum install epel-release -y
 	yum install dnf -y
 	if [[ $? -eq 0 ]]; then
 		# To avoid "Failed loading plugin "osmsplugin": No module named 'librepo'"
 		# Reference: https://anatolinicolae.com/failed-loading-plugin-osmsplugin-no-module-named-librepo/
-		dnf makecache
 		[[ "$CurrentOS" == "CentOS" && "$CurrentOSVer" == "8" ]] && dnf install python3-librepo -y
 		# Redhat like linux OS necessary components.
 		dnf install bind-utils cpio curl dmidecode dnsutils efibootmgr file gzip jq net-tools openssl redhat-lsb syslinux tuned util-linux virt-what wget xz --skip-broken -y
@@ -1275,16 +1273,13 @@ function checkSys() {
 				sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
 				[[ "$CurrentOSVer" == "8" ]] && dnf install python3-librepo -y
 			fi
-			yum install epel-release -y
 			yum install dnf -y
-			dnf makecache
 			# Run dnf update and install components.
 			# In official template of AlmaLinux 9 of Linode, "tuned" must be installed otherwise "grub2-mkconfig" can't work formally.
 			# Reference: https://phanes.silogroup.org/fips-disa-stig-hardening-on-centos9/
 			dnf install bind-utils cpio curl dmidecode dnsutils efibootmgr file gzip jq net-tools openssl redhat-lsb syslinux tuned util-linux virt-what wget xz --skip-broken -y
 			# Oracle Linux 7 doesn't support DNF.
 		elif [[ $(grep -i "no package" /root/yum_execute.log) ]]; then
-			yum makecache
 			yum install bind-utils cpio curl dmidecode dnsutils efibootmgr file gzip jq net-tools openssl redhat-lsb syslinux tuned util-linux virt-what wget xz --skip-broken -y
 		fi
 		rm -rf /root/yum_execute.log
@@ -3978,30 +3973,62 @@ ln -s /etc/init.d/local \$sysroot/etc/runlevels/default/
 EOF
 	fi
 elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]]; then
-	RedHatUrl=""
-	RepoBase=""
-	RepoAppStream=""
-	[[ "$IsCN" == "cn" ]] && RepoEpel="repo --name=epel --baseurl=http://mirrors.ustc.edu.cn/epel/${RedHatSeries}/Everything/${VER}" || RepoEpel="repo --name=epel --mirrorlist=https://mirrors.fedoraproject.org/mirrorlist?repo=epel-${RedHatSeries}&arch=${VER}"
 	AuthMethod="authselect --useshadow --passalgo sha512"
 	SetTimeZone="timezone --utc ${TimeZone}"
 	if [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]]; then
 		if [[ "$RedHatSeries" -ge "8" ]]; then
-			RedHatUrl="url --url=${LinuxMirror}/${DIST}/BaseOS/${VER}/os"
-			RepoBase="repo --name=base --baseurl=${LinuxMirror}/${DIST}/BaseOS/${VER}/os"
-			RepoAppStream="repo --name=appstream --baseurl=${LinuxMirror}/${DIST}/AppStream/${VER}/os"
+			RedHatUrl="url --url=${LinuxMirror}/${DIST}/BaseOS/${VER}/os/"
+			RepoAppStream="repo --name=\"AppStream\" --baseurl=${LinuxMirror}/${DIST}/AppStream/${VER}/os/"
+			[[ "$linux_relese" != 'centos' ]] && RepoExtras="repo --name=\"extras\" --baseurl=${LinuxMirror}/${DIST}/extras/${VER}/os/"
 		elif [[ "$linux_relese" == 'centos' ]] && [[ "$RedHatSeries" -le "7" ]]; then
-			RedHatUrl="url --url=${LinuxMirror}/${DIST}/os/${VER}"
+			RedHatUrl="url --url=${LinuxMirror}/${DIST}/os/${VER}/"
+			RepoUpdates="repo --name=\"updates\" --baseurl=${LinuxMirror}/${DIST}/updates/${VER}/"
 			AuthMethod="auth --useshadow --passalgo=sha512"
 			SetTimeZone="timezone --isUtc ${TimeZone}"
-			RepoBase="repo --name=base --baseurl=${LinuxMirror}/${DIST}/os/${VER}"
-			RepoAppStream="repo --name=updates --baseurl=${LinuxMirror}/${DIST}/updates/${VER}"
 		fi
+		InstallEpel="dnf install epel-release -y"
 	elif [[ "$linux_relese" == 'fedora' ]]; then
-		RedHatUrl="url --url=${LinuxMirror}/releases/${DIST}/Server/${VER}/os"
-		RepoBase="repo --name=base --baseurl=${LinuxMirror}/releases/${DIST}/Server/${VER}/os"
-		[[ "$IsCN" == "cn" ]] && RepoAppStream="repo --name=updates --baseurl=http://mirrors.bfsu.edu.cn/fedora/updates/${DIST}/Everything/${VER}" || RepoAppStream="repo --name=updates --mirrorlist=https://mirrors.fedoraproject.org/mirrorlist?repo=updates-released-f${DIST}&arch=${VER}"
-		[[ "$IsCN" == "cn" ]] && RepoEpel="repo --name=epel --baseurl=http://mirrors.163.com/fedora/releases/${DIST}/Everything/${VER}/os" || RepoEpel="repo --name=epel --mirrorlist=https://mirrors.fedoraproject.org/mirrorlist?repo=fedora-${DIST}&arch=${VER}"
+		RedHatUrl="url --url=${LinuxMirror}/releases/${DIST}/Server/${VER}/os/"
+		# Must configure additional repos for Fedora.
+		# Reference: https://bugzilla.redhat.com/show_bug.cgi?id=1773111
+		if [[ "$IsCN" == "cn" ]]; then
+			RepoUpdates="repo --name=\"updates\" --baseurl=https://mirrors.bfsu.edu.cn/fedora/updates/${DIST}/Everything/${VER}/"
+			RepoEverything="repo --name=\"Everything\" --baseurl=https://mirrors.ustc.edu.cn/fedora/releases/${DIST}/Everything/${VER}/os/"
+		else
+			RepoUpdates="repo --name=\"updates\" --mirrorlist=https://mirrors.fedoraproject.org/mirrorlist?repo=updates-released-f${DIST}&arch=${VER}"
+			RepoEverything="repo --name=\"Everything\" --mirrorlist=https://mirrors.fedoraproject.org/mirrorlist?repo=fedora-${DIST}&arch=${VER}"
+		fi
 	fi
+	# Reference: https://mirrors.ustc.edu.cn/help/rocky.html
+	#            https://mirrors.ustc.edu.cn/help/fedora.html
+	#            https://mirrors.ustc.edu.cn/help/epel.html
+	[[ "$IsCN" == "cn" ]] && {
+		if [[ "$linux_relese" == 'rockylinux' ]]; then
+			BaseUrl="dl.rockylinux.org/\$contentdir"
+			TargetCnUrl="mirrors.ustc.edu.cn/rocky"
+			[[ "$RedHatSeries" -le "8" ]] && ReposProperties="Rocky" || ReposProperties="rocky"
+		elif [[ "$linux_relese" == 'fedora' ]]; then
+			BaseUrl="download.example/pub/fedora/linux"
+			TargetCnUrl="mirrors.tuna.tsinghua.edu.cn/fedora"
+			ReposProperties="fedora"
+		fi
+		ReplaceReposToCn="sed -e 's|^metalink=|#metalink=|g' \
+-e 's|^mirrorlist=|#mirrorlist=|g' \
+-e 's|^#baseurl=http://$BaseUrl|baseurl=https://$TargetCnUrl|g' \
+-i.bak \
+/etc/yum.repos.d/$ReposProperties*.repo"
+		ReplaceEpelToCn="sed -e 's|^metalink=|#metalink=|g' \
+-e 's|^#baseurl=https\?://download.fedoraproject.org/pub/epel/|baseurl=http://mirror.nju.edu.cn/epel/|g' \
+-e 's|^#baseurl=https\?://download.example/pub/epel/|baseurl=http://mirror.nju.edu.cn/epel/|g' \
+-i.bak \
+/etc/yum.repos.d/epel*.repo"
+		[[ "$linux_relese" == 'centos' || "$linux_relese" == 'almalinux' ]] && ReplaceReposToCn=""
+		RestoreRepoCiscoOpenH26x="sed -ri 's|^#metalink=|metalink=|g' /etc/yum.repos.d/epel-cisco*.repo"
+		[[ "$linux_relese" == 'fedora' ]] && {
+			ReplaceEpelToCn=""
+			RestoreRepoCiscoOpenH26x="sed -ri 's|^#metalink=|metalink=|g' /etc/yum.repos.d/$ReposProperties-cisco*.repo"
+		}
+	}
 	# If network adapter is redirected, the "eth0" is default.
 	# --bootproto="a value" is exclusive to IPv4, --bootproto=dhcp is IPv4 DHCP, --bootproto=static is IPv4 Static.
 	# --ipv6="a vaild IPv6 address/netmask bits" is for IPv6 static, and then --ipv6gateway="a valid IPv6 gateway" is necessary, --ipv6=auto is for IPv6 DHCP.
@@ -4057,11 +4084,12 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
 # Firewall configuration
 firewall --enabled --ssh
 
-# Use network installation
+# Use network installation and configure temporary mirrors
 ${RedHatUrl}
-${RepoBase}
 ${RepoAppStream}
-${RepoEpel}
+${RepoExtras}
+${RepoUpdates}
+${RepoEverything}
 
 # Root password
 rootpw --iscrypted ${myPASSWORD}
@@ -4114,17 +4142,6 @@ reboot
 
 %packages --ignoremissing
 @^minimal-environment
-bind-utils
-curl
-epel-release
-fail2ban
-file
-lrzsz
-net-tools
-vim
-wget
-xz
-
 %end
 
 # Enable services
@@ -4132,6 +4149,17 @@ xz
 
 # All modified command should only be executed between %post and %end location!
 %post --interpreter=/bin/bash
+
+# Config mirrors for servers in mainland of China to avoid of executing yum/dnf too slow
+${ReplaceReposToCn}
+
+# Install and config dnf and epel
+yum install dnf -y
+${InstallEpel}
+${ReplaceEpelToCn}
+${RestoreRepoCiscoOpenH26x}
+dnf install fail2ban -y
+dnf install bind-utils curl file lrzsz net-tools vim wget xz -y
 
 # Disable selinux
 sed -ri "/^#?SELINUX=.*/c\SELINUX=disabled" /etc/selinux/config
