@@ -3216,7 +3216,13 @@ getUserTimeZone "/root/timezonelists" "https://api.ip.sb/geoip/" "http://ifconfi
 echo -ne "\n${aoiBlue}# User Timezone${plain}\n\n"
 echo "$TimeZone"
 
-if [[ -z "$tmpWORD" || "$linux_relese" == 'alpinelinux' || "$targetRelese" == 'Ubuntu' ]]; then
+# Hostname should not be "localhost".
+[[ -n "$tmpHostName" ]] && HostName="$tmpHostName" || HostName=$(hostname)
+[[ -z "$HostName" || "$HostName" == "localhost" ]] && HostName="instance-$(date "+%Y%m%d")-$(date "+%H%M")"
+echo -ne "\n${aoiBlue}# Hostname${plain}\n\n"
+echo "$HostName"
+
+if [[ -z "$tmpWORD" || "$linux_relese" == 'alpinelinux' ]]; then
 	tmpWORD='LeitboGi0ro'
 	myPASSWORD='$6$qE9Lqgrd0QTOq46i$YMECmKvIw2SeBP4X411I0ZWmtyMsRcBi4Rxu7HYRsqdwqSApi6zjds5UJyM4HrAoBcuLBmjPyLatGydulmCDb0'
 else
@@ -3585,7 +3591,6 @@ done
 [[ "$COMPTYPE" == 'gzip' ]] && UNCOMP='gzip -d'
 $UNCOMP </tmp/$NewIMG | cpio --extract --make-directories --preserve-modification-time >>/dev/null 2>&1
 
-[[ -n "$tmpHostName" ]] && HostName="$tmpHostName" || HostName=$(hostname)
 if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
 	DebianPreseedProcess
 	if [[ "$loaderMode" != "0" ]] && [[ "$setNet" == '0' ]]; then
@@ -3688,10 +3693,6 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]] || [[ "$
 	}
 elif [[ "$linux_relese" == 'alpinelinux' ]]; then
 	alpineArchitecture="$VER"
-	# Hostname should not be "localhost"
-	[[ "$HostName" == "" || "$HostName" == "localhost" ]] && {
-		[[ -n "$targetRelese" ]] && HostName="$targetRelese" || HostName="AlpineLinux"
-	}
 	# Enable IPv6
 	echo "ipv6" >>/tmp/boot/etc/modules
 	if [[ "$setAutoConfig" == "1" ]]; then
