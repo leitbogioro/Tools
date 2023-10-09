@@ -4458,7 +4458,7 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
 		[[ "$grub2Order" != "0" ]] || grub2Order="saved"
 		# Make grub2 to prefer installation item to boot first.
 		sed -ri 's/GRUB_DEFAULT=.*/GRUB_DEFAULT='$grub2Order'/g' /etc/default/grub
-    if [[ "$linux_relese" == 'ubuntu' || "$linux_relese" == 'debian' || "$linux_relese" == 'kali' ]]; then
+		if [[ "$linux_relese" == 'ubuntu' || "$linux_relese" == 'debian' || "$linux_relese" == 'kali' ]]; then
 			BOOT_OPTION="auto=true $Add_OPTION hostname=$HostName domain=$linux_relese quiet"
 		elif [[ "$linux_relese" == 'alpinelinux' ]]; then
 			if [[ "$IPStackType" == "BiStack" || "$IPStackType" == "IPv4Stack" ]]; then
