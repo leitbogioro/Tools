@@ -160,6 +160,10 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
+**-hostname ""**: you can pre-specify hostname for the newly installing Linux system, the value with empty or includes special symbols except hyphens is not recommend. **default is depended on the original system**.
+<br />
+<br />
+
 **-dd/--image "DD image from a valid url"**: This parameter is for DD mode in KVM or XEN virtualization platform, current os must be Debian series, for example, if you want to DD windows, you can refer to chapter "How to install Windows?" to get more in this document.
 <br />
 <br />
