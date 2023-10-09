@@ -152,7 +152,7 @@ For Ubuntu, official recommend mirror lists are here:
 
 **Recommended terminal client is Xshell or Putty**
 
-**-port ""**: you can pre-specify ssh port of system, range is 1~65535, both Redhat series or Debian series could be supported, **default is depended on the original system, if getting this value is failed, the value will fall into '22'**.
+**-port ""**: you can pre-specify ssh port of system, range is 1~65535, both Redhat series or Debian series could be supported, **default is depended on the original system, if getting this value is failed, the value will fall back to '22'**.
 <br />
 <br />
 
