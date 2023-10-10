@@ -160,11 +160,11 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**-hostname ""**: you can pre-specify hostname for the newly installing Linux system, the value with empty or includes special symbols except hyphens is not recommend. If the hostname of your original system is "localhost", empty or you want to assign it randomly(-hostname "random"),the expect format of the value is "instance-year, month, day of the server time-hour, minute of the server time. **default is depended on the original system**.
+**-hostname ""**: you can pre-specify hostname for the newly installing Linux system, the value with empty or includes special symbols except hyphens is not recommend. If the hostname of your original system is "localhost", empty or you want to assign it randomly(-hostname "random"), the expect format of the value is "instance-year, month, day of the server time-hour, minute of the server time. **default is depended on the original system**.
 <br />
 <br />
 
-**-dd/--image "DD image from a valid url"**: This parameter is for DD mode in KVM or XEN virtualization platform, current os must be Debian series, for example, if you want to DD windows, you can refer to chapter "How to install Windows?" to get more in this document.
+**-dd/--image "DD image from a valid url"**: This parameter is for DD mode in KVM or XEN virtualization platform, current os must be Debian series, for example, if you want to DD windows, you can refer to chapter "How to install Windows?" to get more in this document. This option is also applicable for installing those distributions which under in "Overwriting Packaged Image Mode" like Ubuntu, RockyLinux 8+ and AlmaLinux 9+ in low memory mode.
 <br />
 <br />
 
