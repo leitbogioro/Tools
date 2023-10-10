@@ -39,7 +39,7 @@ Servers in mainland of China:
 <pre><code>wget --no-check-certificate -qO InstallNET.sh 'https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh</code></pre>
 
 ## Quickly start
-If you need to add other parameters, version number must be assigned!
+If you need to add other parameters,a certain name of distributions must be assigned!
 ### Debian 12
 <pre><code>bash InstallNET.sh -debian</code></pre>
 ### Kali Rolling
@@ -65,7 +65,7 @@ If you need to add other parameters, version number must be assigned!
 <pre><code>bash InstallNET.sh -debian/kali/ubuntu/centos/almalinux/rockylinux/fedora(os type) 11(os version) -architecture 64(os bit, not necessary) -port "your server port" -pwd 'your server password' -mirror "a valid url for linux image source" -dd/--image "dd image url" -filetype "gz or xz" -timezone "like Asia/Tokyo etc" --dhcp-static/--ip-addr 'x.x.x.x'(ip address) --ip-mask 'x.x.x.x'(subnet mask) --ip-gate 'x.x.x.x'(gateway) -firmware(Debian with hardware drivers)</code></pre>
 
 ## Parameters detail descriptions
-**-debian 9-12** : Debian 9 and later
+**-debian 7-12** : Debian 7 and later
 <br />
 <br />
 
