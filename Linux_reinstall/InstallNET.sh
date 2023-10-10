@@ -841,7 +841,7 @@ d-i partman-auto/expert_recipe string multiraid ::                 \
 					for currentDisk in $tmpKsAllDisks; do
 						tmpKsRaidVolumes="raid."$partitionIndex""$disksIndex""
 						if [[ "$partitionIndex" == "0" ]]; then
-							tmpKsRaidConfigs="part "$tmpKsRaidVolumes" --size="512" --ondisk="$currentDisk""
+							tmpKsRaidConfigs="part "$tmpKsRaidVolumes" --size="640" --ondisk="$currentDisk""
 						elif [[ "$partitionIndex" == "1" ]]; then
 							tmpKsRaidConfigs="part "$tmpKsRaidVolumes" --size="1024" --ondisk="$currentDisk""
 						elif [[ "$partitionIndex" == "2" ]]; then
@@ -3216,7 +3216,7 @@ echo "$TimeZone"
 
 # Hostname should not be "localhost".
 [[ -n "$tmpHostName" ]] && HostName="$tmpHostName" || HostName=$(hostname)
-[[ -z "$HostName" || "$HostName" == "localhost" || "$HostName" == "random" ]] && HostName="instance-$(date "+%Y%m%d")-$(date "+%H%M")"
+[[ -z "$HostName" || "$HostName" =~ "localhost" || "$HostName" =~ "localdomain" || "$HostName" == "random" ]] && HostName="instance-$(date "+%Y%m%d")-$(date "+%H%M")"
 echo -ne "\n${aoiBlue}# Hostname${plain}\n\n"
 echo "$HostName"
 
