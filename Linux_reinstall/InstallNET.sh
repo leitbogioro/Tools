@@ -34,7 +34,7 @@ export tmpWORD=''
 export tmpMirror=''
 export tmpDHCP=''
 export targetRelese=''
-export targetLang='cn'
+export targetLang='en'
 export TimeZone=''
 export setIpStack=''
 export ipAddr=''
@@ -3018,7 +3018,7 @@ linux_relese=$(echo "$Relese" | sed 's/\ //g' | sed -r 's/(.*)/\L\1/')
 }
 [[ -z "$finalDIST" ]] && {
 	[ "$targetRelese" == 'Ubuntu' ] && finalDIST='22.04'
-	[ "$targetRelese" == 'Windows' ] && finalDIST='server 2022'
+	[ "$targetRelese" == 'Windows' ] && finalDIST='11'
 }
 
 checkVER
@@ -3364,11 +3364,11 @@ if [[ "$ddMode" == '1' ]]; then
 				showFinalDIST="Server $tmpFinalDIST"
 			elif [[ "$tmpFinalDIST" -ge "10" && "$tmpFinalDIST" -le "11" ]]; then
 				[[ "$tmpFinalDIST" == "10" ]] && {
-					[[ "$targetLang" == 'cn' ]] && tmpURL="$tmpURL/tiny"${tmpFinalDIST}"_23h2.xz" || tmpURL="$tmpURL/"${tmpTargetLang}"_windows"${tmpFinalDIST}"_ltsc.xz"
+					[[ "$targetLang" == 'en' ]] && tmpURL="$tmpURL/tiny"${tmpFinalDIST}"_23h2.xz" || tmpURL="$tmpURL/"${tmpTargetLang}"_windows"${tmpFinalDIST}"_ltsc.xz"
 					showFinalDIST="$tmpFinalDIST Enterprise LTSC"
 				}
 				[[ "$tmpFinalDIST" == "11" ]] && {
-					[[ "$targetLang" == 'cn' ]] && tmpURL="$tmpURL/tiny"${tmpFinalDIST}"_23h2.xz" || tmpURL="$tmpURL/"${tmpTargetLang}"_windows"${tmpFinalDIST}"_22h2.xz"
+					[[ "$targetLang" == 'en' ]] && tmpURL="$tmpURL/tiny"${tmpFinalDIST}"_23h2.xz" || tmpURL="$tmpURL/"${tmpTargetLang}"_windows"${tmpFinalDIST}"_22h2.xz"
 					showFinalDIST="$tmpFinalDIST Pro for Workstations"
 				}
 			fi
