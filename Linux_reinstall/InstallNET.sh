@@ -3364,12 +3364,12 @@ if [[ "$ddMode" == '1' ]]; then
 				showFinalDIST="Server $tmpFinalDIST"
 			elif [[ "$tmpFinalDIST" -ge "10" && "$tmpFinalDIST" -le "11" ]]; then
 				[[ "$tmpFinalDIST" == "10" ]] && {
-					tmpURL="$tmpURL/"${tmpTargetLang}"_windows"${tmpFinalDIST}"_ltsc.xz"
+					[[ "$targetLang" == 'cn' ]] && tmpURL="$tmpURL/tiny"${tmpFinalDIST}"_23h2.xz" || tmpURL="$tmpURL/"${tmpTargetLang}"_windows"${tmpFinalDIST}"_ltsc.xz"
 					showFinalDIST="$tmpFinalDIST Enterprise LTSC"
 				}
 				[[ "$tmpFinalDIST" == "11" ]] && {
-					tmpURL="$tmpURL/"${tmpTargetLang}"_windows"${tmpFinalDIST}"_22h2.xz"
-					showFinalDIST="$tmpFinalDIST Pro for Workstations 22H2"
+					[[ "$targetLang" == 'cn' ]] && tmpURL="$tmpURL/tiny"${tmpFinalDIST}"_23h2.xz" || tmpURL="$tmpURL/"${tmpTargetLang}"_windows"${tmpFinalDIST}"_22h2.xz"
+					showFinalDIST="$tmpFinalDIST Pro for Workstations"
 				}
 			fi
 			if [[ "$EfiSupport" == "enabled" ]]; then
