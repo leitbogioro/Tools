@@ -200,7 +200,7 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**--networkstack "ipv4", "ipv6" or "dual"**: To specify one supported IP stack manually by reading related configurations instead of checking connectivity of IP stacks, "ipv4" is for IPv4 stack, "dual" is for IPv4 and IPv6 stack. To make sure the parameter of corresponded stack must has specify configurations in system before assign it.
+**--networkstack "ipv4", "ipv6" or "dual"**: To specify one supported IP stack manually by reading related configurations instead of checking connectivity of IP stacks, "ipv4" is for IPv4 stack, "ipv6" is for IPv6 stack, "dual" is for IPv4 and IPv6 bi-stack. To make sure the parameter of corresponded stack must has specify configurations in system before assign it.
 <br />
 <br />
 
