@@ -58,7 +58,7 @@ If you need to add other parameters, version number must be assigned!
 <pre><code>bash InstallNET.sh -fedora</code></pre>
 ### Ubuntu 22.04
 <pre><code>bash InstallNET.sh -ubuntu</code></pre>
-### Windows Server 2022
+### Windows 11 Pro for Workstations
 <pre><code>bash InstallNET.sh -windows</code></pre>
 
 ## Fully useage sample
@@ -97,7 +97,11 @@ If you need to add other parameters, version number must be assigned!
 <br />
 <br />
 
-**-windows 10/11/2012/2016/2019/2022**: Windows 10 Enterprise LTSC, Windows 11 Pro for Workstation 22H2, Windows Server 2012 R2, Windows Server 2016, Windows Server 2019, Windows Server 2022. Supports IPv4 dhcp and static, expand current OS disk partition. Automatic steps must be executed after user logged in.
+**-windows 10/11/2012/2016/2019/2022**: Windows 10 Enterprise LTSC, Windows 11 Pro for Workstation 22H2. For English language, Windows 10 and 11 preferred to use tiny10 and tiny11. Windows Server 2012 R2, Windows Server 2016, Windows Server 2019, Windows Server 2022. Supports IPv4 dhcp and static, expand current OS disk partition. Automatic steps must be executed after user logged in. <b>All images are packaged and provided by teddysun and hosted on https://dl.lamp.sh/vhd/ . Thanks for his contributions, here are the github and blog pages of him:
+https://github.com/teddysun/
+https://teddysun.net/
+https://teddysun.com/
+</b>
 <br />
 <br />
 
@@ -273,7 +277,7 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 
 **-lang/-language "cn, en or jp"**:
-This option is to set language of dd images of Windows like: -windows 10 -lang "en", cn is simplified Chinese, en is English, jp is Japanese, default is cn. It's not valid for Linux distributions.
+This option is to set language of dd images of Windows like: -windows 10 -lang "en", cn is simplified Chinese, en is English, jp is Japanese, default is en. It's not valid for Linux distributions.
 <br />
 <br />
 
@@ -368,7 +372,7 @@ Change netboot to rescue mode, receive mail, get temporary username and password
 <pre><code>wget -O- 'DD download URL' | xzcat | dd of=/dev/sda</code></pre>
 Wait until downloading and unpackaging are all finished, change netboot to formal mode, restart rescue linux:
 <pre><code>reboot</code></pre>
-#### Initial connection configurations, hardware requirements and available Windows series DD image download URLs which are provided by TeddySun(thanks for his efforts, here is his blog: https://teddysun.com/):
+#### Initial connection configurations, hardware requirements and available Windows series DD image download URLs which are provided by TeddySun:
 Username: **Administrator**
 <br />
 Password: **Teddysun.com**
