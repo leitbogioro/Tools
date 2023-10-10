@@ -160,7 +160,7 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**-hostname ""**: you can pre-specify hostname for the newly installing Linux system, the value with empty or includes special symbols except hyphens is not recommend. **default is depended on the original system**.
+**-hostname ""**: you can pre-specify hostname for the newly installing Linux system, the value with empty or includes special symbols except hyphens is not recommend. If the hostname of your original system is "localhost", empty or you want to assign it randomly(-hostname "random"),the expect format of the value is "instance-year, month, day of the server-hour, minute of the serve. **default is depended on the original system**.
 <br />
 <br />
 
@@ -192,7 +192,7 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**-cloudkernel**: Replace formal linux kernel to cloud kernel because numerous hardware drivers like printers, scanners, sound cards, usb controllers etc. which are not necessary in environment of virtual machines of Cloud Computing Platforms and these will be eliminated in the latter aims to help reducing space occupation of memory and hard drive. In situation of raid or dd(Windows) mode, installing cloud kernel will be disabled. -cloudkernel "0" is to disable installing linux cloud kernel by force, -cloudkernel "1" is to enable installing linux cloud kernel by force. This option is only valid for installing to Debian 11+/Kali/AlpineLinux.
+**-cloudkernel**: Replace formal linux kernel to cloud kernel because numerous hardware drivers like printers, scanners, sound cards, usb controllers etc. which are not necessary in environment of virtual machines of Cloud Computing Platforms and these will be eliminated in the latter aims to help reducing space occupation of memory and hard drive. In situation of raid or dd(Windows) mode, installing cloud kernel will be disabled. -cloudkernel "0" is to disable installing linux cloud kernel by force, -cloudkernel "1" is to enable installing linux cloud kernel by force. This option is only valid for installing to Debian 11+/Kali/AlpineLinux. Cloud kernel executing on some hardwares like Oracle Cloud arm64 servers will cause guest display in VNC be disabled, to avoid this, you may assign -cloudkernel "0" to switch to installing traditional Linux kernel by force.
 <br />
 <br />
 
