@@ -192,7 +192,7 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**-cloudkernel**: Replace formal linux kernel to cloud kernel because numerous hardware drivers like printers, scanners, sound cards, usb controllers etc. which are not necessary in environment of virtual machines of Cloud Computing Platforms and these will be eliminated in the latter aims to help reducing space occupation of memory and hard drive. In situation of raid or dd(Windows) mode, installing cloud kernel will be disabled. -cloudkernel "0" is to disable installing linux cloud kernel by force, -cloudkernel "1" is to enable installing linux cloud kernel by force. This option is only valid for installing to Debian 11+/Kali/AlpineLinux. Cloud kernel executing on some hardwares like Oracle Cloud arm64 servers will cause guest display in VNC be disabled, to avoid this, you may assign -cloudkernel "0" to switch to installing traditional Linux kernel by force. For virtualization of VMware and VirtualBox, installing cloud kernel will cause booting failed.
+**-cloudkernel**: Replace formal Linux kernel to cloud kernel because numerous hardware drivers like printers, scanners, sound cards, usb controllers etc. which are not necessary in environment of virtual machines of Cloud Computing Platforms and these will be eliminated in the latter aims to help reducing space occupation of memory and hard drive. In situation of raid or dd(Windows) mode, installing cloud kernel will be disabled. -cloudkernel "0" is to disable installing Linux cloud kernel by force, -cloudkernel "1" is to enable installing cloud kernel by force. This option is only valid for installing to Debian 11+/Kali/AlpineLinux. Cloud kernel executing on some hardwares like Oracle Cloud arm64 servers will cause guest display in VNC be disabled, to avoid this, you may assign -cloudkernel "0" to switch to installing traditional Linux kernel by force. For virtualization of VMware and VirtualBox, installing cloud kernel will cause booting failed.
 <br />
 <br />
 
@@ -252,7 +252,7 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**--motd**: Enable to insert a set of modified MOTD(message of the day) scripts for a convenience to check executing status of a server when connecting by ssh shell, default is disabled.
+**--motd**: Enable to insert a set of modified MOTD(message of the day) scripts for a convenience to check executing status of a server when connecting by ssh shell, default is disabled, only available for Debian/Kali/AlpineLinux.
 <br />
 <br />
 
