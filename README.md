@@ -156,7 +156,7 @@ For Ubuntu, official recommend mirror lists are here:
 <br />
 <br />
 
-**-pwd/-password ''**: you can pre-specify ssh password for target installing system. Native installation methods for Redhat series, Debian/Kali could be supported, not suitable for AlpineLinux and those os which will be installed by "Over writing packaged image mode"(dd) method like Ubuntu, Windows and Redhat installations(only in environments of low memory capacity). A couple of apostrophe includes between the whole password is recommend, if there are further one and more apostrophes in the password, you should use " '\ " to replace the original apostrophe to prevent it's could not be expressed and handled correctly in the shell! **default is 'LeitboGi0ro'**.
+**-pwd/-password ''**: you can pre-specify ssh password for target installing system. Native installation methods for Redhat series, Debian/Kali could be supported, not suitable for AlpineLinux and those os which will be installed by "Overwriting Packaged Image Mode"(dd) method like Ubuntu, Windows and Redhat installations(only in environments of low memory capacity). A couple of apostrophe includes between the whole password is recommend, if there are further one and more apostrophes in the password, you should use " '\ " to replace the original apostrophe to prevent it's could not be expressed and handled correctly in the shell! **default is 'LeitboGi0ro'**.
 <br />
 <br />
 
