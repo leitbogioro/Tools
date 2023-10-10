@@ -3216,7 +3216,7 @@ echo "$TimeZone"
 
 # Hostname should not be "localhost".
 [[ -n "$tmpHostName" ]] && HostName="$tmpHostName" || HostName=$(hostname)
-[[ -z "$HostName" || "$HostName" == "localhost" ]] && HostName="instance-$(date "+%Y%m%d")-$(date "+%H%M")"
+[[ -z "$HostName" || "$HostName" == "localhost" || "$HostName" == "random" ]] && HostName="instance-$(date "+%Y%m%d")-$(date "+%H%M")"
 echo -ne "\n${aoiBlue}# Hostname${plain}\n\n"
 echo "$HostName"
 
