@@ -97,7 +97,7 @@ If you need to add other parameters, version number must be assigned!
 <br />
 <br />
 
-**-windows 10/11/2012/2016/2019/2022**: Windows 10 Enterprise LTSC, Windows 11 Pro for Workstation 22H2. For English language, Windows 10 and 11 preferred to use base images of tiny10 and tiny11 which were developed by [ntdev](https://twitter.com/NTDEV_). Windows Server 2012 R2, Windows Server 2016, Windows Server 2019, Windows Server 2022. Supports IPv4 dhcp and static, expand current OS disk partition. Automatic steps must be executed after user logged in. <b>All images were re-packaged with incepted drivers which are necessary for cloud virtualizations and provided by teddysun and hosting on https://dl.lamp.sh/vhd/ . Thanks for his contributions, here are the github and blog pages of him:<br />
+**-windows 10/11/2012/2016/2019/2022**: Windows 10 Enterprise LTSC, Windows 11 Pro for Workstation 22H2. For English language, Windows 10 and 11 preferred to use base images of tiny10 and tiny11 which were developed by [ntdev](https://twitter.com/NTDEV_). Windows Server 2012 R2, Windows Server 2016, Windows Server 2019, Windows Server 2022. Supports IPv4 dhcp and static, expand current OS disk partition. Automatic steps must be executed after user logged in. <b>All images were re-packaged with incepted drivers which are necessary for cloud virtualizations and provided by teddysun and hosting on https://dl.lamp.sh/vhd/ . Thanks and appreciates for his contributions, here are the github and blog pages of him:<br />
 https://github.com/teddysun/<br />
 https://teddysun.net/<br />
 https://teddysun.com/
