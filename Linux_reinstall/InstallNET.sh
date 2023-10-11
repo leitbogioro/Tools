@@ -593,7 +593,7 @@ function netmask() {
 	b=""
 	m=""
 	for ((i = 0; i < 32; i++)); do
-		[ $i -lt $n ] && b="${b}1" || b="${b}0"
+		[ $i -lt $n ] 2>/dev/null && b="${b}1" || b="${b}0"
 	done
 	for ((i = 0; i < 4; i++)); do
 		s=$(echo "$b" | cut -c$(($(($i * 8)) + 1))-$(($(($i + 1)) * 8)))
@@ -1262,6 +1262,7 @@ function checkSys() {
 		# Reference: https://anatolinicolae.com/failed-loading-plugin-osmsplugin-no-module-named-librepo/
 		[[ "$CurrentOS" == "CentOS" && "$CurrentOSVer" == "8" ]] && dnf install python3-librepo -y
 		# Redhat like linux OS necessary components.
+		dnf install epel-release -y
 		dnf install bind-utils cpio curl dmidecode dnsutils efibootmgr file gzip jq net-tools openssl redhat-lsb syslinux tuned util-linux virt-what wget xz --skip-broken -y
 	else
 		yum install dnf -y >/root/yum_execute.log 2>&1
@@ -1280,9 +1281,11 @@ function checkSys() {
 			# Run dnf update and install components.
 			# In official template of AlmaLinux 9 of Linode, "tuned" must be installed otherwise "grub2-mkconfig" can't work formally.
 			# Reference: https://phanes.silogroup.org/fips-disa-stig-hardening-on-centos9/
+			dnf install epel-release -y
 			dnf install bind-utils cpio curl dmidecode dnsutils efibootmgr file gzip jq net-tools openssl redhat-lsb syslinux tuned util-linux virt-what wget xz --skip-broken -y
 			# Oracle Linux 7 doesn't support DNF.
 		elif [[ $(grep -i "no package" /root/yum_execute.log) ]]; then
+			yum install epel-release -y
 			yum install bind-utils cpio curl dmidecode dnsutils efibootmgr file gzip jq net-tools openssl redhat-lsb syslinux tuned util-linux virt-what wget xz --skip-broken -y
 		fi
 		rm -rf /root/yum_execute.log
@@ -3225,7 +3228,9 @@ if [[ -z "$tmpWORD" || "$linux_relese" == 'alpinelinux' ]]; then
 	myPASSWORD='$6$qE9Lqgrd0QTOq46i$YMECmKvIw2SeBP4X411I0ZWmtyMsRcBi4Rxu7HYRsqdwqSApi6zjds5UJyM4HrAoBcuLBmjPyLatGydulmCDb0'
 else
 	# "-1" is MD5, "-5" is SHA256, "-6" is SHA512. MD5 is no longer secure.
-	myPASSWORD=$(openssl passwd -6 ''$tmpWORD'')
+	myPASSWORD=$(openssl passwd -6 ''$tmpWORD'' 2>/dev/null)
+	# Version 1.0.2k of openssl in CentOS 7 is too old that it's only support MD5.
+	[[ -z "$myPASSWORD" || "$myPASSWORD" =~ "NULL" ]] && myPASSWORD=$(openssl passwd -1 ''$tmpWORD'')
 fi
 
 echo -ne "\n${aoiBlue}# SSH or RDP Port, Username and Password${plain}\n\n"
