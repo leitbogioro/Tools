@@ -21,7 +21,7 @@
 UpdateLog="/var/log/PackagesUpdatingStatus.log"
 [[ -f "$UpdateLog" ]] && rm -rf $UpdateLog
 
-apt list --upgradable | awk 'END{print NR}' | tee -a "$UpdateLog" > /dev/null 2>&1
+apt list --upgradable | awk 'END{print NR}' | tee -a "$UpdateLog" >/dev/null 2>&1
 UpdateRemind=$(cat $UpdateLog | tail -n 1)
 UpdateNum=$(expr $UpdateRemind - 1)
 
