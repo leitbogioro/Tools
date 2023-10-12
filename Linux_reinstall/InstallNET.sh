@@ -1047,7 +1047,7 @@ function checkMem() {
 		[[ "$TotalMem" -ge "2536" ]] && lowmemLevel="" || lowmemLevel="lowmem=+1"
 		[[ "$setMemCheck" == '1' ]] && {
 			[[ "$TotalMem" -le "336" ]] && {
-				echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 384MB!\n"
+				echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 384 MB!\n"
 				exit 1
 			}
 		}
@@ -1113,11 +1113,11 @@ function checkMem() {
 					exit 1
 				}
 			elif [[ "$1" == 'alpinelinux' ]]; then
-				[[ "$TotalMem" -le "736" ]] && {
-					echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 768 MB!\n"
+				[[ "$TotalMem" -le "236" ]] && {
+					echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 256 MB!\n"
 					exit 1
 				}
-				[[ "$TotalMem" -le "1012" ]] && lowMemMode="1"
+				[[ "$TotalMem" -le "736" ]] && lowMemMode="1"
 			fi
 		}
 		if [[ "$TotalMem" -le "2028" ]]; then
@@ -3564,6 +3564,13 @@ if [[ "$IncFirmware" == '1' ]]; then
 		decompressedKaliFirmwareDir=$(echo $kaliFirmwareName | cut -d'.' -f 1 | sed 's/_/-/g')
 	fi
 fi
+
+# Resize "/tmp" to avoid too low space to contain netboot kernel.
+tmpDirSize=$(df -Th | grep "/tmp\|/dev/shm" | head -n 1 | awk '{print $3}')
+[[ $(echo $tmpDirSize | grep -i "m") ]] && {
+	tmpDirSize=$(echo $tmpDirSize | tr -cd "[0-9]")
+	[[ "$tmpDirSize" -lt "1024" ]] && mount -o remount,size=1G,noexec,nosuid,nodev,noatime /tmp 2>/dev/null
+}
 
 [[ -d /tmp/boot ]] && rm -rf /tmp/boot
 mkdir -p /tmp/boot
