@@ -75,13 +75,13 @@ wget --no-check-certificate -qO "$setupCompleteFile" ''$windowsStaticConfigCmd''
 
 # Write static config script to setup step.
 if [[ "$Network4Config" == "isStatic" ]]; then
-  sed -ri "s/IPv4/$IPv4/g" "$setupCompleteFile"
-  sed -ri "s/actualIp4Subnet/$actualIp4Subnet/g" "$setupCompleteFile"
-  sed -ri "s/GATE/$GATE/g" "$setupCompleteFile"
-  sed -ri "s/ipDNS1/$ipDNS1/g" "$setupCompleteFile"
-  sed -ri "s/ipDNS2/$ipDNS2/g" "$setupCompleteFile"
+	sed -ri "s/IPv4/$IPv4/g" "$setupCompleteFile"
+	sed -ri "s/actualIp4Subnet/$actualIp4Subnet/g" "$setupCompleteFile"
+	sed -ri "s/GATE/$GATE/g" "$setupCompleteFile"
+	sed -ri "s/ipDNS1/$ipDNS1/g" "$setupCompleteFile"
+	sed -ri "s/ipDNS2/$ipDNS2/g" "$setupCompleteFile"
 else
-  sed -ri "s/setmode=on/setmode=off/g" "$setupCompleteFile"
+	sed -ri "s/setmode=on/setmode=off/g" "$setupCompleteFile"
 fi
 
 # Umount mounted directory and loop device.
