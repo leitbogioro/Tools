@@ -4,6 +4,21 @@
 
 exec >/dev/tty0 2>&1
 
+insertIntoFile() {
+	file=$1
+	location=$2
+	regexToFind=$3
+
+	lineNum=$(grep -E -n "$regexToFind" "$file" | cut -d: -f1)
+	if [[ "$location" == "before" ]]; then
+		lineNum=$((lineNum - 1))
+	elif [[ "$location" != "after" ]]; then
+		return 1
+	fi
+
+	sed -i "${lineNum}r /dev/stdin" "$file"
+}
+
 # Delete the initial script itself to prevent to be executed in the new system.
 rm -f /etc/local.d/alpineConf.start
 rm -f /etc/runlevels/default/local
@@ -41,6 +56,30 @@ virtualizationStatus=$(grep "virtualizationStatus" $confFile | awk '{print $2}')
 setFail2banStatus=$(grep "setFail2banStatus" $confFile | awk '{print $2}')
 setMotd=$(grep "setMotd" $confFile | awk '{print $2}')
 lowMemMode=$(grep "lowMemMode" $confFile | awk '{print $2}')
+
+if [[ "$lowMemMode" == "1" ]]; then
+	# Preloading necessary modprobes and then delete modloop to squeeze out more memory.
+	preLoadedModulesList="crc32c ext4 ipv6 nls_cp437 nls_utf8 vfat"
+	for moduleItems in $preLoadedModulesList; do
+		modprobe "$moduleItems"
+	done
+	rc-service modloop stop
+	rm -f /lib/modloop-lts /lib/modloop-virt
+	# Backup component of "set disk" of Alpine.
+	[[ -e /sbin/setup-disk.orig ]] && cp -f /sbin/setup-disk.orig /sbin/setup-disk || cp -f /sbin/setup-disk /sbin/setup-disk.orig
+	# Allocate 1GB swap when rebooting.
+	insertIntoFile /sbin/setup-disk after 'mount -t \$ROOTFS \$root_dev "\$SYSROOT"' <<EOF
+		fallocate -l 1G /mnt/swapspace
+		chmod 0600 /mnt/swapspace
+		mkswap /mnt/swapspace
+		swapon /mnt/swapspace
+		rc-update add swap boot
+EOF
+	# To making swap valid permanently.
+	insertIntoFile /sbin/setup-disk after 'install_mounted_root "\$SYSROOT" "\$disks"' <<EOF
+		echo "/swapspace swap swap defaults 0 0" >>/mnt/etc/fstab
+EOF
+fi
 
 # Reset configurations of repositories
 true >/etc/apk/repositories
@@ -81,14 +120,14 @@ sed -ri 's/MASK/'${MASK}'/g' /etc/network/interfaces
 sed -ri 's/netmask '${MASK}'/netmask '${actualIp4Subnet}'/g' /etc/network/interfaces
 sed -ri 's/GATE/'${GATE}'/g' /etc/network/interfaces
 if [[ "$iAddrNum" -ge "2" ]]; then
-  echo -e "${writeIpsCmd}" >> /etc/network/interfaces
+	echo -e "${writeIpsCmd}" >>/etc/network/interfaces
 fi
 sed -ri 's/ip6Addr/'${ip6Addr}'/g' /etc/network/interfaces
 sed -ri 's/ip6Mask/'${ip6Mask}'/g' /etc/network/interfaces
 sed -ri 's/netmask '${ip6Mask}'/netmask '${actualIp6Prefix}'/g' /etc/network/interfaces
 sed -ri 's/ip6Gate/'${ip6Gate}'/g' /etc/network/interfaces
 if [[ "$i6AddrNum" -ge "2" ]]; then
-  echo -e "${writeIp6sCmd}" >> /etc/network/interfaces
+	echo -e "${writeIp6sCmd}" >>/etc/network/interfaces
 fi
 # Restoring access permission.
 chmod a+x /etc/network/interfaces
@@ -97,17 +136,17 @@ modprobe ipv6
 # Rebuild hosts
 rm -rf /etc/hosts
 # Add special IPv4 addresses
-echo "127.0.0.1       $HostName localhost.localdomain" >> /etc/hosts
+echo "127.0.0.1       $HostName localhost.localdomain" >>/etc/hosts
 # Add special IPv6 addresses
-echo "::1             $HostName localhost.localdomain ipv6-localhost ipv6-loopback" >> /etc/hosts
-echo "fe00::0         ipv6-localnet" >> /etc/hosts
-echo "ff00::0         ipv6-mcastprefix" >> /etc/hosts
-echo "ff02::1         ipv6-allnodes" >> /etc/hosts
-echo "ff02::2         ipv6-allrouters" >> /etc/hosts
-echo "ff02::3         ipv6-allhosts" >> /etc/hosts
+echo "::1             $HostName localhost.localdomain ipv6-localhost ipv6-loopback" >>/etc/hosts
+echo "fe00::0         ipv6-localnet" >>/etc/hosts
+echo "ff00::0         ipv6-mcastprefix" >>/etc/hosts
+echo "ff02::1         ipv6-allnodes" >>/etc/hosts
+echo "ff02::2         ipv6-allrouters" >>/etc/hosts
+echo "ff02::3         ipv6-allhosts" >>/etc/hosts
 # Hostname
 rm -rf /etc/hostname
-echo "$HostName" > /etc/hostname
+echo "$HostName" >/etc/hostname
 hostname -F /etc/hostname
 
 # Localization
@@ -138,19 +177,22 @@ sed -ri 's/ash/bash/g' /etc/passwd
 # Insall more components.
 apk update
 if [[ "$setFail2banStatus" == "1" && "$lowMemMode" != "1" ]]; then
-  apk add bind-tools curl e2fsprogs fail2ban grub lsblk lsof net-tools udev util-linux vim wget
-# Config fail2ban
-  sed -i '/^\[Definition\]/a allowipv6 = auto' /etc/fail2ban/fail2ban.conf
-  rc-update add fail2ban
-  /etc/init.d/fail2ban start
+	apk add bind-tools curl e2fsprogs fail2ban grub lsblk lsof net-tools udev util-linux vim wget
+	# Config fail2ban
+	sed -i '/^\[Definition\]/a allowipv6 = auto' /etc/fail2ban/fail2ban.conf
+	rc-update add fail2ban
+	/etc/init.d/fail2ban start
 elif [[ "$lowMemMode" == "1" ]]; then
-  apk add bind-tools grub net-tools udev util-linux
+	apk add bind-tools grub net-tools udev util-linux
 else
-  apk add bind-tools curl e2fsprogs grub lsblk lsof net-tools udev util-linux vim wget
+	apk add bind-tools curl e2fsprogs grub lsblk lsof net-tools udev util-linux vim wget
 fi
 
 # Make a blank motd to avoid Alpine Linux writes a new one.
-[[ "$setMotd" == "1" ]] && { rm -rf /etc/motd; touch /etc/motd; }
+[[ "$setMotd" == "1" ]] && {
+	rm -rf /etc/motd
+	touch /etc/motd
+}
 
 # Use kernel "virt" if be executed on virtual machine.
 [[ "$virtualizationStatus" == "1" ]] && kernelType="virt" || kernelType="lts"
