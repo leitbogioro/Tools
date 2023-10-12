@@ -95,21 +95,21 @@ sed -ri 's/targetLinuxMirror/'${targetLinuxMirror}'/g' $cloudInitFile
 sed -ri 's/targetLinuxSecurityMirror/'${targetLinuxSecurityMirror}'/g' $cloudInitFile
 sed -ri 's/networkAdapter/'${networkAdapter}'/g' $cloudInitFile
 if [[ "$iAddrNum" -ge "2" ]]; then
-  sed -ri 's#IPv4/ipPrefix#'${writeIpsCmd}'#g' $cloudInitFile
+	sed -ri 's#IPv4/ipPrefix#'${writeIpsCmd}'#g' $cloudInitFile
 else
-  sed -ri 's/IPv4/'${IPv4}'/g' $cloudInitFile
-  sed -ri 's/ipPrefix/'${ipPrefix}'/g' $cloudInitFile
-  sed -ri "s/${IPv4}\/${ipPrefix}/${IPv4}\/${actualIp4Prefix}/g" $cloudInitFile
+	sed -ri 's/IPv4/'${IPv4}'/g' $cloudInitFile
+	sed -ri 's/ipPrefix/'${ipPrefix}'/g' $cloudInitFile
+	sed -ri "s/${IPv4}\/${ipPrefix}/${IPv4}\/${actualIp4Prefix}/g" $cloudInitFile
 fi
 sed -ri 's/GATE/'${GATE}'/g' $cloudInitFile
 sed -ri 's/ipDNS1/'${ipDNS1}'/g' $cloudInitFile
 sed -ri 's/ipDNS2/'${ipDNS2}'/g' $cloudInitFile
 if [[ "$i6AddrNum" -ge "2" ]]; then
-  sed -ri 's#ip6Addr/ip6Mask#'${writeIp6sCmd}'#g' $cloudInitFile
+	sed -ri 's#ip6Addr/ip6Mask#'${writeIp6sCmd}'#g' $cloudInitFile
 else
-  sed -ri 's/ip6Addr/'${ip6Addr}'/g' $cloudInitFile
-  sed -ri 's/ip6Mask/'${ip6Mask}'/g' $cloudInitFile
-  sed -ri "s/${ip6Addr}\/${ip6Mask}/${ip6Addr}\/${actualIp6Prefix}/g" $cloudInitFile
+	sed -ri 's/ip6Addr/'${ip6Addr}'/g' $cloudInitFile
+	sed -ri 's/ip6Mask/'${ip6Mask}'/g' $cloudInitFile
+	sed -ri "s/${ip6Addr}\/${ip6Mask}/${ip6Addr}\/${actualIp6Prefix}/g" $cloudInitFile
 fi
 sed -ri 's/ip6Gate/'${ip6Gate}'/g' $cloudInitFile
 sed -ri 's/ip6DNS1/'${ip6DNS1}'/g' $cloudInitFile
@@ -117,12 +117,12 @@ sed -ri 's/ip6DNS2/'${ip6DNS2}'/g' $cloudInitFile
 
 # Disable any datahouse.
 # Reference: https://github.com/canonical/cloud-init/issues/3772
-echo 'datasource_list: [ NoCloud, None ]' > /mnt/etc/cloud/cloud.cfg.d/90_dpkg.cfg
+echo 'datasource_list: [ NoCloud, None ]' >/mnt/etc/cloud/cloud.cfg.d/90_dpkg.cfg
 
 # Disable IPv6.
 [[ "$setIPv6" == "0" ]] && {
-  sed -ri 's/GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0"/GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0 ipv6.disable=1"/g' /mnt/etc/default/grub
-  sed -ri 's/ro net.ifnames=0 biosdevname=0/ro net.ifnames=0 biosdevname=0 ipv6.disable=1/g' /mnt/boot/grub/grub.cfg
+	sed -ri 's/GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0"/GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0 ipv6.disable=1"/g' /mnt/etc/default/grub
+	sed -ri 's/ro net.ifnames=0 biosdevname=0/ro net.ifnames=0 biosdevname=0 ipv6.disable=1/g' /mnt/boot/grub/grub.cfg
 }
 
 # Permit root user login by password, change ssh port.
@@ -132,10 +132,10 @@ sed -ri 's/^#?Port.*/Port '${sshPORT}'/g' /mnt/etc/ssh/sshd_config
 
 # Disable installing fail2ban.
 [[ "$setFail2banStatus" != "1" ]] && {
-  sed -ri 's/dnsutils fail2ban/dnsutils/g' $cloudInitFile 
-  sed -i '/\/etc\/fail2ban/d' $cloudInitFile
-  sed -i '/fail2ban enable/d' $cloudInitFile
-  sed -i '/fail2ban restart/d' $cloudInitFile
+	sed -ri 's/dnsutils fail2ban/dnsutils/g' $cloudInitFile
+	sed -i '/\/etc\/fail2ban/d' $cloudInitFile
+	sed -i '/fail2ban enable/d' $cloudInitFile
+	sed -i '/fail2ban restart/d' $cloudInitFile
 }
 
 # Hack cloud init, this method is effective for versions from 22.1.9 to 23.2.2 .
