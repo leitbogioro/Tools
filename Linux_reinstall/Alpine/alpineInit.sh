@@ -175,16 +175,17 @@ rc-update add seedrng boot
 sed -ri 's/ash/bash/g' /etc/passwd
 
 # Insall more components.
-apk update
 if [[ "$setFail2banStatus" == "1" && "$lowMemMode" != "1" ]]; then
+	apk update
 	apk add bind-tools curl e2fsprogs fail2ban grub lsblk lsof net-tools util-linux vim wget
 	# Config fail2ban
 	sed -i '/^\[Definition\]/a allowipv6 = auto' /etc/fail2ban/fail2ban.conf
 	rc-update add fail2ban
 	/etc/init.d/fail2ban start
 elif [[ "$lowMemMode" == "1" ]]; then
-	apk add bind-tools grub net-tools util-linux
+	echo ""
 else
+	apk update
 	apk add bind-tools curl e2fsprogs grub lsblk lsof net-tools util-linux vim wget
 fi
 
