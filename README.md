@@ -149,11 +149,6 @@ For Fedora, official recommend mirror lists are here:
 <pre><code>https://admin.fedoraproject.org/mirrormanager/mirrors/Fedora</code></pre>
 <br />
 
-For Ubuntu, official recommend mirror lists are here:
-<br />
-<pre><code>https://launchpad.net/ubuntu/+cdmirrors</code></pre>
-<br />
-
 **Recommended terminal client is Xshell or Putty**
 
 **-port ""**: you can pre-specify ssh port of system, range is 1~65535, both Redhat series or Debian series could be supported, **default is depended on the original system, if getting this value is failed, the value will fall back to '22'**.
