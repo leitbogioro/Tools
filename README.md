@@ -47,7 +47,7 @@ If you need to add other parameters,a certain name of distributions must be assi
 <b>Kali can be installed and run in OracleCloud Ampere A1 ARM64 machine successfully but there are not any output results in VNC screen, just waiting patiently after installation has been finished!</b>
 ### Alpine Linux Edge
 <pre><code>bash InstallNET.sh -alpine</code></pre>
-<b>Alpine Linux is a kind of light Linux release and it's friendly to low memory machine, memory at least 256MB is necessary.</b>
+<b>Alpine Linux is a kind of light Linux release and it's friendly to those machines that have lower performance, system memory at least 256MB is necessary.</b>
 ### CentOS 9 stream
 <pre><code>bash InstallNET.sh -centos</code></pre>
 ### AlmaLinux 9
