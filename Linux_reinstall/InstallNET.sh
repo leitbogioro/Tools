@@ -3578,12 +3578,9 @@ if [[ "$IncFirmware" == '1' ]]; then
 	fi
 fi
 
-# Resize "/tmp" to avoid too low space to contain netboot kernel.
-tmpDirSize=$(df -Th | grep "/tmp\|/dev/shm" | head -n 1 | awk '{print $3}')
-[[ $(echo $tmpDirSize | grep -i "m") ]] && {
-	tmpDirSize=$(echo $tmpDirSize | tr -cd "[0-9]")
-	[[ "$tmpDirSize" -lt "1024" ]] && mount -o remount,size=1G,noexec,nosuid,nodev,noatime /tmp 2>/dev/null
-}
+# Resize "/tmp" to avoid too low space to contain netboot kernel, base measure is "MB".
+tmpDirAvail=$(df -TBM | grep "/tmp\|/dev/shm" | head -n 1 | awk '{print $5}' | tr -cd "[0-9]")
+[[ "$tmpDirAvail" -lt "256" ]] && mount -o remount,size=256M,noexec,nosuid,nodev,noatime /tmp 2>/dev/null
 
 [[ -d /tmp/boot ]] && rm -rf /tmp/boot
 mkdir -p /tmp/boot
