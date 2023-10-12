@@ -1113,7 +1113,7 @@ function checkMem() {
 					exit 1
 				}
 			elif [[ "$1" == 'alpinelinux' ]]; then
-				[[ "$TotalMem" -le "236" ]] && {
+				[[ "$TotalMem" -le "228" ]] && {
 					echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 256 MB!\n"
 					exit 1
 				}
