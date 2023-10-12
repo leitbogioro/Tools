@@ -183,7 +183,7 @@ if [[ "$setFail2banStatus" == "1" && "$lowMemMode" != "1" ]]; then
 	rc-update add fail2ban
 	/etc/init.d/fail2ban start
 elif [[ "$lowMemMode" == "1" ]]; then
-	apk add bind-tools grub net-tools udev util-linux
+	apk add bind-tools grub net-tools util-linux
 else
 	apk add bind-tools curl e2fsprogs grub lsblk lsof net-tools udev util-linux vim wget
 fi
