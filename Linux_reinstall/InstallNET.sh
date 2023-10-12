@@ -1117,7 +1117,10 @@ function checkMem() {
 					echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 256 MB!\n"
 					exit 1
 				}
-				[[ "$TotalMem" -le "736" ]] && lowMemMode="1"
+				[[ "$TotalMem" -le "736" ]] && {
+					lowMemMode="1"
+					setMotd="0"
+				}
 			fi
 		}
 		if [[ "$TotalMem" -le "2028" ]]; then
