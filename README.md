@@ -263,7 +263,7 @@ For Fedora, official recommend mirror lists are here:
 <br />
 <br />
 
-**-allbymyself**: Install OS supported by this script manually, must have VNC, this option is not valid for Redhat series.
+**--allbymyself**: Install OS supported by this script manually, must have VNC, this option is not valid for Redhat series.
 <br />
 <br />
 
