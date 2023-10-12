@@ -290,7 +290,7 @@ while [[ $# -ge 1 ]]; do
 		IncFirmware="1"
 		shift
 		;;
-	-cloudkernel)
+	--cloudkernel)
 		shift
 		setCloudKernel="$1"
 		shift
@@ -1402,8 +1402,13 @@ function checkDIST() {
 		fi
 		# Alpine Linux releases reference: https://alpinelinux.org/releases/
 		[[ "$DIST" != "edge" && ! "$DIST" =~ "v" ]] && DIST="v""$DIST"
+		if [[ "$setCloudKernel" == "" ]]; then
+			[[ -n "$virtWhat" ]] && virtualizationStatus='1' || virtualizationStatus='0'
+		elif [[ "$setCloudKernel" == "1" ]]; then
+			virtualizationStatus='1'
+		fi
 		# Virtual linux kernel of "vmlinuz-virt" of Alpine is unable to probe modules of IPv6 at the beginning so that "modloop" can't be downloaded and loaded!
-		if [[ -n "$virtWhat" && "$IPStackType" != "IPv6Stack" ]]; then
+		if [[ "$virtualizationStatus" == "1" && "$IPStackType" != "IPv6Stack" ]]; then
 			InitrdName="initramfs-virt"
 			VmLinuzName="vmlinuz-virt"
 			ModLoopName="modloop-virt"
@@ -3871,11 +3876,6 @@ elif [[ "$linux_relese" == 'alpinelinux' ]]; then
 		fi
 		writeMultipleIpv4Addresses "$iAddrNum"
 		writeMultipleIpv6Addresses "$i6AddrNum"
-		if [[ "$setCloudKernel" == "" ]]; then
-			[[ -n "$virtWhat" ]] && virtualizationStatus='1' || virtualizationStatus='0'
-		elif [[ "$setCloudKernel" == "1" ]]; then
-			virtualizationStatus='1'
-		fi
 		if [[ "$setMotd" == "1" ]]; then
 			ModifyMOTD=$(echo -e "rm -rf \$sysroot/etc/motd
 wget --no-check-certificate -O \$sysroot/etc/profile.d/motd.sh ${AlpineMotd}
