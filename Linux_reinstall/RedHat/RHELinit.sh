@@ -94,21 +94,21 @@ sed -ri 's/sshPORT/'${sshPORT}'/g' $cloudInitFile
 sed -ri 's/TimeZone/'${TimeZone1}'\/'${TimeZone2}'/g' $cloudInitFile
 sed -ri 's/networkAdapter/'${networkAdapter}'/g' $cloudInitFile
 if [[ "$iAddrNum" -ge "2" ]]; then
-  sed -ri 's#IPv4/ipPrefix#'${writeIpsCmd}'#g' $cloudInitFile
+	sed -ri 's#IPv4/ipPrefix#'${writeIpsCmd}'#g' $cloudInitFile
 else
-  sed -ri 's/IPv4/'${IPv4}'/g' $cloudInitFile
-  sed -ri 's/ipPrefix/'${ipPrefix}'/g' $cloudInitFile
-  sed -ri "s/${IPv4}\/${ipPrefix}/${IPv4}\/${actualIp4Prefix}/g" $cloudInitFile
+	sed -ri 's/IPv4/'${IPv4}'/g' $cloudInitFile
+	sed -ri 's/ipPrefix/'${ipPrefix}'/g' $cloudInitFile
+	sed -ri "s/${IPv4}\/${ipPrefix}/${IPv4}\/${actualIp4Prefix}/g" $cloudInitFile
 fi
 sed -ri 's/GATE/'${GATE}'/g' $cloudInitFile
 sed -ri 's/ipDNS1/'${ipDNS1}'/g' $cloudInitFile
 sed -ri 's/ipDNS2/'${ipDNS2}'/g' $cloudInitFile
 if [[ "$i6AddrNum" -ge "2" ]]; then
-  sed -ri 's#ip6Addr/ip6Mask#'${writeIp6sCmd}'#g' $cloudInitFile
+	sed -ri 's#ip6Addr/ip6Mask#'${writeIp6sCmd}'#g' $cloudInitFile
 else
-  sed -ri 's/ip6Addr/'${ip6Addr}'/g' $cloudInitFile
-  sed -ri 's/ip6Mask/'${ip6Mask}'/g' $cloudInitFile
-  sed -ri "s/${ip6Addr}\/${ip6Mask}/${ip6Addr}\/${actualIp6Prefix}/g" $cloudInitFile
+	sed -ri 's/ip6Addr/'${ip6Addr}'/g' $cloudInitFile
+	sed -ri 's/ip6Mask/'${ip6Mask}'/g' $cloudInitFile
+	sed -ri "s/${ip6Addr}\/${ip6Mask}/${ip6Addr}\/${actualIp6Prefix}/g" $cloudInitFile
 fi
 sed -ri 's/ip6Gate/'${ip6Gate}'/g' $cloudInitFile
 sed -ri 's/ip6DNS1/'${ip6DNS1}'/g' $cloudInitFile
@@ -134,13 +134,13 @@ sed -ri 's/^#?Port.*/Port '${sshPORT}'/g' /mnt/etc/ssh/sshd_config
 [[ "$lowMemMode" != "1" || "$rhelArchitecture" == "aarch64" ]] && sed -i '/swapspace/d' $cloudInitFile
 
 # Hack cloud init.
-# Note: this trick has a great effect on Ubuntu 20.04+, AlmaLinux / Rocky 9+ in almost any cloud platforms but unfortunately it 
+# Note: this trick has a great effect on Ubuntu 20.04+, AlmaLinux / Rocky 9+ in almost any cloud platforms but unfortunately it
 # is not suitable for Rocky 8 otherwise cloud init will meet a fatal may because of the lower version of python3.6(others are 3.9).
 # More details: https://github.com/leitbogioro/Tools/blob/master/Linux_reinstall/Ubuntu/ubuntuInit.sh
 [[ "$RedHatSeries" -ge "9" ]] && {
-  utilProgram=$(find /mnt/usr/lib/python* -name "util.py" | grep "cloudinit" | head -n 1)
-  sed -ri 's/iso9660/osi9876/g' $utilProgram
-  sed -ri 's#"blkid"#"echo"#g' $utilProgram
+	utilProgram=$(find /mnt/usr/lib/python* -name "util.py" | grep "cloudinit" | head -n 1)
+	sed -ri 's/iso9660/osi9876/g' $utilProgram
+	sed -ri 's#"blkid"#"echo"#g' $utilProgram
 }
 
 # Umount mounted directory and loop device.
