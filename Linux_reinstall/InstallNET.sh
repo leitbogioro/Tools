@@ -430,7 +430,7 @@ function selectMirror() {
 	elif [ "$Relese" == "fedora" ]; then
 		TEMP="SUB_MIRROR/releases/${DIST}/Server/${VER}/os/images/pxeboot/initrd.img"
 	elif [ "$Relese" == "alpinelinux" ]; then
-		TEMP="SUB_MIRROR/${DIST}/releases/${VER}/netboot/initramfs-lts"
+		TEMP="SUB_MIRROR/${DIST}/releases/${VER}/netboot/${InitrdName}"
 	fi
 	[ -n "$TEMP" ] || exit 1
 	mirrorStatus=0
@@ -1400,8 +1400,18 @@ function checkDIST() {
 			echo -ne "\n[${red}Warning${plain}] $Relese $DIST is not supported!\n"
 			exit 1
 		fi
-		[[ "$DIST" != "edge" && ! "$DIST" =~ "v" ]] && DIST="v""$DIST"
 		# Alpine Linux releases reference: https://alpinelinux.org/releases/
+		[[ "$DIST" != "edge" && ! "$DIST" =~ "v" ]] && DIST="v""$DIST"
+		# Virtual linux kernel of "vmlinuz-virt" of Alpine is unable to probe modules of IPv6 at the beginning so that "modloop" can't be downloaded and loaded!
+		if [[ -n "$virtWhat" && "$IPStackType" != "IPv6Stack" ]]; then
+			InitrdName="initramfs-virt"
+			VmLinuzName="vmlinuz-virt"
+			ModLoopName="modloop-virt"
+		else
+			InitrdName="initramfs-lts"
+			VmLinuzName="vmlinuz-lts"
+			ModLoopName="modloop-lts"
+		fi
 		LinuxMirror=$(selectMirror "$Relese" "$DIST" "$VER" "$tmpMirror")
 	fi
 	if [[ "$Relese" == 'CentOS' ]] || [[ "$Relese" == 'RockyLinux' ]] || [[ "$Relese" == 'AlmaLinux' ]] || [[ "$Relese" == 'Fedora' ]]; then
@@ -3500,14 +3510,14 @@ elif [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]] || [
 	MirrorFolder="$(echo "$LinuxMirror" | awk -F''${MirrorHost}'' '{print $2}')/"
 	[ -n "$MirrorFolder" ] || MirrorFolder="/"
 elif [[ "$linux_relese" == 'alpinelinux' ]]; then
-	InitrdUrl="${LinuxMirror}/${DIST}/releases/${VER}/netboot/initramfs-lts"
-	VmLinuzUrl="${LinuxMirror}/${DIST}/releases/${VER}/netboot/vmlinuz-lts"
-	ModLoopUrl="${LinuxMirror}/${DIST}/releases/${VER}/netboot/modloop-lts"
+	InitrdUrl="${LinuxMirror}/${DIST}/releases/${VER}/netboot/${InitrdName}"
+	VmLinuzUrl="${LinuxMirror}/${DIST}/releases/${VER}/netboot/${VmLinuzName}"
+	ModLoopUrl="${LinuxMirror}/${DIST}/releases/${VER}/netboot/${ModLoopName}"
 	echo -ne "[${yellow}Mirror${plain}] $InitrdUrl\n\t $VmLinuzUrl\n"
 	wget --no-check-certificate -qO '/tmp/initrd.img' "$InitrdUrl"
-	[[ $? -ne '0' ]] && echo -ne "\n[${red}Error${plain}] Download 'initramfs-lts' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
+	[[ $? -ne '0' ]] && echo -ne "\n[${red}Error${plain}] Download '$InitrdName' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
 	wget --no-check-certificate -qO '/tmp/vmlinuz' "$VmLinuzUrl"
-	[[ $? -ne '0' ]] && echo -ne "\n[${red}Error${plain}] Download 'vmlinuz-lts' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
+	[[ $? -ne '0' ]] && echo -ne "\n[${red}Error${plain}] Download '$VmLinuzName' for ${yellow}$linux_relese${plain} failed! \n" && exit 1
 elif [[ "$linux_relese" == 'centos' ]] && [[ "$RedHatSeries" -le "7" ]]; then
 	InitrdUrl="${LinuxMirror}/${DIST}/os/${VER}/images/pxeboot/initrd.img"
 	VmLinuzUrl="${LinuxMirror}/${DIST}/os/${VER}/images/pxeboot/vmlinuz"
