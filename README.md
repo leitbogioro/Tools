@@ -104,8 +104,9 @@ If you need to add other parameters,a certain name of distributions must be assi
 - Windows Server 2016
 - Windows Server 2019
 - Windows Server 2022
-
+<br />
 Notes: Windows 10 and 11 23H2 for English preferred to use base images of tiny10 and tiny11 which were developed and optimized by [ntdev](https://twitter.com/NTDEV_) .
+<br />
 <b>Installing Windows by using "bash InstallNET.sh -windows distribution number" supports IPv4/IPv6 dhcp and static, expanding current OS disk partition. Automatic setting steps must be executed after user logged in(for example, you can log into the newly installed system via VNC first if the method of upstream network configuration is static). All images were re-packaged with incepted drivers which are necessary for cloud virtualizations and provided by teddysun and hosting on https://dl.lamp.sh/vhd/ . Thanks and appreciates for his contributions, here are the github and blog pages of him:<br />
 https://github.com/teddysun/<br />
 https://teddysun.net/<br />
