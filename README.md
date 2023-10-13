@@ -116,6 +116,11 @@ https://teddysun.com/
 <br />
 <br />
 
+**-lang/-language "cn, en or jp"**:
+This option is to set language of dd images of Windows like: -windows 10 -lang "en", cn is simplified Chinese, en is English, jp is Japanese, default is en. It's not valid for Linux distributions.
+<br />
+<br />
+
 **-mirror "a valid DIST mirror url"**: OS install files resource, you can select one which nearest for actual location of your server to upspeed installation.
 <br />
 <br />
@@ -279,11 +284,6 @@ For Fedora, official recommend mirror lists are here:
 <br />
 
 **-firmware**: Specify drivers for Debian and Kali to support old hardwares, if your server location is in mainland China, program will switch to mirror of 'University of Science and Technology of China(https://mirrors.ustc.edu.cn/debian-cdimage/)' for downloading more quickly, default mirror is from http://cdimage.debian.org/cdimage/.
-<br />
-<br />
-
-**-lang/-language "cn, en or jp"**:
-This option is to set language of dd images of Windows like: -windows 10 -lang "en", cn is simplified Chinese, en is English, jp is Japanese, default is en. It's not valid for Linux distributions.
 <br />
 <br />
 
