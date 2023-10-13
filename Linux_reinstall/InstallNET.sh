@@ -3928,6 +3928,9 @@ echo "windowsStaticConfigCmd  "${windowsStaticConfigCmd} >> \$sysroot/root/alpin
 # To determine Windows network IPv4 static or dhcp.
 echo "Network4Config  "${Network4Config} >> \$sysroot/root/alpine.config
 
+# To determine Windows network IPv6 static or dhcp.
+echo "Network6Config  "${Network6Config} >> \$sysroot/root/alpine.config
+
 # To determine dd package decompress method.
 echo "DEC_CMD  "${DEC_CMD} >> \$sysroot/root/alpine.config
 
