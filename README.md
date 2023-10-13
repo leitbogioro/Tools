@@ -98,8 +98,8 @@ If you need to add other parameters,a certain name of distributions must be assi
 <br />
 
 **-windows 10/11/2012/2016/2019/2022**: Optional list of distributions:
-- Windows 10 Enterprise LTSC 22H2 for simplified Chinese and Japanese, 23H2 for English.
-- Windows 11 Pro for Workstation 22H2 for simplified Chinese and Japanese, 23H2 for English.
+- Windows 10 Enterprise LTSC 22H2 for simplified Chinese and Japanese, 23H2 for English
+- Windows 11 Pro for Workstation 22H2 for simplified Chinese and Japanese, 23H2 for English
 - Windows Server 2012 R2
 - Windows Server 2016
 - Windows Server 2019
