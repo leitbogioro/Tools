@@ -3,23 +3,23 @@
 set setipv4mode=on
 set setipv6mode=on
 
-::IPv4 Static
+::ipv4 Static
 set staticip=IPv4
-::IPv4 Subnet
+::ipv4 Subnet
 set subnetmask=actualIp4Subnet
-::IPv4 Gateway
+::ipv4 Gateway
 set gateways=GATE
-::IPv4 Dns
+::ipv4 Dns
 set dnsserver1=ipDNS1
 set dnsserver2=ipDNS2
 
-::IPv6 Static
+::ipv6 Static
 set staticip6=ip6Addr
-::IPv6 Subnet
+::ipv6 Subnet
 set subnetmask6=actualIp6Prefix
-::IPv6 Gateway
+::ipv6 Gateway
 set gateways6=ip6Gate
-::IPv6 Dns
+::ipv6 Dns
 set dns6server1=ip6DNS1
 set dns6server2=ip6DNS2
 
@@ -30,18 +30,18 @@ for /f "tokens=6-8" %%i in ('netsh interface ip show int ^| findstr /v /i "disco
 set systemDisk=%SystemDrive:~0,1%
 for /f "tokens=2" %%a in ('echo list vol ^| diskpart ^| findstr "\<%systemDisk%\>"') do (echo select disk 0 & echo select vol %%a & echo extend) | diskpart
 
-:: Write IPv4 static configs
+:: Write ipv4 static configs
 echo; %setipv4mode% | find "on" && goto:enable || goto:disable
 :enable
 wmic nicconfig where ipenabled=true call enablestatic(%staticip%),(%subnetmask%)
-::Using IPv4 of local server as a temporary "gateway" to make sure all of static IPv4 configs can be recognized by network service.
+::Using ipv4 of local server as a temporary "gateway" to make sure all of static ipv4 configs can be recognized by network service.
 wmic nicconfig where ipenabled=true call setgateways(%staticip%)
 ::Replace temporary gateway to an actual one.
 wmic nicconfig where ipenabled=true call setgateways(%gateways%)
 wmic nicconfig where ipenabled=true call setdnsserversearchorder(%dnsserver1%,%dnsserver2%)
 :disable
 
-:: Write IPv6 static configs
+:: Write ipv6 static configs
 echo; %setipv6mode% | find "on" && goto:enable || goto:disable
 :enable
 netsh interface ipv6 add address "%interfaceName%" %staticip6%/%subnetmask6%
