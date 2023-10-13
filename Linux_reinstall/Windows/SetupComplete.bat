@@ -23,8 +23,9 @@ set gateways6=ip6Gate
 set dns6server1=ip6DNS1
 set dns6server2=ip6DNS2
 
-::Find Network Adapter Name
-for /f "tokens=6-8" %%i in ('netsh interface ip show int ^| findstr /v /i "disconnected loopback vmware" ^| findstr /n ^^^^ ^| findstr "^[4]"') do set interfaceName=%%i %%j %%k
+::Find Network Adapter Name and Index
+for /f "tokens=6-8" %%i in ('netsh interface ip show int ^| findstr /v /i "disconnected loopback" ^| findstr /n ^^^^ ^| findstr "^[4]"') do set interfaceName=%%i %%j %%k
+for /f "tokens=2" %%l in ('netsh interface ip show int ^| findstr /v /i "disconnected loopback" ^| findstr /n ^^^^ ^| findstr "^[4]"') do set interfaceIdx=%%l
 
 ::Expand system partition
 set systemDisk=%SystemDrive:~0,1%
@@ -44,12 +45,12 @@ wmic nicconfig where ipenabled=true call setdnsserversearchorder(%dnsserver1%,%d
 :: Write ipv6 static configs
 echo; %setipv6mode% | find "on" && goto:enable || goto:disable
 :enable
-netsh interface ipv6 add address "%interfaceName%" %staticip6%/%subnetmask6%
-netsh interface ipv6 add route "::/0" "%interfaceName%" %gateways6%
-netsh interface ipv6 add dnsservers "%interfaceName%" %dns6server1%
-netsh interface ipv6 add dnsservers "%interfaceName%" %dns6server2%
-netsh interface set interface "%interfaceName%" disabled
-netsh interface set interface "%interfaceName%" enabled
+netsh interface ipv6 add address %interfaceIdx% %staticip6%/%subnetmask6%
+netsh interface ipv6 add route "::/0" %interfaceIdx% %gateways6%
+netsh interface ipv6 add dnsservers %interfaceIdx% %dns6server1%
+netsh interface ipv6 add dnsservers %interfaceIdx% %dns6server2%
+netsh interface set interface %interfaceIdx% disabled
+netsh interface set interface %interfaceIdx% enabled
 del %0
 pause
 :disable
