@@ -104,7 +104,7 @@ If you need to add other parameters,a certain name of distributions must be assi
 - Windows Server 2016
 - Windows Server 2019
 - Windows Server 2022
-&nbsp;
+<br />
 Notes: Windows 10 and 11 23H2 for English preferred to use base images of tiny10 and tiny11 which were developed and optimized by <a href="https://twitter.com/NTDEV_">ntdev</a>
 <br />
 <br />
