@@ -717,6 +717,7 @@ function getDisk() {
 	}
 
 	# Redhat cloud init install needs at least 10GB drive space.
+	# Windows needs at least 15GB drive space.
 	diskCapacity=$(lsblk -ipb | grep -w "$IncDisk" | awk {'print $4'})
 }
 
@@ -3268,7 +3269,12 @@ setDisk=$(echo "$setDisk" | sed 's/[A-Z]/\l&/g')
 getDisk "$setDisk" "$linux_relese"
 if [[ "$targetRelese" == 'AlmaLinux' ]] || [[ "$targetRelese" == 'Rocky' ]]; then
 	[[ "$diskCapacity" -lt "10737418240" ]] && {
-		echo -ne "\n[${red}Error${plain}] Minimum system hard drive requirement is 10GB! \n\n"
+		echo -ne "\n[${red}Error${plain}] Minimum system hard drive requirement is 10 GB! \n\n"
+		exit 1
+	}
+elif [[ "$targetRelese" == 'Windows' ]]; then
+	[[ "$diskCapacity" -lt "16106127360" ]] && {
+		echo -ne "\n[${red}Error${plain}] Minimum system hard drive requirement is 15 GB! \n\n"
 		exit 1
 	}
 fi
