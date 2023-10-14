@@ -4428,7 +4428,7 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
 		# }
 		#
 		[[ -n $(grep "initrdfail" /tmp/grub.new) ]] && {
-			sed -ri 's/\"\$\{initrdfail\}\" = 1/\"\$\{initrdfail\}\" = \"\"/g' /tmp/grub.new
+			sed -ri 's/\"\$\{initrdfail\}\".*/\"\$\{initrdfail\}\" = \"\" ]; then/g' /tmp/grub.new
 			sed -ri 's/initrdfail/initrdfial/g' /tmp/grub.new
 		}
 
