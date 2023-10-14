@@ -53,6 +53,7 @@ i6AddrNum=$(grep "i6AddrNum" $confFile | awk '{print $2}')
 writeIp6sCmd=$(grep "writeIp6sCmd" $confFile | sed -e 's/writeIp6sCmd  //g')
 HostName=$(grep "HostName" $confFile | awk '{print $2}')
 virtualizationStatus=$(grep "virtualizationStatus" $confFile | awk '{print $2}')
+serialConsolePropertiesForGrub=$(grep "serialConsolePropertiesForGrub" $confFile | sed -e 's/serialConsolePropertiesForGrub  //g')
 setFail2banStatus=$(grep "setFail2banStatus" $confFile | awk '{print $2}')
 setMotd=$(grep "setMotd" $confFile | awk '{print $2}')
 lowMemMode=$(grep "lowMemMode" $confFile | awk '{print $2}')
@@ -199,6 +200,8 @@ fi
 [[ "$virtualizationStatus" == "1" ]] && kernelType="virt" || kernelType="lts"
 
 # Install to hard drive.
+KERNELOPTS="$serialConsolePropertiesForGrub"
+export KERNELOPTS
 export BOOTLOADER="grub"
 printf 'y' | setup-disk -m sys -k $kernelType -s 0 $IncDisk
 
