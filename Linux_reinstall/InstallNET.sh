@@ -3898,20 +3898,22 @@ chmod a+x \$sysroot/etc/profile.d/motd.sh")
 		else
 			ModifyMOTD=""
 		fi
+		if [[ -z "$targetRelese" ]]; then
+  			NetcfgTemplate=$(echo -e "wget --no-check-certificate -O \$sysroot/etc/network/tmp_interfaces ${AlpineNetworkConf}")
+  		else
+    			NetcfgTemplate=""
+    		fi
 		# All the following steps are processed in the temporary Alpine Linux.
 		cat <<EOF | sed -i "${AlpineInitLineNum}r /dev/stdin" /tmp/boot/init
-# Download "interfaces" templates and replace IP details.
-wget --no-check-certificate -O \$sysroot/etc/network/tmp_interfaces ${AlpineNetworkConf}
+# Download an apposite network configure template and is used for replacing IP details in late stages, only for Alpine Linux.
+${NetcfgTemplate}
 
-# Config nameservers.
+# Configure temporary nameservers.
 rm -rf \$sysroot/etc/resolv.conf
 wget --no-check-certificate -O \$sysroot/etc/resolv.conf ${AlpineDnsFile}
 chmod a+x \$sysroot/etc/resolv.conf
 
-# Add customized motd.
-${ModifyMOTD}
-
-# Creat a modify initial file.
+# Creat a file to storage various prerequisite initial configs.
 echo '' > \$sysroot/root/alpine.config
 
 # To determine CPU architecture.
@@ -3922,32 +3924,20 @@ echo "rhelArchitecture  "${rhelArchitecture} >> \$sysroot/root/alpine.config
 # To determine main hard drive.
 echo "IncDisk  "${IncDisk} >> \$sysroot/root/alpine.config
 
-# To determine mirror.
+# To determine mirror, only for Alpine Linux.
 echo "LinuxMirror  "${LinuxMirror} >> \$sysroot/root/alpine.config
 
-# To determine release of Alpine Linux.
+# To determine the release of Alpine Linux.
 echo "alpineVer  "${DIST} >> \$sysroot/root/alpine.config
 
-# To determine release of Redhat.
+# To determine the release of Redhat series for target system.
 echo "RedHatSeries  "${RedHatSeries} >> \$sysroot/root/alpine.config
 
-# To determine target system mirror.
+# To determine the mirror of software for target system.
 echo "targetLinuxMirror  "${targetLinuxMirror} >> \$sysroot/root/alpine.config
 
-# To determine target system security mirror.
+# To determine the mirror of security for target system.
 echo "targetLinuxSecurityMirror  "${targetLinuxSecurityMirror} >> \$sysroot/root/alpine.config
-
-# To determine Windows network static config file.
-echo "windowsStaticConfigCmd  "${windowsStaticConfigCmd} >> \$sysroot/root/alpine.config
-
-# To determine Windows network IPv4 static or dhcp.
-echo "Network4Config  "${Network4Config} >> \$sysroot/root/alpine.config
-
-# To determine Windows network IPv6 static or dhcp.
-echo "Network6Config  "${Network6Config} >> \$sysroot/root/alpine.config
-
-# To determine dd package decompress method.
-echo "DEC_CMD  "${DEC_CMD} >> \$sysroot/root/alpine.config
 
 # To determine timezone.
 echo "TimeZone  "${TimeZone} >> \$sysroot/root/alpine.config
@@ -3958,10 +3948,13 @@ echo 'tmpWORD  '$tmpWORD'' >> \$sysroot/root/alpine.config
 # To determine ssh port.
 echo "sshPORT  "${sshPORT} >> \$sysroot/root/alpine.config
 
-# To determine network adapter name.
+# To determine the name of network adapter.
 echo "networkAdapter  "${networkAdapter} >> \$sysroot/root/alpine.config
 
-# To determine IPv4 static config.
+# To determine the configuration method of IPv4 network is static or dhcp.
+echo "Network4Config  "${Network4Config} >> \$sysroot/root/alpine.config
+
+# To determine the details of IPv4 static.
 echo "IPv4  "${IPv4} >> \$sysroot/root/alpine.config
 echo "MASK  "${MASK} >> \$sysroot/root/alpine.config
 echo "ipPrefix  "${ipPrefix} >> \$sysroot/root/alpine.config
@@ -3975,7 +3968,10 @@ echo "ipDNS2  "${ipDNS2} >> \$sysroot/root/alpine.config
 echo "iAddrNum  "${iAddrNum} >> \$sysroot/root/alpine.config
 echo "writeIpsCmd  "'''${writeIpsCmd}''' >> \$sysroot/root/alpine.config
 
-# To determine Ipv6 static config.
+# To determine the configuration method of IPv6 network is static or dhcp.
+echo "Network6Config  "${Network6Config} >> \$sysroot/root/alpine.config
+
+# To determine the details of IPv6 static.
 echo "ip6Addr  "${ip6Addr} >> \$sysroot/root/alpine.config
 echo "ip6Mask  "${ip6Mask} >> \$sysroot/root/alpine.config
 echo "actualIp6Prefix  "${actualIp6Prefix} >> \$sysroot/root/alpine.config
@@ -3991,31 +3987,40 @@ echo "setIPv6  "${setIPv6} >> \$sysroot/root/alpine.config
 # To determine hostname.
 echo "HostName  "${HostName} >> \$sysroot/root/alpine.config
 
-# To determine whether in virtual or physical machine.
+# To determine whether in a virtual or physical hardware.
 echo "virtualizationStatus  "${virtualizationStatus} >> \$sysroot/root/alpine.config
 
 # To determine console display for Linux kernel.
 echo "serialConsolePropertiesForGrub  "${serialConsolePropertiesForGrub} >> \$sysroot/root/alpine.config
 
-# To determine whether configure fail2ban.
+# To determine whether to configure fail2ban.
 echo "setFail2banStatus  "${setFail2banStatus} >> \$sysroot/root/alpine.config
 
-# To determine whether to delete motd of original system.
+# Add customized motd.
+${ModifyMOTD}
+
+# To determine whether to delete motd for target system.
 echo "setMotd  "${setMotd} >> \$sysroot/root/alpine.config
 
-# To determine whether low memory mode so that reduce preconditioning components to make sure installation succeed on 768MB and lower.
+# To determine whether to enable low memory mode so that reduce preconditioning components to make sure installation succeed on 768MB and lower.
 echo "lowMemMode  "${lowMemMode} >> \$sysroot/root/alpine.config
 
-# To determine dd image url.
+# To determine the url of dd image.
 echo "DDURL  "${DDURL} >> \$sysroot/root/alpine.config
 
-# To determine cloud init url.
+# To determine decompress method for dd package.
+echo "DEC_CMD  "${DEC_CMD} >> \$sysroot/root/alpine.config
+
+# To determine the url of Linux Cloud-init file.
 echo "cloudInitUrl  "${cloudInitUrl} >> \$sysroot/root/alpine.config
 
-# Download initial file.
+# To determine the url of Windows cmd init file.
+echo "windowsStaticConfigCmd  "${windowsStaticConfigCmd} >> \$sysroot/root/alpine.config
+
+# Download initial program.
 wget --no-check-certificate -O \$sysroot/etc/local.d/${AlpineInitFileName} ${AlpineInitFile}
 
-# Set initial file execute automatically.
+# Set initial program to execute automatically.
 chmod a+x \$sysroot/etc/local.d/${AlpineInitFileName}
 ln -s /etc/init.d/local \$sysroot/etc/runlevels/default/
 EOF
