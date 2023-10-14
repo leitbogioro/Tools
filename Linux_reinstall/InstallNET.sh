@@ -993,10 +993,10 @@ function checkGrub() {
 		done
 	fi
 	GRUBDIR=$(echo ${GRUBDIR%?})
-	if [[ $(awk '/menuentry*/{print NF}' $GRUBDIR/$GRUBFILE | head -n 1) -ge "1" ]] || [[ $(awk '/feature*/{print $a}' $GRUBDIR/$GRUBFILE | head -n 1) != "" ]]; then
-		if [[ -n $(grep -w "grub2-mkconfig" $GRUBDIR/$GRUBFILE) ]] || [[ $(type grub2-mkconfig) != "" ]]; then
+	if [[ $(awk '/menuentry*/{print NF}' $GRUBDIR/$GRUBFILE | head -n 1) -ge "1" ]] || [[ $(awk '/feature*/{print $a}' $GRUBDIR/$GRUBFILE | head -n 1) != "" ]] || [[ $(awk '/insmod*/{print $a}' $GRUBDIR/$GRUBFILE | head -n 1) != "" ]]; then
+		if [[ -n $(grep -w "grub2-.*" $GRUBDIR/$GRUBFILE) ]] || [[ $(type grub2-mkconfig) != "" ]]; then
 			GRUBTYPE="isGrub2"
-		elif [[ -n $(grep -w "grub-mkconfig" $GRUBDIR/$GRUBFILE) ]] || [[ $(type grub-mkconfig) != "" ]]; then
+		elif [[ -n $(grep -w "grub-.*" $GRUBDIR/$GRUBFILE) ]] || [[ $(type grub-mkconfig) != "" ]]; then
 			GRUBTYPE="isGrub1"
 		elif [[ "$CurrentOS" == "CentOS" || "$CurrentOS" == "OracleLinux" ]] && [[ "$CurrentOSVer" -le "6" ]]; then
 			GRUBTYPE="isGrub1"
@@ -1023,9 +1023,9 @@ function checkConsole() {
 	done
 	if [[ "$1" == "aarch64" || "$1" == "arm64" ]]; then
 		[[ ! "$ttyConsole" =~ "ttyS" ]] && {
-  			if [[ "$ttyConsole" =~ "tty[0-9]" ]]; then
-     				ttyConsole="${ttyConsole} console=ttyS0 "
-     			else
+			if [[ "$ttyConsole" =~ "tty[0-9]" ]]; then
+				ttyConsole="${ttyConsole} console=ttyS0 "
+			else
 				ttyConsole="${ttyConsole} console=tty1 console=ttyS0 "
 			fi
 		}
@@ -3060,7 +3060,7 @@ fi
 if [[ "$loaderMode" == "0" ]]; then
 	checkGrub "/boot/grub/" "/boot/grub2/" "/etc/" "grub.cfg" "grub.conf" "/boot/efi/EFI/"
 	if [[ -z "$GRUBTYPE" ]]; then
-		echo -ne "\n[${red}Error${plain}] Not Found grub.\n"
+		echo -ne "\n[${red}Error${plain}] Not found grub!\n"
 		exit 1
 	fi
 	checkConsole "$VER"
@@ -3899,10 +3899,10 @@ chmod a+x \$sysroot/etc/profile.d/motd.sh")
 			ModifyMOTD=""
 		fi
 		if [[ -z "$targetRelese" ]]; then
-  			NetcfgTemplate=$(echo -e "wget --no-check-certificate -O \$sysroot/etc/network/tmp_interfaces ${AlpineNetworkConf}")
-  		else
-    			NetcfgTemplate=""
-    		fi
+			NetcfgTemplate=$(echo -e "wget --no-check-certificate -O \$sysroot/etc/network/tmp_interfaces ${AlpineNetworkConf}")
+		else
+			NetcfgTemplate=""
+		fi
 		# All the following steps are processed in the temporary Alpine Linux.
 		cat <<EOF | sed -i "${AlpineInitLineNum}r /dev/stdin" /tmp/boot/init
 # Download an apposite network configure template and is used for replacing IP details in late stages, only for Alpine Linux.
@@ -4336,17 +4336,17 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
 				[ "$tmpCFG" -gt "$CFG0" -a "$tmpCFG" -lt "$CFG2" ] && CFG1="$tmpCFG"
 			done
 			[[ -z "$CFG1" ]] && {
-				echo -ne "\n[${red}Error${plain}] Read $GRUBFILE.\n"
+				echo -ne "\n[${red}Error${plain}] Read $GRUBFILE !\n"
 				exit 1
 			}
 			sed -n "$CFG0,$CFG1"p $READGRUB >/tmp/grub.new
 			[[ -f /tmp/grub.new ]] && [[ "$(grep -c '{' /tmp/grub.new)" -eq "$(grep -c '}' /tmp/grub.new)" ]] || {
-				echo -ne "\n[${red}Error${plain}] Not configure $GRUBFILE.\n"
+				echo -ne "\n[${red}Error${plain}] Not configure $GRUBFILE !\n"
 				exit 1
 			}
 		fi
-		[ ! -f /tmp/grub.new ] && echo -ne "\n[${red}Error${plain}] $GRUBFILE. " && exit 1
-		sed -i "/menuentry.*/c\menuentry\ \'Install OS \[$Relese\ $DIST\ $VER\]\'\ --class debian\ --class\ gnu-linux\ --class\ gnu\ --class\ os\ \{" /tmp/grub.new
+		[ ! -f /tmp/grub.new ] && echo -ne "\n[${red}Error${plain}] $GRUBFILE ! " && exit 1
+		sed -i "/menuentry.*/c\menuentry\ \'Install OS \[$Relese\ $DIST\ $VER\]\'\ --class $linux_relese\ --class\ gnu-linux\ --class\ gnu\ --class\ os\ \{" /tmp/grub.new
 		sed -i "/echo.*Loading/d" /tmp/grub.new
 		INSERTGRUB="$(awk '/menuentry /{print NR}' $GRUBDIR/$GRUBFILE | head -n 1)"
 
@@ -4404,6 +4404,33 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
 		}
 
 		sed -i '$a\\n' /tmp/grub.new
+
+		# To eliminate the undesirable effect of the condition of "initrdfail" in grub for Ubuntu of AWS EC2 arm64 t4g instances.
+		#
+		# menuentry 'Ubuntu' --class ubuntu --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-simple-0694475a-b8e4-4c51-a03f-0c6f41144a12' {
+		#   recordfail
+		#   load_video
+		#   gfxmode $linux_gfx_mode
+		#   insmod gzio
+		#   if [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
+		#   insmod part_gpt
+		#   insmod ext2
+		#   search --no-floppy --fs-uuid --set=root 0694475a-b8e4-4c51-a03f-0c6f41144a12
+		#   if [ "${initrdfail}" = 1 ]; then
+		#     echo  'GRUB_FORCE_PARTUUID set, initrdless boot failed. Attempting with initrd.'
+		#     linux  /boot/vmlinuz-5.19.0-1025-aws root=PARTUUID=7819481c-7167-49eb-8354-9a1efe601215 ro  console=tty1 console=ttyS0 nvme_core.io_timeout=4294967295
+		#     initrd  /boot/initrd.img-5.19.0-1025-aws
+		#   else
+		#     echo  'GRUB_FORCE_PARTUUID set, attempting initrdless boot.'
+		#     linux  /boot/vmlinuz-5.19.0-1025-aws root=PARTUUID=7819481c-7167-49eb-8354-9a1efe601215 ro  console=tty1 console=ttyS0 nvme_core.io_timeout=4294967295 panic=-1
+		#   fi
+		#   initrdfail
+		# }
+		#
+		[[ -n $(grep "initrdfail" /tmp/grub.new) ]] && {
+			sed -ri 's/\"\$\{initrdfail\}\" = 1/\"\$\{initrdfail\}\" = \"\"/g' /tmp/grub.new
+			sed -ri 's/initrdfail/initrdfial/g' /tmp/grub.new
+		}
 
 		sed -i ''${INSERTGRUB}'i\\n' $GRUBDIR/$GRUBFILE
 		sed -i ''${INSERTGRUB}'r /tmp/grub.new' $GRUBDIR/$GRUBFILE
@@ -4520,16 +4547,16 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
 			CFG1="$SetRootCfg"
 		fi
 		[[ -z "$CFG0" || -z "$CFG1" ]] && {
-			echo -ne "\n[${red}Error${plain}] Read $GRUBFILE.\n"
+			echo -ne "\n[${red}Error${plain}] Read $GRUBFILE !\n"
 			exit 1
 		}
 		sed -n "$CFG0,$CFG1"p $GRUBDIR/$GRUBFILE >/tmp/grub.new
 		sed -i -e 's/^/  /' /tmp/grub.new
 		[[ -f /tmp/grub.new ]] && [[ "$(grep -c '{' /tmp/grub.new)" -eq "$(grep -c '}' /tmp/grub.new)" ]] || {
-			echo -ne "\n[${red}Error${plain}] Not configure $GRUBFILE. \n"
+			echo -ne "\n[${red}Error${plain}] Not configure $GRUBFILE !\n"
 			exit 1
 		}
-		[ ! -f /tmp/grub.new ] && echo -ne "\n[${red}Error${plain}] $GRUBFILE.\n" && exit 1
+		[ ! -f /tmp/grub.new ] && echo -ne "\n[${red}Error${plain}] $GRUBFILE !\n" && exit 1
 		# Set IPv6 or distribute unite network adapter interface
 		[[ "$setInterfaceName" == "1" ]] && Add_OPTION="net.ifnames=0 biosdevname=0" || Add_OPTION=""
 		[[ "$setIPv6" == "0" ]] && Add_OPTION="$Add_OPTION ipv6.disable=1" || Add_OPTION="$Add_OPTION"
