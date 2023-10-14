@@ -3994,6 +3994,9 @@ echo "HostName  "${HostName} >> \$sysroot/root/alpine.config
 # To determine whether in virtual or physical machine.
 echo "virtualizationStatus  "${virtualizationStatus} >> \$sysroot/root/alpine.config
 
+# To determine console display for Linux kernel.
+echo "serialConsolePropertiesForGrub  "${serialConsolePropertiesForGrub} >> \$sysroot/root/alpine.config
+
 # To determine whether configure fail2ban.
 echo "setFail2banStatus  "${setFail2banStatus} >> \$sysroot/root/alpine.config
 
