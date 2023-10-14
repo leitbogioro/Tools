@@ -1021,6 +1021,15 @@ function checkConsole() {
 			ttyConsole+="${ttyItems}0 "
 		}
 	done
+	if [[ "$1" == "aarch64" || "$1" == "arm64" ]]; then
+		[[ ! "$ttyConsole" =~ "ttyS" ]] && {
+  			if [[ "$ttyConsole" =~ "tty[0-9]" ]]; then
+     				ttyConsole="${ttyConsole} console=ttyS0 "
+     			else
+				ttyConsole="${ttyConsole} console=tty1 console=ttyS0 "
+			fi
+		}
+	fi
 	ttyConsole=$(echo "$ttyConsole" | sed 's/.$//' | sed 's/tty0/tty1/g')
 	if [[ "$ttyConsole" =~ "ttyS" ]]; then
 		serialConsolePropertiesForGrub="$ttyConsole,115200n8 earlyprintk=ttyS0,115200n8 consoleblank=0"
