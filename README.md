@@ -110,7 +110,7 @@ Optional list of distributions:
 Note: Windows 10 and 11 23H2 for English preferred to use base images of tiny10 and tiny11 which were developed and optimized by <a href="https://twitter.com/NTDEV_">ntdev</a> .
 <br />
 <br />
-<b>Installing Windows by using "bash InstallNET.sh -windows distribution number" supports IPv4/IPv6 dhcp or static, expanding current OS disk partition from 15GB dd image to the actual capacity of the drive. Automatic setting steps of above must be executed after Administrator user logged in(for example, you can log into the newly installed system via VNC first if the router of upstream network supports only static configure method so that accessing server via RDP is unable yet)</b>.
+<b>Installing Windows by using "bash InstallNET.sh -windows distribution number" supports IPv4/IPv6 dhcp or static, expanding current OS disk partition from default 15GB dd image to the actual capacity of the drive. Automatic setting steps of above must be executed after Administrator user logged in(for example, you can log into the newly installed system via VNC first if the router of upstream network supports only static configure method so that accessing server via RDP is unable yet)</b>.
 <br />
 <br />
 <b>All Windows dd images were re-packaged with incepted drivers which are necessary for cloud virtualizations and provided by Teddy Sun and hosting on https://dl.lamp.sh/vhd/ . Thanks and appreciates for his contributions, here are the github and blog pages of him:
@@ -192,7 +192,7 @@ For Fedora, official recommend mirror lists are here:
 <br />
 <br />
 
-**-timezone "like Asia/Tokyo etc"**: It means assign timezone manually, if you are using a proxy to connect to your machine and then execute "InstallNET.sh", automatic timezone configuration may not suitable for you in this situation.
+**-timezone "like Asia/Tokyo etc"**: It means assign timezone manually, if you are using a proxy to connect to the server with ssh service, automatic timezone configuration may not suitable for you in this situation.
 <br />
 <br />
 
@@ -208,7 +208,7 @@ For Fedora, official recommend mirror lists are here:
 <br />
 <br />
 
-**--nomemcheck**: Disable memory check by force so that you can install any OS on any size of the memory in target machine, whether installation will succeed is not guaranteed.
+**--nomemcheck**: Disable memory check by force so that you can install any OS on any size of the memory in target machine, whether installation will succeed is not guaranteed, **this option is only for trouble shotting**.
 <br />
 <br />
 
