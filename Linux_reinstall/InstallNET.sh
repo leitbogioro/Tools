@@ -4407,7 +4407,7 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
 
 		sed -i '$a\\n' /tmp/grub.new
 
-		# To eliminate the undesirable effect of the condition of "initrdfail" in grub for Ubuntu of AWS EC2 arm64 t4g instances.
+		# To eliminate the undesirable effect of the condition of "initrdfail" in grub for Ubuntu series of AWS EC2 arm64 t4g instances.
 		#
 		# menuentry 'Ubuntu' --class ubuntu --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-simple-0694475a-b8e4-4c51-a03f-0c6f41144a12' {
 		#   recordfail
@@ -4429,6 +4429,7 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
 		#   initrdfail
 		# }
 		#
+		# The same as AWS Lightsail.
 		[[ -n $(grep "initrdfail" /tmp/grub.new) ]] && {
 			sed -ri 's/\"\$\{initrdfail\}\".*/\"\$\{initrdfail\}\" = \"\" ]; then/g' /tmp/grub.new
 			sed -ri 's/initrdfail/initrdfial/g' /tmp/grub.new
