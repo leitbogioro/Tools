@@ -75,7 +75,7 @@ For Windows: Teddysun.com
 For Linux: The same as the former system which you were connected by terminal.
 <br />
 <br />
-<b>If you didn't assign any other ssh password or port, after system installation, you must change password(LeitboGi0ro) immediately to prevent unauthorized access!</b>
+<b>If you didn't assign any other ssh password or port, after system installation, you must change the default password immediately or switch to ssh key login to prevent unauthorized access!</b>
 <br />
 <br />
 For Windows: 3389
