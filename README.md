@@ -147,7 +147,7 @@ This option is to set language of dd images of Windows like: -windows 10 -lang "
 
 **Recommended terminal client is Xshell or Putty**
 
-**-port ""**: you can pre-specify ssh port of system, range is 1~65535, both Redhat series or Debian series could be supported, **default is depended on the original system, if getting this value is failed, the value will fall back to '22'**.
+**-port ""**: you can pre-specify ssh port of system, range is 1~65535, this option is not valid for installing Windows, **default is depended on the original system, if getting this value is failed, the value will fall back to '22'**.
 <br />
 <br />
 
@@ -182,11 +182,11 @@ Wait until downloading and unpackaging are all finished, change netboot to forma
 <br />
 <br />
 
-**-timezone "like Asia/Tokyo etc"**: It means assign timezone manually, if the format of the input parameter is incorrect or it's not supported by current operating system, the value will fall back to "Asia/Tokyo". If the parameter is not assigned, the value depends on the geo-location of guest's IP address, if you are using a proxy to connect to the server with ssh service, automatic timezone configuration may not suitable for you in this situation.
+**-timezone "like Asia/Tokyo etc"**: It means assign timezone manually, if the format of the input parameter is incorrect or it's not supported by current operating system, the value will fall back to "Asia/Tokyo". If the parameter is not assigned, the value depends on the geo-location of guest's IP address, if you are using a proxy to connect to the server with ssh service, automatic timezone configuration may not suitable for you in this situation. This option is not valid for Windows.
 <br />
 <br />
 
-**-raid "0, 1, 5, 6 or 10"**: Test succeed on Debian 12, Kali rolling, CentOS 9-stream, AlmaLinux 9, RockyLinux 9, Fedora 38 with raid 0, 1, 5, 6 or 10 disks raid partition recipes, raid 0 or 1 needs at least 2 disks, raid 5 needs at least 3 disks, raid 6 or 10 needs at least 4 disks, **if your machine has only one hard drive or capacity of all drives are not the same or in a virtual environment, don't assign it!**
+**-raid "0, 1, 5, 6 or 10"**: Test succeed on Debian 12, Kali rolling, CentOS 9-stream, AlmaLinux 9, RockyLinux 9, Fedora 38 with native installation method, raid 0, 1, 5, 6 or 10 disks raid partition recipes, not suitable for dd installation, raid 0 or 1 needs at least 2 disks, raid 5 needs at least 3 disks, raid 6 or 10 needs at least 4 disks, **if your machine has only one hard drive or capacity of all drives are not the same or in a virtual environment, don't assign it!**
 <br />
 <br />
 
@@ -194,7 +194,7 @@ Wait until downloading and unpackaging are all finished, change netboot to forma
 <br />
 <br />
 
-**-partition "mbr" or "gpt"**: Default is "mbr", ext4 file system with mbr partition table, if assign "gpt", the partition method will be as xfs file system with gpt partition table. This is only valid for Debian series, single hard drive formatting environment, not suitable for Raid.
+**-partition "mbr" or "gpt"**: Default is "mbr", ext4 file system with mbr partition table, if assign "gpt", the partition method will be as xfs file system with gpt partition table. This is only valid for Debian/Kali, single hard drive formatting environment, not suitable for Raid.
 <br />
 <br />
 
@@ -250,7 +250,7 @@ Wait until downloading and unpackaging are all finished, change netboot to forma
 <br />
 <br />
 
-**--setipv6 "0 is disabled"**: Default will enable IPv6, if your machine is IPv4 stack and provided by Racknerd and Virmach etc. they will give IPv6 DNS for IPv4 stack server, the server will access to invalid IPv6 network for priority, not IPv4 first, you can remove all IPv6 modules force in new os by adding --setipv6 "0" to avoid the situation of above.
+**--setipv6 "0 is disabled"**: Default will enable IPv6, if your machine is IPv4 stack and provided by Racknerd and Virmach etc. they will give IPv6 DNS for IPv4 stack server, the server will access to invalid IPv6 network for priority, not IPv4 first, you can remove all IPv6 modules force in new os by adding --setipv6 "0" to avoid the situation of above. This option is not valid for Windows.
 <br />
 <br />
 
@@ -266,7 +266,7 @@ Wait until downloading and unpackaging are all finished, change netboot to forma
 <br />
 <br />
 
-**--fail2ban**: Install and configure fail2ban to prevent from suspicious ssh port blastings. To reduce occupation of the memory, those servers which memory are less than 2GB will disabled automatically. --fail2ban "0" is disabled by force, --fail2ban "1" is enabled by force.
+**--fail2ban**: Install and configure fail2ban to prevent from suspicious ssh port blastings. To reduce occupation of the memory, those servers which memory are less than 2GB will disabled automatically. --fail2ban "0" is disabled by force, --fail2ban "1" is enabled by force. This option is not valid for Windows.
 <br />
 <br />
 
