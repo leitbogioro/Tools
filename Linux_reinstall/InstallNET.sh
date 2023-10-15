@@ -1014,6 +1014,7 @@ function checkGrub() {
 # Serial console parameters of default grub in official cloud images of several linux distributions:
 # Debian 12 amd64:           console=tty0 console=ttyS0,115200 earlyprintk=ttyS0,115200 consoleblank=0
 # AlmaLinux 9.2 arm64:       console=tty0 console=ttyS0,115200n8
+# RockyLinux 9.2 arm64:      console=ttyS0,115200n8
 # Ubuntu 20.04+ amd/arm64:   console=tty1 console=ttyS0
 function checkConsole() {
 	for ttyItems in "console=tty" "console=ttyAMA" "console=ttyS"; do
@@ -3100,19 +3101,20 @@ clear
 	detectCloudinit
 	if [[ "$linux_relese" == 'rockylinux' || "$linux_relese" == 'almalinux' || "$linux_relese" == 'centos' ]]; then
 		if [[ "$RedHatSeries" == "7" ]]; then
-			echo -ne "\n[${red}Error${plain}] There were no suitable Cloud Images for ${yellow}$Relese $RedHatSeries${plain}!\n"
+			echo -ne "\n[${red}Error${plain}] There were not suitable Cloud Images for ${yellow}$Relese $RedHatSeries${plain}!\n"
 			exit 1
 		fi
 		if [[ "$RedHatSeries" == "8" ]]; then
 			targetRelese='Rocky'
-			[[ "$IPStackType" == "IPv6Stack" || "$internalCloudinitStatus" == "1" ]] && {
-				if [[ "$IPStackType" == "IPv6Stack" ]]; then
-					echo -ne "\n[${red}Error${plain}] ${yellow}$targetRelese $RedHatSeries${plain} doesn't support ${blue}$IPStackType${plain}."
+			# Cloud images of Redhat 8 series could not accept any parameter of IPv6 from cloud init, a higher memory requirement for installation and execution, worse compatibility, failure distribution. Anyone should abandon it in principle.
+			[[ "$IPStackType" != "IPv4Stack" || "$internalCloudinitStatus" == "1" ]] && {
+				if [[ "$IPStackType" != "IPv4Stack" ]]; then
+					echo -ne "\n[${red}Error${plain}] Cloud Image of ${yellow}$targetRelese $RedHatSeries${plain} doesn't support ${blue}$IPStackType${plain}!\n"
 				elif [[ "$internalCloudinitStatus" == "1" ]]; then
-					echo -ne "\n[${red}Error${plain}] Due to internal Cloud Init configurations existed on ${underLine}$cloudinitCdDrive${plain}, $targetRelese $RedHatSeries installation will meet a fatal."
+					echo -ne "\n[${red}Error${plain}] Due to internal Cloud Init configurations existed on ${underLine}$cloudinitCdDrive${plain}, installation of $targetRelese $RedHatSeries will meet a fatal!\n"
 				fi
 				RedHatSeries="$(($RedHatSeries + 1))"
-				echo -ne "\nTry to install ${yellow}AlmaLinux $RedHatSeries${plain} or ${yellow}Rocky $RedHatSeries${plain} instead!\n"
+				echo -ne "\nTry to install ${yellow}AlmaLinux $RedHatSeries${plain} or ${yellow}Rocky $RedHatSeries${plain} instead.\n"
 				exit 1
 			}
 		fi
@@ -4276,7 +4278,7 @@ rm -rf /boot/vmlinuz
 find . | cpio -o -H newc | gzip -1 >/tmp/initrd.img
 
 # Grub config start
-# Debian/Ubuntu/Kali Grub1 set start
+# Debian/Ubuntu/Kali/AlpineLinux Grub1 setting start
 if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
 	if [[ "$setNetbootXyz" == "0" ]]; then
 		READGRUB='/tmp/grub.read'
@@ -4435,7 +4437,13 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
 		sed -i ''${INSERTGRUB}'i\\n' $GRUBDIR/$GRUBFILE
 		sed -i ''${INSERTGRUB}'r /tmp/grub.new' $GRUBDIR/$GRUBFILE
 		[[ -f $GRUBDIR/grubenv ]] && sed -i 's/saved_entry/#saved_entry/g' $GRUBDIR/grubenv
-		# Debian/Ubuntu grub1 set end
+
+		# The value of " set default=... " in "/boot/grub/grub.cfg" in Ubuntu 20.04 of Tencent Cloud is "1", to boot to the new menuentry that we generated, the value of it must be replaced to "0".
+		[[ $(grep "set default=\"[0-9]" $GRUBDIR/$GRUBFILE | tr -cd "[0-9]") != "0" ]] && {
+			sed -ri 's/set default=\"[0-9].*/set default=\"0\"/g' $GRUBDIR/$GRUBFILE
+		}
+
+		# Debian/Ubuntu/Kali/AlpineLinux grub1 setting end
 	elif [[ "$setNetbootXyz" == "1" ]]; then
 		grub-mkconfig -o $GRUBDIR/$GRUBFILE >>/dev/null 2>&1
 		grub-set-default "Bootable ISO Image: netboot.xyz" >>/dev/null 2>&1
@@ -4443,7 +4451,7 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
 	fi
 elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
 	if [[ "$setNetbootXyz" == "0" ]]; then
-		# RedHat grub2 set start
+		# RedHat grub2 setting start
 		# Confirm linux and initrd kernel direction
 		if [[ -f /boot/grub2/grubenv ]] && [[ -d /boot/loader/entries ]] && [[ "$(ls /boot/loader/entries | wc -w)" != "" ]]; then
 			LoaderPath=$(cat /boot/grub2/grubenv | grep 'saved_entry=' | awk -F '=' '{print $2}')
@@ -4597,7 +4605,7 @@ EOF
 		grub2-mkconfig -o $GRUBDIR/$GRUBFILE >>/dev/null 2>&1
 		grub2-set-default "Install $Relese $DIST $VER" >>/dev/null 2>&1
 		grub2-reboot "Install $Relese $DIST $VER" >>/dev/null 2>&1
-		# RedHat grub set end
+		# RedHat grub setting end
 	elif [[ "$setNetbootXyz" == "1" ]]; then
 		grub2-mkconfig -o $GRUBDIR/$GRUBFILE >>/dev/null 2>&1
 		grub2-set-default "Bootable ISO Image: netboot.xyz" >>/dev/null 2>&1
