@@ -60,9 +60,8 @@ If you need to add other parameters, a certain name of distributions must be ass
 ### Windows 11 Pro for Workstations
 <pre><code>bash InstallNET.sh -windows</code></pre>
 
-**Recommended desktop terminal client is Xshell or Putty**
-
 ## Default configurations of SSH or RDP service
+**Recommended desktop terminal client is Xshell or Putty.**
 ### Default user name
 For Linux: root
 <br />
