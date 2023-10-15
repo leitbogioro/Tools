@@ -412,10 +412,12 @@ For more information, please refer to <http://unlicense.org/>
 Microsoft products and services—including images, text, and software downloads (the "content")—are owned either by Microsoft Corporation or by third parties who have granted Microsoft permission to use the content. Microsoft cannot grant you permission for content that is owned by third parties. You may only copy, modify, distribute, display, license, or sell the content if you are granted explicit permission within the End-User License Agreement (EULA) or license terms that accompany the content or are provided in the following guidelines. For more information, consult your copyright attorney.
 <br />
 <br />
-<b>"InstallNET.sh" doesn't provide any third-part activation service for Windows, this function is only aim to assist you with researching, evaluating related features of Windows. "InstallNET.sh" is not responsible or liable if someone cause any illegal circumstance or lose their data by inappropriate using without any backups. "InstallNET.sh" only supports your server to install from Linux to Windows but it can't work well in Windows so that you have no more chance to use "InstallNET.sh" to install from Windows to Linux again.</b>
+<b>"InstallNET.sh" doesn't provide any third-part activation service for Windows, this function is only aim to assist you with researching, evaluating related features of Windows. "InstallNET.sh" only supports your server to install from Linux to Windows but it can't work well in Windows so that you have no more chance to use "InstallNET.sh" to install from Windows to Linux again.</b>
 <br />
 <br />
-<b>You should assume any consequences by your own after executing this program includes: causing data corruptions without any backups, causing irredeemable operation failure of the server.</b>
+<b>"InstallNET.sh" is not responsible or liable if someone cause any illegal circumstance. You should assume any consequences by your own after executing this program includes: causing data corruptions without any backups, causing irredeemable operation failure of the server.</b>
+<br />
+<br />
 
 ## Features and updates:
 - "InstallNET.sh" will give you a clean, safe, official Linux system, and help you escape of your server providers' monitoring.
