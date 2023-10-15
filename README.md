@@ -44,7 +44,6 @@ If you need to add other parameters, a certain name of distributions must be ass
 <pre><code>bash InstallNET.sh -debian</code></pre>
 ### Kali Rolling
 <pre><code>bash InstallNET.sh -kali</code></pre>
-<b>Kali can be installed and run in OracleCloud Ampere A1 ARM64 machine successfully but there are not any output results in VNC screen, just waiting patiently after installation has been finished!</b>
 ### Alpine Linux Edge
 <pre><code>bash InstallNET.sh -alpine</code></pre>
 <b>Alpine Linux is a kind of light Linux release and it's friendly to those machines that have lower performance, system memory at least 256MB is necessary.</b>
