@@ -270,7 +270,7 @@ Wait until downloading and unpackaging are all finished, change netboot to forma
 <br />
 <br />
 
-**-netbootxyz**: Use netbootXYZ(https://netboot.xyz/) to install netbootXYZ supported OS manually, must have VNC, only for x86_64 and AMD64 with BIOS firmware(UEFI is not supported!)
+**-netbootxyz**: Using <a href="https://netboot.xyz/">netbootXYZ</a> to install the OS that it's supported manually, VNC access for manipulation is necessary, make sure the memory capacity of the server is enough to accommodate the whole iso image for installing the target system. <b>Only for AMD64/x86_64 architecture with BIOS firmware. ARM64/aarch64 architecture, UEFI firmware with any architecture could not supported</b>!
 <br />
 <br />
 
