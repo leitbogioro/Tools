@@ -168,6 +168,8 @@ This option is to set language of dd images of Windows like: -windows 10 -lang "
 <br />
 
 **Steps of DD any system that you want to:**
+<br />
+<br />
 <b>The middle handling linux system is Debian 12 with the following steps without any OS assignment</b>:
 <pre><code>bash InstallNET.sh -dd 'DD image download URL'</code></pre>
 Servers based on physical hardware, Intel network adapter, kimsufi etc. : Change netboot to rescue mode, receive temporary username and password from mailbox, login rescue linux, execute:
