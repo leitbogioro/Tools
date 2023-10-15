@@ -39,7 +39,7 @@ Servers in mainland of China:
 <pre><code>wget --no-check-certificate -qO InstallNET.sh 'https://gitee.com/mb9e8j2/Tools/raw/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh</code></pre>
 
 ## Quickly start
-If you need to add other parameters,a certain name of distributions must be assigned!
+If you need to add other parameters, a certain name of distributions must be assigned!
 ### Debian 12
 <pre><code>bash InstallNET.sh -debian</code></pre>
 ### Kali Rolling
