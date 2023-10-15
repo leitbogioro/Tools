@@ -60,8 +60,27 @@ If you need to add other parameters, a certain name of distributions must be ass
 ### Windows 11 Pro for Workstations
 <pre><code>bash InstallNET.sh -windows</code></pre>
 
-## Fully useage sample
-<pre><code>bash InstallNET.sh -debian/kali/ubuntu/centos/almalinux/rockylinux/fedora(os type) 11(os version) -architecture 64(os bit, not necessary) -port "your server port" -pwd 'your server password' -mirror "a valid url for linux image source" -dd/--image "dd image url" -filetype "gz or xz" -timezone "like Asia/Tokyo etc" --network "static"/--ip-addr 'x.x.x.x'(ip address) --ip-mask 'x.x.x.x'(subnet mask) --ip-gate 'x.x.x.x'(gateway) -firmware(Debian with hardware drivers)</code></pre>
+## Default configurations of SSH or RDP service
+### Default user name
+For Linux: root
+<br />
+<br />
+For Windows: Administrator
+### Default password
+For Linux: LeitboGi0ro
+<br />
+<br />
+For Windows: Teddysun.com
+### Default port
+For Linux: The same as the former system which you were connected by terminal.
+<br />
+<br />
+<b>If you didn't assign any other ssh password or port, after system installation, you must change password(LeitboGi0ro) immediately to prevent unauthorized access!</b>
+<br />
+<br />
+For Windows: 3389
+<br />
+<br />
 
 ## Parameters detail descriptions
 **-debian 7-12** : Debian 7 and later
@@ -126,50 +145,6 @@ This option is to set language of dd images of Windows like: -windows 10 -lang "
 <br />
 <br />
 
-**-mirror "a valid DIST mirror url"**: OS install files resource, you can select one which nearest for actual location of your server to upspeed installation.
-<br />
-<br />
-
-For Debian, official recommend mirror lists are here:
-<br />
-<pre><code>https://www.debian.org/mirror/list.html</code></pre>
-<br />
-
-For Kali, official recommend mirror lists are here:
-<br />
-<pre><code>https://http.kali.org/README.mirrorlist</code></pre>
-<br />
-
-For Alpine Linux, official recommend mirror lists are here:
-<br />
-<pre><code>https://mirrors.alpinelinux.org/</code></pre>
-<br />
-
-For CentOS 7 and 8-stream, official recommend mirror lists are here:
-<br />
-<pre><code>https://www.centos.org/download/mirrors/</code></pre>
-<br />
-
-For CentOS 9-stream and later, official recommend mirror lists are here:
-<br />
-<pre><code>https://admin.fedoraproject.org/mirrormanager/mirrors/CentOS</code></pre>
-<br />
-
-For AlmaLinux, official recommend mirror lists are here:
-<br />
-<pre><code>https://mirrors.almalinux.org/</code></pre>
-<br />
-
-For RockyLinux, official recommend mirror lists are here:
-<br />
-<pre><code>https://mirrors.rockylinux.org/mirrormanager/mirrors</code></pre>
-<br />
-
-For Fedora, official recommend mirror lists are here:
-<br />
-<pre><code>https://admin.fedoraproject.org/mirrormanager/mirrors/Fedora</code></pre>
-<br />
-
 **Recommended terminal client is Xshell or Putty**
 
 **-port ""**: you can pre-specify ssh port of system, range is 1~65535, both Redhat series or Debian series could be supported, **default is depended on the original system, if getting this value is failed, the value will fall back to '22'**.
@@ -184,15 +159,28 @@ For Fedora, official recommend mirror lists are here:
 <br />
 <br />
 
-**-dd/--image "DD image from a valid url"**: This parameter is for DD mode in KVM or XEN virtualization platform, current os must be Debian series, for example, if you want to DD windows, you can refer to chapter "How to install Windows?" to get more in this document. This option is also applicable for installing those distributions which under in "Overwriting Packaged Image Mode" like Ubuntu, RockyLinux 8+ and AlmaLinux 9+ in low memory mode.
+**-dd/--image "DD image from a valid url"**: This parameter is for DD mode in KVM or XEN virtualization platform. This option is applicable for "Overwriting Packaged Image Mode".
 <br />
 <br />
+
+For installing Ubuntu in any memory capacties, installing RockyLinux 8+ and AlmaLinux 9+ in low memory mode, installing Windows by using "bash InstallNET.sh -windows", the middle handler is AlpineLinux.
+<br />
+<br />
+
+**Steps of DD any system that you want to:**
+### Servers based on KVM or XEN or QEMU virtualization, the middle handling linux system is Debian 12(bookworm):
+<pre><code>bash InstallNET.sh -dd 'DD image download URL'</code></pre>
+### Servers based on physical hardware, Intel network adapter, kimsufi etc:
+Change netboot to rescue mode, receive mail, get temporary username and password, login rescue linux, execute:
+<pre><code>wget -O- 'DD download URL' | xzcat | dd of=/dev/sda</code></pre>
+Wait until downloading and unpackaging are all finished, change netboot to formal mode, restart rescue linux:
+<pre><code>reboot</code></pre>
 
 **-filetype "gz/xz"**: To determine DD file type, not only ".gz"(default) but also ".xz" can be supported.
 <br />
 <br />
 
-**-timezone "like Asia/Tokyo etc"**: It means assign timezone manually, if you are using a proxy to connect to the server with ssh service, automatic timezone configuration may not suitable for you in this situation.
+**-timezone "like Asia/Tokyo etc"**: It means assign timezone manually, if the format of the input parameter is incorrect or it's not supported by current operating system, the value will fall back to "Asia/Tokyo". If the parameter is not assigned, the value depends on the geo-location of guest's IP address, if you are using a proxy to connect to the server with ssh service, automatic timezone configuration may not suitable for you in this situation.
 <br />
 <br />
 
@@ -288,6 +276,50 @@ For Fedora, official recommend mirror lists are here:
 <br />
 <br />
 
+**-mirror "a valid DIST mirror url"**: OS install files resource, you can select one which nearest for actual location of your server to upspeed installation.
+<br />
+<br />
+
+For Debian, official recommend mirror lists are here:
+<br />
+<pre><code>https://www.debian.org/mirror/list.html</code></pre>
+<br />
+
+For Kali, official recommend mirror lists are here:
+<br />
+<pre><code>https://http.kali.org/README.mirrorlist</code></pre>
+<br />
+
+For Alpine Linux, official recommend mirror lists are here:
+<br />
+<pre><code>https://mirrors.alpinelinux.org/</code></pre>
+<br />
+
+For CentOS 7 and 8-stream, official recommend mirror lists are here:
+<br />
+<pre><code>https://www.centos.org/download/mirrors/</code></pre>
+<br />
+
+For CentOS 9-stream and later, official recommend mirror lists are here:
+<br />
+<pre><code>https://admin.fedoraproject.org/mirrormanager/mirrors/CentOS</code></pre>
+<br />
+
+For AlmaLinux, official recommend mirror lists are here:
+<br />
+<pre><code>https://mirrors.almalinux.org/</code></pre>
+<br />
+
+For RockyLinux, official recommend mirror lists are here:
+<br />
+<pre><code>https://mirrors.rockylinux.org/mirrormanager/mirrors</code></pre>
+<br />
+
+For Fedora, official recommend mirror lists are here:
+<br />
+<pre><code>https://admin.fedoraproject.org/mirrormanager/mirrors/Fedora</code></pre>
+<br />
+
 **-firmware**: Specify drivers for Debian and Kali to support old hardwares, if your server location is in mainland China, program will switch to mirror of 'University of Science and Technology of China(https://mirrors.ustc.edu.cn/debian-cdimage/)' for downloading more quickly, default mirror is from http://cdimage.debian.org/cdimage/.
 <br />
 <br />
@@ -341,21 +373,6 @@ Australia:
 <br />
 <pre><code>bash InstallNET.sh -debian 12 -mirror "http://ftp.au.debian.org/debian/"</code></pre>
 
-## Default configurations
-### Time zone
-Depends on the geo-location of guest's IP(automode) or "Asia/Tokyo"(if the format of the input parameter is incorrect or it's not supported by current operating system in manual mode)
-### Default user name
-root
-### Default password
-LeitboGi0ro
-### Default port
-The same as the former system which you were connected by terminal, if script can't find any port on the former system, the default is 22.
-<br />
-<br />
-<b>If you didn't assign any other ssh password or port, after system installation, you must change password(LeitboGi0ro) and ssh port(22) immediately to prevent unauthorized access!</b>
-<br />
-<br />
-
 ## Errors and solutions:
 In some versions of CentOS 8 which are not subsumed into CentOS-stream are end of supporting by CentOS official, so the source is failure:
 <pre><code>Failed to synchronize cache for repo 'baseos', ignoring this repo.
@@ -371,107 +388,31 @@ If you have enabled and assigned IPv6 address after server had been created in t
 <pre><code>dhclient -6 "network adapter name"</pre></code>
 <pre><code>dhclient -4 "network adapter name"</pre></code>
 
-## How to install Windows?
-Notice: Microsoft products and services—including images, text, and software downloads (the "content")—are owned either by Microsoft Corporation or by third parties who have granted Microsoft permission to use the content. Microsoft cannot grant you permission for content that is owned by third parties. You may only copy, modify, distribute, display, license, or sell the content if you are granted explicit permission within the End-User License Agreement (EULA) or license terms that accompany the content or are provided in the following guidelines. For more information, consult your copyright attorney.
+## Fully useage sample
+<pre><code>bash InstallNET.sh -debian/kali/ubuntu/centos/almalinux/rockylinux/fedora(os type) 11(os version) -architecture 64(os bit, not necessary) -port "your server port" -pwd 'your server password' -mirror "a valid url for linux image source" -dd/--image "dd image url" -filetype "gz or xz" -timezone "like Asia/Tokyo etc" --network "static"/--ip-addr 'x.x.x.x'(ip address) --ip-mask 'x.x.x.x'(subnet mask) --ip-gate 'x.x.x.x'(gateway) -firmware(Debian with hardware drivers)</code></pre>
+
+## The Unlicense and Legal notice:
+This is free and unencumbered software released into the public domain.
+<br />
+<br />
+Anyone is free to copy, modify, publish, use, compile, sell, or distribute this software, either in source code form or as a compiled binary, for any purpose, commercial or non-commercial, and by any means.
+<br />
+<br />
+In jurisdictions that recognize copyright laws, the author or authors
+of this software dedicate any and all copyright interest in the software to the public domain. We make this dedication for the benefit of the public at large and to the detriment of our heirs and successors. We intend this dedication to be an overt act of
+relinquishment in perpetuity of all present and future rights to this software under copyright law.
+<br />
+<br />
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+<br />
+<br />
+For more information, please refer to <http://unlicense.org/>
+<br />
+<br />
+Microsoft products and services—including images, text, and software downloads (the "content")—are owned either by Microsoft Corporation or by third parties who have granted Microsoft permission to use the content. Microsoft cannot grant you permission for content that is owned by third parties. You may only copy, modify, distribute, display, license, or sell the content if you are granted explicit permission within the End-User License Agreement (EULA) or license terms that accompany the content or are provided in the following guidelines. For more information, consult your copyright attorney.
 <br />
 <br />
 <b>"InstallNET.sh" doesn't provide any third-part activation service for Windows, this function is only aim to assist you with researching, evaluating related features of Windows. "InstallNET.sh" is not responsible or liable if someone cause any illegal circumstance or lose their data by inappropriate using without any backups. "InstallNET.sh" only supports your server to install from Linux to Windows but it can't work well in Windows so that you have no more chance to use "InstallNET.sh" to install from Windows to Linux again.</b>
-### Servers based on KVM or XEN or QEMU virtualization, the middle handling linux system is Debian 12(bookworm):
-<pre><code>bash InstallNET.sh -dd 'DD image download URL'</code></pre>
-### Servers based on physical hardware, Intel network adapter, kimsufi etc:
-Change netboot to rescue mode, receive mail, get temporary username and password, login rescue linux, execute:
-<pre><code>wget -O- 'DD download URL' | xzcat | dd of=/dev/sda</code></pre>
-Wait until downloading and unpackaging are all finished, change netboot to formal mode, restart rescue linux:
-<pre><code>reboot</code></pre>
-#### Initial connection configurations, hardware requirements and available Windows series DD image download URLs which are provided by TeddySun:
-Username: **Administrator**
-<br />
-Password: **Teddysun.com**
-<br />
-RDC(Remote Desktop Connection) port: 5900
-<br />
-Network: **IPv4 DHCP is necessary**
-<br />
-CPU: **AMD64** architecture, single core at least, dual core or more is recommend.
-<br />
-Hard Drive: **20GB at least**, 50GB or more, SSD is recommend.
-<br />
-Memory: **2GB at least**, 8GB or more is recommend.
-
-##### For BIOS firmware and MBR partition table #####
-
-- Windows 11 Pro for Workstations 22H2
-
-Chinese: https://dl.lamp.sh/vhd/zh-cn_windows11_22h2.xz
-<br />
-English: https://dl.lamp.sh/vhd/en-us_windows11_22h2.xz
-<br />
-Japanese: https://dl.lamp.sh/vhd/ja-jp_windows11_22h2.xz
-<br />
-
-- Windows Server 2022 Datacenter
-
-Chinese: https://dl.lamp.sh/vhd/zh-cn_win2022.xz
-<br />
-English: https://dl.lamp.sh/vhd/en-us_win2022.xz
-<br />
-Japanese: https://dl.lamp.sh/vhd/ja-jp_win2022.xz
-<br />
-
-- Windows 10 Enterprise LTSC
-
-Chinese: https://dl.lamp.sh/vhd/zh-cn_windows10_ltsc.xz
-<br />
-English: https://dl.lamp.sh/vhd/en-us_windows10_ltsc.xz
-<br />
-Japanese: https://dl.lamp.sh/vhd/ja-jp_windows10_ltsc.xz
-<br />
-
-- Windows Server 2012 R2 Datacenter
-
-Chinese: https://dl.lamp.sh/vhd/cn_win2012r2.xz
-<br />
-English: https://dl.lamp.sh/vhd/en_win2012r2.xz
-<br />
-Japanese: https://dl.lamp.sh/vhd/ja_win2012r2.xz
-
-##### For UEFI firmware and GPT partition table #####
-
-- Windows 11 Pro for Workstations 22H2
-
-Chinese: https://dl.lamp.sh/vhd/zh-cn_windows11_22h2_uefi.xz
-<br />
-English: https://dl.lamp.sh/vhd/en-us_windows11_22h2_uefi.xz
-<br />
-Japanese: https://dl.lamp.sh/vhd/ja-jp_windows11_22h2_uefi.xz
-<br />
-
-- Windows Server 2022 Datacenter
-
-Chinese: https://dl.lamp.sh/vhd/zh-cn_win2022_uefi.xz
-<br />
-English: https://dl.lamp.sh/vhd/en-us_win2022_uefi.xz
-<br />
-Japanese: https://dl.lamp.sh/vhd/ja-jp_win2022_uefi.xz
-<br />
-
-- Windows 10 Enterprise LTSC
-
-Chinese: https://dl.lamp.sh/vhd/zh-cn_win10_ltsc_uefi.xz
-<br />
-English: https://dl.lamp.sh/vhd/en-us_win10_ltsc_uefi.xz
-<br />
-Japanese: https://dl.lamp.sh/vhd/ja-jp_win10_ltsc_uefi.xz
-<br />
-
-- Windows Server 2012 R2 Datacenter
-
-Chinese: https://dl.lamp.sh/vhd/cn_win2012r2_uefi.xz
-<br />
-English: https://dl.lamp.sh/vhd/en_win2012r2_uefi.xz
-<br />
-Japanese: https://dl.lamp.sh/vhd/ja_win2012r2_uefi.xz
-<br />
 
 ## Features and updates:
 - "InstallNET.sh" will give you a clean, safe, official Linux system, and help you escape of your server providers' monitoring.
