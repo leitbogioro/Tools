@@ -168,13 +168,14 @@ For installing Ubuntu in any memory capacties, installing RockyLinux 8+ and Alma
 <br />
 
 **Steps of DD any system that you want to:**
-### Servers based on KVM or XEN or QEMU virtualization, the middle handling linux system is Debian 12(bookworm):
+Servers based on KVM or XEN or QEMU virtualization, the middle handling linux system is Debian 12:
 <pre><code>bash InstallNET.sh -dd 'DD image download URL'</code></pre>
-### Servers based on physical hardware, Intel network adapter, kimsufi etc:
+Servers based on physical hardware, Intel network adapter, kimsufi etc:
 Change netboot to rescue mode, receive mail, get temporary username and password, login rescue linux, execute:
 <pre><code>wget -O- 'DD download URL' | xzcat | dd of=/dev/sda</code></pre>
 Wait until downloading and unpackaging are all finished, change netboot to formal mode, restart rescue linux:
 <pre><code>reboot</code></pre>
+<br />
 
 **-filetype "gz/xz"**: To determine DD file type, not only ".gz"(default) but also ".xz" can be supported.
 <br />
