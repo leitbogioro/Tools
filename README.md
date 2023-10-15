@@ -163,15 +163,14 @@ This option is to set language of dd images of Windows like: -windows 10 -lang "
 <br />
 <br />
 
-For installing Ubuntu in any memory capacties, installing RockyLinux 8+ and AlmaLinux 9+ in low memory mode, installing Windows by using "bash InstallNET.sh -windows", the middle handler is AlpineLinux.
+<b>For installing Ubuntu in any memory capacties, installing RockyLinux 8+ and AlmaLinux 9+ in low memory mode, installing Windows by using "bash InstallNET.sh -ubuntu/rocky/alma/windows", the middle handler is AlpineLinux</b>.
 <br />
 <br />
 
 **Steps of DD any system that you want to:**
-Servers based on KVM or XEN or QEMU virtualization, the middle handling linux system is Debian 12:
+<b>The middle handling linux system is Debian 12 with the following steps without any OS assignment</b>:
 <pre><code>bash InstallNET.sh -dd 'DD image download URL'</code></pre>
-Servers based on physical hardware, Intel network adapter, kimsufi etc:
-Change netboot to rescue mode, receive mail, get temporary username and password, login rescue linux, execute:
+Servers based on physical hardware, Intel network adapter, kimsufi etc. : Change netboot to rescue mode, receive temporary username and password from mailbox, login rescue linux, execute:
 <pre><code>wget -O- 'DD download URL' | xzcat | dd of=/dev/sda</code></pre>
 Wait until downloading and unpackaging are all finished, change netboot to formal mode, restart rescue linux:
 <pre><code>reboot</code></pre>
