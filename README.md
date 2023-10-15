@@ -107,10 +107,13 @@ Optional list of distributions:
 - Windows Server 2019
 - Windows Server 2022
 <br />
-Notes: Windows 10 and 11 23H2 for English preferred to use base images of tiny10 and tiny11 which were developed and optimized by <a href="https://twitter.com/NTDEV_">ntdev</a> .
+Note: Windows 10 and 11 23H2 for English preferred to use base images of tiny10 and tiny11 which were developed and optimized by <a href="https://twitter.com/NTDEV_">ntdev</a> .
 <br />
 <br />
-<b>Installing Windows by using "bash InstallNET.sh -windows distribution number" supports IPv4/IPv6 dhcpair static, expanding current OS disk partition. Automatic setting steps must be executed after user logged in(for example, you can log into the newly installed system via VNC first if the method of upstream network configuration is static so that accessing server via RDP is unable yet). All images were re-packaged with incepted drivers which are necessary for cloud virtualizations and provided by Teddy Sun and hosting on https://dl.lamp.sh/vhd/ . Thanks and appreciates for his contributions, here are the github and blog pages of him:<br />
+<b>Installing Windows by using "bash InstallNET.sh -windows distribution number" supports IPv4/IPv6 dhcp or static, expanding current OS disk partition from 15GB dd image to the actual capacity of the drive. Automatic setting steps of above must be executed after Administrator user logged in(for example, you can log into the newly installed system via VNC first if the router of upstream network supports only static configure method so that accessing server via RDP is unable yet)</b>.
+<br />
+<br />
+<b>All Windows dd images were re-packaged with incepted drivers which are necessary for cloud virtualizations and provided by Teddy Sun and hosting on https://dl.lamp.sh/vhd/ . Thanks and appreciates for his contributions, here are the github and blog pages of him:
 https://github.com/teddysun/<br />
 https://teddysun.net/<br />
 https://teddysun.com/
