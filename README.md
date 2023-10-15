@@ -174,7 +174,7 @@ This option is to set language of dd images of Windows like: -windows 10 -lang "
 <pre><code>bash InstallNET.sh -dd 'DD image download URL'</code></pre>
 Servers based on physical hardware, Intel network adapter, kimsufi etc. : Change netboot to rescue mode, receive temporary username and password from mailbox, login rescue linux, execute:
 <pre><code>wget -O- 'DD download URL' | xzcat | dd of=/dev/sda</code></pre>
-Wait until downloading and unpackaging are all finished, change netboot to formal mode, restart rescue linux:
+Wait until downloading and unpackaging are all finished, change netboot to formal mode, exit from rescue Linux to the newly installed system:
 <pre><code>reboot</code></pre>
 <br />
 
