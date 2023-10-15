@@ -110,7 +110,7 @@ Optional list of distributions:
 Notes: Windows 10 and 11 23H2 for English preferred to use base images of tiny10 and tiny11 which were developed and optimized by <a href="https://twitter.com/NTDEV_">ntdev</a> .
 <br />
 <br />
-<b>Installing Windows by using "bash InstallNET.sh -windows distribution number" supports IPv4/IPv6 dhcp and static, expanding current OS disk partition. Automatic setting steps must be executed after user logged in(for example, you can log into the newly installed system via VNC first if the method of upstream network configuration is static). All images were re-packaged with incepted drivers which are necessary for cloud virtualizations and provided by teddysun and hosting on https://dl.lamp.sh/vhd/ . Thanks and appreciates for his contributions, here are the github and blog pages of him:<br />
+<b>Installing Windows by using "bash InstallNET.sh -windows distribution number" supports IPv4/IPv6 dhcpair static, expanding current OS disk partition. Automatic setting steps must be executed after user logged in(for example, you can log into the newly installed system via VNC first if the method of upstream network configuration is static so that accessing server via RDP is unable yet). All images were re-packaged with incepted drivers which are necessary for cloud virtualizations and provided by Teddy Sun and hosting on https://dl.lamp.sh/vhd/ . Thanks and appreciates for his contributions, here are the github and blog pages of him:<br />
 https://github.com/teddysun/<br />
 https://teddysun.net/<br />
 https://teddysun.com/
@@ -193,7 +193,7 @@ For Fedora, official recommend mirror lists are here:
 <br />
 <br />
 
-**-raid "0, 1, 5, 6 or 10"**: Test succeed on Debian 12, Kali rolling, CentOS 9-stream, AlmaLinux 9, RockyLinux 9, Fedora 38 with raid 0, 1, 5, 6 or 10 disks raid partition recipes, raid 0 or 1 needs at least 2 disks, raid 5 needs at least 3 disks, raid 6 or 10 needs at least 4 disks, if your machine has only one hard drive, don't assign it!
+**-raid "0, 1, 5, 6 or 10"**: Test succeed on Debian 12, Kali rolling, CentOS 9-stream, AlmaLinux 9, RockyLinux 9, Fedora 38 with raid 0, 1, 5, 6 or 10 disks raid partition recipes, raid 0 or 1 needs at least 2 disks, raid 5 needs at least 3 disks, raid 6 or 10 needs at least 4 disks, **if your machine has only one hard drive or capacity of all drives are not the same or in a virtual environment, don't assign it!**
 <br />
 <br />
 
@@ -209,7 +209,11 @@ For Fedora, official recommend mirror lists are here:
 <br />
 <br />
 
-**--cloudkernel**: Replace formal Linux kernel to cloud kernel because numerous hardware drivers like printers, scanners, sound cards, usb controllers etc. which are not necessary in environment of virtual machines of Cloud Computing Platforms and these will be eliminated in the latter aims to help reducing space occupation of memory and hard drive. In situation of raid or dd(Windows) mode, installing cloud kernel will be disabled. --cloudkernel "0" is to disable installing Linux cloud kernel by force, --cloudkernel "1" is to enable installing cloud kernel by force. This option is only valid for installing to Debian 11+/Kali/AlpineLinux. Cloud kernel executing on some hardwares like Oracle Cloud arm64 servers will cause guest display in VNC be disabled, to avoid this, you may assign --cloudkernel "0" to switch to installing traditional Linux kernel by force. For virtualization of VMware and VirtualBox, installing cloud kernel will cause booting failed.
+**--cloudkernel**: Replace formal Linux kernel to cloud kernel because numerous hardware drivers like printers, scanners, sound cards, usb controllers etc. which are not necessary in environment of virtual machines of Cloud Computing Platforms and these will be eliminated in the latter aims to help reducing space occupation of memory and hard drive. In situation of raid or dd(Windows) mode, installing cloud kernel will be disabled. --cloudkernel "0" is to disable installing Linux cloud kernel by force, --cloudkernel "1" is to enable installing cloud kernel by force. This option is only valid for installing to Debian 11+/Kali/AlpineLinux. **Cloud kernel executing on some hardwares like Oracle Cloud arm64 servers will cause guest display in VNC be disabled, to avoid this, you may assign --cloudkernel "0" to switch to installing traditional Linux kernel by force**. For virtualization of VMware and VirtualBox, installing cloud kernel will cause booting failed.
+<br />
+<br />
+
+**--motd**: Enable to insert a set of modified MOTD(message of the day) scripts for a convenience to check executing status of a server when connecting by ssh shell, default is disabled, only available for Debian/Kali/AlpineLinux.
 <br />
 <br />
 
@@ -266,10 +270,6 @@ For Fedora, official recommend mirror lists are here:
 <br />
 
 **--autoplugadapter**: Only valid for Debian/Kali, the connection method of network adapter will be replaced from "allow-hotplug" to "auto" in /etc/network/interfaces. --autoplugadapter "0" is disabled by force, --autoplugadapter "1" is enabled, it's enabled by default. When add this, for multiple interfaces environment, if the interface which is configurated by "auto", regardless of it is plugged by internet cable, Debian/Kali will continuously try to wake and start up it contains with dhcp even timeout. Set up with "allow-hotplug(default setting by Debian/Kali installer)" will skip this problem, but if one interface has more than 1 IP or it will connect to another network bridge, when system restarted, the interfaces' initialization will be failed, in most of VPS environments, the interfaces of machine should be stable, so replace the default from "allow-hotplug" to "auto" for interfaces config method is a better idea, but it causes some server spending a long time to boot up(try to activate all internet adapters and waiting dhcp fatal time). Because the default configure method "allow-hotplug" will cause network adapter disconnected to the host permanently unless rebooting the system when executing "systemctl restart networking" so in order to avoid this situation, all configure method of valid network adapters will use "auto" instead of "allow-hotplug".
-<br />
-<br />
-
-**--motd**: Enable to insert a set of modified MOTD(message of the day) scripts for a convenience to check executing status of a server when connecting by ssh shell, default is disabled, only available for Debian/Kali/AlpineLinux.
 <br />
 <br />
 
