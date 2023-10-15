@@ -3106,7 +3106,7 @@ clear
 		fi
 		if [[ "$RedHatSeries" == "8" ]]; then
 			targetRelese='Rocky'
-			# Cloud images of Redhat 8 series could not accept any parameter of IPv6 from cloud init, a higher memory requirement for installation and execution, worse compatibility, failure distribution. Anyone should abandon it in principle.
+			# Cloud images of Redhat 8 series could not accept any parameter of IPv6 from cloud init, this is an awful release because of higher memory requirement for installation and execution, worse compatibility. Anyone should abandon it in principle.
 			[[ "$IPStackType" != "IPv4Stack" || "$internalCloudinitStatus" == "1" ]] && {
 				if [[ "$IPStackType" != "IPv4Stack" ]]; then
 					echo -ne "\n[${red}Error${plain}] Cloud Image of ${yellow}$targetRelese $RedHatSeries${plain} doesn't support ${blue}$IPStackType${plain}!\n"
