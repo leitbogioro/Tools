@@ -162,7 +162,7 @@ This option is to set language of dd images of Windows like: -windows 10 -lang "
 <br />
 <br />
 
-<b>For installing Ubuntu in any memory capacties, installing RockyLinux 8+ and AlmaLinux 9+ in low memory mode, installing Windows by using "bash InstallNET.sh -ubuntu/rocky/alma/windows", the middle handler is AlpineLinux</b>.
+<b>For installing Ubuntu in any memory capacties, installing RockyLinux 8+ and AlmaLinux 9+ in low memory mode, installing Windows by using "bash InstallNET.sh -ubuntu/rocky/alma/windows", the middle handler is AlpineLinux, dd installation method of RockyLinux 8+, AlmaLinux 9+ and Windows may take a long time even up to 40 minutes or more if hard drive I/O of system is too low, wait patiently until installation finished</b>.
 <br />
 <br />
 
