@@ -3110,7 +3110,7 @@ clear
 	echo -e "\n${TotalMem} MB"
 }
 
-[[ -n "$virtWhat" ]] && {
+[[ -n "$showAllVirts" ]] && {
 	echo -ne "\n${aoiBlue}# Virtualization and Manufacturer${plain}\n"
 	echo -e "\n${showAllVirts}"
 }
