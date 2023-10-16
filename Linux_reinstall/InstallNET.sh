@@ -3127,7 +3127,7 @@ clear
 			# Cloud images of Redhat 8 series could not accept any parameter of IPv6 from cloud init, this is an awful release because of higher memory requirement for installation and execution, worse compatibility. Anyone should abandon it in principle.
 			[[ "$IPStackType" != "IPv4Stack" || "$internalCloudinitStatus" == "1" ]] && {
 				if [[ "$IPStackType" != "IPv4Stack" ]]; then
-					echo -ne "\n[${red}Error${plain}] Cloud Image of ${yellow}$targetRelese $RedHatSeries${plain} doesn't support ${blue}$IPStackType${plain}!\n"
+					echo -ne "\n[${red}Error${plain}] Cloud Image of ${yellow}$targetRelese $RedHatSeries${plain} doesn't support ${blue}$IPStackType${plain} network!\n"
 				elif [[ "$internalCloudinitStatus" == "1" ]]; then
 					echo -ne "\n[${red}Error${plain}] Due to internal Cloud Init configurations existed on ${underLine}$cloudinitCdDrive${plain}, installation of $targetRelese $RedHatSeries will meet a fatal!\n"
 				fi
