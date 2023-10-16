@@ -1148,12 +1148,13 @@ function checkVirt() {
 	virtType=""
 	virtWhat=""
 	[[ -n $(virt-what) ]] && {
-		for virtItem in $(dmidecode -s system-manufacturer | awk '{print $1}' | sed 's/[A-Z]/\l&/g') $(systemd-detect-virt | sed 's/[A-Z]/\l&/g') $(lscpu | grep -i "hypervisor vendor" | cut -d ':' -f 2 | sed 's/^[ \t]*//g' | sed 's/[A-Z]/\l&/g'); do
+		for virtItem in $(dmidecode -s system-manufacturer | sed 's/[[:space:]]//g' | sed 's/[A-Z]/\l&/g') $(systemd-detect-virt | sed 's/[A-Z]/\l&/g') $(lscpu | grep -i "hypervisor vendor" | cut -d ':' -f 2 | sed 's/^[ \t]*//g' | sed 's/[A-Z]/\l&/g'); do
 			virtType+="$virtItem "
 		done
 		for virtItem in $(virt-what); do
 			virtWhat+="$virtItem "
 		done
+		showAllVirts=$(echo "$virtType$virtWhat" | sed 's/[[:space:]]/\n/g' | sort -u | tr -s '\n' ' ' | sed 's/^[ \t]*//g' | sed 's/[ \t]*$//g')
 		# Does not support OpenVZ or LXC.
 		[[ $(echo $virtWhat | grep -i "openvz") || $(echo $virtWhat | grep -i "lxc") ]] && {
 			echo -ne "\n[${red}Error${plain}] Virtualization of ${yellow}$virtWhat${plain}could not be supported!\n"
@@ -3111,7 +3112,7 @@ clear
 
 [[ -n "$virtWhat" ]] && {
 	echo -ne "\n${aoiBlue}# Virtualization and Manufacturer${plain}\n"
-	echo -e "\n${virtWhat}${virtType}"
+	echo -e "\n${showAllVirts}"
 }
 
 [[ "$lowMemMode" == '1' || "$useCloudImage" == "1" ]] && {
