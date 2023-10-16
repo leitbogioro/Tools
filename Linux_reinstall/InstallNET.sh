@@ -3110,7 +3110,7 @@ clear
 }
 
 [[ -n "$virtWhat" ]] && {
-	echo -ne "\n${aoiBlue}# Virtualizations List${plain}\n"
+	echo -ne "\n${aoiBlue}# Virtualization and Manufacturer${plain}\n"
 	echo -e "\n${virtWhat}${virtType}"
 }
 
