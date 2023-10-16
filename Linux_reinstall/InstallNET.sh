@@ -1084,7 +1084,7 @@ function checkMem() {
 			if [[ "$1" == 'rockylinux' || "$1" == 'almalinux' || "$1" == 'centos' ]]; then
 				if [[ "$2" == "8" ]] || [[ "$1" == 'centos' && "$2" -ge "9" ]]; then
 					[[ "$TotalMem" -le "2228" ]] && {
-						echo -ne "\n[${red}Warning${plain}] Minimum system memory requirement is 2.2 GB for ${blue}KickStart${plain} native method."
+						echo -ne "\n[${red}Warning${plain}] Minimum system memory requirement is 2.2 GB for ${blue}KickStart${plain} native method.\n"
 						if [[ "$2" == "8" ]]; then
 							echo -ne "\nSwitching to ${yellow}Rocky $2${plain} by ${blue}Cloud Init${plain} Installation... \n"
 							lowMemMode="1"
@@ -1100,7 +1100,7 @@ function checkMem() {
 					}
 				elif [[ "$2" -ge "9" ]]; then
 					[[ "$TotalMem" -le "2028" ]] && {
-						echo -ne "\n[${red}Warning${plain}] Minimum system memory requirement is 2 GB for ${blue}Kickstart${plain} native method."
+						echo -ne "\n[${red}Warning${plain}] Minimum system memory requirement is 2 GB for ${blue}Kickstart${plain} native method.\n"
 						echo -ne "\nSwitching to ${blue}Cloud Init${plain} Installation... \n"
 						lowMemMode="1"
 					}
@@ -1157,7 +1157,7 @@ function checkVirt() {
 		# Does not support OpenVZ or LXC.
 		[[ $(echo $virtWhat | grep -i "openvz") || $(echo $virtWhat | grep -i "lxc") ]] && {
 			echo -ne "\n[${red}Error${plain}] Virtualization of ${yellow}$virtWhat${plain}could not be supported!\n"
-			echo -ne "\nTry to refer to the following project: \n\n${underLine}https://github.com/LloydAsp/OsMutation${plain} \n\nfor learning more and then execute it as the re-installation.\n"
+			echo -ne "\nTry to refer to the ${blue}following project${plain}: \n\n${underLine}https://github.com/LloydAsp/OsMutation${plain} \n\nfor learning more and then execute it as the re-installation.\n"
 			exit 1
 		}
 	}
