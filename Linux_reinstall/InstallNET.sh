@@ -1146,10 +1146,21 @@ function checkMem() {
 
 function checkVirt() {
 	virtType=""
-	for Count in $(dmidecode -s system-manufacturer | awk '{print $1}' | sed 's/[A-Z]/\l&/g') $(systemd-detect-virt | sed 's/[A-Z]/\l&/g') $(lscpu | grep -i "hypervisor vendor" | cut -d ':' -f 2 | sed 's/^[ \t]*//g' | sed 's/[A-Z]/\l&/g'); do
-		virtType+="$Count"
-	done
-	virtWhat=$(virt-what)
+	virtWhat=""
+	[[ -n $(virt-what) ]] && {
+		for virtItem in $(dmidecode -s system-manufacturer | awk '{print $1}' | sed 's/[A-Z]/\l&/g') $(systemd-detect-virt | sed 's/[A-Z]/\l&/g') $(lscpu | grep -i "hypervisor vendor" | cut -d ':' -f 2 | sed 's/^[ \t]*//g' | sed 's/[A-Z]/\l&/g'); do
+			virtType+="$virtItem "
+		done
+		for virtItem in $(virt-what); do
+			virtWhat+="$virtItem "
+		done
+		# Does not support OpenVZ or LXC.
+		[[ $(echo $virtWhat | grep -i "openvz") || $(echo $virtWhat | grep -i "lxc") ]] && {
+			echo -ne "\n[${red}Error${plain}] Virtualization of ${yellow}$virtWhat${plain}could not be supported!\n"
+			echo -ne "\nTry to refer to the following project: \n\n${underLine}https://github.com/LloydAsp/OsMutation${plain} \n\nfor learning more and then execute it as the re-installation.\n"
+			exit 1
+		}
+	}
 }
 
 function checkSys() {
@@ -2551,14 +2562,15 @@ function checkDHCP() {
 	[[ "$Network6Config" == "" ]] && Network6Config="isStatic"
 }
 
-# $1 is "$tmpDHCP", $2 is "$virtWhat".
+# $1 is "$tmpDHCP", $2 is "$virtWhat", $3 is "$virtType".
 # For GCP, network config method for netboot kernel must be static.
+# In official template of Debian 10-11, Ubuntu 20.04-22.04 of GCP, the result of "virt-what" can only be shown as "kvm", so we need to figure out the actual manufacturer from both "$virtWhat" and "$virtType".
 function setDhcpOrStatic() {
 	[[ "$1" == "dhcp" || "$1" == "auto" || "$1" == "automatic" || "$1" == "true" || "$1" == "yes" || "$1" == "1" ]] && {
 		Network4Config="isDHCP"
 		Network6Config="isDHCP"
 	}
-	[[ "$1" == "static" || "$1" == "manual" || "$1" == "none" || "$1" == "false" || "$1" == "no" || "$1" == "0" || -n $(echo $2 | grep -io 'google') ]] && {
+	[[ "$1" == "static" || "$1" == "manual" || "$1" == "none" || "$1" == "false" || "$1" == "no" || "$1" == "0" || -n $(echo $2 $3 | grep -io 'google') ]] && {
 		Network4Config="isStatic"
 		Network6Config="isStatic"
 	}
@@ -3097,6 +3109,11 @@ clear
 	echo -e "\n${TotalMem} MB"
 }
 
+[[ -n "$virtWhat" ]] && {
+	echo -ne "\n${aoiBlue}# Virtualizations List${plain}\n"
+	echo -e "\n${virtWhat}${virtType}"
+}
+
 [[ "$lowMemMode" == '1' || "$useCloudImage" == "1" ]] && {
 	detectCloudinit
 	if [[ "$linux_relese" == 'rockylinux' || "$linux_relese" == 'almalinux' || "$linux_relese" == 'centos' ]]; then
@@ -3178,7 +3195,7 @@ ip6DNS=$(checkDNS "$ip6DNS")
 if [[ -n "$ipAddr" && -n "$ipMask" && -n "$ipGate" ]] && [[ -z "$ip6Addr" && -z "$ip6Mask" && -z "$ip6Gate" ]]; then
 	setNet='1'
 	checkDHCP "$CurrentOS" "$CurrentOSVer" "$IPStackType"
-	setDhcpOrStatic "$tmpDHCP" "$virtWhat"
+	setDhcpOrStatic "$tmpDHCP" "$virtWhat" "$virtType"
 	Network4Config="isStatic"
 	acceptIPv4AndIPv6SubnetValue "$ipMask" ""
 	[[ "$IPStackType" != "IPv4Stack" ]] && getIPv6Address
@@ -3191,7 +3208,7 @@ elif [[ -n "$ipAddr" && -n "$ipMask" && -n "$ipGate" ]] && [[ -n "$ip6Addr" && -
 elif [[ -z "$ipAddr" && -z "$ipMask" && -z "$ipGate" ]] && [[ -n "$ip6Addr" && -n "$ip6Mask" && -n "$ip6Gate" ]]; then
 	setNet='1'
 	checkDHCP "$CurrentOS" "$CurrentOSVer" "$IPStackType"
-	setDhcpOrStatic "$tmpDHCP" "$virtWhat"
+	setDhcpOrStatic "$tmpDHCP" "$virtWhat" "$virtType"
 	Network6Config="isStatic"
 	acceptIPv4AndIPv6SubnetValue "" "$ip6Mask"
 	getIPv4Address
@@ -3199,7 +3216,7 @@ fi
 
 if [[ "$setNet" == "0" ]]; then
 	checkDHCP "$CurrentOS" "$CurrentOSVer" "$IPStackType"
-	setDhcpOrStatic "$tmpDHCP" "$virtWhat"
+	setDhcpOrStatic "$tmpDHCP" "$virtWhat" "$virtType"
 	getIPv4Address
 	[[ "$IPStackType" != "IPv4Stack" ]] && getIPv6Address
 	if [[ "$IPStackType" == "BiStack" && "$iAddrNum" -ge "2" || "$i6AddrNum" -ge "2" ]]; then
@@ -4429,7 +4446,7 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
 		#   initrdfail
 		# }
 		#
-		# The same as AWS Lightsail.
+		# The same as AWS Lightsail, GCP.
 		[[ -n $(grep "initrdfail" /tmp/grub.new) ]] && {
 			sed -ri 's/\"\$\{initrdfail\}\".*/\"\$\{initrdfail\}\" = \"\" ]; then/g' /tmp/grub.new
 			sed -ri 's/initrdfail/initrdfial/g' /tmp/grub.new
