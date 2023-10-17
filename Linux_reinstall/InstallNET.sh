@@ -4299,6 +4299,10 @@ find . | cpio -o -H newc | gzip -1 >/tmp/initrd.img
 # Debian/Ubuntu/Kali/AlpineLinux Grub1 setting start
 if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
 	if [[ "$setNetbootXyz" == "0" ]]; then
+		# In templates of Debian of equinix.com, the default "grub.cfg" is not match with the standard format, so it should be re-generated.
+		[[ ! $(grep -iE '/etc/grub.d|begin|end|savedefault|load_video|gfxmode' $GRUBDIR/$GRUBFILE) ]] && {
+			grub-mkconfig -o $GRUBDIR/$GRUBFILE >>/dev/null 2>&1
+		}
 		READGRUB='/tmp/grub.read'
 		[[ -f $READGRUB ]] && rm -rf $READGRUB
 		touch $READGRUB
