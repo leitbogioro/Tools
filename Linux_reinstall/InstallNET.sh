@@ -1145,16 +1145,12 @@ function checkMem() {
 }
 
 function checkVirt() {
-	virtType=""
 	virtWhat=""
+	virtType=""
 	[[ -n $(virt-what) ]] && {
-		for virtItem in $(dmidecode -s system-manufacturer | sed 's/[[:space:]]//g' | sed 's/[A-Z]/\l&/g') $(systemd-detect-virt | sed 's/[A-Z]/\l&/g') $(lscpu | grep -i "hypervisor vendor" | cut -d ':' -f 2 | sed 's/^[ \t]*//g' | sed 's/[A-Z]/\l&/g'); do
-			virtType+="$virtItem "
-		done
 		for virtItem in $(virt-what); do
 			virtWhat+="$virtItem "
 		done
-		showAllVirts=$(echo "$virtType$virtWhat" | sed 's/[[:space:]]/\n/g' | sort -u | tr -s '\n' ' ' | sed 's/^[ \t]*//g' | sed 's/[ \t]*$//g')
 		# Does not support OpenVZ or LXC.
 		[[ $(echo $virtWhat | grep -i "openvz") || $(echo $virtWhat | grep -i "lxc") ]] && {
 			echo -ne "\n[${red}Error${plain}] Virtualization of ${yellow}$virtWhat${plain}could not be supported!\n"
@@ -1162,6 +1158,10 @@ function checkVirt() {
 			exit 1
 		}
 	}
+	for virtItem in $(dmidecode -s system-manufacturer | sed 's/[[:space:]]//g' | sed 's/[A-Z]/\l&/g') $(systemd-detect-virt | sed 's/[A-Z]/\l&/g') $(lscpu | grep -i "hypervisor vendor" | cut -d ':' -f 2 | sed 's/^[ \t]*//g' | sed 's/[A-Z]/\l&/g'); do
+		virtType+="$virtItem "
+	done
+	showAllVirts=$(echo "$virtType$virtWhat" | sed 's/[[:space:]]/\n/g' | sort -u | tr -s '\n' ' ' | sed 's/^[ \t]*//g' | sed 's/[ \t]*$//g')
 }
 
 function checkSys() {
@@ -4448,6 +4448,16 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
 		# }
 		#
 		# The same as AWS Lightsail, GCP.
+		#
+		# "initrdfail" is a recovery feature of Ubuntu. This option is used as when booting without initrd/initramfs for the cloud,
+		# and is not suitable in a normal Ubuntu installation environment. This option is similar to "recordfail",
+		# the variables of "initrdfail" are set on the GRUB side when each booting and then they will be deleted after startup,
+		# the behavior changes at the next startup depending on the contents of the variables.
+		#
+		# Reference: https://gihyo.jp/admin/serial/01/ubuntu-recipe/0746
+		#     Title: 第746回: update-grubの仕組みを使ってUbuntuのGRUBをさらにカスタマイズする
+		#   Chapter: 起動が失敗した時のリカバリー機能
+		#
 		[[ -n $(grep "initrdfail" /tmp/grub.new) ]] && {
 			sed -ri 's/\"\$\{initrdfail\}\".*/\"\$\{initrdfail\}\" = \"\" ]; then/g' /tmp/grub.new
 			sed -ri 's/initrdfail/initrdfial/g' /tmp/grub.new
