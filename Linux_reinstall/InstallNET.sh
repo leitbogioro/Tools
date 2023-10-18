@@ -1024,7 +1024,7 @@ function checkConsole() {
 	done
 	if [[ "$1" == "aarch64" || "$1" == "arm64" ]]; then
 		[[ ! "$ttyConsole" =~ "ttyS" ]] && {
-			if [[ "$ttyConsole" =~ "tty[0-9]" ]]; then
+			if [[ $(echo "$ttyConsole" | grep "tty[0-9]") ]]; then
 				ttyConsole="${ttyConsole} console=ttyS0 "
 			else
 				ttyConsole="${ttyConsole} console=tty1 console=ttyS0 "
@@ -3945,7 +3945,8 @@ echo "LinuxMirror  "${LinuxMirror} >> \$sysroot/root/alpine.config
 # To determine the release of Alpine Linux.
 echo "alpineVer  "${DIST} >> \$sysroot/root/alpine.config
 
-# To determine the release of Redhat series for target system.
+# To determine the distribution and release of Redhat series for target system.
+echo "targetRelese  "${targetRelese} >> \$sysroot/root/alpine.config
 echo "RedHatSeries  "${RedHatSeries} >> \$sysroot/root/alpine.config
 
 # To determine the mirror of software for target system.
