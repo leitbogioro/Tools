@@ -1031,14 +1031,9 @@ function checkConsole() {
 			fi
 		}
 	fi
-	ttyConsole=$(echo "$ttyConsole" | sed 's/.$//' | sed 's/tty0/tty1/g')
-	if [[ "$ttyConsole" =~ "ttyS" ]]; then
-		serialConsolePropertiesForGrub="$ttyConsole,115200n8 earlyprintk=ttyS0,115200n8 consoleblank=0"
-		[[ "$1" == "aarch64" || "$1" == "arm64" ]] && ttyConsole="$ttyConsole,115200n8" || ttyConsole=""
-	elif [[ "$ttyConsole" =~ "ttyAMA" ]]; then
-		serialConsolePropertiesForGrub="$ttyConsole"
-		[[ "$1" == "aarch64" || "$1" == "arm64" ]] && ttyConsole="$ttyConsole" || ttyConsole=""
-	fi
+	ttyConsole=$(echo "$ttyConsole" | sed 's/console=tty[0-9]/console=tty1/g' | sed 's/console=ttyAMA[0-9]/console=ttyAMA0,115200n8/g' | sed 's/console=ttyS[0-9]/console=ttyS0,115200n8/g' | sed 's/.$//')
+	[[ "$ttyConsole" =~ "ttyS" ]] && serialConsolePropertiesForGrub="$ttyConsole earlyprintk=ttyS0,115200n8 consoleblank=0"
+	[[ "$1" == "aarch64" || "$1" == "arm64" ]] || ttyConsole=""
 }
 
 # $1 is $linux_relese, $2 is $RedHatSeries, $3 is $targetRelese
