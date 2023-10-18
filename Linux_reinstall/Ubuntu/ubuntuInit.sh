@@ -50,6 +50,7 @@ targetLinuxMirror=$(grep "targetLinuxMirror" $confFile | awk '{print $2}')
 targetLinuxSecurityMirror=$(grep "targetLinuxSecurityMirror" $confFile | awk '{print $2}')
 cloudInitUrl=$(grep "cloudInitUrl" $confFile | awk '{print $2}')
 setFail2banStatus=$(grep "setFail2banStatus" $confFile | awk '{print $2}')
+serialConsolePropertiesForGrub=$(grep "serialConsolePropertiesForGrub" $confFile | sed -e 's/serialConsolePropertiesForGrub  //g')
 
 # Reset configurations of repositories.
 true >/etc/apk/repositories
@@ -123,6 +124,12 @@ echo 'datasource_list: [ NoCloud, None ]' >/mnt/etc/cloud/cloud.cfg.d/90_dpkg.cf
 [[ "$setIPv6" == "0" ]] && {
 	sed -ri 's/GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0"/GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0 ipv6.disable=1"/g' /mnt/etc/default/grub
 	sed -ri 's/ro net.ifnames=0 biosdevname=0/ro net.ifnames=0 biosdevname=0 ipv6.disable=1/g' /mnt/boot/grub/grub.cfg
+}
+
+# Replace serial console parameters.
+[[ -n "$serialConsolePropertiesForGrub" && $(echo "$serialConsolePropertiesForGrub" | grep "ttyAMA[0-9]") ]] && {
+	sed -ri 's/console=tty1 console=ttyS0/'$serialConsolePropertiesForGrub'/g' /mnt/etc/default/grub.d/50-cloudimg-settings.cfg
+	sed -ri 's/console=tty1 console=ttyS0/'$serialConsolePropertiesForGrub'/g' /mnt/boot/grub/grub.cfg
 }
 
 # Permit root user login by password, change ssh port.
