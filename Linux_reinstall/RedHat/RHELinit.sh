@@ -50,6 +50,7 @@ DEC_CMD=$(grep "DEC_CMD" $confFile | awk '{print $2}')
 cloudInitUrl=$(grep "cloudInitUrl" $confFile | awk '{print $2}')
 RedHatSeries=$(grep "RedHatSeries" $confFile | awk '{print $2}')
 lowMemMode=$(grep "lowMemMode" $confFile | awk '{print $2}')
+serialConsolePropertiesForGrub=$(grep "serialConsolePropertiesForGrub" $confFile | sed -e 's/serialConsolePropertiesForGrub  //g')
 
 # Reset configurations of repositories.
 true >/etc/apk/repositories
@@ -122,7 +123,12 @@ sed -ri 's/^SELINUX=.*/SELINUX=disabled/g' /mnt/etc/selinux/config
 
 # Add tty console for grub.
 sed -ri 's/console=tty0//g' /mnt/etc/default/grub
-sed -ri 's/console=ttyS0,115200n8/console=ttyS0,115200n8 console=tty1/g' /mnt/etc/default/grub
+sed -ri 's/console=ttyS0,115200n8/console=tty1 console=ttyS0,115200n8/g' /mnt/etc/default/grub
+
+# Replace serial console parameters.
+[[ -n "$serialConsolePropertiesForGrub" && $(echo "$serialConsolePropertiesForGrub" | sed 's/[[:space:]]/#/g' | grep "ttyAMA[0-9]") ]] && {
+	sed -ri 's/console=tty1/console=tty1 console=ttyAMA0,115200n8/g' /mnt/etc/default/grub
+}
 
 # Permit root user login by password, change ssh port.
 sed -ri 's/^#?PermitRootLogin.*/PermitRootLogin yes/g' /mnt/etc/ssh/sshd_config
