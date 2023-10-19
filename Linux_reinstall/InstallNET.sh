@@ -1015,7 +1015,7 @@ function checkGrub() {
 # Debian 12 amd64:           console=tty0 console=ttyS0,115200 earlyprintk=ttyS0,115200 consoleblank=0
 # AlmaLinux 9.2 arm64:       console=tty0 console=ttyS0,115200n8
 # RockyLinux 9.2 arm64:      console=ttyS0,115200n8
-# Ubuntu 20.04+ amd/arm64:   console=tty1 console=ttyS0
+# Ubuntu 22.04+ amd/arm64:   console=tty1 console=ttyS0
 # Serial console parameters of "yitian 710" processor in servers of AlibabaCloud ECS:
 # Ubuntu 18.04+ arm64:       console=tty0 console=ttyAMA0,115200n8
 # Cloud images of Ubuntu 20.04-22.04 will boot fail on "yitian 710".
