@@ -1016,6 +1016,9 @@ function checkGrub() {
 # AlmaLinux 9.2 arm64:       console=tty0 console=ttyS0,115200n8
 # RockyLinux 9.2 arm64:      console=ttyS0,115200n8
 # Ubuntu 20.04+ amd/arm64:   console=tty1 console=ttyS0
+# Serial console parameters of "yitian 710" processor in servers of AlibabaCloud ECS:
+# Ubuntu 18.04+ arm64:       console=tty0 console=ttyAMA0,115200n8
+# Cloud images of Ubuntu 20.04-22.04 will boot fail on "yitian 710".
 function checkConsole() {
 	for ttyItems in "console=tty" "console=ttyAMA" "console=ttyS"; do
 		[[ $(grep "$ttyItems" $GRUBDIR/$GRUBFILE) ]] && {
@@ -1048,9 +1051,18 @@ function checkMem() {
 	[[ -z "$TotalMem" ]] && TotalMem=$(($(cat /proc/meminfo | grep "^MemTotal:" | sed 's/kb//i' | grep -o "[0-9]*" | awk -F' ' '{print $NF}') / 1024))
 	[[ -z "$TotalMem" ]] && TotalMem=$(free -m | grep -wi "mem*" | awk '{printf $2}')
 
-	# In any servers that total memory below 2.5GB to install debian, the low memory installation will be force enabled, "lowmem=+0, 1 or 2" is only for Debian like, 0 is lowest, 1 is medium, 2 is the highest.
+	# "lowmem=+0, 1 or 2" is only for Debian/Kali.
+	# "lowmem=+2" is dangerous because it will cause net-installer-kernel booting failed in any memory capacity.
+	# "lowmem=+1" will disable many features including load other drivers to save memory to make installation successful.
+	# "lowmem=+0" is to avoid Debian installer to enable low memory mode by force so that it can urge Debian installer to read "d-i non-free-firmware" from "preseed.cfg" to load many drivers like NVME disks to improve hardware compatibility, tested succeed on 512MB memory servers with Debian, Kali.
 	[[ "$1" == 'debian' ]] || [[ "$1" == 'ubuntu' ]] || [[ "$1" == 'kali' ]] && {
-		[[ "$TotalMem" -ge "2536" ]] && lowmemLevel="" || lowmemLevel="lowmem=+1"
+		if [[ "$TotalMem" -le "452" ]]; then
+			lowmemLevel="lowmem=+1"
+		elif [[ "$TotalMem" -le "1500" ]]; then
+			lowmemLevel="lowmem=+0"
+		else
+			lowmemLevel=""
+		fi
 		[[ "$setMemCheck" == '1' ]] && {
 			[[ "$TotalMem" -le "336" ]] && {
 				echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 384 MB!\n"
@@ -1100,7 +1112,7 @@ function checkMem() {
 						lowMemMode="1"
 					}
 				elif [[ "$2" == "7" ]]; then
-					[[ "$TotalMem" -le "1520" ]] && {
+					[[ "$TotalMem" -le "1500" ]] && {
 						echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 1.5 GB!\n"
 						exit 1
 					}
@@ -3683,8 +3695,6 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]] || [[ "$
 			mv /tmp/$decompressedKaliFirmwareDir/* '/tmp/boot/lib/firmware/'
 		}
 	fi
-	# To avoid to entry into low memory mode.
-	[[ -z "$lowmemLevel" ]] && sed -i '/d-i\ lowmem\/low note/d' /tmp/boot/preseed.cfg
 	# Ubuntu 20.04 and below does't support xfs, force grub-efi installation to the removable media path may cause grub install failed, low memory mode.
 	if [[ "$linux_relese" == 'ubuntu' ]]; then
 		sed -i '/d-i\ partman\/default_filesystem string xfs/d' /tmp/boot/preseed.cfg
@@ -4595,7 +4605,7 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
 		}
 		[ ! -f /tmp/grub.new ] && echo -ne "\n[${red}Error${plain}] $GRUBFILE !\n" && exit 1
 		# Set IPv6 or distribute unite network adapter interface
-		[[ "$setInterfaceName" == "1" ]] && Add_OPTION="net.ifnames=0 biosdevname=0" || Add_OPTION=""
+		[[ "$setInterfaceName" == "1" ]] && Add_OPTION="$Add_OPTION net.ifnames=0 biosdevname=0" || Add_OPTION="$Add_OPTION"
 		[[ "$setIPv6" == "0" ]] && Add_OPTION="$Add_OPTION ipv6.disable=1" || Add_OPTION="$Add_OPTION"
 		# Write menuentry to grub
 		# Find existed boot entries: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/managing_monitoring_and_updating_the_kernel/configuring-kernel-command-line-parameters_managing-monitoring-and-updating-the-kernel#what-boot-entries-are_configuring-kernel-command-line-parameters
