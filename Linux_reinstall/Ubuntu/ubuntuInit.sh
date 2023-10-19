@@ -126,9 +126,18 @@ echo 'datasource_list: [ NoCloud, None ]' >/mnt/etc/cloud/cloud.cfg.d/90_dpkg.cf
 	sed -ri 's/ro net.ifnames=0 biosdevname=0/ro net.ifnames=0 biosdevname=0 ipv6.disable=1/g' /mnt/boot/grub/grub.cfg
 }
 
+# Add console, Ubuntu 20.04 is different from Ubuntu 22.04 .
+[[ ! $(grep "console=tty[0-9] console=ttyS[0-9]" /mnt/etc/default/grub.d/50-cloudimg-settings.cfg) ]] && {
+	sed -ri 's/net.ifnames=0 biosdevname=0/net.ifnames=0 biosdevname=0 console=tty1 console=ttyS0/g' /mnt/etc/default/grub
+	sed -ri 's/net.ifnames=0 biosdevname=0/net.ifnames=0 biosdevname=0 console=tty1 console=ttyS0/g' /mnt/boot/grub/grub.cfg
+}
+
 # Replace serial console parameters.
 [[ -n "$serialConsolePropertiesForGrub" && $(echo "$serialConsolePropertiesForGrub" | sed 's/[[:space:]]/#/g' | grep "ttyAMA[0-9]") ]] && {
 	sed -ri 's/console=tty1/console=tty1 console=ttyAMA0/g' /mnt/etc/default/grub.d/50-cloudimg-settings.cfg
+	[[ ! $(grep "console=tty[0-9] console=ttyS[0-9]" /mnt/etc/default/grub.d/50-cloudimg-settings.cfg) ]] && {
+		sed -ri 's/console=tty1/console=tty1 console=ttyAMA0/g' /mnt/etc/default/grub
+	}
 	sed -ri 's/console=tty1/console=tty1 console=ttyAMA0/g' /mnt/boot/grub/grub.cfg
 }
 
