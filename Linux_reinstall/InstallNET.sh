@@ -1016,7 +1016,8 @@ function checkGrub() {
 # AlmaLinux 9.2 arm64:       console=tty0 console=ttyS0,115200n8
 # RockyLinux 9.2 arm64:      console=ttyS0,115200n8
 # Ubuntu 22.04+ amd/arm64:   console=tty1 console=ttyS0
-# Serial console parameters of "yitian 710" processor in servers of AlibabaCloud ECS:
+# For Ampere A1 arm64 processor, "console=ttyS0" is necessary.
+# Serial console parameters of "yitian 710" arm64 processor in servers of AlibabaCloud ECS:
 # Ubuntu 18.04+ arm64:       console=tty0 console=ttyAMA0,115200n8
 # Cloud images of Ubuntu 20.04-22.04 will boot fail on "yitian 710".
 function checkConsole() {
@@ -1284,7 +1285,8 @@ function checkSys() {
 	# Remove "inetutils-ping" because it does not support the statement of "ping -4" or "ping -6".
 	# "kexec-tools" is also need to be removed because in environment of official template of Debian 12 on Tencent Cloud, whether it is executing on instance of "Lighthouse" or "CVM"(Cloud Virtual Machine).
 	# This component may cause the menuentry of grub which we had generated and wrote can't be booted successfully when rebooting the system.
-	apt purge inetutils-ping kexec-tools -y
+	# "kdump-tools" is a dependence of "kexec-tools".
+	apt purge inetutils-ping kdump-tools kexec-tools -y
 	# Debian like linux OS necessary components.
 	apt install cpio curl dmidecode dnsutils efibootmgr fdisk file gzip iputils-ping jq net-tools openssl tuned util-linux virt-what wget xz-utils -y
 
