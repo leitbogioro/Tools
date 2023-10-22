@@ -1057,7 +1057,7 @@ function checkMem() {
 	# "lowmem=+1" will disable many features including load other drivers to save memory to make installation successful.
 	# "lowmem=+0" is to avoid Debian installer to enable low memory mode by force so that it can urge Debian installer to read "d-i non-free-firmware" from "preseed.cfg" to load many drivers like NVME disks to improve hardware compatibility, tested succeed on 512MB memory servers with Debian, Kali.
 	[[ "$1" == 'debian' ]] || [[ "$1" == 'ubuntu' ]] || [[ "$1" == 'kali' ]] && {
-		if [[ "$TotalMem" -le "452" ]]; then
+		if [[ "$TotalMem" -le "448" ]]; then
 			lowmemLevel="lowmem=+1"
 		elif [[ "$TotalMem" -le "1500" ]]; then
 			lowmemLevel="lowmem=+0"
@@ -1085,7 +1085,7 @@ function checkMem() {
 	# They never optimize or improve it, just tell users they need to pay more to expand their hardware performance and adjust to the endless demand of them. it's not a correct decision.
 	[[ "$setMemCheck" == '1' ]] && {
 		[[ "$1" == 'fedora' || "$1" == 'rockylinux' || "$1" == 'almalinux' || "$1" == 'centos' ]] && {
-			[[ "$TotalMem" -le "452" ]] && {
+			[[ "$TotalMem" -le "448" ]] && {
 				echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 512 MB!\n"
 				exit 1
 			}
@@ -1127,7 +1127,7 @@ function checkMem() {
 		}
 		[[ "$1" == 'alpinelinux' || "$3" == 'Ubuntu' ]] && {
 			if [[ "$3" == 'Ubuntu' ]]; then
-				[[ "$TotalMem" -le "452" ]] && {
+				[[ "$TotalMem" -le "448" ]] && {
 					echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 512 MB!\n"
 					exit 1
 				}
@@ -1173,12 +1173,29 @@ function checkVirt() {
 }
 
 function checkSys() {
+	# Remove AliYunDun(a guard process to support monitoring hardware status, scanning security breaches for alarm etc.) from Alibaba Cloud otherwise it will impede the installation.
+	aliyundunProcess=$(ps -ef | grep -i 'aegis\|aliyun\|aliyundun\|assist-daemon' | grep -v 'grep\|-i' | awk -F ' ' '{print $NF}')
+	[[ -n "$aliyundunProcess" ]] && {
+		timeout 5s wget --no-check-certificate -qO /root/Fuck_Aliyun.sh 'https://raw.githubusercontent.com/leitbogioro/Fuck_Aliyun/master/Fuck_Aliyun.sh' && chmod a+x /root/Fuck_Aliyun.sh
+		if [[ $? -ne 0 ]]; then
+			wget --no-check-certificate -qO /root/Fuck_Aliyun.sh 'https://gitee.com/mb9e8j2/Fuck_Aliyun/raw/master/Fuck_Aliyun.sh' && chmod a+x /root/Fuck_Aliyun.sh
+		fi
+		bash /root/Fuck_Aliyun.sh
+		rm -rf /root/Fuck_Aliyun.sh
+	}
+
+	rm -rf /swapspace
 	# Allocate 512MB swap to provent yum dead.
 	if [[ ! -e "/swapspace" ]]; then
 		fallocate -l 512M /swapspace
 		chmod 600 /swapspace
 		mkswap /swapspace
 		swapon /swapspace
+		# Prefer to divert temporary data from RAM to virtual memory when there are 70% left and below of RAM to pull out a biggest effort to make sure the allowance of RAM is sufficient for installing dependence.
+		# In 512 MB RAM environment, the occupation of "yum / dnf" process could reach to nearly 49% at highest.
+		# 			total    used
+		# Mem:  446028   216752
+		[[ $(cat /proc/sys/vm/swappiness | sed 's/[^0-9]//g') -lt "70" ]] && sysctl vm.swappiness=70
 	fi
 
 	# Fix debian security sources 404 not found (only of default sources)
@@ -3092,6 +3109,10 @@ fi
 clear
 
 [[ ! -d "/tmp/" ]] && mkdir /tmp
+
+[[ -n "$aliyundunProcess" ]] && {
+	echo -ne "\n[${red}Warning${plain}] ${blue}AliYunDun${plain} is detected on your server, the components will be removed compeletely because they may obstruct the following flow. \n"
+}
 
 # Disable SELinux
 [[ -f /etc/selinux/config ]] && {
