@@ -29,7 +29,7 @@ for /f "tokens=2" %%l in ('netsh interface ip show int ^| findstr /v /i "disconn
 
 ::Expand system partition
 set systemDisk=%SystemDrive:~0,1%
-for /f "tokens=2" %%a in ('echo list vol ^| diskpart ^| findstr "\<%systemDisk%\>"') do (echo select disk 0 & echo select vol %%a & echo extend) | diskpart
+for /f "tokens=2" %%d in ('echo list vol ^| diskpart ^| findstr "\<%systemDisk%\>"') do (echo select disk 0 & echo select vol %%d & echo extend) | diskpart
 
 :: Write ipv4 static configs
 echo; %setipv4mode% | find "on" && goto:enable || goto:disable
