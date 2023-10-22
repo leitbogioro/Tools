@@ -48,7 +48,7 @@ sed -i '$a\'$LinuxMirror'/'$alpineVer'/community' /etc/apk/repositories
 # sed -i '$a\'$LinuxMirror'/edge/testing' /etc/apk/repositories
 
 # Synchronize time from hardware.
-hwclock -s
+hwclock -s || true
 
 # Install necessary components.
 apk update
