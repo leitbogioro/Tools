@@ -1193,8 +1193,8 @@ function checkSys() {
 		swapon /swapspace
 		# Prefer to divert temporary data from RAM to virtual memory when there are 70% left and below of RAM to pull out a biggest effort to make sure the allowance of RAM is sufficient for installing dependence.
 		# In 512 MB RAM environment, the occupation of "yum / dnf" process could reach to nearly 49% at highest.
-		# 			total    used
-		# Mem:  446028   216752
+		# 			total		used
+		# Mem:	446028	216752
 		[[ $(cat /proc/sys/vm/swappiness | sed 's/[^0-9]//g') -lt "70" ]] && sysctl vm.swappiness=70
 	fi
 
