@@ -141,6 +141,12 @@ echo 'datasource_list: [ NoCloud, None ]' >/mnt/etc/cloud/cloud.cfg.d/90_dpkg.cf
 	sed -ri 's/console=tty1/console=tty1 console=ttyAMA0/g' /mnt/boot/grub/grub.cfg
 }
 
+# Disable sshd service to read configs from "ssh.socket" otherwise any changes on "/etc/ssh/sshd_config" will not take effects after Ubuntu 22.10, 23.04, 23.10… .
+# This is a preparation for dealing with the future versions of Ubuntu for example Ubuntu 24.04 LTS and later.
+# Reference: https://discourse.ubuntu.com/t/sshd-now-uses-socket-based-activation-ubuntu-22-10-and-later/30189/23
+rm -rf /mnt/etc/systemd/system/ssh.service.d/*.conf
+sed -ri 's#^Include /etc/ssh/sshd_config.d/#\#Include /etc/ssh/sshd_config.d/#g' /mnt/etc/ssh/sshd_config
+
 # Permit root user login by password, change ssh port.
 sed -ri 's/^#?PermitRootLogin.*/PermitRootLogin yes/g' /mnt/etc/ssh/sshd_config
 sed -ri 's/^#?PasswordAuthentication.*/PasswordAuthentication yes/g' /mnt/etc/ssh/sshd_config
