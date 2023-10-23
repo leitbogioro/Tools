@@ -3310,7 +3310,7 @@ if [[ -z "$tmpWORD" || "$linux_relese" == 'alpinelinux' ]]; then
 else
 	# "-1" is MD5, "-5" is SHA256, "-6" is SHA512. MD5 is no longer secure.
 	myPASSWORD=$(openssl passwd -6 ''$tmpWORD'' 2>/dev/null)
-	# Version 1.0.2k of openssl in CentOS 7 is too old that it's only support MD5.
+	# Version 1.0.2k of openssl in CentOS 7 is too old that it's only support MD5, the same as Debian 9.
 	[[ -z "$myPASSWORD" || "$myPASSWORD" =~ "NULL" ]] && myPASSWORD=$(openssl passwd -1 ''$tmpWORD'')
 fi
 
