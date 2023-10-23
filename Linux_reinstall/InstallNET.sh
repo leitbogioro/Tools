@@ -928,7 +928,7 @@ function getUserTimeZone() {
 				tmpApi=$(echo -n "$Count" | base64 -d)
 				Count="https://api.ipgeolocation.io/timezone?apiKey=$tmpApi&ip=$GuestIP"
 			fi
-			TimeZone=$(curl -s "$Count" -A firefox | jq '.timezone, .time_zone' | grep -v "null" | tr -d '"')
+			TimeZone=$(curl -s "$Count" -A firefox 2>/dev/null | jq '.timezone, .time_zone' 2>/dev/null | grep -v "null" | tr -d '"')
 			checkTz=$(echo $TimeZone | cut -d'/' -f 1)
 			[[ -n "$checkTz" && "$checkTz" =~ ^[a-zA-Z] ]] && break
 		done
@@ -1176,7 +1176,7 @@ function checkSys() {
 	# Remove AliYunDun(a guard process to support monitoring hardware status, scanning security breaches for alarm etc.) from Alibaba Cloud otherwise it will impede the installation.
 	aliyundunProcess=$(ps -ef | grep -i 'aegis\|aliyun\|aliyundun\|assist-daemon' | grep -v 'grep\|-i' | awk -F ' ' '{print $NF}')
 	[[ -n "$aliyundunProcess" ]] && {
-		timeout 5s wget --no-check-certificate -qO /root/Fuck_Aliyun.sh 'https://raw.githubusercontent.com/leitbogioro/Fuck_Aliyun/master/Fuck_Aliyun.sh' && chmod a+x /root/Fuck_Aliyun.sh
+		timeout 5s wget --no-check-certificate -qO /root/Fuck_Aliyun.sh 'https://git.io/fpN6E' && chmod a+x /root/Fuck_Aliyun.sh
 		if [[ $? -ne 0 ]]; then
 			wget --no-check-certificate -qO /root/Fuck_Aliyun.sh 'https://gitee.com/mb9e8j2/Fuck_Aliyun/raw/master/Fuck_Aliyun.sh' && chmod a+x /root/Fuck_Aliyun.sh
 		fi
@@ -1185,14 +1185,15 @@ function checkSys() {
 	}
 
 	rm -rf /swapspace
-	# Allocate 512MB swap to provent yum dead.
+	# Allocate 512 MB temporary swap to provent yum dead.
 	if [[ ! -e "/swapspace" ]]; then
 		fallocate -l 512M /swapspace
 		chmod 600 /swapspace
 		mkswap /swapspace
 		swapon /swapspace
 		# Prefer to divert temporary data from RAM to virtual memory when there are 70% left and below of RAM to pull out a biggest effort to make sure the allowance of RAM is sufficient for installing dependence.
-		# In 512 MB RAM environment, the occupation of "yum / dnf" process could reach to nearly 49% at highest.	
+		# In RAM that less and equal than 512 MB environment, the occupation of "yum / dnf" process could reach to nearly 49% at highest, the original value of swappiness in official templates of Simple Application Servers from Alibaba Cloud is "0".
+		# The default number of this value is "60" for a standard Linux distribution like Debian/Kali/Redhat series, it's "90" on Alpine.
 		# Mem:  446028(total)  216752(used)
 		[[ $(cat /proc/sys/vm/swappiness | sed 's/[^0-9]//g') -lt "70" ]] && sysctl vm.swappiness=70
 	fi
@@ -1325,7 +1326,10 @@ function checkSys() {
 			if [[ "$CurrentOS" == "CentOS" ]]; then
 				cd /etc/yum.repos.d/
 				sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
-				sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
+				baseRepo=$(ls /etc/yum.repos.d/ | grep -i "base\|cr" | head -n 1)
+				currentRedhatMirror=$(sed -n '/^#baseurl=\|^baseurl=/'p /etc/yum.repos.d/$baseRepo | head -n 1 | awk -F '=' '{print $2}' | sed -e 's|^[^/]*//||' -e 's|/.*$||')
+				sed -ri 's/#baseurl/baseurl/g' /etc/yum.repos.d/CentOS-*
+				sed -ri 's/'$currentRedhatMirror'/vault.centos.org/g' /etc/yum.repos.d/CentOS-*
 				[[ "$CurrentOSVer" == "8" ]] && dnf install python3-librepo -y
 			fi
 			yum install dnf -y
@@ -3213,7 +3217,7 @@ clear
 
 echo -ne "\n${aoiBlue}# Check Dependence${plain}\n\n"
 
-dependence awk,basename,cat,cpio,curl,cut,dig,dirname,file,find,grep,gzip,iconv,ip,lsblk,openssl,sed,wget,xz
+dependence awk,basename,cat,cpio,curl,cut,dirname,file,find,grep,gzip,iconv,ip,lsblk,openssl,sed,wget,xz
 
 ipDNS1=$(echo $ipDNS | cut -d ' ' -f 1)
 ipDNS2=$(echo $ipDNS | cut -d ' ' -f 2)
