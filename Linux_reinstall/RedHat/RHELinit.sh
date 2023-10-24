@@ -2,14 +2,7 @@
 #
 # Alpine Linux use "ash" as the default shell.
 
-# Find available temporary tty.
-for ttyItems in "/dev/tty0" "/dev/ttyS0" "/dev/ttyAMA0"; do
-	ttyAttribute=$(stty -F "$ttyItems")
-	[[ -n "$ttyAttribute" && -n $(echo "$ttyAttribute" | grep -io "\-brkint ixoff \-imaxbel") ]] && {
-		break
-	}
-done
-exec >"$ttyItems" 2>&1
+exec >/dev/tty0 2>&1
 
 # Delete the initial script itself to prevent to be executed in the new system.
 rm -f /etc/local.d/rhelConf.start
