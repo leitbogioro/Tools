@@ -2,7 +2,7 @@
 #
 # Alpine Linux use "ash" as the default shell.
 
-# Find available tty.
+# Find available temporary tty.
 # Parameters of outputs of "stty": https://www.ibm.com/docs/en/aix/7.3?topic=s-stty-command
 for ttyItems in "/dev/tty0" "/dev/ttyS0" "/dev/ttyAMA0"; do
 	ttyAttribute=$(stty -F "$ttyItems")
