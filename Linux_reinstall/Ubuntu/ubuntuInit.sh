@@ -5,7 +5,7 @@
 # Find available temporary tty.
 for ttyItems in "/dev/tty0" "/dev/ttyS0" "/dev/ttyAMA0"; do
 	ttyAttribute=$(stty -F "$ttyItems")
-	[[ -n "$ttyAttribute" && -n $(echo "$ttyAttribute" | grep -io "\-brkint ixoff \-imaxbel") ]] && {
+	[[ -n "$ttyAttribute" && -n $(echo "$ttyAttribute" | grep -io '\-brkint' | grep -io 'ixoff' | grep -io '\-imaxbel') ]] && {
 		break
 	}
 done
