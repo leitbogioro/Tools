@@ -4,7 +4,6 @@
 
 exec >/dev/tty0 2>&1
 exec >/dev/ttyS0 2>&1
-exec >/dev/ttyAMA0 2>&1
 
 # Delete the initial script itself to prevent to be executed in the new system.
 rm -f /etc/local.d/rhelConf.start
