@@ -3,6 +3,7 @@
 # Alpine Linux use "ash" as the default shell.
 
 exec >/dev/tty0 2>&1
+exec >/dev/ttyS0 2>&1
 
 insertIntoFile() {
 	file=$1
