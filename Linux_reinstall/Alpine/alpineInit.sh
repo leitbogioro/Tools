@@ -2,16 +2,6 @@
 #
 # Alpine Linux use "ash" as the default shell.
 
-# Find available temporary tty.
-# Parameters of outputs of "stty": https://www.ibm.com/docs/en/aix/7.3?topic=s-stty-command
-for ttyItems in "/dev/tty0" "/dev/ttyS0" "/dev/ttyAMA0"; do
-	ttyAttribute=$(stty -F "$ttyItems")
-	[[ -n "$ttyAttribute" && -n $(echo "$ttyAttribute" | grep -o 'ixoff') ]] && {
-		exec >"$ttyItems" 2>&1
-		break
-	}
-done
-
 insertIntoFile() {
 	file=$1
 	location=$2
@@ -34,6 +24,16 @@ rm -f /etc/runlevels/default/local
 # Install necessary components.
 apk update
 apk add bash coreutils grep sed
+
+# Find available temporary tty.
+# Parameters of outputs of "stty": https://www.ibm.com/docs/en/aix/7.3?topic=s-stty-command
+for ttyItems in "/dev/tty0" "/dev/ttyS0" "/dev/ttyAMA0"; do
+	ttyAttribute=$(stty -F "$ttyItems")
+	[[ -n "$ttyAttribute" && -n $(echo "$ttyAttribute" | grep -o 'ixoff') ]] && {
+		exec >"$ttyItems" 2>&1
+		break
+	}
+done
 
 # Get Alpine Linux configurations.
 confFile="/root/alpine.config"
