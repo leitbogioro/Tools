@@ -29,10 +29,10 @@ apk add bash coreutils grep sed
 # Parameters of outputs of "stty": https://www.ibm.com/docs/en/aix/7.3?topic=s-stty-command
 for ttyItems in "/dev/tty0" "/dev/ttyS0" "/dev/ttyAMA0"; do
 	ttyAttribute=$(stty -F "$ttyItems")
-	[[ -n "$ttyAttribute" && -n $(echo "$ttyAttribute" | grep -o 'ixoff') ]] && {
+	if [[ -n "$ttyAttribute" ]] && [[ ! $(echo "$ttyAttribute" | grep 'min = 1') ]]; then
 		exec >"$ttyItems" 2>&1
 		break
-	}
+	fi
 done
 
 # Get Alpine Linux configurations.
