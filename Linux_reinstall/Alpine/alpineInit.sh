@@ -7,10 +7,10 @@
 for ttyItems in "/dev/tty0" "/dev/ttyS0" "/dev/ttyAMA0"; do
 	ttyAttribute=$(stty -F "$ttyItems")
 	[[ -n "$ttyAttribute" && -n $(echo "$ttyAttribute" | grep -o 'ixoff') ]] && {
+		exec >"$ttyItems" 2>&1
 		break
 	}
 done
-exec >"$ttyItems" 2>&1
 
 insertIntoFile() {
 	file=$1
