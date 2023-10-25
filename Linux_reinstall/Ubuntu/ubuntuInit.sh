@@ -281,7 +281,7 @@ sed -ri 's/^#?Port.*/Port '${sshPORT}'/g' /mnt/etc/ssh/sshd_config
 # Official cloud image of Rocky Linux 9.2:
 # /usr/lib/python3.9/site-packages/cloudinit/*
 #
-# Servers provided by Akile.io also have static disrupt cloud-inits on device of "/dev/sr0" .
+# Servers provided by Akile.io, DigitalOcean.com also have static disrupt cloud-inits or OpenStacks on device of "/dev/sr0" .
 
 utilProgram=$(find /mnt/usr/lib/python* -name "util.py" | grep "cloudinit" | head -n 1)
 sed -ri 's/iso9660/osi9876/g' $utilProgram
