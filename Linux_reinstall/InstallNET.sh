@@ -4487,7 +4487,7 @@ if [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub1" ]]; then
 		#   initrdfail
 		# }
 		#
-		# The same as AWS Lightsail, GCP.
+		# The same as AWS Lightsail, GCP, Azure.
 		#
 		# "initrdfail" is a recovery feature of Ubuntu. This option is used as when booting without initrd/initramfs for the cloud,
 		# and is not suitable in a normal Ubuntu installation environment. This option is similar to "recordfail",
