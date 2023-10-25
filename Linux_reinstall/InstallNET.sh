@@ -2710,10 +2710,10 @@ function DebianModifiedPreseed() {
 				writeMultipleIpv4Addresses "$iAddrNum" "$1" ''$2''
 				writeMultipleIpv6Addresses "$i6AddrNum" "$1" ''$2''
 				if [[ "$iAddrNum" == "1" || "$i6AddrNum" == "1" ]]; then
-                                        					SupportIPv6orIPv4="$SupportMultipleIPv4 $SupportMultipleIPv6 $SupportIPv6orIPv4"
-                                				else
-                                        					SupportIPv6orIPv4="$SupportMultipleIPv4 $SupportMultipleIPv6"
-                                				fi
+					SupportIPv6orIPv4="$SupportMultipleIPv4 $SupportMultipleIPv6 $SupportIPv6orIPv4"
+				else
+					SupportIPv6orIPv4="$SupportMultipleIPv4 $SupportMultipleIPv6"
+				fi
 			}
 		elif [[ "$IPStackType" == "IPv6Stack" ]]; then
 			[[ "$BurnIrregularIpv6Status" == "1" ]] && BurnIrregularIpv6Gate="$1 sed -i '\$a\\\tgateway $ip6Gate' $2;"
