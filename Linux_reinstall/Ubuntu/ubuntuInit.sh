@@ -142,6 +142,8 @@ echo 'datasource_list: [ NoCloud, None ]' >/mnt/etc/cloud/cloud.cfg.d/90_dpkg.cf
 }
 
 # Create a soft link between /boot/grub/* and /boot/grub2/*
+mkdir -p /mnt/boot/grub2/
+cp /mnt/boot/grub/* /mnt/boot/grub2/*
 ln -s /mnt/boot/grub /mnt/boot/grub2
 
 # Disable sshd service to read configs from "ssh.socket" otherwise any changes on "/etc/ssh/sshd_config" will not take effects after Ubuntu 22.10, 23.04, 23.10… .
