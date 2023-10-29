@@ -4522,8 +4522,8 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
 	if [[ "$setNetbootXyz" == "0" ]]; then
 		# RedHat grub2 setting start
 		# Confirm linux and initrd kernel direction
-		if [[ -f /boot/grub2/grubenv ]] && [[ -d /boot/loader/entries ]] && [[ "$(ls /boot/loader/entries | wc -w)" != "" ]]; then
-			LoaderPath=$(cat /boot/grub2/grubenv | grep 'saved_entry=' | awk -F '=' '{print $2}')
+		if [[ -f $GRUBDIR/grubenv ]] && [[ -d /boot/loader/entries ]] && [[ "$(ls /boot/loader/entries | wc -l)" != "0" ]]; then
+			LoaderPath=$(cat $GRUBDIR/grubenv | grep 'saved_entry=' | awk -F '=' '{print $2}')
 			LpLength=$(echo ${#LoaderPath})
 			LpFile="/boot/loader/entries/$LoaderPath.conf"
 			# The saved_entry of OpenCloudOS(Tencent Cloud) is equal "0"
