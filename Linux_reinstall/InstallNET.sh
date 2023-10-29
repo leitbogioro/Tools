@@ -4643,6 +4643,7 @@ elif [[ ! -z "$GRUBTYPE" && "$GRUBTYPE" == "isGrub2" ]]; then
 		grub2Order=$(find /boot/loader/entries/ -maxdepth 1 -name "*.conf" 2>/dev/null | wc -l)
 		[[ "$grub2Order" == "0" ]] && grub2Order=$(grep -ic "menuentry '*'" $GRUBDIR/$GRUBFILE)
 		[[ "$grub2Order" == "0" ]] && grub2Order=$(grub2-mkconfig -o $GRUBDIR/$GRUBFILE 2>&1 | grep -ic "linux image:")
+		[[ "$grub2Order" == "0" ]] && grub2Order="saved"
 		# Make grub2 to prefer installation item to boot first.
 		sed -ri 's/GRUB_DEFAULT=.*/GRUB_DEFAULT='$grub2Order'/g' /etc/default/grub
 		if [[ "$linux_relese" == 'ubuntu' || "$linux_relese" == 'debian' || "$linux_relese" == 'kali' ]]; then
