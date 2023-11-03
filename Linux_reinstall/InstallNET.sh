@@ -1178,7 +1178,7 @@ function checkSys() {
 	[[ -n "$aliyundunProcess" ]] && {
 		timeout 5s wget --no-check-certificate -qO /root/Fuck_Aliyun.sh 'https://git.io/fpN6E' && chmod a+x /root/Fuck_Aliyun.sh
 		if [[ $? -ne 0 ]]; then
-			wget --no-check-certificate -qO /root/Fuck_Aliyun.sh 'https://gitee.com/mb9e8j2/Fuck_Aliyun/raw/master/Fuck_Aliyun.sh' && chmod a+x /root/Fuck_Aliyun.sh
+			wget --no-check-certificate -qO /root/Fuck_Aliyun.sh 'https://gitee.com/mb9e8j2/Fuck_Aliyun/raw/master/Fuck_Aliyun.sh' && sed -i 's/\r//g' /root/Fuck_Aliyun.sh && chmod a+x /root/Fuck_Aliyun.sh
 		fi
 		bash /root/Fuck_Aliyun.sh
 		rm -rf /root/Fuck_Aliyun.sh
