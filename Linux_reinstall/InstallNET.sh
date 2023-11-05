@@ -1477,6 +1477,7 @@ function checkDIST() {
 		RedHatSeries=$(echo "$tmpDIST" | cut -d"." -f 1 | cut -d"-" -f 1)
 		# CentOS and CentOS stream releases history:
 		# https://endoflife.date/centos
+		# https://endoflife.date/centos-stream
 		if [[ "$linux_relese" == 'centos' ]]; then
 			[[ "$RedHatSeries" =~ [0-9]{${#1}} ]] && {
 				if [[ "$RedHatSeries" == "6" ]]; then
@@ -1506,7 +1507,7 @@ function checkDIST() {
 					echo -ne "\n[${red}Warning${plain}] $Relese $DISTCheck is not supported!\n"
 					exit 1
 					# Fedora releases history:
-					# https://en.wikipedia.org/wiki/Fedora_Linux_release_history
+					# https://fedorapeople.org/groups/schedule/
 				elif [[ "$linux_relese" == 'fedora' ]] && [[ "$RedHatSeries" -le "36" ]]; then
 					echo -ne "\n[${red}Warning${plain}] $Relese $DISTCheck is not supported!\n"
 					exit 1
