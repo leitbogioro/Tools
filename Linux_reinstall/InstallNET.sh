@@ -807,7 +807,7 @@ d-i partman/default_label string gpt")
 			normalRecipes=$(echo -e "d-i partman-auto/choose_recipe select normal
 d-i partman-auto/expert_recipe string normal ::                                   \
     538 100 1075 free \$iflabel{ gpt } \$reusemethod{ } method{ efi } format{ } . \
-	$swapRecipe                                                                   \
+    $swapRecipe                                                                   \
     $mainRecipe
 d-i partman-efi/non_efi_system boolean true")
 		else
@@ -815,7 +815,7 @@ d-i partman-efi/non_efi_system boolean true")
 d-i partman-auto/expert_recipe string normal :: \
     $gptForBios                                 \
     $swapRecipe                                 \
-	$mainRecipe
+    $mainRecipe
 ")
 		fi
 		FormatDisk=$(echo -e "$selectDisks
