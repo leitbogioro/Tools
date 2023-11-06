@@ -193,6 +193,14 @@ Wait until downloading and unpackaging are all finished, change netboot to forma
 <br />
 <br />
 
+**-swap/-virtualmemory/-virtualram "number, the unit is MB"**: Default is "0" which means no swap is allowanced, you can pre-specify a certain capacity of space on hard drive to enable swap for target system, for example " -swap '1024' " to distribute 1GB swap, not suitable for Raid, AlpineLinux, dd Mode.
+<br />
+<br />
+
+**-filesystem "ext4 or xfs"**: Default is "ext4", you can pre-specify a kind of file system for target system, only suitable for Debian/Kali.
+<br />
+<br />
+
 **-partition "mbr" or "gpt"**: Default is "mbr", ext4 file system with mbr partition table, if assign "gpt", the partition method will be as xfs file system with gpt partition table. This is only valid for Debian/Kali, single hard drive formatting environment, not suitable for Raid.
 <br />
 <br />
