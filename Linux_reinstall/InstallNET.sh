@@ -15,6 +15,8 @@
 ## Github: https://github.com/bin456789/
 ## Modified By nat.ee
 ## Forum: https://hostloc.com/space-uid-49984.html
+## Modified By Bohan Yang
+## Twitter: https://twitter.com/brentybh
 ## Modified By Leitbogioro
 ## Blog: https://www.zhihu.com/column/originaltechnic
 
@@ -61,7 +63,9 @@ export tmpSetIPv6=''
 export setIPv6='1'
 export setRaid=''
 export setDisk=''
+export swapSpace='0'
 export partitionTable='mbr'
+export fileSystem=''
 export setMemCheck='1'
 export setCloudKernel=''
 export isMirror='0'
@@ -265,9 +269,19 @@ while [[ $# -ge 1 ]]; do
 		setDisk="$1"
 		shift
 		;;
+	-swap | -virtualmemory | -virtualram)
+		shift
+		setSwap="$1"
+		shift
+		;;
 	-partition)
 		shift
 		partitionTable="$1"
+		shift
+		;;
+	-filesystem)
+		shift
+		setFileSystem="$1"
 		shift
 		;;
 	-timezone)
@@ -742,6 +756,97 @@ function diskType() {
 	echo $(udevadm info --query all "$1" 2>/dev/null | grep 'ID_PART_TABLE_TYPE' | cut -d'=' -f2)
 }
 
+# Default to make a GPT partition to support 3TB hard drive or larger.
+# To remove LVM VGM PVM force automatically:
+# https://serverfault.com/questions/571363/unable-to-automatically-remove-lvm-data
+# To part all disks for preseed:
+# https://unix.stackexchange.com/questions/341253/using-d-i-partman-recipe-strings
+#
+# Recipes for parting disk in BIOS or UEFI manually for kickstart.
+# https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/installation_guide/sect-kickstart-syntax
+# https://blog.adachin.me/archives/3621
+# https://www.cnblogs.com/hukey/p/14919346.html
+#
+# $1 is "$linux_relese", $2 is "$disksNum", $3 is "$setSwap", $4 is "$setDisk", $5 is "$partitionTable", $6 is "$setFileSystem", $7 is "$EfiSupport", $8 is "$diskCapacity", $9 is "$IncDisk", ${10} is "$AllDisks".
+function setNormalRecipe() {
+	[[ -n "$3" && $(echo "$3" | grep -o '[0-9]') ]] && swapSpace="$setSwap" || swapSpace='0'
+	if [[ "$1" == 'debian' ]] || [[ "$1" == 'kali' ]]; then
+		if [[ -n "$swapSpace" && "$swapSpace" -gt "0" ]]; then
+			swapSpace=$(awk 'BEGIN{print '${swapSpace}'*1.05 }' | cut -d '.' -f '1')
+			swapRecipe=''${swapSpace}' 200 '${swapSpace}' linux-swap method{ swap } format{ } .'
+		else
+			swapRecipe=""
+		fi
+		if [[ "$6" == "xfs" ]]; then
+			fileSystem="xfs"
+		else
+			fileSystem="ext4"
+		fi
+		defaultFileSystem='d-i partman/default_filesystem string '${fileSystem}''
+		mainRecipe='1075 150 -1 '${fileSystem}' method{ format } format{ } use_filesystem{ } filesystem{ '${fileSystem}' } mountpoint{ / } .'
+		if [[ "$2" -gt "1" && "$4" == "all" ]]; then
+			PartmanEarlyCommand='debconf-set partman-auto/disk '${10}';'
+			selectDisks='d-i partman-auto/disk string '${10}''
+		else
+			PartmanEarlyCommand='debconf-set partman-auto/disk "$(list-devices disk | grep '${9}' | head -n 1)";'
+			selectDisks='d-i partman-auto/disk string '${9}''
+		fi
+		if [[ "$5" == "gpt" || "$7" == "enabled" || "$8" -ge "2199023255552" ]]; then
+			gptPartitionPreseed=$(echo -e "d-i partman-basicfilesystems/choose_label string gpt
+d-i partman-basicfilesystems/default_label string gpt
+d-i partman-partitioning/choose_label string gpt
+d-i partman-partitioning/default_label string gpt
+d-i partman/choose_label string gpt
+d-i partman/default_label string gpt")
+			gptForBios='1 100 1 free $iflabel{ gpt } $reusemethod{ } method{ biosgrub } .'
+		else
+			gptPartitionPreseed=""
+			gptForBios=""
+		fi
+		if [[ "$7" == "enabled" ]]; then
+			normalRecipes=$(echo -e "d-i partman-auto/choose_recipe select normal
+d-i partman-auto/expert_recipe string normal ::                                   \
+    538 100 1075 free \$iflabel{ gpt } \$reusemethod{ } method{ efi } format{ } . \
+	$swapRecipe                                                                   \
+    $mainRecipe
+d-i partman-efi/non_efi_system boolean true")
+		else
+			normalRecipes=$(echo -e "d-i partman-auto/choose_recipe select normal
+d-i partman-auto/expert_recipe string normal :: \
+    $gptForBios                                 \
+    $swapRecipe                                 \
+	$mainRecipe
+")
+		fi
+		FormatDisk=$(echo -e "$selectDisks
+d-i partman-auto/method string regular
+d-i partman-basicfilesystems/no_swap boolean false
+$normalRecipes
+$gptPartitionPreseed
+")
+	elif [[ "$1" == 'centos' ]] || [[ "$1" == 'rockylinux' ]] || [[ "$1" == 'almalinux' ]] || [[ "$1" == 'fedora' ]]; then
+		ksIncDisk=$(echo $9 | cut -d'/' -f 3)
+		ksAllDisks=$(echo ${10} | sed 's/\/dev\///g' | sed 's/ /,/g')
+		if [[ -n "$swapSpace" && "$swapSpace" -gt "0" ]]; then
+			swapRecipe='part swap --ondisk='${ksIncDisk}' --size='${swapSpace}'\n'
+		else
+			swapRecipe=""
+		fi
+		[[ "$2" -le "1" || "$4" != "all" ]] && {
+			clearPart="clearpart --drives=${ksIncDisk} --all --initlabel"
+			if [[ "$7" == "enabled" ]]; then
+				FormatDisk=$(echo -e "part / --fstype="xfs" --ondisk="$ksIncDisk" --grow --size="0"\n${swapRecipe}part /boot --fstype="xfs" --ondisk="$ksIncDisk" --size="1024"\npart /boot/efi --fstype="efi" --ondisk="$ksIncDisk" --size="512"")
+			else
+				FormatDisk=$(echo -e "part / --fstype="xfs" --ondisk="$ksIncDisk" --grow --size="0"\n${swapRecipe}part /boot --fstype="xfs" --ondisk="$ksIncDisk" --size="1024"\npart biosboot --fstype=biosboot --ondisk="$ksIncDisk" --size=1")
+			fi
+		}
+		[[ "$4" == "all" || -n "$setRaid" ]] && {
+			clearPart="clearpart --all --initlabel"
+			FormatDisk="autopart"
+		}
+	fi
+}
+
 # $1 is "$setRaid", $2 is "$disksNum", $3 is "$AllDisks", $4 is "$linux_relese".
 function setRaidRecipe() {
 	[[ -n "$1" ]] && {
@@ -772,6 +877,7 @@ function setRaidRecipe() {
 			exit 1
 		fi
 		if [[ "$4" == 'debian' ]] || [[ "$4" == 'kali' ]]; then
+			defaultFileSystem='d-i partman/default_filesystem string ext4'
 			for ((r = 1; r <= "$2"; r++)); do
 				tmpAllDisksPart=$(echo "$3" | cut -d ' ' -f"$r")
 				# Some NVME controller hard drives like "/dev/nvme0n1" etc are end of a number in there names must add "p" with partition numbers for "d-i partman-auto-raid/recipe string",
@@ -842,9 +948,9 @@ d-i partman-auto/expert_recipe string multiraid ::                 \
 					for currentDisk in $tmpKsAllDisks; do
 						tmpKsRaidVolumes="raid."$partitionIndex""$disksIndex""
 						if [[ "$partitionIndex" == "0" ]]; then
-							tmpKsRaidConfigs="part "$tmpKsRaidVolumes" --size="640" --ondisk="$currentDisk""
-						elif [[ "$partitionIndex" == "1" ]]; then
 							tmpKsRaidConfigs="part "$tmpKsRaidVolumes" --size="1024" --ondisk="$currentDisk""
+						elif [[ "$partitionIndex" == "1" ]]; then
+							tmpKsRaidConfigs="part "$tmpKsRaidVolumes" --size="512" --ondisk="$currentDisk""
 						elif [[ "$partitionIndex" == "2" ]]; then
 							tmpKsRaidConfigs="part "$tmpKsRaidVolumes" --size="0" --grow --ondisk="$currentDisk""
 						fi
@@ -1353,7 +1459,7 @@ function checkSys() {
 		# Try to remove comments of any valid mirror.
 		sed -i 's/#//' /etc/apk/repositories
 		# Add community mirror.
-		[[ ! $(grep -i "community" /etc/apk/repositories) ]] && sed -i '$a\http://ftp.udx.icscoe.jp/Linux/alpine/v'${CurrentAlpineVer}'/community' /etc/apk/repositories
+		[[ ! $(grep -i "community" /etc/apk/repositories) ]] && sed -i '$a\http://dl-cdn.alpinelinux.org/alpine/v'${CurrentAlpineVer}'/community' /etc/apk/repositories
 		# Add testing mirror.
 		# [[ ! `grep -i "testing" /etc/apk/repositories` ]] && sed -i '$a\http://ftp.udx.icscoe.jp/Linux/alpine/edge/testing' /etc/apk/repositories
 		# Alpine Linux use "apk" as package management.
@@ -1560,7 +1666,7 @@ function checkIpv4OrIpv6() {
 		IPv4PingDNS=$(timeout 0.3s ping -4 -c 1 "$y" | grep "rtt\|round-trip" | cut -d'/' -f5 | awk -F'.' '{print $NF}' | sed -E '/^[0-9]\+\(\.[0-9]\+\)\?$/p')"$IPv4PingDNS"
 		[[ "$IPv4PingDNS" != "" ]] && break
 	done
-	for z in "$7" "$8" "$9" "$10"; do
+	for z in "$7" "$8" "$9" "${10}"; do
 		IPv6PingDNS=$(timeout 0.3s ping -6 -c 1 "$z" | grep "rtt\|round-trip" | cut -d'/' -f5 | awk -F'.' '{print $NF}' | sed -E '/^[0-9]\+\(\.[0-9]\+\)\?$/p')"$IPv6PingDNS"
 		[[ "$IPv6PingDNS" != "" ]] && break
 	done
@@ -2780,29 +2886,7 @@ function DebianPreseedProcess() {
 		[[ -n "$setRaid" || "$ddMode" == '1' || -n $(echo $virtWhat | grep -io 'vmware\|virtualbox') ]] && AddCloudKernel=""
 		ddWindowsEarlyCommandsOfAnna='anna-install libfuse2-udeb fuse-udeb ntfs-3g-udeb libcrypto3-udeb libpcre2-8-0-udeb libssl3-udeb libuuid1-udeb zlib1g-udeb wget-udeb'
 		tmpDdWinsEarlyCommandsOfAnna="$ddWindowsEarlyCommandsOfAnna"
-		# Default to make a GPT partition to support 3TB hard drive or larger.
-		# To remove LVM VGM PVM force automatically:
-		# https://serverfault.com/questions/571363/unable-to-automatically-remove-lvm-data
-		# To part all disks:
-		# https://unix.stackexchange.com/questions/341253/using-d-i-partman-recipe-strings
-		if [[ "$disksNum" -gt "1" && "$setDisk" == "all" ]]; then
-			[[ "$partitionTable" == "gpt" ]] && FormatDisk=$(echo -e "d-i partman-auto/disk string $AllDisks\nd-i partman-auto/method string regular\nd-i partman-auto/init_automatically_partition select Guided - use entire disk\nd-i partman-auto/choose_recipe select All files in one partition (recommended for new users)\nd-i partman-basicfilesystems/choose_label string gpt\nd-i partman-basicfilesystems/default_label string gpt\nd-i partman-partitioning/choose_label string gpt\nd-i partman-partitioning/default_label string gpt\nd-i partman/choose_label string gpt\nd-i partman/default_label string gpt") || FormatDisk=$(echo -e "d-i partman-auto/disk string $AllDisks\nd-i partman-auto/method string regular\nd-i partman-auto/init_automatically_partition select Guided - use entire disk\nd-i partman-auto/choose_recipe select All files in one partition (recommended for new users)")
-			PartmanEarlyCommand='debconf-set partman-auto/disk '${AllDisks}';'
-		else
-			[[ "$partitionTable" == "gpt" ]] && FormatDisk=$(echo -e "d-i partman-auto/disk string $IncDisk\nd-i partman-auto/method string regular\nd-i partman-auto/init_automatically_partition select Guided - use entire disk\nd-i partman-auto/choose_recipe select All files in one partition (recommended for new users)\nd-i partman-basicfilesystems/choose_label string gpt\nd-i partman-basicfilesystems/default_label string gpt\nd-i partman-partitioning/choose_label string gpt\nd-i partman-partitioning/default_label string gpt\nd-i partman/choose_label string gpt\nd-i partman/default_label string gpt") || FormatDisk=$(echo -e "d-i partman-auto/disk string $IncDisk\nd-i partman-auto/method string regular\nd-i partman-auto/init_automatically_partition select Guided - use entire disk\nd-i partman-auto/choose_recipe select All files in one partition (recommended for new users)")
-			PartmanEarlyCommand='debconf-set partman-auto/disk "$(list-devices disk | grep '${IncDisk}' | head -n 1)";'
-		fi
-		# Default single disk format recipe( -partition="gpt" ):
-		# d-i partman-auto/disk string $AllDisks/$IncDisk
-		# d-i partman-auto/method string regular
-		# d-i partman-auto/init_automatically_partition select Guided - use entire disk
-		# d-i partman-auto/choose_recipe select All files in one partition (recommended for new users)
-		# d-i partman-basicfilesystems/choose_label string gpt
-		# d-i partman-basicfilesystems/default_label string gpt
-		# d-i partman-partitioning/choose_label string gpt
-		# d-i partman-partitioning/default_label string gpt
-		# d-i partman/choose_label string gpt
-		# d-i partman/default_label string gpt
+		setNormalRecipe "$linux_relese" "$disksNum" "$setSwap" "$setDisk" "$partitionTable" "$setFileSystem" "$EfiSupport" "$diskCapacity" "$IncDisk" "$AllDisks"
 		setRaidRecipe "$setRaid" "$disksNum" "$AllDisks" "$linux_relese"
 		# Debian 11 and former versions couldn't accept irregular IPv6 format configs, they can only be recognized by Debian 12+ and Kali, dd mode(base system is Debian 12) prefer IPv4 to config network.
 		if [[ "$BiStackPreferIpv6Status" == "1" ]]; then
@@ -2958,7 +3042,7 @@ d-i partman-partitioning/confirm_write_new_label boolean true
 d-i partman/choose_partition select finish
 d-i partman/confirm boolean true
 d-i partman/confirm_nooverwrite boolean true
-d-i partman/default_filesystem string ext4
+${defaultFileSystem}
 d-i partman/mount_style select uuid
 d-i partman-md/device_remove_md boolean true
 ${FormatDisk}
@@ -3697,7 +3781,6 @@ if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]] || [[ "$
 		sed -i '/netcfg\/get_.*/d' /tmp/boot/preseed.cfg
 		sed -i '/netcfg\/confirm_static/d' /tmp/boot/preseed.cfg
 	fi
-	[[ "$partitionTable" == "gpt" ]] && sed -i 's/default_filesystem string ext4/default_filesystem string xfs/g' /tmp/boot/preseed.cfg
 	# If server has only one disk, lv/vg/pv volumes removement by force should be disallowed, it may causes partitioner continuous execution but not finished.
 	if [[ "$disksNum" -le "1" || "$setDisk" != "all" || -n "$setRaid" ]]; then
 		sed -i 's/lvremove --select all -ff -y;//g' /tmp/boot/preseed.cfg
@@ -4173,20 +4256,7 @@ elif [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] 
 			NetConfigManually="network --device=$interface --bootproto=dhcp --ipv6=$ip6Addr/$actualIp6Prefix --ipv6gateway=$ip6Gate --nameserver=$ip6DNS --hostname=$HostName --onboot=on --activate --noipv4"
 		fi
 	fi
-	# Recipes for part disk in BIOS or UEFI manually.
-	# Reference: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/installation_guide/sect-kickstart-syntax
-	#            https://blog.adachin.me/archives/3621
-	#            https://www.cnblogs.com/hukey/p/14919346.html
-	ksIncDisk=$(echo $IncDisk | cut -d'/' -f 3)
-	ksAllDisks=$(echo $AllDisks | sed 's/\/dev\///g' | sed 's/ /,/g')
-	[[ "$disksNum" -le "1" || "$setDisk" != "all" ]] && {
-		clearPart="clearpart --drives=${ksIncDisk} --all --initlabel"
-		[[ "$EfiSupport" == "enabled" ]] && FormatDisk=$(echo -e "part / --fstype="xfs" --ondisk="$ksIncDisk" --grow --size="0"\npart swap --ondisk="$ksIncDisk" --size="1024"\npart /boot --fstype="xfs" --ondisk="$ksIncDisk" --size="512"\npart /boot/efi --fstype="efi" --ondisk="$ksIncDisk" --size="1024"") || FormatDisk=$(echo -e "part / --fstype="xfs" --ondisk="$ksIncDisk" --grow --size="0"\npart swap --ondisk="$ksIncDisk" --size="1024"\npart /boot --fstype="xfs" --ondisk="$ksIncDisk" --size="1024"\npart biosboot --fstype=biosboot --ondisk="$ksIncDisk" --size=1")
-	}
-	[[ "$setDisk" == "all" || -n "$setRaid" ]] && {
-		clearPart="clearpart --all --initlabel"
-		FormatDisk="autopart"
-	}
+	setNormalRecipe "$linux_relese" "$disksNum" "$setSwap" "$setDisk" "$partitionTable" "$setFileSystem" "$EfiSupport" "$diskCapacity" "$IncDisk" "$AllDisks"
 	setRaidRecipe "$setRaid" "$disksNum" "$AllDisks" "$linux_relese"
 	cat >/tmp/boot/ks.cfg <<EOF
 # platform x86, AMD64, or Intel EM64T, or ARM aarch64
