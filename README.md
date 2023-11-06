@@ -201,7 +201,7 @@ Wait until downloading and unpackaging are all finished, change netboot to forma
 <br />
 <br />
 
-**-partition "mbr" or "gpt"**: Default is "mbr", ext4 file system with mbr partition table, if assign "gpt", the partition method will be as xfs file system with gpt partition table. This is only valid for Debian/Kali, single hard drive formatting environment, not suitable for Raid.
+**-partition "mbr" or "gpt"**: Default is "mbr", you can assign "gpt" to format hard drive with GUID Partition Table, if the capacity of current hard drive is above 2TB, "gpt" partition recipe will be activated automatically, This is only valid for Debian/Kali, single hard drive formatting environment, not suitable for Raid.
 <br />
 <br />
 
