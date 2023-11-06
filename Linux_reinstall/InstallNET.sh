@@ -772,7 +772,7 @@ function setNormalRecipe() {
 	[[ -n "$3" && $(echo "$3" | grep -o '[0-9]') ]] && swapSpace="$setSwap" || swapSpace='0'
 	if [[ "$1" == 'debian' ]] || [[ "$1" == 'kali' ]]; then
 		if [[ -n "$swapSpace" && "$swapSpace" -gt "0" ]]; then
-			swapSpace=$(awk 'BEGIN{print '${swapSpace}'*1.05 }' | cut -d '.' -f '1')
+			swapSpace=$(awk 'BEGIN{print '${swapSpace}'*1.05078125 }' | cut -d '.' -f '1')
 			swapRecipe=''${swapSpace}' 200 '${swapSpace}' linux-swap method{ swap } format{ } .'
 		else
 			swapRecipe=""
@@ -783,7 +783,7 @@ function setNormalRecipe() {
 			fileSystem="ext4"
 		fi
 		defaultFileSystem='d-i partman/default_filesystem string '${fileSystem}''
-		mainRecipe='1075 150 -1 '${fileSystem}' method{ format } format{ } use_filesystem{ } filesystem{ '${fileSystem}' } mountpoint{ / } .'
+		mainRecipe='1076 150 -1 '${fileSystem}' method{ format } format{ } use_filesystem{ } filesystem{ '${fileSystem}' } mountpoint{ / } .'
 		if [[ "$2" -gt "1" && "$4" == "all" ]]; then
 			PartmanEarlyCommand='debconf-set partman-auto/disk '${10}';'
 			selectDisks='d-i partman-auto/disk string '${10}''
@@ -806,7 +806,7 @@ d-i partman/default_label string gpt")
 		if [[ "$7" == "enabled" ]]; then
 			normalRecipes=$(echo -e "d-i partman-auto/choose_recipe select normal
 d-i partman-auto/expert_recipe string normal ::                                   \
-    538 100 1075 free \$iflabel{ gpt } \$reusemethod{ } method{ efi } format{ } . \
+    538 100 1076 free \$iflabel{ gpt } \$reusemethod{ } method{ efi } format{ } . \
     $swapRecipe                                                                   \
     $mainRecipe
 d-i partman-efi/non_efi_system boolean true")
@@ -912,8 +912,8 @@ d-i partman-auto-raid/recipe string     \
     1  $2 0 ext4 /boot $AllDisksPart2 . \
     $1 $2 0 ext4 /     $AllDisksPart3 .
 d-i partman-auto/expert_recipe string multiraid ::                                                            \
-    1075 100 2150 free \$bootable{ } \$primary{ } method{ efi } \$iflabel{ gpt } \$reusemethod{ } format{ } . \
-    269  150 538  raid               \$primary{ } method{ raid } .                                            \
+	538  100 1076 free \$bootable{ } \$primary{ } method{ efi } \$iflabel{ gpt } \$reusemethod{ } format{ } . \
+	1076 150 2152 raid               \$primary{ } method{ raid } .                                            \
     100  200 -1   raid               \$primary{ } method{ raid } .
 d-i partman-efi/non_efi_system boolean true
 d-i partman-partitioning/choose_label select gpt
@@ -925,7 +925,7 @@ d-i partman-auto-raid/recipe string     \
     1  $2 0 ext4 /boot $AllDisksPart1 . \
     $1 $2 0 ext4 /     $AllDisksPart2 .
 d-i partman-auto/expert_recipe string multiraid ::                 \
-    1075 100 2150 raid \$bootable{ } \$primary{ } method{ raid } . \
+    1076 100 2152 raid \$bootable{ } \$primary{ } method{ raid } . \
     100  200 -1   raid               \$primary{ } method{ raid } .
 ")
 			fi
