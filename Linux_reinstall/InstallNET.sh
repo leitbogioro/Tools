@@ -912,8 +912,8 @@ d-i partman-auto-raid/recipe string     \
     1  $2 0 ext4 /boot $AllDisksPart2 . \
     $1 $2 0 ext4 /     $AllDisksPart3 .
 d-i partman-auto/expert_recipe string multiraid ::                                                            \
-	538  100 1076 free \$bootable{ } \$primary{ } method{ efi } \$iflabel{ gpt } \$reusemethod{ } format{ } . \
-	1076 150 2152 raid               \$primary{ } method{ raid } .                                            \
+    538  100 1076 free \$bootable{ } \$primary{ } method{ efi } \$iflabel{ gpt } \$reusemethod{ } format{ } . \
+    1076 150 2152 raid               \$primary{ } method{ raid } .                                            \
     100  200 -1   raid               \$primary{ } method{ raid } .
 d-i partman-efi/non_efi_system boolean true
 d-i partman-partitioning/choose_label select gpt
