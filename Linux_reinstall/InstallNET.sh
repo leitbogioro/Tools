@@ -771,6 +771,9 @@ function diskType() {
 function setNormalRecipe() {
 	[[ -n "$3" && $(echo "$3" | grep -o '[0-9]') ]] && swapSpace="$setSwap" || swapSpace='0'
 	if [[ "$1" == 'debian' ]] || [[ "$1" == 'kali' ]]; then
+		[[ "$lowMemMode" == "1" ]] && {
+			[[ -z "$swapSpace" || "$swapSpace" -lt "512" ]] && swapSpace="512"
+		}
 		if [[ -n "$swapSpace" && "$swapSpace" -gt "0" ]]; then
 			swapSpace=$(awk 'BEGIN{print '${swapSpace}'*1.05078125 }' | cut -d '.' -f '1')
 			swapRecipe=''${swapSpace}' 200 '${swapSpace}' linux-swap method{ swap } format{ } .'
@@ -1162,7 +1165,11 @@ function checkMem() {
 	# "lowmem=+2" is dangerous because it will cause net-installer-kernel booting failed in any memory capacity.
 	# "lowmem=+1" will disable many features including load other drivers to save memory to make installation successful.
 	# "lowmem=+0" is to avoid Debian installer to enable low memory mode by force so that it can urge Debian installer to read "d-i non-free-firmware" from "preseed.cfg" to load many drivers like NVME disks to improve hardware compatibility, tested succeed on 512MB memory servers with Debian, Kali.
+	# The actual available capacity of memory on AWS ec2 arm64 t4g model is 472mb in spite of the hardware which was announced by Amazon is "0.5G"
+	# so that in this situation, distributing 512mb swap for target machine is necessary to avoid of installing linux kernel will meet a fatal for Debian series.
+	# I decided to set a baseline of 672mb(any ram of current machine is lower than this) to deal with it at current(2023.11).
 	[[ "$1" == 'debian' ]] || [[ "$1" == 'ubuntu' ]] || [[ "$1" == 'kali' ]] && {
+		[[ "$TotalMem" -le "672" ]] && lowMemMode="1"
 		if [[ "$TotalMem" -le "448" ]]; then
 			lowmemLevel="lowmem=+1"
 		elif [[ "$TotalMem" -le "1500" ]]; then
