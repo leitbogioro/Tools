@@ -1621,7 +1621,7 @@ function checkDIST() {
 					exit 1
 					# Fedora releases history:
 					# https://fedorapeople.org/groups/schedule/
-				elif [[ "$linux_relese" == 'fedora' ]] && [[ "$RedHatSeries" -le "36" ]]; then
+				elif [[ "$linux_relese" == 'fedora' ]] && [[ "$RedHatSeries" -le "37" ]]; then
 					echo -ne "\n[${red}Warning${plain}] $Relese $DISTCheck is not supported!\n"
 					exit 1
 				fi
@@ -3184,7 +3184,7 @@ linux_relese=$(echo "$Relese" | sed 's/\ //g' | sed -r 's/(.*)/\L\1/')
 	[ "$Relese" == 'CentOS' ] && tmpDIST='9'
 	[ "$Relese" == 'RockyLinux' ] && tmpDIST='9'
 	[ "$Relese" == 'AlmaLinux' ] && tmpDIST='9'
-	[ "$Relese" == 'Fedora' ] && tmpDIST='38'
+	[ "$Relese" == 'Fedora' ] && tmpDIST='39'
 }
 [[ -z "$finalDIST" ]] && {
 	[ "$targetRelese" == 'Ubuntu' ] && finalDIST='22.04'
