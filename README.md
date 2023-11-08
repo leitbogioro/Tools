@@ -53,7 +53,7 @@ If you need to add other parameters, a certain name of distributions must be ass
 <pre><code>bash InstallNET.sh -almalinux</code></pre>
 ### RockyLinux 9
 <pre><code>bash InstallNET.sh -rockylinux</code></pre>
-### Fedora 38
+### Fedora 39
 <pre><code>bash InstallNET.sh -fedora</code></pre>
 ### Ubuntu 22.04
 <pre><code>bash InstallNET.sh -ubuntu</code></pre>
@@ -108,7 +108,7 @@ For Windows: 3389
 <br />
 <br />
 
-**-fedora 37/38**: Fedora 37 and later
+**-fedora 38/39**: Fedora 38 and later
 <br />
 <br />
 
