@@ -1232,7 +1232,7 @@ function checkMem() {
 					}
 				fi
 			elif [[ "$1" == 'fedora' ]]; then
-				[[ "$TotalMem" -le "1724" ]] && {
+				[[ "$TotalMem" -le "1722" ]] && {
 					echo -ne "\n[${red}Error${plain}] Minimum system memory requirement is 1.7 GB!\n"
 					exit 1
 				}
@@ -4363,6 +4363,8 @@ systemctl restart sshd
 # Add new ssh port for firewalld
 sed -i '6i \ \ <port port="${sshPORT}" protocol="tcp"/>' /etc/firewalld/zones/public.xml
 sed -i '7i \ \ <port port="${sshPORT}" protocol="udp"/>' /etc/firewalld/zones/public.xml
+# Allowance of IPv4 and IPv6 access
+echo -e "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<direct>\n  <rule ipv=\"ipv4\" table=\"filter\" chain=\"INPUT\" priority=\"0\">-p icmp --icmp-type 32 -j DROP</rule>\n  <rule ipv=\"ipv4\" table=\"filter\" chain=\"INPUT\" priority=\"1\">-p icmp -j ACCEPT</rule>\n  <rule ipv=\"ipv6\" table=\"filter\" chain=\"INPUT\" priority=\"0\">-p icmpv6 --icmpv6-type 128 -j DROP</rule>\n  <rule ipv=\"ipv6\" table=\"filter\" chain=\"INPUT\" priority=\"1\">-p icmpv6 -j ACCEPT</rule>\n</direct>" > /etc/firewalld/direct.xml
 # Reload firewalld service
 firewall-cmd --reload
 
