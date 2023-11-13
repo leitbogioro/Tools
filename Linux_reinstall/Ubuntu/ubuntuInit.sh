@@ -128,6 +128,7 @@ fi
 wget --no-check-certificate -qO $cloudInitFile ''$cloudInitUrl''
 
 # User config.
+sed -ri 's/sshPORT/'${sshPORT}'/g' $cloudInitFile
 sed -ri 's/HostName/'${HostName}'/g' $cloudInitFile
 sed -ri 's/tmpWORD/'${tmpWORD}'/g' $cloudInitFile
 sed -ri 's/TimeZone/'${TimeZone1}'\/'${TimeZone2}'/g' $cloudInitFile
@@ -169,6 +170,9 @@ sed -ri 's#^Include /etc/ssh/sshd_config.d/#\#Include /etc/ssh/sshd_config.d/#g'
 sed -ri 's/^#?PermitRootLogin.*/PermitRootLogin yes/g' /mnt/etc/ssh/sshd_config
 sed -ri 's/^#?PasswordAuthentication.*/PasswordAuthentication yes/g' /mnt/etc/ssh/sshd_config
 sed -ri 's/^#?Port.*/Port '${sshPORT}'/g' /mnt/etc/ssh/sshd_config
+# Change ssh port for service of "ssh.socket".
+# https://askubuntu.com/questions/1439461/ssh-default-port-not-changing-ubuntu-22-10
+sed -ri 's/^ListenStream=.*/ListenStream='${sshPORT}'/g' /mnt/lib/systemd/system/ssh.socket
 
 # Disable installing fail2ban.
 [[ "$setFail2banStatus" != "1" ]] && {
