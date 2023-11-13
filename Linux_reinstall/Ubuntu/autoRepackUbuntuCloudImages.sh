@@ -10,7 +10,7 @@ linuxName="Ubuntu"
 websiteDir="/www/wwwroot/cloud-images.a.disk.re/$linuxName"
 [[ ! -d "$websiteDir" ]] && mkdir -p "$websiteDir"
 
-for distName in "jammy" "focal"; do
+for distName in "jammy" "focal" "noble"; do
 	for archType in "amd64" "arm64"; do
 		fileName="$distName-server-cloudimg-$archType"
 		axel -n 16 -k -q -o /root/$fileName.img "https://cloud-images.ubuntu.com/$distName/current/$fileName.img"
