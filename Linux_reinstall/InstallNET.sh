@@ -3491,7 +3491,7 @@ if [[ "$ddMode" == '1' ]]; then
 				# More discussions: https://discourse.ubuntu.com/t/netbooting-the-live-server-installer/14510/18
 				[[ "$ubuntuDigital" == '22.04' ]] && finalDIST='jammy'
 				# [[ "$ubuntuDigital" == '24.04' ]] && finalDIST='noble'
-				# Ubuntu releases reference: https://releases.ubuntu.com/
+				# Ubuntu releases reference: https://wiki.ubuntu.com/Releases/
 			}
 		}
 		if [[ "$VER" == "x86_64" ]] || [[ "$VER" == "x86-64" ]]; then
