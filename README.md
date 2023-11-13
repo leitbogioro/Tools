@@ -112,7 +112,7 @@ For Windows: 3389
 <br />
 <br />
 
-**-ubuntu 20.04/22.04**: Ubuntu from 20.04 and later
+**-ubuntu 20.04/22.04/24.04(not stable)**: Ubuntu from 20.04 and later
 <br />
 <br />
 
