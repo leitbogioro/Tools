@@ -20,6 +20,7 @@ cloudInitFile='/mnt/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg'
 IncDisk=$(grep "IncDisk" $confFile | awk '{print $2}')
 LinuxMirror=$(grep -w "LinuxMirror" $confFile | awk '{print $2}')
 alpineVer=$(grep "alpineVer" $confFile | awk '{print $2}')
+distYearsNum=$(grep "ubuntuDigital" $confFile | awk '{print $2}' | cut -d'.' -f 1)
 TimeZone1=$(grep "TimeZone" $confFile | awk '{print $2}' | cut -d'/' -f 1)
 TimeZone2=$(grep "TimeZone" $confFile | awk '{print $2}' | cut -d'/' -f 2)
 tmpWORD=$(grep -w "tmpWORD" $confFile | awk '{print $2}')
@@ -79,11 +80,49 @@ loopDeviceNum=$(echo $(losetup -f) | cut -d'/' -f 3)
 # Make a soft link between valid loop device and disk.
 losetup $loopDevice $IncDisk
 
-# Get mapper partition.
-mapperDevice=$(kpartx -av $loopDevice | grep "$loopDeviceNum" | head -n 1 | awk '{print $3}')
-
-# Mount Ubuntu dd partition to /mnt .
-mount /dev/mapper/$mapperDevice /mnt
+if [[ "$distYearsNum" -le "22" ]]; then
+	# Get mapper partition.
+	mapperDevice=$(kpartx -av $loopDevice | grep "$loopDeviceNum" | head -n 1 | awk '{print $3}')
+	# Mount Ubuntu dd partition to /mnt .
+	mount /dev/mapper/$mapperDevice /mnt
+	# Disable IPv6.
+	[[ "$setIPv6" == "0" ]] && {
+		sed -ri 's/GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0"/GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0 ipv6.disable=1"/g' /mnt/etc/default/grub
+		sed -ri 's/ro net.ifnames=0 biosdevname=0/ro net.ifnames=0 biosdevname=0 ipv6.disable=1/g' /mnt/boot/grub/grub.cfg
+	}
+	# Add console, Ubuntu 20.04 is different from Ubuntu 22.04 .
+	[[ ! $(grep "console=tty[0-9] console=ttyS[0-9]" /mnt/etc/default/grub.d/50-cloudimg-settings.cfg) ]] && {
+		sed -ri 's/net.ifnames=0 biosdevname=0/net.ifnames=0 biosdevname=0 console=tty1 console=ttyS0/g' /mnt/etc/default/grub
+		sed -ri 's/net.ifnames=0 biosdevname=0/net.ifnames=0 biosdevname=0 console=tty1 console=ttyS0/g' /mnt/boot/grub/grub.cfg
+	}
+	# Replace serial console parameters.
+	[[ -n "$serialConsolePropertiesForGrub" && $(echo "$serialConsolePropertiesForGrub" | sed 's/[[:space:]]/#/g' | grep "ttyAMA[0-9]") ]] && {
+		sed -ri 's/console=tty1/console=tty1 console=ttyAMA0/g' /mnt/etc/default/grub.d/50-cloudimg-settings.cfg
+		[[ ! $(grep "console=tty[0-9] console=ttyS[0-9]" /mnt/etc/default/grub.d/50-cloudimg-settings.cfg) ]] && {
+			sed -ri 's/console=tty1/console=tty1 console=ttyAMA0/g' /mnt/etc/default/grub
+		}
+		sed -ri 's/console=tty1/console=tty1 console=ttyAMA0/g' /mnt/boot/grub/grub.cfg
+	}
+else
+	# In cloud images of Ubuntu 24.04 and above, the partition of main system files is in the first, the partition of "/grub/grub.cfg" is in the last.
+	mapperDevice=$(kpartx -av $loopDevice | grep "$loopDeviceNum" | sort -rn | head -n 1 | awk '{print $3}')
+	mount /dev/mapper/$mapperDevice /mnt
+	[[ "$setIPv6" == "0" ]] && {
+		sed -ri 's/ro net.ifnames=0 biosdevname=0/ro net.ifnames=0 biosdevname=0 ipv6.disable=1/g' /mnt/grub/grub.cfg
+	}
+	[[ -n "$serialConsolePropertiesForGrub" && $(echo "$serialConsolePropertiesForGrub" | sed 's/[[:space:]]/#/g' | grep "ttyAMA[0-9]") ]] && {
+		sed -ri 's/console=tty1/console=tty1 console=ttyAMA0/g' /mnt/grub/grub.cfg
+	}
+	umount /mnt
+	mapperDevice=$(kpartx -av $loopDevice | grep "$loopDeviceNum" | head -n 1 | awk '{print $3}')
+	mount /dev/mapper/$mapperDevice /mnt
+	[[ "$setIPv6" == "0" ]] && {
+		sed -ri 's/GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0"/GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0 ipv6.disable=1"/g' /mnt/etc/default/grub
+	}
+	[[ -n "$serialConsolePropertiesForGrub" && $(echo "$serialConsolePropertiesForGrub" | sed 's/[[:space:]]/#/g' | grep "ttyAMA[0-9]") ]] && {
+		sed -ri 's/console=tty1/console=tty1 console=ttyAMA0/g' /mnt/etc/default/grub.d/50-cloudimg-settings.cfg
+	}
+fi
 
 # Download cloud init file.
 wget --no-check-certificate -qO $cloudInitFile ''$cloudInitUrl''
@@ -119,27 +158,6 @@ sed -ri 's/ip6DNS2/'${ip6DNS2}'/g' $cloudInitFile
 # Disable any datahouse.
 # Reference: https://github.com/canonical/cloud-init/issues/3772
 echo 'datasource_list: [ NoCloud, None ]' >/mnt/etc/cloud/cloud.cfg.d/90_dpkg.cfg
-
-# Disable IPv6.
-[[ "$setIPv6" == "0" ]] && {
-	sed -ri 's/GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0"/GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0 ipv6.disable=1"/g' /mnt/etc/default/grub
-	sed -ri 's/ro net.ifnames=0 biosdevname=0/ro net.ifnames=0 biosdevname=0 ipv6.disable=1/g' /mnt/boot/grub/grub.cfg
-}
-
-# Add console, Ubuntu 20.04 is different from Ubuntu 22.04 .
-[[ ! $(grep "console=tty[0-9] console=ttyS[0-9]" /mnt/etc/default/grub.d/50-cloudimg-settings.cfg) ]] && {
-	sed -ri 's/net.ifnames=0 biosdevname=0/net.ifnames=0 biosdevname=0 console=tty1 console=ttyS0/g' /mnt/etc/default/grub
-	sed -ri 's/net.ifnames=0 biosdevname=0/net.ifnames=0 biosdevname=0 console=tty1 console=ttyS0/g' /mnt/boot/grub/grub.cfg
-}
-
-# Replace serial console parameters.
-[[ -n "$serialConsolePropertiesForGrub" && $(echo "$serialConsolePropertiesForGrub" | sed 's/[[:space:]]/#/g' | grep "ttyAMA[0-9]") ]] && {
-	sed -ri 's/console=tty1/console=tty1 console=ttyAMA0/g' /mnt/etc/default/grub.d/50-cloudimg-settings.cfg
-	[[ ! $(grep "console=tty[0-9] console=ttyS[0-9]" /mnt/etc/default/grub.d/50-cloudimg-settings.cfg) ]] && {
-		sed -ri 's/console=tty1/console=tty1 console=ttyAMA0/g' /mnt/etc/default/grub
-	}
-	sed -ri 's/console=tty1/console=tty1 console=ttyAMA0/g' /mnt/boot/grub/grub.cfg
-}
 
 # Disable sshd service to read configs from "ssh.socket" otherwise any changes on "/etc/ssh/sshd_config" will not take effects after Ubuntu 22.10, 23.04, 23.10… .
 # This is a preparation for dealing with the future versions of Ubuntu for example Ubuntu 24.04 LTS and later.
