@@ -3490,7 +3490,7 @@ if [[ "$ddMode" == '1' ]]; then
 				# Canonical.inc is son of a bitch, they change back and forth, pood and pee everywhere.
 				# More discussions: https://discourse.ubuntu.com/t/netbooting-the-live-server-installer/14510/18
 				[[ "$ubuntuDigital" == '22.04' ]] && finalDIST='jammy'
-				# [[ "$ubuntuDigital" == '24.04' ]] && finalDIST='noble'
+				[[ "$ubuntuDigital" == '24.04' ]] && finalDIST='noble'
 				# Ubuntu releases reference: https://wiki.ubuntu.com/Releases/
 			}
 		}
@@ -4077,7 +4077,8 @@ echo "LinuxMirror  "${LinuxMirror} >> \$sysroot/root/alpine.config
 # To determine the release of Alpine Linux.
 echo "alpineVer  "${DIST} >> \$sysroot/root/alpine.config
 
-# To determine the distribution and release of Redhat series for target system.
+# To determine the distribution and release of Redhat series or Ubuntu for target system.
+echo "ubuntuDigital  "${ubuntuDigital} >> \$sysroot/root/alpine.config
 echo "targetRelese  "${targetRelese} >> \$sysroot/root/alpine.config
 echo "RedHatSeries  "${RedHatSeries} >> \$sysroot/root/alpine.config
 
