@@ -173,6 +173,7 @@ sed -ri 's/^#?Port.*/Port '${sshPORT}'/g' /mnt/etc/ssh/sshd_config
 # Change ssh port for service of "ssh.socket".
 # https://askubuntu.com/questions/1439461/ssh-default-port-not-changing-ubuntu-22-10
 sed -ri 's/^ListenStream=.*/ListenStream='${sshPORT}'/g' /mnt/lib/systemd/system/ssh.socket
+sed -ri 's/^Accept=.*/Accept=yes/g' /mnt/lib/systemd/system/ssh.socket
 
 # Disable installing fail2ban.
 [[ "$setFail2banStatus" != "1" ]] && {
