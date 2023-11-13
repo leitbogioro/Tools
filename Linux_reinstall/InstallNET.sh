@@ -3470,7 +3470,7 @@ if [[ "$ddMode" == '1' ]]; then
 			ubuntuDigital="$(echo "$ubuntuDIST" | grep -o '[\.0-9]\{1,\}' | sed -n '1h;1!H;$g;s/\n//g;$p')"
 			ubuntuDigital1=$(echo "$ubuntuDigital" | cut -d'.' -f1)
 			ubuntuDigital2=$(echo "$ubuntuDigital" | cut -d'.' -f2)
-			if [[ "$ubuntuDigital1" -le "19" || "$ubuntuDigital1" -ge "23" || $((${ubuntuDigital1} % 2)) = 1 ]] || [[ "$ubuntuDigital2" != "04" ]]; then
+			if [[ "$ubuntuDigital1" -le "19" || "$ubuntuDigital1" -ge "25" || $((${ubuntuDigital1} % 2)) = 1 ]] || [[ "$ubuntuDigital2" != "04" ]]; then
 				echo -ne "\n[${red}Error${plain}] The dists version not found, Please check it! \n'"
 				exit 1
 			fi
@@ -3490,6 +3490,7 @@ if [[ "$ddMode" == '1' ]]; then
 				# Canonical.inc is son of a bitch, they change back and forth, pood and pee everywhere.
 				# More discussions: https://discourse.ubuntu.com/t/netbooting-the-live-server-installer/14510/18
 				[[ "$ubuntuDigital" == '22.04' ]] && finalDIST='jammy'
+				# [[ "$ubuntuDigital" == '24.04' ]] && finalDIST='noble'
 				# Ubuntu releases reference: https://releases.ubuntu.com/
 			}
 		}
