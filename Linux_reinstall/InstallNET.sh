@@ -830,10 +830,11 @@ $gptPartitionPreseed
 	elif [[ "$1" == 'centos' ]] || [[ "$1" == 'rockylinux' ]] || [[ "$1" == 'almalinux' ]] || [[ "$1" == 'fedora' ]]; then
 		ksIncDisk=$(echo $9 | cut -d'/' -f 3)
 		ksAllDisks=$(echo ${10} | sed 's/\/dev\///g' | sed 's/ /,/g')
-		if [[ -n "$swapSpace" && "$swapSpace" -gt "0" ]]; then
+		if [[ -n "$swapSpace" && "$swapSpace" -gt "512" ]]; then
 			swapRecipe='part swap --ondisk='${ksIncDisk}' --size='${swapSpace}'\n'
-		else
-			swapRecipe=""
+		elif [[ -z "$swapSpace" || "$swapSpace" -le "512" ]]; then
+			# Not distributing any capacity of swap will cause installing of Kickstart collapse.
+			swapRecipe='part swap --ondisk='${ksIncDisk}' --size=512\n'
 		fi
 		[[ "$2" -le "1" || "$4" != "all" ]] && {
 			clearPart="clearpart --drives=${ksIncDisk} --all --initlabel"
