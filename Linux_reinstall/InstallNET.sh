@@ -1204,27 +1204,15 @@ function checkMem() {
 				exit 1
 			}
 			if [[ "$1" == 'rockylinux' || "$1" == 'almalinux' || "$1" == 'centos' ]]; then
-				if [[ "$2" == "8" ]] || [[ "$1" == 'centos' && "$2" -ge "9" ]]; then
+				if [[ "$2" == "8" ]] || [[ "$2" == "9" ]]; then
 					[[ "$TotalMem" -le "2228" ]] && {
 						echo -ne "\n[${red}Warning${plain}] Minimum system memory requirement is 2.2 GB for ${blue}KickStart${plain} native method.\n"
+						lowMemMode="1"
 						if [[ "$2" == "8" ]]; then
 							echo -ne "\nSwitching to ${yellow}Rocky $2${plain} by ${blue}Cloud Init${plain} Installation... \n"
-							lowMemMode="1"
-						elif [[ "$1" == 'centos' && "$2" -ge "9" ]]; then
-							[[ "$TotalMem" -ge "2028" ]] && {
-								echo -ne "\nSwitching to ${yellow}AlmaLinux $2${plain} distribution... \n"
-								switchRedhatDIST="1"
-							} || {
-								echo -ne "\nSwitching to ${yellow}AlmaLinux $2${plain} by ${blue}Cloud Init${plain} Installation... \n"
-								lowMemMode="1"
-							}
+						elif [[ "$2" == "9" ]]; then
+							echo -ne "\nSwitching to ${blue}Cloud Init${plain} Installation... \n"
 						fi
-					}
-				elif [[ "$2" -ge "9" ]]; then
-					[[ "$TotalMem" -le "2028" ]] && {
-						echo -ne "\n[${red}Warning${plain}] Minimum system memory requirement is 2 GB for ${blue}Kickstart${plain} native method.\n"
-						echo -ne "\nSwitching to ${blue}Cloud Init${plain} Installation... \n"
-						lowMemMode="1"
 					}
 				elif [[ "$2" == "7" ]]; then
 					[[ "$TotalMem" -le "1500" ]] && {
@@ -3224,14 +3212,10 @@ clear
 	}
 }
 
-# RAM of RedHat series is 2GB required at least for native install, for dd is 512MB.
+# RAM of RedHat series is 2.2GB required at least for native install, for dd is 512MB.
 [[ "$setNetbootXyz" == "0" ]] && {
 	checkMem "$linux_relese" "$RedHatSeries" "$targetRelese"
 	Add_OPTION="$Add_OPTION $lowmemLevel"
-	[[ "$switchRedhatDIST" == "1" ]] && {
-		Relese='AlmaLinux'
-		linux_relese='almalinux'
-	}
 	checkDIST
 }
 
