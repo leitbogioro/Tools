@@ -217,7 +217,7 @@ Wait until downloading and unpackaging are all finished, change netboot to forma
 <br />
 <br />
 
-**--bbr**: Enable BBR(Bottleneck Bandwidth and Round-trip propagation time) for current kernel by add parameters and values to "/etc/sysctl.d/99-sysctl.conf" including:
+**--bbr**: Enable BBR(Bottleneck Bandwidth and Round-trip propagation time) for current kernel by adding parameters and values to "/etc/sysctl.d/99-sysctl.conf" including:
 <pre><code>net.core.default_qdisc = fq
 net.ipv4.tcp_congestion_control = bbr
 net.ipv4.tcp_rmem = 8192 262144 536870912
@@ -227,6 +227,7 @@ net.ipv4.tcp_collapse_max_bytes = 6291456
 net.ipv4.tcp_notsent_lowat = 131072
 </code></pre>
 to optimize the network environments of high latency and low bandwidth.
+<br />
 Note: Module "tcp_collapse_max_bytes" is a self completion of Cloudflare, you need to download and apply patches by yourself otherwise this module will not be in effect:
 https://github.com/cloudflare/linux/tree/master/patches
 <br />
