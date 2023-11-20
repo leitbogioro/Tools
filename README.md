@@ -217,6 +217,21 @@ Wait until downloading and unpackaging are all finished, change netboot to forma
 <br />
 <br />
 
+**--bbr**: Enable BBR(Bottleneck Bandwidth and Round-trip propagation time) for current kernel by add parameters and values to "/etc/sysctl.d/99-sysctl.conf" including:
+<pre><code>net.core.default_qdisc = fq
+net.ipv4.tcp_congestion_control = bbr
+net.ipv4.tcp_rmem = 8192 262144 536870912
+net.ipv4.tcp_wmem = 4096 16384 536870912
+net.ipv4.tcp_adv_win_scale = -2
+net.ipv4.tcp_collapse_max_bytes = 6291456
+net.ipv4.tcp_notsent_lowat = 131072
+</code></pre>
+to optimize the network environments of high latency and low bandwidth.
+Note: Module "tcp_collapse_max_bytes" is a self completion of Cloudflare, you need to download and apply patches by yourself otherwise this module will not be in effect:
+https://github.com/cloudflare/linux/tree/master/patches
+<br />
+<br />
+
 **--network "dhcp/auto" or "static/manual"**: Default to use DHCP to finish network configuration. If your cloud provider is a small or middle merchant, the network of your machine may be static so you need to add it. it is equal with add --ip-addr "" --ip-mask "" --ip-gate "", if you add this, don't distribute the following three items again! It must be added in the last of the command.
 <br />
 <br />
