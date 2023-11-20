@@ -2716,7 +2716,7 @@ function setDhcpOrStatic() {
 	}
 }
 
-# $1 is "in-target", $2 is "/etc/network/interfaces".
+# $1 is "in-target", $2 is "/etc/network/interfaces", $3 is "/etc/sysctl.d/99-sysctl.conf".
 function DebianModifiedPreseed() {
 	if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'kali' ]]; then
 		debianConfFileDir="https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/Debian"
@@ -2856,7 +2856,8 @@ function DebianModifiedPreseed() {
 			ReviseMOTD="$1 sed -ri 's/Debian/Kali/g' /etc/update-motd.d/00-header;"
 			SupportZSH="$1 apt install zsh -y; $1 chsh -s /bin/zsh; $1 rm -rf /root/.bashrc.original;"
 		}
-		# Write the following configs to "/etc/sysctl.d/99-sysctl.conf"
+		# Write the following configs to "/etc/sysctl.d/99-sysctl.conf", including network optimization:
+		#
 		# net.core.default_qdisc = fq
 		# net.ipv4.tcp_congestion_control = bbr
 		# net.ipv4.tcp_rmem = 8192 262144 536870912
@@ -2864,6 +2865,30 @@ function DebianModifiedPreseed() {
 		# net.ipv4.tcp_adv_win_scale = -2
 		# net.ipv4.tcp_collapse_max_bytes = 6291456
 		# net.ipv4.tcp_notsent_lowat = 131072
+		# net.ipv4.ip_local_port_range = 1024 65535
+		# net.core.rmem_max = 536870912
+		# net.core.wmem_max = 536870912
+		# net.core.somaxconn = 32768
+		# net.core.netdev_max_backlog = 32768
+		# net.ipv4.tcp_max_tw_buckets = 65536
+		# net.ipv4.tcp_abort_on_overflow = 1
+		# net.ipv4.tcp_slow_start_after_idle = 0
+		# net.ipv4.tcp_timestamps = 1
+		# net.ipv4.tcp_syncookies = 0
+		# net.ipv4.tcp_syn_retries = 3
+		# net.ipv4.tcp_synack_retries = 3
+		# net.ipv4.tcp_max_syn_backlog = 32768
+		# net.ipv4.tcp_fin_timeout = 15
+		# net.ipv4.tcp_keepalive_intvl = 3
+		# net.ipv4.tcp_keepalive_probes = 5
+		# net.ipv4.tcp_keepalive_time = 600
+		# net.ipv4.tcp_retries1 = 3
+		# net.ipv4.tcp_retries2 = 5
+		# net.ipv4.tcp_no_metrics_save = 1
+		# net.ipv4.ip_forward = 1
+		# fs.file-max = 104857600
+		# fs.inotify.max_user_instances = 8192
+		# fs.nr_open = 1048576
 		#
 		# Note: Module "tcp_collapse_max_bytes" is a self completion of Cloudflare, users need to download and apply patches by themselves otherwise this module will not be in effect.
 		#
@@ -2877,7 +2902,23 @@ function DebianModifiedPreseed() {
 		# 3. Third part patches for Linux kernel which were provided by CloudFlare:
 		# https://github.com/cloudflare/linux/tree/master/patches
 		#
-		[[ "$enableBBR" == "1" ]] && EnableBBR="$1 sed -i '\$anet.core.default_qdisc = fq' /etc/sysctl.d/99-sysctl.conf; $1 sed -i '\$anet.ipv4.tcp_congestion_control = bbr' /etc/sysctl.d/99-sysctl.conf; $1 sed -i '\$anet.ipv4.tcp_rmem = 8192 262144 536870912' /etc/sysctl.d/99-sysctl.conf; $1 sed -i '\$anet.ipv4.tcp_wmem = 4096 16384 536870912' /etc/sysctl.d/99-sysctl.conf; $1 sed -i '\$anet.ipv4.tcp_adv_win_scale = -2' /etc/sysctl.d/99-sysctl.conf; $1 sed -i '\$anet.ipv4.tcp_collapse_max_bytes = 6291456' /etc/sysctl.d/99-sysctl.conf; $1 sed -i '\$anet.ipv4.tcp_notsent_lowat = 131072' /etc/sysctl.d/99-sysctl.conf; $1 systemctl restart systemd-sysctl;" || EnableBBR=""
+		# 4. https://github.com/MoeClub/Note/blob/master/LinuxInit.sh
+		#
+		# 5. https://www.nodeseek.com/post-37225-1
+		#
+		# 6. https://www.starduster.me/2020/03/02/linux-network-tuning-kernel-parameter/
+		#
+		# 7. https://zhuanlan.zhihu.com/p/149372947
+		#
+		# 8. https://my.oschina.net/alchemystar/blog/4712110
+		#
+		# 9. http://performance.oreda.net/linux/configuration/sysctl 高負荷·大規模システムのLinuxカーネル·チューニング Linux kernel tuning for high availability and large scale system.
+		#
+		[[ "$enableBBR" == "1" ]] && {
+			EnableBBR="$1 sed -i '\$anet.core.default_qdisc = fq' $3; $1 sed -i '\$anet.ipv4.tcp_congestion_control = bbr' $3; $1 sed -i '\$anet.ipv4.tcp_rmem = 8192 262144 536870912' $3; $1 sed -i '\$anet.ipv4.tcp_wmem = 4096 16384 536870912' $3; $1 sed -i '\$anet.ipv4.tcp_adv_win_scale = -2' $3; $1 sed -i '\$anet.ipv4.tcp_collapse_max_bytes = 6291456' $3; $1 sed -i '\$anet.ipv4.tcp_notsent_lowat = 131072' $3; $1 sed -i '\$anet.ipv4.ip_local_port_range = 1024 65535' $3; $1 sed -i '\$anet.core.rmem_max = 536870912' $3; $1 sed -i '\$anet.core.wmem_max = 536870912' $3; $1 sed -i '\$anet.core.somaxconn = 32768' $3; $1 sed -i '\$anet.core.netdev_max_backlog = 32768' $3; $1 sed -i '\$anet.ipv4.tcp_max_tw_buckets = 65536' $3; $1 sed -i '\$anet.ipv4.tcp_abort_on_overflow = 1' $3; $1 sed -i '\$anet.ipv4.tcp_slow_start_after_idle = 0' $3; $1 sed -i '\$anet.ipv4.tcp_timestamps = 1' $3; $1 sed -i '\$anet.ipv4.tcp_syncookies = 0' $3; $1 sed -i '\$anet.ipv4.tcp_syn_retries = 3' $3; $1 sed -i '\$anet.ipv4.tcp_synack_retries = 3' $3; $1 sed -i '\$anet.ipv4.tcp_max_syn_backlog = 32768' $3; $1 sed -i '\$anet.ipv4.tcp_fin_timeout = 15' $3; $1 sed -i '\$anet.ipv4.tcp_keepalive_intvl = 3' $3; $1 sed -i '\$anet.ipv4.tcp_keepalive_probes = 5' $3; $1 sed -i '\$anet.ipv4.tcp_keepalive_time = 600' $3; $1 sed -i '\$anet.ipv4.tcp_retries1 = 3' $3; $1 sed -i '\$anet.ipv4.tcp_retries2 = 5' $3; $1 sed -i '\$anet.ipv4.tcp_no_metrics_save = 1' $3; $1 sed -i '\$anet.ipv4.ip_forward = 1' $3; $1 sed -i '\$afs.file-max = 104857600' $3; $1 sed -i '\$afs.inotify.max_user_instances = 8192' $3; $1 sed -i '\$afs.nr_open = 1048576' $3; $1 systemctl restart systemd-sysctl;"
+		} || {
+			EnableBBR=""
+		}
 		# For some cloud providers which servers boot from their own grub2 bootloader first by force, not boot from grub in harddisk of our own servers directly,
 		# we need to creat a soft link for grub2 from grub1 to make sure the first reboot after installation won't meet a fatal.
 		# In this situation, the partition table and filesystem of the newly installed OS must be "mbr" and "ext4".
@@ -2978,7 +3019,7 @@ function DebianPreseedProcess() {
 		# d-i netcfg/get_nameservers string $ipDNS/$ip6DNS
 		# d-i netcfg/no_default_route boolean true
 		# d-i netcfg/confirm_static boolean true
-		DebianModifiedPreseed "in-target" "/etc/network/interfaces"
+		DebianModifiedPreseed "in-target" "/etc/network/interfaces" "/etc/sysctl.d/99-sysctl.conf"
 		cat >/tmp/boot/preseed.cfg <<EOF
 ### Unattended Installation
 d-i auto-install/enable boolean true
