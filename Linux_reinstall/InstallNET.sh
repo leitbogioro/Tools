@@ -2856,7 +2856,7 @@ function DebianModifiedPreseed() {
 			ReviseMOTD="$1 sed -ri 's/Debian/Kali/g' /etc/update-motd.d/00-header;"
 			SupportZSH="$1 apt install zsh -y; $1 chsh -s /bin/zsh; $1 rm -rf /root/.bashrc.original;"
 		}
-		# Write the following configs to "/etc/sysctl.conf"
+		# Write the following configs to "/etc/sysctl.d/99-sysctl.conf"
 		# net.core.default_qdisc = fq
 		# net.ipv4.tcp_congestion_control = bbr
 		# net.ipv4.tcp_rmem = 8192 262144 536870912
