@@ -379,8 +379,8 @@ function checkCN() {
 	# If testing servers are all unaccessible, the server may be in mainland of China.
 	[[ $(echo $tmpIsCN | grep -o "cn" | wc -l) == "4" ]] && {
 		IsCN="cn"
-		ipDNS="119.29.29.29 223.6.6.6"
-		ip6DNS="2402:4e00:: 2400:3200::1"
+		[[ -z "$ipDNS" ]] && ipDNS="119.29.29.29 223.6.6.6"
+		[[ -z "$ip6DNS" ]] && ip6DNS="2402:4e00:: 2400:3200::1"
 	}
 }
 
