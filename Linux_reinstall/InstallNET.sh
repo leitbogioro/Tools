@@ -68,6 +68,7 @@ export partitionTable='mbr'
 export fileSystem=''
 export setMemCheck='1'
 export setCloudKernel=''
+export enableBBR='0'
 export isMirror='0'
 export FindDists='0'
 export setFileType=''
@@ -189,6 +190,7 @@ while [[ $# -ge 1 ]]; do
 	--ip-dns)
 		shift
 		ipDNS="$1"
+		ipDNSChanged='1'
 		shift
 		;;
 	--ip6-addr)
@@ -209,6 +211,7 @@ while [[ $# -ge 1 ]]; do
 	--ip6-dns)
 		shift
 		ip6DNS="$1"
+		ip6DNSChanged='1'
 		shift
 		;;
 	--network)
@@ -338,6 +341,10 @@ while [[ $# -ge 1 ]]; do
 		tmpSetIPv6="$1"
 		shift
 		;;
+	--bbr)
+		shift
+		enableBBR="1"
+		;;
 	--allbymyself)
 		shift
 		setAutoConfig='0'
@@ -379,8 +386,8 @@ function checkCN() {
 	# If testing servers are all unaccessible, the server may be in mainland of China.
 	[[ $(echo $tmpIsCN | grep -o "cn" | wc -l) == "4" ]] && {
 		IsCN="cn"
-		[[ -z "$ipDNS" ]] && ipDNS="119.29.29.29 223.6.6.6"
-		[[ -z "$ip6DNS" ]] && ip6DNS="2402:4e00:: 2400:3200::1"
+		[[ "$ipDNSChanged" != "1" ]] && ipDNS="119.29.29.29 223.6.6.6"
+		[[ "$ip6DNSChanged" != "1" ]] && ip6DNS="2402:4e00:: 2400:3200::1"
 	}
 }
 
@@ -2849,6 +2856,28 @@ function DebianModifiedPreseed() {
 			ReviseMOTD="$1 sed -ri 's/Debian/Kali/g' /etc/update-motd.d/00-header;"
 			SupportZSH="$1 apt install zsh -y; $1 chsh -s /bin/zsh; $1 rm -rf /root/.bashrc.original;"
 		}
+		# Write the following configs to "/etc/sysctl.conf"
+		# net.core.default_qdisc = fq
+		# net.ipv4.tcp_congestion_control = bbr
+		# net.ipv4.tcp_rmem = 8192 262144 536870912
+		# net.ipv4.tcp_wmem = 4096 16384 536870912
+		# net.ipv4.tcp_adv_win_scale = -2
+		# net.ipv4.tcp_collapse_max_bytes = 6291456
+		# net.ipv4.tcp_notsent_lowat = 131072
+		#
+		# Note: Module "tcp_collapse_max_bytes" is a self completion of Cloudflare, users need to download and apply patches by themselves otherwise this module will not be in effect.
+		#
+		# Reference:
+		# 1. Settings of enable BBR:
+		# https://qiita.com/yoshuuua/items/daa9d04089d416afbf94 BBR推奨のパケットスケジューラーのキューイングアルゴリズムによるソケットバッファ枯渇問題
+		#                                                       Problem of exhaustion of socket buffer due to default queuing algorithm of packet scheduler of BBR
+		# 2. TCP optimization for shuttling to Cloudflare:
+		# https://blog.cloudflare.com/optimizing-tcp-for-high-throughput-and-low-latency/ Optimizing TCP for high WAN throughput while preserving low latency
+		#
+		# 3. Third part patches for Linux kernel which were provided by CloudFlare:
+		# https://github.com/cloudflare/linux/tree/master/patches
+		#
+		[[ "$enableBBR" == "1" ]] && EnableBBR="$1 sed -i '\$anet.core.default_qdisc = fq' /etc/sysctl.d/99-sysctl.conf; $1 sed -i '\$anet.ipv4.tcp_congestion_control = bbr' /etc/sysctl.d/99-sysctl.conf; $1 sed -i '\$anet.ipv4.tcp_rmem = 8192 262144 536870912' /etc/sysctl.d/99-sysctl.conf; $1 sed -i '\$anet.ipv4.tcp_wmem = 4096 16384 536870912' /etc/sysctl.d/99-sysctl.conf; $1 sed -i '\$anet.ipv4.tcp_adv_win_scale = -2' /etc/sysctl.d/99-sysctl.conf; $1 sed -i '\$anet.ipv4.tcp_collapse_max_bytes = 6291456' /etc/sysctl.d/99-sysctl.conf; $1 sed -i '\$anet.ipv4.tcp_notsent_lowat = 131072' /etc/sysctl.d/99-sysctl.conf; $1 systemctl restart systemd-sysctl;" || EnableBBR=""
 		# For some cloud providers which servers boot from their own grub2 bootloader first by force, not boot from grub in harddisk of our own servers directly,
 		# we need to creat a soft link for grub2 from grub1 to make sure the first reboot after installation won't meet a fatal.
 		# In this situation, the partition table and filesystem of the newly installed OS must be "mbr" and "ext4".
@@ -2856,7 +2885,7 @@ function DebianModifiedPreseed() {
 		CreateSoftLinkToGrub2FromGrub1="$1 ln -s /boot/grub/ /boot/grub2;"
 		# Statement of "grub-pc/timeout" in "preseed.cfg" is only valid for BIOS.
 		[[ "$EfiSupport" == "enabled" ]] && SetGrubTimeout="$1 sed -ri 's/GRUB_TIMEOUT=5/GRUB_TIMEOUT=3/g' /etc/default/grub; $1 sed -ri 's/set timeout=5/set timeout=3/g' /boot/grub/grub.cfg;" || SetGrubTimeout=""
-		export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${VimIndentEolStart} ${DnsChangePermanently} ${ModifyMOTD} ${BurnIrregularIpv4Gate} ${BurnIrregularIpv6Gate} ${SupportIPv6orIPv4} ${ReplaceActualIpPrefix} ${AutoPlugInterfaces} ${EnableSSH} ${ReviseMOTD} ${SupportZSH} ${EnableFail2ban} ${CreateSoftLinkToGrub2FromGrub1} ${SetGrubTimeout}"
+		export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${VimIndentEolStart} ${DnsChangePermanently} ${ModifyMOTD} ${BurnIrregularIpv4Gate} ${BurnIrregularIpv6Gate} ${SupportIPv6orIPv4} ${ReplaceActualIpPrefix} ${AutoPlugInterfaces} ${EnableSSH} ${ReviseMOTD} ${SupportZSH} ${EnableFail2ban} ${EnableBBR} ${CreateSoftLinkToGrub2FromGrub1} ${SetGrubTimeout}"
 	fi
 }
 
