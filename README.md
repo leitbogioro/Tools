@@ -250,7 +250,7 @@ fs.file-max = 104857600
 fs.inotify.max_user_instances = 8192
 fs.nr_open = 1048576
 </code></pre>
-to optimize the network environments of high latency and low bandwidth.
+to optimize the network environments of high latency and low bandwidth, only valid for Debian 11 and later.
 <br />
 Note: Module "tcp_collapse_max_bytes" is a self completion of Cloudflare, you need to download and apply patches by yourself otherwise this module will not be in effect:
 https://github.com/cloudflare/linux/tree/master/patches
