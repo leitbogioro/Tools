@@ -255,6 +255,15 @@ to optimize the network environments of high latency and low bandwidth, only val
 Note: Module "tcp_collapse_max_bytes" is a self completion of Cloudflare, you need to download and apply patches by yourself otherwise this module will not be in effect:
 https://github.com/cloudflare/linux/tree/master/patches
 <br />
+Little tutorial: Installing XanMod(an excellent third part mod for Linux kernel to improve network connectivity including applicating the patches of Cloudflare which we known on above, enhanced hardware compatibility etc. only for amd64 architecture CPUs) for Debian.
+apt install gpg -y
+wget -qO - https://dl.xanmod.org/archive.key | sudo gpg --dearmor -o /usr/share/keyrings/xanmod-archive-keyring.gpg
+echo 'deb [signed-by=/usr/share/keyrings/xanmod-archive-keyring.gpg] http://deb.xanmod.org releases main' | sudo tee /etc/apt/sources.list.d/xanmod-release.list
+apt update
+apt install linux-xanmod-lts-x64v3 -y
+reboot
+uname -a
+<br />
 <br />
 
 **--network "dhcp/auto" or "static/manual"**: Default to use DHCP to finish network configuration. If your cloud provider is a small or middle merchant, the network of your machine may be static so you need to add it. it is equal with add --ip-addr "" --ip-mask "" --ip-gate "", if you add this, don't distribute the following three items again! It must be added in the last of the command.
