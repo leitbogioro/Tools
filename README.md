@@ -256,7 +256,10 @@ Note: Module "tcp_collapse_max_bytes" is a self completion of Cloudflare, you ne
 https://github.com/cloudflare/linux/tree/master/patches
 <br />
 <br />
-<b>Little tutorial: Installing XanMod(an excellent third part mod for Linux kernel to improve network connectivity including applicating the patches of Cloudflare which we known on above, enhanced hardware compatibility etc. only for amd64 architecture CPUs) on Debian.</b>
+#### Little tutorial: Installing XanMod on Debian
+<br />
+<br />
+Introduce: XanMod series is an excellent third part mod for Linux kernel to improve network connectivity including applicating the patches of Cloudflare which we known on above, enhanced hardware compatibility etc. only for amd64 architecture CPUs .
 <br />
 <br />
 Install gpg utility:
