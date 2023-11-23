@@ -256,13 +256,21 @@ Note: Module "tcp_collapse_max_bytes" is a self completion of Cloudflare, you ne
 https://github.com/cloudflare/linux/tree/master/patches
 <br />
 Little tutorial: Installing XanMod(an excellent third part mod for Linux kernel to improve network connectivity including applicating the patches of Cloudflare which we known on above, enhanced hardware compatibility etc. only for amd64 architecture CPUs) for Debian.
-apt install gpg -y
-wget -qO - https://dl.xanmod.org/archive.key | sudo gpg --dearmor -o /usr/share/keyrings/xanmod-archive-keyring.gpg
-echo 'deb [signed-by=/usr/share/keyrings/xanmod-archive-keyring.gpg] http://deb.xanmod.org releases main' | sudo tee /etc/apt/sources.list.d/xanmod-release.list
-apt update
-apt install linux-xanmod-lts-x64v3 -y
-reboot
-uname -a
+<br />
+Install gpg utility:
+<pre><code>apt install gpg -y</code></pre>
+Import and transform gpg key to binary file:
+<pre><code>wget -qO - https://dl.xanmod.org/archive.key | sudo gpg --dearmor -o /usr/share/keyrings/xanmod-archive-keyring.gpg</code></pre>
+Apply additional repository of "dl.xanmod.org" for apt:
+<pre><code>echo 'deb [signed-by=/usr/share/keyrings/xanmod-archive-keyring.gpg] http://deb.xanmod.org releases main' | sudo tee /etc/apt/sources.list.d/xanmod-release.list</code></pre>
+Refresh package dependencies:
+<pre><code>apt update</code></pre>
+Install xanmod Linux kernel, the differences from "v1" "v2" "v3" "v4" is the different optimizations for CPUs from each periods, you can visit https://xanmod.org/, title "x86-64 psABI level reference" to inquire or execute this script to confirm it: https://dl.xanmod.org/check_x86-64_psabi.sh .
+<pre><code>apt install linux-xanmod-lts-x64v3 -y</code></pre>
+Reboot the system:
+<pre><code>reboot</code></pre>
+To confirm the new kernel that we installed:
+<pre><code>uname -a</code></pre>
 <br />
 <br />
 
