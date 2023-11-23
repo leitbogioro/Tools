@@ -255,7 +255,9 @@ to optimize the network environments of high latency and low bandwidth, only val
 Note: Module "tcp_collapse_max_bytes" is a self completion of Cloudflare, you need to download and apply patches by yourself otherwise this module will not be in effect:
 https://github.com/cloudflare/linux/tree/master/patches
 <br />
-Little tutorial: Installing XanMod(an excellent third part mod for Linux kernel to improve network connectivity including applicating the patches of Cloudflare which we known on above, enhanced hardware compatibility etc. only for amd64 architecture CPUs) for Debian.
+<br />
+<b>Little tutorial: Installing XanMod(an excellent third part mod for Linux kernel to improve network connectivity including applicating the patches of Cloudflare which we known on above, enhanced hardware compatibility etc. only for amd64 architecture CPUs) on Debian.</b>
+<br />
 <br />
 Install gpg utility:
 <pre><code>apt install gpg -y</code></pre>
