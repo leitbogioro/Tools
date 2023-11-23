@@ -728,7 +728,7 @@ function getDisk() {
 	}
 
 	# Allow user to install system to one disk manually.
-	[[ -n "$1" && "$1" =~ ^[a-z0-9]+$ && "$1" != "all" ]] && {
+	[[ -n "$1" && "$1" != "all" && "$(echo $1 | cut -d '/' -f 3)" =~ ^[a-z0-9]+$ || "$(echo $1 | cut -d '/' -f 3)" =~ ^[a-z]+$ ]] && {
 		[[ "$1" =~ "/dev/" ]] && IncDisk="$1" || IncDisk="/dev/$1"
 	}
 
