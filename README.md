@@ -257,8 +257,6 @@ https://github.com/cloudflare/linux/tree/master/patches
 <br />
 <br />
 #### Little tutorial: Installing XanMod on Debian
-<br />
-<br />
 Introduce: XanMod series is an excellent third part mod for Linux kernel to improve network connectivity including applicating the patches of Cloudflare which we known on above, enhanced hardware compatibility etc. only for amd64 architecture CPUs .
 <br />
 <br />
