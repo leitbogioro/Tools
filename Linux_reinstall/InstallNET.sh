@@ -3369,7 +3369,7 @@ clear
 
 echo -ne "\n${aoiBlue}# Check Dependence${plain}\n\n"
 
-dependence awk,basename,cat,cpio,curl,cut,dirname,file,find,grep,gzip,iconv,ip,lsblk,openssl,sed,wget,xz
+dependence awk,basename,cat,cpio,curl,cut,dirname,file,find,grep,gzip,iconv,ip,lsblk,openssl,sed,wget
 
 ipDNS1=$(echo $ipDNS | cut -d ' ' -f 1)
 ipDNS2=$(echo $ipDNS | cut -d ' ' -f 2)
