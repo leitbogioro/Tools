@@ -262,7 +262,7 @@ Introduce: XanMod series is an excellent third part mod for Linux kernel to impr
 <br />
 Install gpg utility:
 <pre><code>apt install gpg -y</code></pre>
-Import and transform gpg key to binary file:
+Download, import and transform gpg key to binary file:
 <pre><code>wget -qO - https://dl.xanmod.org/archive.key | sudo gpg --dearmor -o /usr/share/keyrings/xanmod-archive-keyring.gpg</code></pre>
 Apply additional repository of "dl.xanmod.org" for apt:
 <pre><code>echo 'deb [signed-by=/usr/share/keyrings/xanmod-archive-keyring.gpg] http://deb.xanmod.org releases main' | sudo tee /etc/apt/sources.list.d/xanmod-release.list</code></pre>
