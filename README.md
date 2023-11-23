@@ -268,7 +268,7 @@ Apply additional repository of "dl.xanmod.org" for apt:
 <pre><code>echo 'deb [signed-by=/usr/share/keyrings/xanmod-archive-keyring.gpg] http://deb.xanmod.org releases main' | sudo tee /etc/apt/sources.list.d/xanmod-release.list</code></pre>
 Refresh package dependencies:
 <pre><code>apt update</code></pre>
-Install xanmod Linux kernel, the differences from "v1" "v2" "v3" "v4" is the different optimizations for CPUs from each periods, you can visit https://xanmod.org/, title "x86-64 psABI level reference" to inquire or execute this script to confirm it: https://dl.xanmod.org/check_x86-64_psabi.sh .
+Install xanmod Linux kernel, the differences from "v1" "v2" "v3" "v4" is the different optimizations for ISA (Instruction Set Architecture) of CPUs from each periods, you can visit https://xanmod.org/, title "x86-64 psABI level reference" to inquire or execute this script to confirm it: https://dl.xanmod.org/check_x86-64_psabi.sh .
 <pre><code>apt install linux-xanmod-lts-x64v3 -y</code></pre>
 Reboot the system:
 <pre><code>reboot</code></pre>
