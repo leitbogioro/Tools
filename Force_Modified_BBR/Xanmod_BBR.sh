@@ -5,14 +5,11 @@ Error="${Red_font}[Error]${Font_suffix}"
 reboot="${Yellow_font}Reboot${Font_suffix}"
 echo -e "${Green_font}
 #================================================
-# Project:  tcp_nanqinlang general
-# Modified by: LeitboGioro
-# Platform: --Debian --KVM
-# Branch:   --pro
-# Version:  3.4.2.1
-# Author:   nanqinlang
-# Blog:     https://sometimesnaive.org
-# Github:   https://github.com/nanqinlang
+# Project:          Xanmod_Advanced_BBR
+# Platform:         --Debian --KVM --AMD64
+# Contributed by:   nanqinlang: https://github.com/nanqinlang/
+#                   Xanmod team: https://t.me/kernel_xanmod/
+# Author:           LeitboGioro: https://github.com/leitbogioro/Tools/
 #================================================
 ${Font_suffix}"
 
