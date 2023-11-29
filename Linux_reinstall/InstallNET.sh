@@ -2356,9 +2356,16 @@ function getInterface() {
 	done
 	interfacesNum="${#Interfaces[*]}"
 	# Some server has two different network adapters and for example: eth0 is for IPv4, eth1 is for IPv6, so we need to distinguish whether they are the same.
-	default4Route=$(ip -4 route show default | grep "^default")
+	default4Route=$(ip -4 route show default | grep -A 3 "^default")
 	# In Vultr server of 2.5$/mo plan, it has only IPv6 address, so the default route is via IPv6.
-	default6Route=$(ip -6 route show default | grep "^default")
+	# The name of interface is not always in the first line:
+	# root@layer7:~# ip -6 route show
+	# 2a12:5e40:15::/48 dev eth0 proto ra metric 1024 expires 2591978sec pref medium
+	# fe80::/64 dev eth0 proto kernel metric 256 pref medium
+	# default proto static metric 1024 pref medium
+	# nexthop via 2a12:5e40:1::1 dev eth0 weight 1
+	# nexthop via fe80::e6c7:22ff:fe4d:b63c dev eth0 weight 1
+	default6Route=$(ip -6 route show default | grep -A 3 "^default")
 	for item in ${Interfaces[*]}; do
 		[ -n "$item" ] || continue
 		echo "$default4Route" | grep -q "$item"
