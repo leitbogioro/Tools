@@ -1121,6 +1121,35 @@ function checkGrub() {
 	fi
 }
 
+# We found out an expedite and critical bug of Alpine Linux 3.19+ and edge(based on testing version of 3.20 at Mar. 2024) is that
+# when restarting Ubuntu 22.04 or Redhat series to boot on grub in order to start Alpine's netboot kernel will be failed because of Alpine was updated
+# the new grub version of 2.12 and added a new parameter of 'fwsetup --is-supported' but it could not be recognized by grub 2.06 only on arm64 hardware.
+# Debian 12 was not effected.
+# 
+# A valid solution is to download an always up-to-date 'grub.efi' file which offered by OpenSUSE and replace the original one before restart.
+# Grub 2.12 is compatible with 2.06 .
+#
+# Reference: https://wiki.alpinelinux.org/wiki/Release_Notes_for_Alpine_3.20.0
+#            https://gitlab.alpinelinux.org/alpine/aports/-/issues/15263
+#            https://fosstodon.org/@alpinelinux/111703786706332100
+function checkAndReplaceEfiGrub() {
+	if [[ "$VER" == "aarch64" || "$VER" == "arm64" ]] && [[ "$EfiSupport" == "enabled" ]] && [[ "$linux_relese" == 'alpinelinux' ]]; then
+		[[ "$AlpineVer1" == "3" && "$AlpineVer2" -ge "19" ]] || [[ "$DIST" == "edge" ]] && {
+			efiGrubFull=$(find "/boot/efi/EFI/" -name "*.efi" | grep -i "grub" | head -n 1)
+			efiGrubDir=$(echo ${efiGrubFull%/*}"/")
+			efiGrubFile=$(echo $efiGrubFull | awk -F "/" '{print $NF}')
+			mv "$efiGrubFull" "$efiGrubFull"".bak"
+			if [[ "$IsCN" == "cn" ]]; then
+				aarch64EfiGrubMirror="https://mirrors.tuna.tsinghua.edu.cn/opensuse/ports/aarch64/tumbleweed/repo/oss/EFI/BOOT/"
+			else
+				aarch64EfiGrubMirror="http://download.opensuse.org/ports/aarch64/tumbleweed/repo/oss/EFI/BOOT/"
+			fi
+			aarch64EfiGrubUrl="$aarch64EfiGrubMirror""grub.efi"
+			wget --no-check-certificate -qO "$efiGrubDir$efiGrubFile" "$aarch64EfiGrubUrl"
+		}
+	fi
+}
+
 # $1 is "$VER".
 # For AWS arm64, "console=tty1 console=ttyS0,115200n8" must be added to menuentry of the grub in order to successfully rebooting to the netboot installer kernel and viewing graphis on serial console.
 # Note: When booting into a new grub menuentry that we generated, this is not suitable for amd64 architecture otherwise it will cause boot with "RETBleed attacks, data leaks possible!" and failed.
@@ -4829,6 +4858,9 @@ EOF
 	fi
 fi
 # Grub config end
+
+# To fix errors about grub 2.06 reading configs from grub 2.12 .
+checkAndReplaceEfiGrub
 
 if [[ "$loaderMode" == "0" ]]; then
 	# sleep 5 && reboot || sudo reboot >/dev/null 2>&1
