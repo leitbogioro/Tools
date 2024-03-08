@@ -1129,6 +1129,8 @@ function checkGrub() {
 # A valid solution is to download an always up-to-date 'grub.efi' file which offered by OpenSUSE and replace the original one before restart.
 # Grub 2.12 is compatible with 2.06 .
 #
+# In official image of Ubuntu 22.04 provided by Hetzner arm64, directory of "/boot/efi/EFI/ubuntu/" was not existed, we should use "grub-install" to rebuild it.
+# 
 # Reference: https://wiki.alpinelinux.org/wiki/Release_Notes_for_Alpine_3.20.0
 #            https://gitlab.alpinelinux.org/alpine/aports/-/issues/15263
 #            https://fosstodon.org/@alpinelinux/111703786706332100
@@ -1136,6 +1138,10 @@ function checkAndReplaceEfiGrub() {
 	if [[ "$VER" == "aarch64" || "$VER" == "arm64" ]] && [[ "$EfiSupport" == "enabled" ]] && [[ "$linux_relese" == 'alpinelinux' ]]; then
 		[[ "$AlpineVer1" == "3" && "$AlpineVer2" -ge "19" ]] || [[ "$DIST" == "edge" ]] && {
 			efiGrubFull=$(find "/boot/efi/EFI/" -name "*.efi" | grep -i "grub" | head -n 1)
+			[[ -z "$efiGrubFull" ]] && {
+				grub-install
+				efiGrubFull=$(find "/boot/efi/EFI/" -name "*.efi" | grep -i "grub" | head -n 1)
+			}
 			efiGrubDir=$(echo ${efiGrubFull%/*}"/")
 			efiGrubFile=$(echo $efiGrubFull | awk -F "/" '{print $NF}')
 			mv "$efiGrubFull" "$efiGrubFull"".bak"
