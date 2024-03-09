@@ -514,9 +514,6 @@ Microsoft products and services—including images, text, and software downloads
 - Fix if input --ip-addr "" --ip-mask "" --ip-gate "", static network configuration may not valid.
 - Support config timezone automatically according to the geo-location of the guest's IP or determine an existed timezone parameter to config it manually is also be supported.
 - Concentrate all needed installation of dependences to inner command except "wget" because you need to download "InstallNET.sh" first.
-- Change name server for Debian permanently is provided by "resolvconf", related configuration files has been written. you just need to logging in new installed system, and install "resolvconf":
-<pre><code>echo "O" | apt install resolvconf -y</code></pre>
-to make changes validating!
 - Support Debian 12.
 - Update pre-install components, python2 to python3, vim-gtk2 to vim-gtk3 for support Debian 12.
 - Creat a new algorithm for checking effectiveness about IPv6, it's applied in 10-sysinfo for motd file in Debian and the main program "InstallNET.sh".
