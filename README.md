@@ -277,6 +277,13 @@ To confirm the new kernel that we installed:
 <br />
 <br />
 
+**--setdns**: Only for Debian/Kali to change name server for Debian permanently is provided by "resolvconf", related configuration files has been written. you just need to logging in new installed system, and install "resolvconf":
+<pre><code>echo "O" | apt install resolvconf -y</code></pre>
+<pre><code>restart</code></pre>
+to make changes validating!
+<br />
+<br />
+
 **--network "dhcp/auto" or "static/manual"**: Default to use DHCP to finish network configuration. If your cloud provider is a small or middle merchant, the network of your machine may be static so you need to add it. it is equal with add --ip-addr "" --ip-mask "" --ip-gate "", if you add this, don't distribute the following three items again! It must be added in the last of the command.
 <br />
 <br />
