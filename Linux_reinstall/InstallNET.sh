@@ -1125,12 +1125,14 @@ function checkGrub() {
 # when restarting Ubuntu 22.04 or Redhat series to boot on grub in order to start Alpine's netboot kernel will be failed because of Alpine was updated
 # the new grub version of 2.12 and added a new parameter of 'fwsetup --is-supported' but it could not be recognized by grub 2.06 only on arm64 hardware.
 # Debian 12 was not effected.
-# 
+#
 # A valid solution is to download an always up-to-date 'grub.efi' file which offered by OpenSUSE and replace the original one before restart.
 # Grub 2.12 is compatible with 2.06 .
 #
 # In official image of Ubuntu 22.04 provided by Hetzner arm64, directory of "/boot/efi/EFI/ubuntu/" was not existed, we should use "grub-install" to rebuild it.
-# 
+#
+# http://ftp.kddilabs.jp/pub/debian/dists/bookworm/main/installer-arm64/current/images/netboot/debian-installer/arm64/grubaa64.efi
+#
 # Reference: https://wiki.alpinelinux.org/wiki/Release_Notes_for_Alpine_3.20.0
 #            https://gitlab.alpinelinux.org/alpine/aports/-/issues/15263
 #            https://fosstodon.org/@alpinelinux/111703786706332100
