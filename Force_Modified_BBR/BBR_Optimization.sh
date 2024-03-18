@@ -1,66 +1,143 @@
 #!/bin/bash
-Green_font="\033[32m" && Yellow_font="\033[33m" && Red_font="\033[31m" && Font_suffix="\033[0m"
-Info="${Green_font}[Info]${Font_suffix}"
-Error="${Red_font}[Error]${Font_suffix}"
-reboot="${Yellow_font}Reboot${Font_suffix}"
-echo -e "${Green_font}
+
+# color
+underLine='\033[4m'
+aoiBlue='\033[36m'
+blue='\033[34m'
+yellow='\033[33m'
+green='\033[32m'
+red='\033[31m'
+plain='\033[0m'
+
+Info="${green}[Info]${plain}"
+Error="${red}[Error]${plain}"
+reboot="${yellow}Reboot${plain}"
+
+echo -e "${green}
 #================================================
 # Project:          Xanmod_Advanced_BBR
 # Platform:         --Debian --KVM --AMD64
-# Contributed by:   nanqinlang: https://github.com/nanqinlang/
+# Contributed by:   nanqinlang:  https://github.com/nanqinlang/
 #                   Xanmod team: https://t.me/kernel_xanmod/
+#                          NANI: https://github.com/UJX6N
 # Author:           LeitboGioro: https://github.com/leitbogioro/Tools/
 #================================================
-${Font_suffix}"
+${plain}"
 
-dpkg_updates="/var/lib/dpkg/updates"
-sort="?C=M;O=A"
-kernel_url="https://kernel.ubuntu.com/~kernel-ppa/mainline/"
-cert_file="index"
+# Check Root
+function checkRoot() {
+	[[ "$EUID" -ne '0' || $(id -u) != '0' ]] && echo -ne "\n[${red}Error${plain}] This script must be executed as root!\n\nTry to type:\n${yellow}sudo -s\n${plain}\nAfter entering the password, switch to root dir to execute this script:\n${yellow}cd ~${plain}\n\n" && exit 1
+}
 
-check_system() {
-	#cat /etc/issue | grep -q -E -i "debian" && release="debian"
-	#[[ "${release}" != "debian" ]] && echo -e "${Error} only support Debian !" && exit 1
-	if [ ! -z "$(cat /etc/issue | grep -iE "debian")" ]; then
-		sed -i '/^mozilla\/DST_Root_CA_X3/s/^/!/' /etc/ca-certificates.conf && update-ca-certificates -f
-		# 关闭 Debian 9 已过期的 DST Root CA X3 证书验证
+function check_system() {
+	# Fix debian security sources 404 not found (only of default sources)
+	sed -i 's/^\(deb.*security.debian.org\/\)\(.*\)\/updates/\1debian-security\2-security/g' /etc/apt/sources.list
+
+	CurrentOSVer=$(cat /etc/os-release | grep -w "VERSION_ID=*" | awk -F '=' '{print $2}' | sed 's/\"//g' | cut -d'.' -f 1)
+	
+	apt update -y
+	# Try to fix error of connecting to current mirror for Debian.
+	if [[ $? -ne 0 ]]; then
+		apt update -y >/root/apt_execute.log
+		if [[ $(grep -i "debian" /root/apt_execute.log) ]] && [[ $(grep -i "err:[0-9]" /root/apt_execute.log) || $(grep -i "404  not found" /root/apt_execute.log) ]]; then
+			currentDebianMirror=$(sed -n '/^deb /'p /etc/apt/sources.list | head -n 1 | awk '{print $2}' | sed -e 's|^[^/]*//||' -e 's|/.*$||')
+			if [[ "$CurrentOSVer" -gt "9" ]]; then
+				# Replace invalid mirror of Debian to 'deb.debian.org' if current version has not been 'EOL'(End Of Life).
+				sed -ri "s/$currentDebianMirror/deb.debian.org/g" /etc/apt/sources.list
+			else
+				# Replace invalid mirror of Debian to 'archive.debian.org' because it had been marked with 'EOL'.
+				sed -ri "s/$currentDebianMirror/archive.debian.org/g" /etc/apt/sources.list
+			fi
+			# Disable get security update.
+			sed -ri 's/^deb-src/# deb-src/g' /etc/apt/sources.list
+			apt update -y
+		fi
+		rm -rf /root/apt_execute.log
+	fi
+	apt install lsb-release -y
+	
+	DebianRelease=""
+	IsUbuntu=$(uname -a | grep -i "ubuntu")
+	IsDebian=$(uname -a | grep -i "debian")
+	IsKali=$(uname -a | grep -i "kali")
+	for Count in $(cat /etc/os-release | grep -w "ID=*" | awk -F '=' '{print $2}') $(cat /etc/issue | awk '{print $1}') "$OsLsb"; do
+		[[ -n "$Count" ]] && DebianRelease=$(echo -e "$Count")"$DebianRelease"
+	done
+	
+	if [[ "$IsDebian" ]] || [[ $(echo "$DebianRelease" | grep -i 'debian') != "" ]]; then
+		CurrentOS="Debian"
+		CurrentOSVer=$(lsb_release -r | awk '{print$2}' | cut -d'.' -f1)
 	else
-		echo -e "${Error} only support Debian !" && exit 1
+		echo -ne "\n[${red}Error${plain}] Does't support your system!\n"
+		exit 1
+	fi
+	
+	if [[ "$CurrentOSVer" -le "10" ]]; then
+		echo -ne "\n[${red}Error${plain}] Does't support your system!\n"
+		exit 1
 	fi
 }
 
-check_root() {
-	[[ "$(id -u)" != "0" ]] && echo -e "${Error} must be root user !" && exit 1
+# Check architecture of CPU, only support amd64 or arm64.
+function check_architecture() {
+	# Get architecture of current os automatically
+	ArchName=$(uname -m)
+	[[ -z "$ArchName" ]] && ArchName=$(echo $(hostnamectl status | grep "Architecture" | cut -d':' -f 2))
+	case $ArchName in arm64) Architecture="arm64" ;; aarch64) Architecture="aarch64" ;; x86 | i386 | i686) Architecture="i386" ;; x86_64) Architecture="x86_64" ;; x86-64) Architecture="x86-64" ;; amd64) Architecture="amd64" ;; *) Architecture="" ;; esac
+	# Exchange architecture name
+	if [[ "$CurrentOS" == 'Debian' ]]; then
+		# In debian 12, the result of "uname -m" is "x86_64";
+		# the result of "echo `hostnamectl status | grep "Architecture" | cut -d':' -f 2`" is "x86-64"
+		if [[ "$Architecture" == "x86_64" ]] || [[ "$Architecture" == "x86-64" ]]; then
+			Architecture="amd64"
+		elif [[ "$Architecture" == "aarch64" ]]; then
+			Architecture="arm64"
+		fi
+	fi
+	[[ "$Architecture" != "amd64" && "$Architecture" != "arm64" ]] && echo -ne "\n[${red}Error${plain}] Unsupported CPU architecture!" && exit 1
+	# To install Xanmod Linux kernel, the differences from "v1" "v2" "v3" "v4" is the different optimizations for ISA (Instruction Set Architecture) of CPUs from each periods,
+	# we can visit https://xanmod.org/, title "x86-64 psABI level reference" to inquire or execute this script to confirm it: https://dl.xanmod.org/check_x86-64_psabi.sh .
+	[[ "$Architecture" == "amd64" ]] && {
+		if [[ $(grep -iw "avx512f" "/proc/cpuinfo") || $(grep -iw "avx512bw" "/proc/cpuinfo") || $(grep -iw "avx512cd" "/proc/cpuinfo") || $(grep -iw "avx512dq" "/proc/cpuinfo") || $(grep -iw "avx512vl" "/proc/cpuinfo") ]]; then
+			isaLevel="4"
+		elif [[ $(grep -iw "avx" "/proc/cpuinfo") || $(grep -iw "avx2" "/proc/cpuinfo") || $(grep -iw "bmi1" "/proc/cpuinfo") || $(grep -iw "bmi2" "/proc/cpuinfo") || $(grep -iw "f16c" "/proc/cpuinfo")|| $(grep -iw "fma" "/proc/cpuinfo") || $(grep -iw "abm" "/proc/cpuinfo") || $(grep -iw "movbe" "/proc/cpuinfo") || $(grep -iw "xsave" "/proc/cpuinfo") ]]; then
+			isaLevel="3"
+		elif [[ $(grep -iw "cx16" "/proc/cpuinfo") || $(grep -iw "lahf" "/proc/cpuinfo") || $(grep -iw "popcnt" "/proc/cpuinfo") || $(grep -iw "sse4_1" "/proc/cpuinfo") || $(grep -iw "sse4_2" "/proc/cpuinfo") || $(grep -iw "ssse3" "/proc/cpuinfo") ]]; then
+			isaLevel="2"
+		elif [[ $(grep -iw "lm" "/proc/cpuinfo") || $(grep -iw "cmov" "/proc/cpuinfo") || $(grep -iw "cx8" "/proc/cpuinfo") || $(grep -iw "fpu" "/proc/cpuinfo") || $(grep -iw "fxsr" "/proc/cpuinfo") || $(grep -iw "mmx" "/proc/cpuinfo") || $(grep -iw "syscall" "/proc/cpuinfo") || $(grep -iw "sse2" "/proc/cpuinfo") ]]; then
+			isaLevel="1"
+		fi
+		[[ -z "$isaLevel" ]] && isaLevel="3"
+	}
 }
 
-check_kvm() {
+# Check is not OpenVZ
+function checkKvm() {
+	dpkg_updates="/var/lib/dpkg/updates"
 	if [ -f $($dpkg_updates) ]; then
-		rm -r /var/lib/dpkg/updates
-		mkdir /var/lib/dpkg/updates
+		rm -r $dpkg_updates
+		mkdir $dpkg_updates
 	fi
 	apt-get update
 	apt-get install virt-what ca-certificates apt-transport-https -y
 	virt=$(virt-what)
-	[[ "${virt}" = "openvz" ]] && echo -e "${Error} OpenVZ not support !" && exit 1
+	[[ "${virt}" = "openvz" ]] && echo -ne "\n[${red}Error${plain}] OpenVZ not support !" && exit 1
 	#[[ "`virt-what`" != "kvm" ]] && echo -e "${Error} only support KVM !" && exit 1
 }
 
-directory() {
-	[[ ! -d /home/tcp_nanqinlang ]] && mkdir -p /home/tcp_nanqinlang
-	cd /home/tcp_nanqinlang
-}
-
-get_version() {
-	wget --no-check-certificate -O ${cert_file} ${kernel_url}${sort}
+# Get official mainstream kernel.
+# "$1" is sort method, "$2" is kernel url, "$3" is cert file, "$4" is mainstream version of the kernel.
+function getVersion() {
+	wget --no-check-certificate -O ${3} ${2}${1}
 	#get_kernel_ver=`awk '{print $5}' index | grep "v4.9." | sed -n '$p' | sed -r 's/.*href=\"(.*)\">v4.9.*/\1/' | sed 's/.$//' | sed 's/^.//g'`
 	#get_ver_legacy=${get_kernel_ver}
-	get_kernel_ver=$(awk '{print $5}' index | grep "v4.9." | tail -1 | head -n 1 | sed -r 's/.*href=\"(.*)\">v4.9.*/\1/' | sed 's/.$//' | sed 's/^.//g')
+	get_kernel_ver=$(awk '{print $5}' index | grep "v${4}" | tail -1 | head -n 1 | sed -r 's/.*href=\"(.*)\">v'${4}'*/\1/' | sed 's/.$//' | sed 's/^.//g')
 
 	#
 	declare -a kernel_ver=()
 	num=1
 	for ((i = 0; i <= 3; i++)); do
-		get_kernel_ver=$(awk '{print $5}' index | grep "v4.9." | tail -$num | head -n 1 | sed -r 's/.*href=\"(.*)\">v4.9.*/\1/' | sed 's/.$//' | sed 's/^.//g')
+		get_kernel_ver=$(awk '{print $5}' index | grep "v${4}" | tail -$num | head -n 1 | sed -r 's/.*href=\"(.*)\">v'${4}'*/\1/' | sed 's/.$//' | sed 's/^.//g')
 		num=$(expr $num + 1)
 		ver_last=($(echo ${get_kernel_ver} | awk -F '.' '{print $3}'))
 		kernel_ver_last[$i]=$(expr ${ver_last})
@@ -78,89 +155,48 @@ get_version() {
 	done
 
 	download_ver=${kernel_ver_last[0]}
-	wget --no-check-certificate -O downloadpage ${kernel_url}v4.9.${download_ver}
+	wget --no-check-certificate -O downloadpage ${2}v${4}${download_ver}
 	ver_sub=0
 	while [[ ! $(grep -i ".deb" downloadpage) ]]; do
 		rm -rf downloadpage
 		ver_sub=$(expr $ver_sub + 1)
 		download_ver="${kernel_ver_last[$ver_sub]}"
-		wget --no-check-certificate -O downloadpage ${kernel_url}v4.9.${download_ver}
+		wget --no-check-certificate -O downloadpage ${2}v${4}${download_ver}
 	done
 
 	rm -rf downloadpage
-	rm -rf ${cert_file}
+	rm -rf ${3}
 
-	latest_kernel_ver="4.9.${download_ver}"
-	echo -e "${Info} Only support: 4.9.3 ~ 4.13.16, Because of some versions like ${Red_font}4.9.179${Font_suffix} is not compiled by Ubuntu official and the download recourses are not available so we must backtrack to some previous in succession until we have found an available one."
-	echo ""
-	echo -e "For example: ${Green_font}${latest_kernel_ver}${Font_suffix} is the latest version of 4.9.X series which belongs to Long-term support, press ${Yellow_font}Enter${Font_suffix} key to install the above mentioned kernel by default."
+	latest_kernel_ver="${4}${download_ver}"
+	echo -ne "${green}${latest_kernel_ver}${plain} is the latest version of ${4}X series which belongs to Long-term support, press ${yellow}Enter${plain} key to install the above mentioned kernel by default."
 	echo ""
 	read -p "(Type which version you'd like to upgrade):" required_version
+	echo $required_version
 	[[ -z "${required_version}" ]] && required_version=${latest_kernel_ver}
 }
 
-get_url() {
-	get_version
-	bit=$(uname -m)
-	if [[ "${bit}" = "x86_64" ]]; then
-		image_name=$(wget --no-check-certificate -qO- http://kernel.ubuntu.com/~kernel-ppa/mainline/v${required_version}/ | grep "linux-image" | grep "lowlatency" | awk -F'\">' '/amd64.deb/{print $2}' | cut -d'<' -f1 | head -1 | cut -d'/' -f2)
-		bit="amd64"
-		image_url="http://kernel.ubuntu.com/~kernel-ppa/mainline/v${required_version}/${bit}/${image_name}"
-		headers_all_name=$(wget --no-check-certificate -qO- http://kernel.ubuntu.com/~kernel-ppa/mainline/v${required_version}/ | grep "linux-headers" | awk -F'\">' '/all.deb/{print $2}' | cut -d'<' -f1 | head -1 | cut -d'/' -f2)
-		headers_all_url="http://kernel.ubuntu.com/~kernel-ppa/mainline/v${required_version}/${bit}/${headers_all_name}"
-		headers_bit_name=$(wget --no-check-certificate -qO- http://kernel.ubuntu.com/~kernel-ppa/mainline/v${required_version}/ | grep "linux-headers" | grep "lowlatency" | awk -F'\">' '/amd64.deb/{print $2}' | cut -d'<' -f1 | head -1 | cut -d'/' -f2)
-		headers_bit_url="http://kernel.ubuntu.com/~kernel-ppa/mainline/v${required_version}/${bit}/${headers_bit_name}"
-	elif [[ "${bit}" = "i386" ]]; then
-		image_name=$(wget --no-check-certificate -qO- http://kernel.ubuntu.com/~kernel-ppa/mainline/v${required_version}/ | grep "linux-image" | grep "lowlatency" | awk -F'\">' '/i386.deb/{print $2}' | cut -d'<' -f1 | head -1 | cut -d'/' -f2)
-		image_url="http://kernel.ubuntu.com/~kernel-ppa/mainline/v${required_version}/${bit}/${image_name}"
-		headers_all_name=$(wget --no-check-certificate -qO- http://kernel.ubuntu.com/~kernel-ppa/mainline/v${required_version}/ | grep "linux-headers" | awk -F'\">' '/all.deb/{print $2}' | cut -d'<' -f1 | head -1 | cut -d'/' -f2)
-		headers_all_url="http://kernel.ubuntu.com/~kernel-ppa/mainline/v${required_version}/${bit}/${headers_all_name}"
-		headers_bit_name=$(wget --no-check-certificate -qO- http://kernel.ubuntu.com/~kernel-ppa/mainline/v${required_version}/ | grep "linux-headers" | grep "lowlatency" | awk -F'\">' '/i386.deb/{print $2}' | cut -d'<' -f1 | head -1 | cut -d'/' -f2)
-		headers_bit_url="http://kernel.ubuntu.com/~kernel-ppa/mainline/v${required_version}/${bit}/${headers_bit_name}"
+function get_url() {
+	getVersion '?C=M;O=A' "https://kernel.ubuntu.com/~kernel-ppa/mainline/" "index" "6.6."
+	if [[ "$Architecture" == "amd64" ]]; then
+		image_name=$(wget --no-check-certificate -qO- http://kernel.ubuntu.com/~kernel-ppa/mainline/v${required_version}/ | grep "linux-image" | awk -F'\">' '/'${Architecture}'.deb/{print $2}' | cut -d'<' -f1 | head -1 | cut -d'/' -f2)
+		image_url="http://kernel.ubuntu.com/~kernel-ppa/mainline/v${required_version}/${Architecture}/${image_name}"
+		headers_flavor_name=$(wget --no-check-certificate -qO- http://kernel.ubuntu.com/~kernel-ppa/mainline/v${required_version}/ | grep "linux-headers" | awk -F'\">' '/all.deb/{print $2}' | cut -d'<' -f1 | head -1 | cut -d'/' -f2)
+		headers_all_url="http://kernel.ubuntu.com/~kernel-ppa/mainline/v${required_version}/${Architecture}/${headers_flavor_name}"
+		modules_name=$(wget --no-check-certificate -qO- http://kernel.ubuntu.com/~kernel-ppa/mainline/v${required_version}/ | grep "linux-modules" | awk -F'\">' '/'${Architecture}'.deb/{print $2}' | cut -d'<' -f1 | head -1 | cut -d'/' -f2)
+		modules_url="http://kernel.ubuntu.com/~kernel-ppa/mainline/v${required_version}/${Architecture}/${modules_name}"
+	elif [[ "$Architecture" == "arm64" ]]; then
+		image_name=$(wget --no-check-certificate -qO- http://kernel.ubuntu.com/~kernel-ppa/mainline/v${required_version}/ | grep "linux-image" | grep -v "64k" | awk -F'\">' '/'${Architecture}'.deb/{print $2}' | cut -d'<' -f1 | head -1 | cut -d'/' -f2)
+		image_url="http://kernel.ubuntu.com/~kernel-ppa/mainline/v${required_version}/${Architecture}/${image_name}"
+		headers_flavor_name=$(wget --no-check-certificate -qO- http://kernel.ubuntu.com/~kernel-ppa/mainline/v${required_version}/ | grep "linux-headers" | grep -v "64k" | awk -F'\">' '/'${Architecture}'.deb/{print $2}' | cut -d'<' -f1 | head -1 | cut -d'/' -f2)
+		headers_all_url="http://kernel.ubuntu.com/~kernel-ppa/mainline/v${required_version}/${Architecture}/${headers_flavor_name}"
+		modules_name=$(wget --no-check-certificate -qO- http://kernel.ubuntu.com/~kernel-ppa/mainline/v${required_version}/ | grep "linux-modules" | grep -v "64k" | awk -F'\">' '/'${Architecture}'.deb/{print $2}' | cut -d'<' -f1 | head -1 | cut -d'/' -f2)
+		modules_url="http://kernel.ubuntu.com/~kernel-ppa/mainline/v${required_version}/${Architecture}/${modules_name}"
 	else
-		echo -e "${Error} not support bit !" && exit 1
+		echo -e "${red}Not supported architecture!${plain}" && exit 1
 	fi
 }
 
-libssl() {
-	# for Kernel Headers
-	echo -e "\ndeb http://ftp.us.debian.org/debian jessie main\c" >>/etc/apt/sources.list
-	apt-get update && apt-get install -y libssl1.0.0
-	sed -i '/deb http:\/\/ftp\.us\.debian\.org\/debian jessie main/d' /etc/apt/sources.list
-	#mv /etc/apt/sources.list /etc/apt/sources.list.backup
-	#echo -e "\ndeb http://cdn-fastly.deb.debian.org/ jessie main\c" > /etc/apt/sources.list
-	#apt-get update && apt-get install -y libssl1.0.0
-	#sed  -i '/deb http:\/\/cdn-fastly\.deb\.debian\.org\/ jessie main/d' /etc/apt/sources.list
-	#mv -f /etc/apt/sources.list.backup /etc/apt/sources.list
-	apt-get update
-}
-
-gcc4.9() {
-	# for Debian 7
-	#sys_ver=`grep -oE  "[0-9.]+" /etc/issue`
-	if [[ "$(grep -oE "[0-9.]+" /etc/issue)" = "7" ]]; then
-		mv /etc/apt/sources.list /etc/apt/sources.list.backup
-		wget https://raw.githubusercontent.com/nanqinlang/sources.list/master/hk.sources.list && mv hk.sources.list /etc/apt/sources.list
-		apt-get update && apt-get install -y build-essential
-		mv -f /etc/apt/sources.list.backup /etc/apt/sources.list
-		apt-get update
-	else
-		apt-get install -y build-essential
-	fi
-}
-
-delete_surplus_image() {
-	for ((integer = 1; integer <= ${surplus_total_image}; integer++)); do
-		surplus_sort_image=$(dpkg -l | grep linux-image | awk '{print $2}' | grep -v "${required_version}" | head -${integer})
-		apt-get purge -y ${surplus_sort_image}
-	done
-	apt-get autoremove -y
-	if [[ "${surplus_total_image}" = "0" ]]; then
-		echo -e "${Info} uninstall all surplus images successfully, continuing"
-	fi
-}
-
-delete_surplus_headers() {
+function delete_surplus_headers() {
 	for ((integer = 1; integer <= ${surplus_total_headers}; integer++)); do
 		surplus_sort_headers=$(dpkg -l | grep linux-headers | awk '{print $2}' | grep -v "${required_version}" | head -${integer})
 		apt-get purge -y ${surplus_sort_headers}
@@ -171,20 +207,29 @@ delete_surplus_headers() {
 	fi
 }
 
-install_image() {
-	if [[ -f "${image_name}" ]]; then
-		echo -e "${Info} deb file exist"
-	else
-		echo -e "${Info} downloading image" && wget --no-check-certificate -O ${image_name} ${image_url}
-	fi
-	if [[ -f "${image_name}" ]]; then
-		echo -e "${Info} installing image" && dpkg -i ${image_name}
-	else
-		echo -e "${Error} image download failed, please check !" && exit 1
+function delete_surplus_modules() {
+	for ((integer = 1; integer <= ${surplus_total_modules}; integer++)); do
+		surplus_sort_modules=$(dpkg -l | grep linux-modules | awk '{print $2}' | grep -v "${required_version}" | head -${integer})
+		apt-get purge -y ${surplus_sort_modules}
+	done
+	apt-get autoremove -y
+	if [[ "${surplus_total_modules}" = "0" ]]; then
+		echo -e "${Info} uninstall all surplus modules successfully, continuing"
 	fi
 }
 
-install_headers() {
+function delete_surplus_image() {
+	for ((integer = 1; integer <= ${surplus_total_image}; integer++)); do
+		surplus_sort_image=$(dpkg -l | grep linux-image | awk '{print $2}' | grep -v "${required_version}" | head -${integer})
+		apt-get purge -y ${surplus_sort_image}
+	done
+	apt-get autoremove -y
+	if [[ "${surplus_total_image}" = "0" ]]; then
+		echo -e "${Info} uninstall all surplus images successfully, continuing"
+	fi
+}
+
+function install_headers() {
 	if [[ -f ${headers_all_name} ]]; then
 		echo -e "${Info} deb file exist"
 	else
@@ -195,35 +240,79 @@ install_headers() {
 	else
 		echo -e "${Error} headers_all download failed, please check !" && exit 1
 	fi
+	rm -rf ${headers_all_name}
+}
 
-	if [[ -f ${headers_bit_name} ]]; then
+function install_modules() {
+	if [[ -f ${modules_name} ]]; then
 		echo -e "${Info} deb file exist"
 	else
-		echo -e "${Info} downloading headers_bit" && wget --no-check-certificate -O ${headers_bit_name} ${headers_bit_url}
+		echo -e "${Info} downloading modules" && wget --no-check-certificate -O ${modules_name} ${modules_url}
 	fi
-	if [[ -f ${headers_bit_name} ]]; then
-		echo -e "${Info} installing headers_bit" && dpkg -i ${headers_bit_name}
+	if [[ -f ${modules_name} ]]; then
+		echo -e "${Info} installing modules" && dpkg -i ${modules_name}
 	else
-		echo -e "${Error} headers_bit download failed, please check !" && exit 1
+		echo -e "${Error} modules download failed, please check !" && exit 1
 	fi
+	rm -rf ${modules_name}
+}
+
+function install_image() {
+	if [[ -f "${image_name}" ]]; then
+		echo -e "${Info} deb file exist"
+	else
+		echo -e "${Info} downloading image" && wget --no-check-certificate -O ${image_name} ${image_url}
+	fi
+	if [[ -f "${image_name}" ]]; then
+		echo -e "${Info} installing image" && dpkg -i ${image_name}
+	else
+		echo -e "${Error} image download failed, please check !" && exit 1
+	fi
+	rm -rf ${image_name}
 }
 
 #check/install required version and remove surplus kernel
-check_kernel() {
+function check_kernel() {
 	get_url
 
 	#when kernel version = required version, response required version number.
 	digit_ver_image=$(dpkg -l | grep linux-image | awk '{print $2}' | awk -F '-' '{print $3}' | grep "${required_version}")
 	digit_ver_headers=$(dpkg -l | grep linux-headers | awk '{print $2}' | awk -F '-' '{print $3}' | grep "${required_version}")
+	digit_ver_modules=$(dpkg -l | grep linux-modules | awk '{print $2}' | awk -F '-' '{print $3}' | grep "${required_version}")
 
 	#total digit of kernel without required version
 	surplus_total_image=$(dpkg -l | grep linux-image | awk '{print $2}' | grep -v "${required_version}" | wc -l)
 	surplus_total_headers=$(dpkg -l | grep linux-headers | awk '{print $2}' | grep -v "${required_version}" | wc -l)
+	surplus_total_modules=$(dpkg -l | grep linux-modules | awk '{print $2}' | grep -v "${required_version}" | wc -l)
+
+	if [[ -z "${digit_ver_headers}" ]]; then
+		echo -e "${Info} installing required headers" && install_headers
+	else
+		echo -e "${Info} headers already installed a required version"
+	fi
+	
+	if [[ -z "${digit_ver_modules}" ]]; then
+		echo -e "${Info} installing required modules" && install_modules
+	else
+		echo -e "${Info} modules already installed a required version"
+	fi
 
 	if [[ -z "${digit_ver_image}" ]]; then
 		echo -e "${Info} installing required image" && install_image
 	else
 		echo -e "${Info} image already installed a required version"
+	fi
+
+	if [[ "${surplus_total_headers}" != "0" ]]; then
+		echo -e "${Info} removing surplus headers" && delete_surplus_headers
+	else
+		echo -e "${Info} no surplus headers need to remove"
+	fi
+	
+	if [[ "${surplus_total_modules}" != "0" ]]; then
+		echo -e "${Info} removing surplus modules" && delete_surplus_modules
+	else
+		echo -e "${Info} no surplus modules need to remove"
 	fi
 
 	if [[ "${surplus_total_image}" != "0" ]]; then
@@ -232,22 +321,10 @@ check_kernel() {
 		echo -e "${Info} no surplus image need to remove"
 	fi
 
-	if [[ "${surplus_total_headers}" != "0" ]]; then
-		echo -e "${Info} removing surplus headers" && delete_surplus_headers
-	else
-		echo -e "${Info} no surplus headers need to remove"
-	fi
-
-	if [[ -z "${digit_ver_headers}" ]]; then
-		echo -e "${Info} installing required headers" && install_headers
-	else
-		echo -e "${Info} headers already installed a required version"
-	fi
-
 	update-grub
 }
 
-dpkg_list() {
+function dpkg_list() {
 	echo -e "${Info} This following list includes all installed kernels:"
 	dpkg -l | grep linux-image | awk '{print $2}'
 	dpkg -l | grep linux-headers | awk '{print $2}'
@@ -255,37 +332,7 @@ dpkg_list() {
 	echo -e "${Info} Make sure two lists are completely consistent!"
 }
 
-ver_current() {
-	[[ ! -f /lib/modules/$(uname -r)/kernel/net/ipv4/tcp_nanqinlang.ko ]] && compiler
-	[[ ! -f /lib/modules/$(uname -r)/kernel/net/ipv4/tcp_nanqinlang.ko ]] && echo -e "${Error} load mod failed, please check !" && exit 1
-}
-compiler() {
-	#mkdir make && cd make
-
-	# kernel source code：https://www.kernel.org/pub/linux/kernel
-	# kernel v4.13.x is different from the other older kernel
-	ver_4_13=$(dpkg -l | grep linux-image | awk '{print $2}' | awk -F '-' '{print $3}' | grep "4.13")
-	if [[ ! -z "${ver_4_13}" ]]; then
-		wget https://raw.githubusercontent.com/tcp-nanqinlang/general/master/General/Debian/source/kernel-v4.13/tcp_nanqinlang.c
-	else
-		wget https://raw.githubusercontent.com/leitbogioro/Force_Modified_BBR/master/General/Debian/source/kernel-v4.12andbelow/tcp_nanqinlang.c
-	fi
-
-	[[ ! -f tcp_nanqinlang.c ]] && echo -e "${Error} failed download tcp_nanqinlang.c, please check !" && exit 1
-
-	#sys_ver=`grep -oE  "[0-9.]+" /etc/issue`
-	if [[ "$(grep -oE "[0-9.]+" /etc/issue)" = "9" ]]; then
-		wget -O Makefile https://raw.githubusercontent.com/tcp-nanqinlang/general/master/Makefile/Makefile-Debian9
-	else
-		wget -O Makefile https://raw.githubusercontent.com/tcp-nanqinlang/general/master/Makefile/Makefile-Debian7or8
-	fi
-
-	[[ ! -f Makefile ]] && echo -e "${Error} failed download Makefile, please check !" && exit 1
-
-	make && make install
-}
-
-check_status() {
+function check_status() {
 	#status_sysctl=`sysctl net.ipv4.tcp_congestion_control | awk '{print $3}'`
 	#status_lsmod=`lsmod | grep nanqinlang`
 	if [[ "$(lsmod | grep nanqinlang)" != "" ]]; then
@@ -301,25 +348,22 @@ check_status() {
 }
 
 ###################################################################################################
-install() {
+function install() {
 	check_system
+	check_architecture
 	check_root
 	check_kvm
-	directory
-	gcc4.9
-	libssl
 	check_kernel
 	dpkg_list
 	echo -e "${Info} Finish replaced kernel, ${reboot} your machine, execute the second action of this script when you re-login as root!"
-	reboot
+	exit 1
 }
 
-start() {
+function start() {
 	check_system
+	check_architecture
 	check_root
 	check_kvm
-	directory
-	ver_current
 	sed -i '/net\.core\.default_qdisc/d' /etc/sysctl.conf
 	sed -i '/net\.ipv4\.tcp_congestion_control/d' /etc/sysctl.conf
 	echo -e "\n#Enable BBR Congestion Control Protocol" >>/etc/sysctl.conf
@@ -330,7 +374,7 @@ start() {
 	rm -rf /home/tcp_nanqinlang
 }
 
-optimize() {
+function optimize() {
 	if [[ ! $(cat /etc/rc.local | grep "ulimit -n 51200") ]] || [ ! -d "/etc/rc.local" ]; then
 		ulimit -n 51200 && echo ulimit -n 51200 >>/etc/rc.local
 	fi
@@ -377,11 +421,11 @@ optimize() {
 	exit 1
 }
 
-status() {
+function status() {
 	check_status
 }
 
-uninstall() {
+function uninstall() {
 	check_root
 	sed -i '/net\.core\.default_qdisc=/d' /etc/sysctl.conf
 	sed -i '/net\.ipv4\.tcp_congestion_control=/d' /etc/sysctl.conf
