@@ -1545,6 +1545,9 @@ function checkVER() {
 		aarch64 | arm64 | arm)
 			[[ "$linux_relese" == 'alpinelinux' ]] || [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]] && VER='aarch64' || VER='arm64'
 			;;
+		s390x | s390)
+			[[ "$linux_relese" == 'alpinelinux' ]] || [[ "$linux_relese" == 'centos' ]] || [[ "$linux_relese" == 'rockylinux' ]] || [[ "$linux_relese" == 'almalinux' ]] || [[ "$linux_relese" == 'fedora' ]] && VER='s390x' || VER='s390x'
+			;;
 		*)
 			VER=''
 			;;
