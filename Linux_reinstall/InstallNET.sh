@@ -1023,6 +1023,7 @@ function getUserTimeZone() {
 		# because the "Sent-Q" can record the data packs which IP is active for current ssh user.
 		# The same as for IPv6s.
 		GuestIP=$(netstat -naputeoW | grep -i 'established' | grep -i 'sshd: '$loginUser'' | grep -iw '^tcp\|udp' | awk '{print $3,$5}' | sort -t ' ' -k 1 -rn | awk '{print $2}' | head -n 1 | cut -d':' -f'1')
+		[[ -z "$GuestIP" ]] && GuestIP=$(netstat -naputeoW | grep -i 'established' | grep -i "sshd-session" | grep -i "on" | grep -iw '^tcp\|udp' | awk '{print $3,$5}' | sort -t ' ' -k 1 -rn | awk '{print $2}' | head -n 1 | cut -d':' -f'1')
 		if [[ ! -z "$GuestIP" ]]; then
 			checkIfIpv4AndIpv6IsLocalOrPublic "$GuestIP" ""
 			# If some users are connecting to ssh service via private IPs, the actual location of this server may be the same as the public IP of this server like:
@@ -1033,6 +1034,7 @@ function getUserTimeZone() {
 			}
 		else
 			GuestIP=$(netstat -naputeoW | grep -i 'established' | grep -i 'sshd: '$loginUser'' | grep -iw '^tcp6\|udp6' | awk '{print $3,$5}' | sort -t ' ' -k 1 -rn | awk '{print $2}' | head -n 1 | awk -F':' '{for (i=1;i<=NF-1;i++)printf("%s:", $i);print ""}' | sed 's/.$//')
+			[[ -z "$GuestIP" ]] && GuestIP=$(netstat -naputeoW | grep -i 'established' | grep -i "sshd-session" | grep -i "on" | grep -iw '^tcp6\|udp6' | awk '{print $3,$5}' | sort -t ' ' -k 1 -rn | awk '{print $2}' | head -n 1 | awk -F':' '{for (i=1;i<=NF-1;i++)printf("%s:", $i);print ""}' | sed 's/.$//')
 			checkIfIpv4AndIpv6IsLocalOrPublic "" "$GuestIP"
 			[[ "$ipv6LocalOrPublicStatus" == '1' ]] && {
 				GuestIP=$(timeout 0.3s dig -6 TXT +short o-o.myaddr.l.google.com @ns3.google.com | sed 's/\"//g')
