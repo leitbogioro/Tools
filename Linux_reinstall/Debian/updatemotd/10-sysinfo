@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 #    10-sysinfo - generate the system information
 #    Copyright (c) 2013 Nick Charlton
@@ -22,71 +22,278 @@
 #    with this program; if not, write to the Free Software Foundation, Inc.,
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-date=$(date)
-load=$(cat /proc/loadavg | awk '{print $1}')
-root_usage=$(df -h / | awk '/\// {print $(NF-1)}')
-memory_usage=$(free -m | awk '/Mem:/ { total=$2; used=$3 } END { printf("%3.1f%%", used/total*100)}')
+set -o pipefail
 
-[[ $(free -m | awk '/Swap/ {print $2}') == "0" ]] && swap_usage="0.0%" || swap_usage=$(free -m | awk '/Swap/ { printf("%3.1f%%", $3/$2*100) }')
-usersnum=$(expr $(users | wc -w) + 1)
-time=$(uptime | grep -ohe 'up .*' | sed 's/,/\ hours/g' | awk '{ printf $2" "$3 }')
-processes=$(ps aux | wc -l)
-localip=$(hostname -I | awk '{print $1}')
+have_cmd() { command -v "$1" >/dev/null 2>&1; }
 
-IPv4=$(timeout 1s dig -4 TXT +short o-o.myaddr.l.google.com @ns3.google.com | sed 's/\"//g')
-[[ "$IPv4" == "" ]] && IPv4=$(timeout 1s dig -4 TXT CH +short whoami.cloudflare @1.0.0.3 | sed 's/\"//g')
-IPv6=$(timeout 1s dig -6 TXT +short o-o.myaddr.l.google.com @ns3.google.com | sed 's/\"//g')
-[[ "$IPv6" == "" ]] && IPv6=$(timeout 1s dig -6 TXT CH +short whoami.cloudflare @2606:4700:4700::1003 | sed 's/\"//g')
-# IP_Check=$(echo $IPv4 | awk -F. '$1<255&&$2<255&&$3<255&&$4<255{print "isIPv4"}')
-IP_Check="$IPv4"
-if expr "$IP_Check" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; then
-	for i in 1 2 3 4; do
-		if [ $(echo "$IP_Check" | cut -d. -f$i) -gt 255 ]; then
-			echo "fail ($IP_Check)"
-			exit 1
-		fi
-	done
-	IP_Check="isIPv4"
+run_timeout() {
+  local t="$1"; shift
+  if have_cmd timeout; then
+    timeout "$t" "$@" 2>/dev/null
+  else
+    "$@" 2>/dev/null
+  fi
+}
+
+get_load() { awk '{print $1}' /proc/loadavg 2>/dev/null || echo "0.00"; }
+
+get_root_usage() { df -h / 2>/dev/null | awk 'NR==2{print $5}' | head -n 1; }
+
+# CPU usage: sample /proc/stat twice, output integer percent like "8%"
+get_cpu_usage() {
+  local cpu user nice system idle iowait irq softirq steal guest guest_nice
+  local cpu2 user2 nice2 system2 idle2 iowait2 irq2 softirq2 steal2 guest2 guest_nice2
+  local idle_all1 idle_all2 total1 total2 dt di
+
+  read -r cpu user nice system idle iowait irq softirq steal guest guest_nice < /proc/stat 2>/dev/null || { echo "N/A"; return 0; }
+  idle_all1=$((idle + iowait))
+  total1=$((user + nice + system + idle + iowait + irq + softirq + steal))
+
+  sleep 0.2
+
+  read -r cpu2 user2 nice2 system2 idle2 iowait2 irq2 softirq2 steal2 guest2 guest_nice2 < /proc/stat 2>/dev/null || { echo "N/A"; return 0; }
+  idle_all2=$((idle2 + iowait2))
+  total2=$((user2 + nice2 + system2 + idle2 + iowait2 + irq2 + softirq2 + steal2))
+
+  dt=$((total2 - total1))
+  di=$((idle_all2 - idle_all1))
+  if (( dt <= 0 )); then
+    echo "N/A"
+    return 0
+  fi
+
+  # integer percent
+  awk -v dt="$dt" -v di="$di" 'BEGIN{printf "%d%%", ((dt-di)*100)/dt}'
+}
+
+get_mem_usage() {
+  local total avail used
+  total="$(awk '/^MemTotal:/{print $2; exit}' /proc/meminfo 2>/dev/null)"
+  avail="$(awk '/^MemAvailable:/{print $2; exit}' /proc/meminfo 2>/dev/null)"
+  if [[ -n "$total" && -n "$avail" && "$total" =~ ^[0-9]+$ && "$avail" =~ ^[0-9]+$ && "$total" -gt 0 ]]; then
+    used=$((total - avail))
+    awk -v u="$used" -v t="$total" 'BEGIN{printf "%.1f%%", (u/t)*100}'
+    return 0
+  fi
+
+  if have_cmd free; then
+    free -m 2>/dev/null | awk '/Mem:/ { total=$2; used=$3 } END { if(total>0) printf("%.1f%%", used/total*100); else print "N/A"}'
+  else
+    echo "N/A"
+  fi
+}
+
+get_swap_usage() {
+  local st sf su
+  st="$(awk '/^SwapTotal:/{print $2; exit}' /proc/meminfo 2>/dev/null)"
+  sf="$(awk '/^SwapFree:/{print $2; exit}' /proc/meminfo 2>/dev/null)"
+  if [[ -n "$st" && "$st" =~ ^[0-9]+$ && "$st" -gt 0 ]]; then
+    su=$((st - sf))
+    awk -v u="$su" -v t="$st" 'BEGIN{printf "%.1f%%", (u/t)*100}'
+  else
+    echo "0.0%"
+  fi
+}
+
+get_uptime_str() {
+  local uptime_s days hrs mins
+  uptime_s="$(cut -d. -f1 /proc/uptime 2>/dev/null)"
+  if [[ -z "$uptime_s" || ! "$uptime_s" =~ ^[0-9]+$ ]]; then
+    echo "N/A"
+    return 0
+  fi
+
+  days=$((uptime_s / 86400))
+  hrs=$(((uptime_s % 86400) / 3600))
+  mins=$(((uptime_s % 3600) / 60))
+
+  if ((days > 0)); then
+    echo "${days} days ${hrs} hours"
+  elif ((hrs > 0)); then
+    echo "${hrs} hours ${mins} min"
+  else
+    echo "${mins} min"
+  fi
+}
+
+get_local_ipv4() {
+  local ip=""
+  if have_cmd ip; then
+    ip="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src"){print $(i+1); exit}}')"
+    [[ -z "$ip" ]] && ip="$(ip -4 addr show scope global 2>/dev/null | awk '/inet /{print $2; exit}' | cut -d/ -f1)"
+  fi
+  [[ -z "$ip" ]] && ip="$(hostname -I 2>/dev/null | awk '{print $1}')"
+  echo "$ip"
+}
+
+validate_ipv4() {
+  local ip="$1"
+  [[ -z "$ip" ]] && return 1
+  echo "$ip" | awk -F. '
+    NF==4{
+      for(i=1;i<=4;i++){
+        if($i !~ /^[0-9]+$/) exit 1
+        if($i<0 || $i>255) exit 1
+      }
+      exit 0
+    }
+    { exit 1 }
+  ' >/dev/null 2>&1
+}
+
+normalize_ipv6() {
+  local ip="$1"
+  [[ -z "$ip" ]] && { echo ""; return 0; }
+  [[ "$ip" == :* ]] && ip="0$ip"
+  [[ "$ip" == *: ]] && ip="${ip}0"
+  echo "$ip"
+}
+
+validate_ipv6() {
+  local ip="$1"
+  [[ -z "$ip" ]] && return 1
+  echo "$ip" | awk '
+    {
+      s=$0
+      if (index(s,":")==0) exit 1
+      if (s ~ /[^0-9A-Fa-f:]/) exit 1
+      if (s ~ /:::/) exit 1
+
+      tmp=s
+      n=gsub(/::/, "&", tmp)
+      if (n>1) exit 1
+
+      split(s, a, ":")
+      hext=0
+      for(i=1;i<=length(a);i++){
+        if (a[i]!=""){
+          if (length(a[i])>4) exit 1
+          if (a[i] ~ /[^0-9A-Fa-f]/) exit 1
+          hext++
+        }
+      }
+
+      if (n==0){
+        if (length(a)!=8) exit 1
+      } else {
+        if (hext>8) exit 1
+      }
+      exit 0
+    }
+  ' >/dev/null 2>&1
+}
+
+query_public_ip() {
+  local family="$1" ip=""
+
+  if have_cmd dig; then
+    if [[ "$family" == "4" ]]; then
+      ip="$(run_timeout 1s dig -4 TXT +short o-o.myaddr.l.google.com @ns3.google.com | head -n 1 | tr -d '"')"
+      [[ -z "$ip" ]] && ip="$(run_timeout 1s dig -4 TXT CH +short whoami.cloudflare @1.0.0.3 | head -n 1 | tr -d '"')"
+    else
+      ip="$(run_timeout 1s dig -6 TXT +short o-o.myaddr.l.google.com @ns3.google.com | head -n 1 | tr -d '"')"
+      [[ -z "$ip" ]] && ip="$(run_timeout 1s dig -6 TXT CH +short whoami.cloudflare @2606:4700:4700::1003 | head -n 1 | tr -d '"')"
+    fi
+  fi
+
+  if [[ -z "$ip" ]] && have_cmd curl; then
+    if [[ "$family" == "4" ]]; then
+      ip="$(run_timeout 2s curl -4 -fsS https://api.ipify.org | head -n 1)"
+    else
+      ip="$(run_timeout 2s curl -6 -fsS https://api64.ipify.org | head -n 1)"
+    fi
+  fi
+
+  if [[ -z "$ip" ]] && have_cmd wget; then
+    if [[ "$family" == "4" ]]; then
+      ip="$(run_timeout 2s wget -T 2 -qO- https://api.ipify.org | head -n 1)"
+    else
+      ip="$(run_timeout 2s wget -T 2 -qO- https://api64.ipify.org | head -n 1)"
+    fi
+  fi
+
+  echo "$ip"
+}
+
+# Public IP cache TTL sweet spot: 300s
+get_public_ips_cached() {
+  local cache="/run/motd-ip.cache"
+  local ttl=300
+  local now mtime age
+
+  now="$(date +%s 2>/dev/null || echo 0)"
+
+  if [[ -f "$cache" ]] && have_cmd stat && [[ "$now" =~ ^[0-9]+$ ]]; then
+    mtime="$(stat -c %Y "$cache" 2>/dev/null || echo 0)"
+    if [[ "$mtime" =~ ^[0-9]+$ ]]; then
+      age=$((now - mtime))
+      if (( age >= 0 && age < ttl )); then
+        # shellcheck disable=SC1090
+        . "$cache"
+        echo "${IPv4:-N/A}|${IPv6:-N/A}"
+        return 0
+      fi
+    fi
+  fi
+
+  local v4 v6
+  v4="$(query_public_ip 4)"
+  v6="$(query_public_ip 6)"
+  v6="$(normalize_ipv6 "$v6")"
+
+  if validate_ipv4 "$v4"; then IPv4="$v4"; else IPv4="N/A"; fi
+  if validate_ipv6 "$v6"; then IPv6="$v6"; else IPv6="N/A"; fi
+
+  { printf 'IPv4=%q\n' "$IPv4"; printf 'IPv6=%q\n' "$IPv6"; } >"$cache" 2>/dev/null || true
+
+  echo "${IPv4}|${IPv6}"
+}
+
+get_usersnum() {
+  if have_cmd ss; then
+    ss -tnp 2>/dev/null | awk '/sshd/ && /ESTAB/{c++} END{print c+0}'
+    return 0
+  fi
+  if have_cmd netstat; then
+    netstat -tnp 2>/dev/null | awk '/sshd/ && /ESTABLISHED/{c++} END{print c+0}'
+    return 0
+  fi
+  who 2>/dev/null | wc -l
+}
+
+# ---------- collect ----------
+date_str="$(date)"
+load="$(get_load)"
+root_usage="$(get_root_usage)"
+cpu_usage="$(get_cpu_usage)"
+memory_usage="$(get_mem_usage)"
+swap_usage="$(get_swap_usage)"
+usersnum="$(get_usersnum)"
+time_str="$(get_uptime_str)"
+processes="$(ps aux 2>/dev/null | wc -l)"
+localip="$(get_local_ipv4)"
+
+ip_pair="$(get_public_ips_cached)"
+IPv4="${ip_pair%%|*}"
+IPv6="${ip_pair#*|}"
+
+if [[ -z "$localip" || "$localip" == "$IPv4" || "$localip" == "$IPv6" || "$localip" == *:* ]]; then
+  localip="$(awk '/localhost/{print $1; exit}' /etc/hosts 2>/dev/null)"
 fi
+[[ -z "$localip" ]] && localip="127.0.0.1"
 
-[[ ${IPv6: -1} == ":" ]] && IPv6=$(echo "$IPv6" | sed 's/.$/0/')
-[[ ${IPv6:0:1} == ":" ]] && IPv6=$(echo "$IPv6" | sed 's/^./0/')
-IP6_Check="$IPv6"":"
-IP6_Hex_Num=$(echo "$IP6_Check" | tr -cd ":" | wc -c)
-IP6_Hex_Abbr="0"
-if [[ $(echo "$IPv6" | grep -i '[[:xdigit:]]' | grep ':') ]] && [[ "$IP6_Hex_Num" -le "8" ]]; then
-	for ((i = 1; i <= "$IP6_Hex_Num"; i++)); do
-		IP6_Hex=$(echo "$IP6_Check" | cut -d: -f$i)
-		[[ "$IP6_Hex" == "" ]] && IP6_Hex_Abbr=$(expr $IP6_Hex_Abbr + 1)
-		[[ $(echo "$IP6_Hex" | wc -c) -le "4" ]] && {
-			if [[ $(echo "$IP6_Hex" | grep -iE '[^0-9a-f]') ]] || [[ "$IP6_Hex_Abbr" -gt "1" ]]; then
-				echo "fail ($IP6_Check)"
-				exit 1
-			fi
-		}
-	done
-	IP6_Check="isIPv6"
-fi
-
-[[ "${IP6_Check}" != "isIPv6" ]] && IPv6="N/A"
-
-[[ "${IP_Check}" != "isIPv4" ]] && IPv4="N/A"
-
-if [[ "${localip}" == "${IPv4}" ]] || [[ "${localip}" == "${IPv6}" ]] || [[ -z "${localip}" ]]; then
-	# localip=`ip -o a show | grep -w "lo" | grep -w "inet" | cut -d ' ' -f7 | awk '{split($1, a, "/"); print $2 "" a[1]}'`
-	localip=$(cat /etc/hosts | grep "localhost" | sed -n 1p | awk '{print $1}')
-fi
-
-echo " System information as of $date"
+# ---------- output ----------
+echo " System information as of $date_str"
 echo
 printf "%-30s%-15s\n" " System Load:" "$load"
 printf "%-30s%-15s\n" " Private IP Address:" "$localip"
 printf "%-30s%-15s\n" " Public IPv4 Address:" "$IPv4"
 printf "%-30s%-15s\n" " Public IPv6 Address:" "$IPv6"
+printf "%-30s%-15s\n" " CPU Usage:" "$cpu_usage"
 printf "%-30s%-15s\n" " Memory Usage:" "$memory_usage"
 printf "%-30s%-15s\n" " Usage On /:" "$root_usage"
 printf "%-30s%-15s\n" " Swap Usage:" "$swap_usage"
 printf "%-30s%-15s\n" " Users Logged In:" "$usersnum"
 printf "%-30s%-15s\n" " Processes:" "$processes"
-printf "%-30s%-15s\n" " System Uptime:" "$time"
+printf "%-30s%-15s\n" " System Uptime:" "$time_str"
 echo
