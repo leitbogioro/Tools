@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 #
 #    00-header - create the header of the MOTD
 #    Copyright (c) 2013 Nick Charlton
@@ -24,27 +24,27 @@
 #    with this program; if not, write to the Free Software Foundation, Inc.,
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-#[ -r /etc/lsb-release ] ; /etc/lsb-release
+DISTRIB_DESCRIPTION="${DISTRIB_DESCRIPTION:-}"
 
-if
-	[ -z "$DISTRIB_DESCRIPTION" ]
-	[ -x /usr/bin/lsb_release ]
-then
-	# Fall back to using the very slow lsb_release utility
-	DISTRIB_DESCRIPTION=$(lsb_release -s -d)
+# Prefer /etc/os-release (fast), fallback to lsb_release (slow)
+if [[ -z "$DISTRIB_DESCRIPTION" ]] && [[ -r /etc/os-release ]]; then
+  # shellcheck disable=SC1091
+  . /etc/os-release
+  DISTRIB_DESCRIPTION="${PRETTY_NAME:-}"
 fi
+
+if [[ -z "$DISTRIB_DESCRIPTION" ]] && command -v lsb_release >/dev/null 2>&1; then
+  DISTRIB_DESCRIPTION="$(lsb_release -s -d 2>/dev/null)"
+fi
+
+[[ -z "$DISTRIB_DESCRIPTION" ]] && DISTRIB_DESCRIPTION="Debian GNU/Linux"
 
 printf "Welcome to %s (%s)\n" "$DISTRIB_DESCRIPTION" "$(uname -r)"
 printf "\n"
-printf "The programs included with the Debian GNU/Linux system are free software;"
+printf "The programs included with the Debian GNU/Linux system are free software;\n"
+printf "the exact distribution terms for each program are described in the\n"
+printf "individual files in /usr/share/doc/*/copyright.\n"
 printf "\n"
-printf "the exact distribution terms for each program are described in the"
-printf "\n"
-printf "individual files in /usr/share/doc/*/copyright."
-printf "\n"
-printf "\n"
-printf "Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent"
-printf "\n"
-printf "permitted by applicable law."
-printf "\n"
+printf "Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent\n"
+printf "permitted by applicable law.\n"
 printf "\n"
