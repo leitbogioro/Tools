@@ -1354,7 +1354,7 @@ function checkSys() {
 	IsKali=$(uname -a | grep -i "kali")
 	apt update -y
 	# Try to fix error of connecting to current mirror for Debian.
-	if [[ $? -ne 0 ]]; then
+	if [[ "$CurrentOSVer" -ne 0 ]]; then
 		apt update -y >/root/apt_execute.log
 		if [[ $(grep -i "debian" /root/apt_execute.log) ]] && [[ $(grep -i "err:[0-9]" /root/apt_execute.log) || $(grep -i "404  not found" /root/apt_execute.log) ]]; then
 			currentDebianMirror=$(sed -n '/^deb /'p /etc/apt/sources.list | head -n 1 | awk '{print $2}' | sed -e 's|^[^/]*//||' -e 's|/.*$||')
@@ -1369,7 +1369,7 @@ function checkSys() {
 			sed -ri 's/^deb-src/# deb-src/g' /etc/apt/sources.list
 			apt update -y
 		fi
-		# fix security signature check failure of Kali.
+		# Fix security signature check failure of Kali.
 		if [[ "$IsKali" ]] && [[ $(grep -i "public key is not available" /root/apt_execute.log) || $(grep -i "an error occurred during the signature verification" /root/apt_execute.log) || $(grep -i "the following signatures couldn't be verified" /root/apt_execute.log) ]]; then
 			wget https://archive.kali.org/archive-keyring.gpg -O /usr/share/keyrings/kali-archive-keyring.gpg
 			apt update -y
