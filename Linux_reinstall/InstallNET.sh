@@ -1348,7 +1348,10 @@ function checkSys() {
 	sed -i 's/^\(deb.*security.debian.org\/\)\(.*\)\/updates/\1debian-security\2-security/g' /etc/apt/sources.list
 
 	CurrentOSVer=$(cat /etc/os-release | grep -w "VERSION_ID=*" | awk -F '=' '{print $2}' | sed 's/\"//g' | cut -d'.' -f 1)
-
+	DebianRelease=""
+	IsUbuntu=$(uname -a | grep -i "ubuntu")
+	IsDebian=$(uname -a | grep -i "debian")
+	IsKali=$(uname -a | grep -i "kali")
 	apt update -y
 	# Try to fix error of connecting to current mirror for Debian.
 	if [[ $? -ne 0 ]]; then
@@ -1364,6 +1367,11 @@ function checkSys() {
 			fi
 			# Disable get security update.
 			sed -ri 's/^deb-src/# deb-src/g' /etc/apt/sources.list
+			apt update -y
+		fi
+		# fix security signature check failure of Kali.
+		if [[ "$IsKali" ]] && [[ $(grep -i "public key is not available" /root/apt_execute.log) || $(grep -i "an error occurred during the signature verification" /root/apt_execute.log) || $(grep -i "the following signatures couldn't be verified" /root/apt_execute.log) ]]; then
+			wget https://archive.kali.org/archive-keyring.gpg -O /usr/share/keyrings/kali-archive-keyring.gpg
 			apt update -y
 		fi
 		rm -rf /root/apt_execute.log
@@ -1383,10 +1391,6 @@ function checkSys() {
 		[[ -n "$Count" ]] && RedHatRelease=$(echo -e "$Count")"$RedHatRelease"
 	done
 
-	DebianRelease=""
-	IsUbuntu=$(uname -a | grep -i "ubuntu")
-	IsDebian=$(uname -a | grep -i "debian")
-	IsKali=$(uname -a | grep -i "kali")
 	for Count in $(cat /etc/os-release | grep -w "ID=*" | awk -F '=' '{print $2}') $(cat /etc/issue | awk '{print $1}') "$OsLsb"; do
 		[[ -n "$Count" ]] && DebianRelease=$(echo -e "$Count")"$DebianRelease"
 	done
