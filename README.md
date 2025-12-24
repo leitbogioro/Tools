@@ -1,6 +1,6 @@
 # Tools
 Something about scripts
-# Linux reinstall useage
+# Linux reinstall usage
 
 ![](https://raw.githubusercontent.com/leitbogioro/Tools/master/imgs/1.png)
 
