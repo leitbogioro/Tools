@@ -1,7 +1,8 @@
 #!/bin/sh
 #
-# Alpine ash/POSIX compatible MOTD
-# Put this file in /etc/profile.d/motd.sh
+#    Alpine ash/POSIX compatible MOTD
+#    Put this file in /etc/profile.d/motd.sh
+#    Authors:Leitbogioro
 #
 
 # ------------------ 0) helpers ------------------
@@ -17,6 +18,51 @@ run_timeout() {
   else
     "$@" 2>/dev/null
   fi
+}
+
+# CPU usage: sample /proc/stat twice, output integer percent like "8%"
+get_cpu_usage() {
+  # 1st sample
+  set -- $(head -n 1 /proc/stat 2>/dev/null)
+  [ "$1" = "cpu" ] || { echo "N/A"; return; }
+
+  user=${2:-0}
+  nice=${3:-0}
+  system=${4:-0}
+  idle=${5:-0}
+  iowait=${6:-0}
+  irq=${7:-0}
+  softirq=${8:-0}
+  steal=${9:-0}
+
+  idle_all1=$((idle + iowait))
+  total1=$((user + nice + system + idle + iowait + irq + softirq + steal))
+
+  # small interval; if fractional sleep unsupported, fallback to 1s
+  sleep 0.2 2>/dev/null || sleep 1
+
+  # 2nd sample
+  set -- $(head -n 1 /proc/stat 2>/dev/null)
+  [ "$1" = "cpu" ] || { echo "N/A"; return; }
+
+  user2=${2:-0}
+  nice2=${3:-0}
+  system2=${4:-0}
+  idle2=${5:-0}
+  iowait2=${6:-0}
+  irq2=${7:-0}
+  softirq2=${8:-0}
+  steal2=${9:-0}
+
+  idle_all2=$((idle2 + iowait2))
+  total2=$((user2 + nice2 + system2 + idle2 + iowait2 + irq2 + softirq2 + steal2))
+
+  dt=$((total2 - total1))
+  di=$((idle_all2 - idle_all1))
+
+  [ "$dt" -gt 0 ] 2>/dev/null || { echo "N/A"; return; }
+
+  awk -v dt="$dt" -v di="$di" 'BEGIN{printf "%d%%", ((dt-di)*100)/dt}'
 }
 
 # ------------------ 1) tweak vim defaults ------------------
@@ -120,11 +166,7 @@ localip=""
 if have_cmd ip; then
   # best: infer real source IP used to reach internet
   localip="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '
-    {
-      for(i=1;i<=NF;i++){
-        if($i=="src"){print $(i+1); exit}
-      }
-    }')"
+    { for(i=1;i<=NF;i++){ if($i=="src"){print $(i+1); exit} } }')"
   # fallback: first global ipv4
   if [ -z "$localip" ]; then
     localip="$(ip -4 addr show scope global 2>/dev/null | awk '/inet /{print $2; exit}' | cut -d/ -f1)"
@@ -228,6 +270,9 @@ case "$localip" in
 esac
 [ -z "$localip" ] && localip="127.0.0.1"
 
+# CPU usage (after IPs, before memory output)
+cpu_usage="$(get_cpu_usage)"
+
 # ------------------ 6) output ------------------
 echo " System information as of $date_str"
 echo
@@ -235,6 +280,7 @@ printf "%-30s%-15s\n" " System Load:" "$load"
 printf "%-30s%-15s\n" " Private IP Address:" "$localip"
 printf "%-30s%-15s\n" " Public IPv4 Address:" "$IPv4"
 printf "%-30s%-15s\n" " Public IPv6 Address:" "$IPv6"
+printf "%-30s%-15s\n" " CPU Usage:" "$cpu_usage"
 printf "%-30s%-15s\n" " Memory Usage:" "$memory_usage"
 printf "%-30s%-15s\n" " Usage On /:" "$root_usage"
 printf "%-30s%-15s\n" " Swap Usage:" "$swap_usage"
