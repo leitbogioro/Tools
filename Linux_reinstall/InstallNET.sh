@@ -1580,7 +1580,8 @@ function checkDIST() {
 				[[ "$isDigital" == '11' ]] && DIST='bullseye'
 				[[ "$isDigital" == '12' ]] && DIST='bookworm'
 				[[ "$isDigital" == '13' ]] && DIST='trixie'
-				# [[ "$isDigital" == '14' ]] && DIST='forky'
+				[[ "$isDigital" == '14' ]] && DIST='forky'
+				# [[ "$isDigital" == '15' ]] && DIST='duke'
 				# Debian releases TBA reference: https://wiki.debian.org/DebianReleases
 				#                                https://en.wikipedia.org/wiki/Debian_version_history#Release_table
 			}
