@@ -40,7 +40,7 @@ Servers in mainland of China:
 
 ## Quickly start
 If you need to add other parameters, a certain name of distributions must be assigned!
-### Debian 12
+### Debian 13
 <pre><code>bash InstallNET.sh -debian</code></pre>
 ### Kali Rolling
 <pre><code>bash InstallNET.sh -kali</code></pre>
@@ -84,7 +84,7 @@ For Windows: 3389
 <br />
 
 ## Parameters detail descriptions
-**-debian 7-12** : Debian 7 and later
+**-debian 7-13** : Debian 7 and later
 <br />
 <br />
 
