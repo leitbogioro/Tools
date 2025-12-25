@@ -242,10 +242,14 @@ net.ipv4.tcp_mtu_probing = 1
 # avoid slow-start penalty after idle (often helps proxy patterns)
 net.ipv4.tcp_slow_start_after_idle = 0
 
+# SYN cookies protect against SYN flood. Debian usually defaults to 1; keep it enabled.
+net.ipv4.tcp_syncookies = 1
+
 # --- Stability for long-lived TCP through NAT/CGNAT/WAN ---
-# (reduce "half-dead" connections; helps ChatGPT/YouTube/Reddit clients + proxy tunnels)
-net.ipv4.tcp_keepalive_time = 120
-net.ipv4.tcp_keepalive_intvl = 20
+# Keepalive helps detect half-dead connections through NAT/WAN.
+# Too aggressive values may increase overhead and cause false disconnects under packet loss.
+net.ipv4.tcp_keepalive_time = 180
+net.ipv4.tcp_keepalive_intvl = 30
 net.ipv4.tcp_keepalive_probes = 5
 
 # many outbound connections (proxy relay)
@@ -263,8 +267,7 @@ net.ipv4.tcp_rmem = 4096 87380 16777216
 net.ipv4.tcp_wmem = 4096 65536 16777216
 </code></pre>
 A typical sysctl optimize template for web server(including BBR optimization of above).
-<pre><code>
-# --- Core: BBR + fq ---
+<pre><code># --- Core: BBR + fq ---
 net.core.default_qdisc = fq
 net.ipv4.tcp_congestion_control = bbr
 
@@ -277,6 +280,14 @@ net.ipv4.tcp_mtu_probing = 1
 
 # Avoid slow-start penalty after an idle period; often helps keep throughput stable for intermittent flows.
 net.ipv4.tcp_slow_start_after_idle = 0
+
+# SYN cookies protect against SYN flood. Debian usually defaults to 1; keep it enabled.
+net.ipv4.tcp_syncookies = 1
+
+# burst handling (web/proxy both benefit)
+net.core.somaxconn = 8192
+net.ipv4.tcp_max_syn_backlog = 8192
+net.core.netdev_max_backlog = 16384
 
 # -----------------------------
 # 3) Moderate TCP socket buffers (32MB)
