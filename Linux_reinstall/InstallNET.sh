@@ -3297,13 +3297,13 @@ fi
 linux_relese=$(echo "$Relese" | sed 's/\ //g' | sed -r 's/(.*)/\L\1/')
 
 [[ -z "$tmpDIST" ]] && {
-	[ "$Relese" == 'Debian' ] && tmpDIST='12'
+	[ "$Relese" == 'Debian' ] && tmpDIST='13'
 	[ "$Relese" == 'Kali' ] && tmpDIST='rolling'
 	[ "$Relese" == 'AlpineLinux' ] && tmpDIST='edge'
 	[ "$Relese" == 'CentOS' ] && tmpDIST='9'
 	[ "$Relese" == 'RockyLinux' ] && tmpDIST='9'
 	[ "$Relese" == 'AlmaLinux' ] && tmpDIST='9'
-	[ "$Relese" == 'Fedora' ] && tmpDIST='39'
+	[ "$Relese" == 'Fedora' ] && tmpDIST='43'
 }
 [[ -z "$finalDIST" ]] && {
 	[ "$targetRelese" == 'Ubuntu' ] && finalDIST='22.04'
