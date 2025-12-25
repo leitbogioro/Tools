@@ -2909,64 +2909,14 @@ function DebianModifiedPreseed() {
 			ReviseMOTD="$1 sed -ri 's/Debian/Kali/g' /etc/update-motd.d/00-header;"
 			SupportZSH="$1 apt install zsh -y; $1 chsh -s /bin/zsh; $1 rm -rf /root/.bashrc.original;"
 		}
-		# Write the following configs to "/etc/sysctl.d/99-sysctl.conf", including network optimization:
+		# Write the following configs to "/etc/sysctl.d/99-sysctl.conf", including basic and general network optimization only:
 		#
 		# net.core.default_qdisc = fq
 		# net.ipv4.tcp_congestion_control = bbr
-		# net.ipv4.tcp_rmem = 8192 262144 536870912
-		# net.ipv4.tcp_wmem = 4096 16384 536870912
-		# net.ipv4.tcp_adv_win_scale = -2
-		# net.ipv4.tcp_collapse_max_bytes = 6291456
-		# net.ipv4.tcp_notsent_lowat = 131072
-		# net.ipv4.ip_local_port_range = 1024 65535
-		# net.core.rmem_max = 536870912
-		# net.core.wmem_max = 536870912
-		# net.core.somaxconn = 32768
-		# net.core.netdev_max_backlog = 32768
-		# net.ipv4.tcp_max_tw_buckets = 65536
-		# net.ipv4.tcp_abort_on_overflow = 1
+		# net.ipv4.tcp_mtu_probing = 1
 		# net.ipv4.tcp_slow_start_after_idle = 0
-		# net.ipv4.tcp_timestamps = 1
-		# net.ipv4.tcp_syncookies = 0
-		# net.ipv4.tcp_syn_retries = 3
-		# net.ipv4.tcp_synack_retries = 3
-		# net.ipv4.tcp_max_syn_backlog = 32768
-		# net.ipv4.tcp_fin_timeout = 15
-		# net.ipv4.tcp_keepalive_intvl = 3
-		# net.ipv4.tcp_keepalive_probes = 5
-		# net.ipv4.tcp_keepalive_time = 600
-		# net.ipv4.tcp_retries1 = 3
-		# net.ipv4.tcp_retries2 = 5
-		# net.ipv4.tcp_no_metrics_save = 1
-		# net.ipv4.ip_forward = 1
-		# fs.file-max = 104857600
-		# fs.inotify.max_user_instances = 8192
-		# fs.nr_open = 1048576
 		#
-		# Note: Module "tcp_collapse_max_bytes" is a self completion of Cloudflare, users need to download and apply patches by themselves otherwise this module will not be in effect.
-		#
-		# Reference:
-		# 1. Settings of enable BBR:
-		# https://qiita.com/yoshuuua/items/daa9d04089d416afbf94 BBR推奨のパケットスケジューラーのキューイングアルゴリズムによるソケットバッファ枯渇問題
-		#                                                       Problem of exhaustion of socket buffer due to default queuing algorithm of packet scheduler of BBR
-		# 2. TCP optimization for shuttling to Cloudflare:
-		# https://blog.cloudflare.com/optimizing-tcp-for-high-throughput-and-low-latency/ Optimizing TCP for high WAN throughput while preserving low latency
-		#
-		# 3. Third part patches for Linux kernel which were provided by CloudFlare:
-		# https://github.com/cloudflare/linux/tree/master/patches
-		#
-		# 4. https://github.com/MoeClub/Note/blob/master/LinuxInit.sh
-		#
-		# 5. https://www.nodeseek.com/post-37225-1
-		#
-		# 6. https://www.starduster.me/2020/03/02/linux-network-tuning-kernel-parameter/
-		#
-		# 7. https://zhuanlan.zhihu.com/p/149372947
-		#
-		# 8. https://my.oschina.net/alchemystar/blog/4712110
-		#
-		# 9. http://performance.oreda.net/linux/configuration/sysctl 高負荷·大規模システムのLinuxカーネル·チューニング Linux kernel tuning for high availability and large scale system.
-		#
+		# "net.ipv4.tcp_syncookies" is already enabled by default.
 		# To enable BBR is only suitable for Debian 11+
 		[[ "$enableBBR" == "1" ]] && [[ "$DebianDistNum" -ge "11" || "$linux_relese" == "kali" ]] && {
 			[[ "$DebianDistNum" -ge "13" || "$linux_relese" == "kali" ]] && {
@@ -2975,7 +2925,7 @@ function DebianModifiedPreseed() {
 			} || {
 				WriteSysctlConf=""
 			}
-			EnableBBR="$1 sed -i '\$anet.core.default_qdisc = fq' $3; $1 sed -i '\$anet.ipv4.tcp_congestion_control = bbr' $3; $1 sed -i '\$anet.ipv4.tcp_rmem = 8192 262144 536870912' $3; $1 sed -i '\$anet.ipv4.tcp_wmem = 4096 16384 536870912' $3; $1 sed -i '\$anet.ipv4.tcp_adv_win_scale = -2' $3; $1 sed -i '\$anet.ipv4.tcp_collapse_max_bytes = 6291456' $3; $1 sed -i '\$anet.ipv4.tcp_notsent_lowat = 131072' $3; $1 sed -i '\$anet.ipv4.ip_local_port_range = 1024 65535' $3; $1 sed -i '\$anet.core.rmem_max = 536870912' $3; $1 sed -i '\$anet.core.wmem_max = 536870912' $3; $1 sed -i '\$anet.core.somaxconn = 32768' $3; $1 sed -i '\$anet.core.netdev_max_backlog = 32768' $3; $1 sed -i '\$anet.ipv4.tcp_max_tw_buckets = 65536' $3; $1 sed -i '\$anet.ipv4.tcp_abort_on_overflow = 1' $3; $1 sed -i '\$anet.ipv4.tcp_slow_start_after_idle = 0' $3; $1 sed -i '\$anet.ipv4.tcp_timestamps = 1' $3; $1 sed -i '\$anet.ipv4.tcp_syncookies = 0' $3; $1 sed -i '\$anet.ipv4.tcp_syn_retries = 3' $3; $1 sed -i '\$anet.ipv4.tcp_synack_retries = 3' $3; $1 sed -i '\$anet.ipv4.tcp_max_syn_backlog = 32768' $3; $1 sed -i '\$anet.ipv4.tcp_fin_timeout = 15' $3; $1 sed -i '\$anet.ipv4.tcp_keepalive_intvl = 3' $3; $1 sed -i '\$anet.ipv4.tcp_keepalive_probes = 5' $3; $1 sed -i '\$anet.ipv4.tcp_keepalive_time = 600' $3; $1 sed -i '\$anet.ipv4.tcp_retries1 = 3' $3; $1 sed -i '\$anet.ipv4.tcp_retries2 = 5' $3; $1 sed -i '\$anet.ipv4.tcp_no_metrics_save = 1' $3; $1 sed -i '\$anet.ipv4.ip_forward = 1' $3; $1 sed -i '\$afs.file-max = 104857600' $3; $1 sed -i '\$afs.inotify.max_user_instances = 8192' $3; $1 sed -i '\$afs.nr_open = 1048576' $3; $1 systemctl restart systemd-sysctl;"
+			EnableBBR="$1 sed -i '\$a# --- Core: BBR + fq ---' $3; $1 sed -i '\$anet.core.default_qdisc = fq' $3; $1 sed -i '\$anet.ipv4.tcp_congestion_control = bbr' $3; $1 sed -i -e '\$a\\' -e '' $3; $1 sed -i '\$a# PMTU blackhole tolerance (common with tunnels / some WAN paths)' $3; $1 sed -i '\$anet.ipv4.tcp_mtu_probing = 1' $3; $1 sed -i -e '\$a\\' -e '' $3; $1 sed -i '\$a# avoid slow-start penalty after idle (often helps proxy patterns)' $3; $1 sed -i '\$anet.ipv4.tcp_slow_start_after_idle = 0' $3; $1 systemctl restart systemd-sysctl; $1 sed -i -e '\$a\\' -e '' $3;"
 		} || {
 			EnableBBR=""
 		}
