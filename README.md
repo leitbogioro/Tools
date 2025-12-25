@@ -53,7 +53,7 @@ If you need to add other parameters, a certain name of distributions must be ass
 <pre><code>bash InstallNET.sh -almalinux</code></pre>
 ### RockyLinux 9
 <pre><code>bash InstallNET.sh -rockylinux</code></pre>
-### Fedora 39
+### Fedora 43
 <pre><code>bash InstallNET.sh -fedora</code></pre>
 ### Ubuntu 22.04
 <pre><code>bash InstallNET.sh -ubuntu</code></pre>
