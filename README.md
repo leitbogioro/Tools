@@ -108,11 +108,11 @@ For Windows: 3389
 <br />
 <br />
 
-**-fedora 38/39**: Fedora 38 and later
+**-fedora 42/43**: Fedora 42 and later
 <br />
 <br />
 
-**-ubuntu 20.04/22.04/24.04(testing, not stable, do not install it in the production environment!)**: Ubuntu from 20.04 and later
+**-ubuntu 20.04/22.04/24.04**: Ubuntu from 20.04 and later
 <br />
 <br />
 
