@@ -1358,18 +1358,27 @@ function checkSys() {
 	# Try to fix error of connecting to current mirror for Debian.
 	if [[ "$CurrentOSVer" -ne 0 ]]; then
 		apt update -y >/root/apt_execute.log
-		if [[ $(grep -i "debian" /root/apt_execute.log) ]] && [[ $(grep -i "err:[0-9]" /root/apt_execute.log) || $(grep -i "404  not found" /root/apt_execute.log) ]]; then
-			currentDebianMirror=$(sed -n '/^deb /'p /etc/apt/sources.list | head -n 1 | awk '{print $2}' | sed -e 's|^[^/]*//||' -e 's|/.*$||')
-			if [[ "$CurrentOSVer" -gt "9" ]]; then
-				# Replace invalid mirror of Debian to 'deb.debian.org' if current version has not been 'EOL'(End Of Life).
-				sed -ri "s/$currentDebianMirror/deb.debian.org/g" /etc/apt/sources.list
-			else
-				# Replace invalid mirror of Debian to 'archive.debian.org' because it had been marked with 'EOL'.
-				sed -ri "s/$currentDebianMirror/archive.debian.org/g" /etc/apt/sources.list
+		if [[ $(grep -i "debian" /root/apt_execute.log) ]]; then
+			# Delete the apt mirror with ejected optical drive.
+			if [[ $(grep -i "err:[0-9]" /root/apt_execute.log) ]] && [[ $(grep -i "cdrom" /root/apt_execute.log) ]]; then
+				sed -i "/^deb cdrom/d" /etc/apt/sources.list
+				# Refresh cache of logs of apt update.
+				rm -rf /root/apt_execute.log
+				apt update -y >/root/apt_execute.log
 			fi
-			# Disable get security update.
-			sed -ri 's/^deb-src/# deb-src/g' /etc/apt/sources.list
-			apt update -y
+			if [[ $(grep -i "err:[0-9]" /root/apt_execute.log) || $(grep -i "404  not found" /root/apt_execute.log) ]]; then
+				currentDebianMirror=$(sed -n '/^deb /'p /etc/apt/sources.list | head -n 1 | awk '{print $2}' | sed -e 's|^[^/]*//||' -e 's|/.*$||')
+				if [[ "$CurrentOSVer" -gt "9" ]]; then
+					# Replace invalid mirror of Debian to 'deb.debian.org' if current version has not been 'EOL'(End Of Life).
+					sed -ri "s/$currentDebianMirror/deb.debian.org/g" /etc/apt/sources.list
+				else
+					# Replace invalid mirror of Debian to 'archive.debian.org' because it had been marked with 'EOL'.
+					sed -ri "s/$currentDebianMirror/archive.debian.org/g" /etc/apt/sources.list
+				fi
+				# Disable get security update.
+				sed -ri 's/^deb-src/# deb-src/g' /etc/apt/sources.list
+				apt update -y
+			fi
 		fi
 		# Fix security signature check failure of Kali.
 		if [[ "$IsKali" ]] && [[ $(grep -i "public key is not available" /root/apt_execute.log) || $(grep -i "an error occurred during the signature verification" /root/apt_execute.log) || $(grep -i "the following signatures couldn't be verified" /root/apt_execute.log) ]]; then
@@ -2808,17 +2817,15 @@ function DebianModifiedPreseed() {
 		if [[ "$IsCN" == "cn" ]]; then
 			# Modify /root/.bashrc to support colorful filename.
 			ChangeBashrc="$1 rm -rf /root/.bashrc; $1 wget --no-check-certificate -qO /root/.bashrc '${debianConfFileDirCn}/.bashrc';"
-			# Need to install "resolvconf" manually after all installation ended, logged into new system.
-			# DNS server validation must setting up in installed system, can't in preseeding!
 			# Set China DNS server from Tencent Cloud and Alibaba Cloud permanently.
-			[[ "$setDns" == "1" ]] && SetDNS="CNResolvHead" DnsChangePermanently="$1 mkdir -p /etc/resolvconf/resolv.conf.d/; $1 wget --no-check-certificate -qO /etc/resolvconf/resolv.conf.d/head '${debianConfFileDirCn}/network/${SetDNS}';" || DnsChangePermanently=""
+			[[ "$setDns" == "1" ]] && SetDNS="CNResolvHead" DnsChangePermanently="$1 mkdir -p /etc/resolvconf/resolv.conf.d/; $1 wget --no-check-certificate -qO /etc/resolvconf/resolv.conf.d/head '${debianConfFileDirCn}/network/${SetDNS}'; $1 export DEBIAN_FRONTEND=noninteractive; $1 apt-get -y -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold install resolvconf;" || DnsChangePermanently=""
 			# Modify logging in welcome information(Message Of The Day) of Debian and make it more pretty.
 			[[ "$setMotd" == "1" ]] && ModifyMOTD="$1 rm -rf /etc/update-motd.d/ /etc/motd /run/motd.dynamic; $1 mkdir -p /etc/update-motd.d/; $1 wget --no-check-certificate -qO /etc/update-motd.d/00-header '${debianConfFileDirCn}/updatemotd/00-header'; $1 wget --no-check-certificate -qO /etc/update-motd.d/10-sysinfo '${debianConfFileDirCn}/updatemotd/10-sysinfo'; $1 wget --no-check-certificate -qO /etc/update-motd.d/90-footer '${debianConfFileDirCn}/updatemotd/90-footer'; $1 chmod +x /etc/update-motd.d/00-header; $1 chmod +x /etc/update-motd.d/10-sysinfo; $1 chmod +x /etc/update-motd.d/90-footer;" || ModifyMOTD=""
 			[[ "$enableBBR" == "1" ]] && SysctlConfFile="${debianConfFileDirCn}/99-sysctl.conf"
 		else
 			ChangeBashrc="$1 rm -rf /root/.bashrc; $1 wget --no-check-certificate -qO /root/.bashrc '${debianConfFileDir}/.bashrc';"
-			# Set DNS server from Cloudflare and Google permanently.
-			[[ "$setDns" == "1" ]] && SetDNS="NomalResolvHead" DnsChangePermanently="$1 mkdir -p /etc/resolvconf/resolv.conf.d/; $1 wget --no-check-certificate -qO /etc/resolvconf/resolv.conf.d/head '${debianConfFileDir}/network/${SetDNS}';" || DnsChangePermanently=""
+			# Set DNS server from Cloudflare and Google permanently, resolved some puzzles about install "resolvconf" component in late command stage of preseed.
+			[[ "$setDns" == "1" ]] && SetDNS="NomalResolvHead" DnsChangePermanently="$1 mkdir -p /etc/resolvconf/resolv.conf.d/; $1 wget --no-check-certificate -qO /etc/resolvconf/resolv.conf.d/head '${debianConfFileDir}/network/${SetDNS}'; $1 export DEBIAN_FRONTEND=noninteractive; $1 apt-get -y -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold install resolvconf;" || DnsChangePermanently=""
 			[[ "$setMotd" == "1" ]] && ModifyMOTD="$1 rm -rf /etc/update-motd.d/ /etc/motd /run/motd.dynamic; $1 mkdir -p /etc/update-motd.d/; $1 wget --no-check-certificate -qO /etc/update-motd.d/00-header '${debianConfFileDir}/updatemotd/00-header'; $1 wget --no-check-certificate -qO /etc/update-motd.d/10-sysinfo '${debianConfFileDir}/updatemotd/10-sysinfo'; $1 wget --no-check-certificate -qO /etc/update-motd.d/90-footer '${debianConfFileDir}/updatemotd/90-footer'; $1 chmod +x /etc/update-motd.d/00-header; $1 chmod +x /etc/update-motd.d/10-sysinfo; $1 chmod +x /etc/update-motd.d/90-footer;" || ModifyMOTD=""
 			[[ "$enableBBR" == "1" ]] && SysctlConfFile="${debianConfFileDir}/99-sysctl.conf"
 		fi
@@ -2936,7 +2943,7 @@ function DebianModifiedPreseed() {
 		CreateSoftLinkToGrub2FromGrub1="$1 ln -s /boot/grub/ /boot/grub2;"
 		# Statement of "grub-pc/timeout" in "preseed.cfg" is only valid for BIOS.
 		[[ "$EfiSupport" == "enabled" ]] && SetGrubTimeout="$1 sed -ri 's/GRUB_TIMEOUT=5/GRUB_TIMEOUT=3/g' /etc/default/grub; $1 sed -ri 's/set timeout=5/set timeout=3/g' /boot/grub/grub.cfg;" || SetGrubTimeout=""
-		export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${VimIndentEolStart} ${DnsChangePermanently} ${ModifyMOTD} ${BurnIrregularIpv4Gate} ${BurnIrregularIpv6Gate} ${SupportIPv6orIPv4} ${ReplaceActualIpPrefix} ${AutoPlugInterfaces} ${EnableSSH} ${ReviseMOTD} ${SupportZSH} ${EnableFail2ban} ${WriteSysctlConf} ${EnableBBR} ${CreateSoftLinkToGrub2FromGrub1} ${SetGrubTimeout}"
+		export DebianModifiedProcession="${AptUpdating} ${InstallComponents} ${DisableCertExpiredCheck} ${ChangeBashrc} ${VimSupportCopy} ${VimIndentEolStart} ${ModifyMOTD} ${BurnIrregularIpv4Gate} ${BurnIrregularIpv6Gate} ${SupportIPv6orIPv4} ${ReplaceActualIpPrefix} ${AutoPlugInterfaces} ${EnableSSH} ${ReviseMOTD} ${SupportZSH} ${EnableFail2ban} ${WriteSysctlConf} ${EnableBBR} ${DnsChangePermanently} ${CreateSoftLinkToGrub2FromGrub1} ${SetGrubTimeout}"
 	fi
 }
 
@@ -3394,12 +3401,19 @@ if [[ -n "$ipAddr" && -n "$ipMask" && -n "$ipGate" ]] && [[ -z "$ip6Addr" && -z 
 	Network4Config="isStatic"
 	acceptIPv4AndIPv6SubnetValue "$ipMask" ""
 	[[ "$IPStackType" != "IPv4Stack" ]] && getIPv6Address
+	# Accept IPv4 configs from user and set to Bi-Stack.
+	[[ "$IPStackType" == "IPv6Stack" ]] && {
+		IPStackType="BiStack"
+		iAddrNum="1"
+	}
 elif [[ -n "$ipAddr" && -n "$ipMask" && -n "$ipGate" ]] && [[ -n "$ip6Addr" && -n "$ip6Mask" && -n "$ip6Gate" ]]; then
 	setNet='1'
 	[[ -z "$interfaceSelect" ]] && getInterface "$CurrentOS"
 	Network4Config="isStatic"
 	Network6Config="isStatic"
 	acceptIPv4AndIPv6SubnetValue "$ipMask" "$ip6Mask"
+	# Accept IPv4 and IPv6 configs from user and set to Bi-Stack.
+	IPStackType="BiStack"
 elif [[ -z "$ipAddr" && -z "$ipMask" && -z "$ipGate" ]] && [[ -n "$ip6Addr" && -n "$ip6Mask" && -n "$ip6Gate" ]]; then
 	setNet='1'
 	checkDHCP "$CurrentOS" "$CurrentOSVer" "$IPStackType"
@@ -3407,6 +3421,11 @@ elif [[ -z "$ipAddr" && -z "$ipMask" && -z "$ipGate" ]] && [[ -n "$ip6Addr" && -
 	Network6Config="isStatic"
 	acceptIPv4AndIPv6SubnetValue "" "$ip6Mask"
 	getIPv4Address
+	# Accept IPv6 configs from user and set to Bi-Stack.
+	[[ "$IPStackType" == "IPv4Stack" ]] && {
+		IPStackType="BiStack"
+		i6AddrNum="1"
+	}
 fi
 
 if [[ "$setNet" == "0" ]]; then
