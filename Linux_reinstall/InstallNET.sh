@@ -1466,7 +1466,7 @@ function checkSys() {
 	# "kdump-tools" is a dependence of "kexec-tools".
 	apt purge inetutils-ping kdump-tools kexec-tools -y
 	# Debian like linux OS necessary components.
-	apt install cpio curl dmidecode dnsutils efibootmgr fdisk file gzip iputils-ping jq net-tools openssl tuned util-linux virt-what wget xz-utils -y
+	apt install cpio curl dmidecode dnsutils efibootmgr fdisk file gzip iputils-ping jq net-tools openssl sudo tuned util-linux virt-what wget xz-utils -y
 
 	# Redhat like Linux OS prefer to use dnf instead of yum because former has a higher execute efficiency.
 	yum install dnf -y
@@ -1498,11 +1498,11 @@ function checkSys() {
 			# In official template of AlmaLinux 9 of Linode, "tuned" must be installed otherwise "grub2-mkconfig" can't work formally.
 			# Reference: https://phanes.silogroup.org/fips-disa-stig-hardening-on-centos9/
 			dnf install epel-release -y
-			dnf install bind-utils cpio curl dmidecode dnsutils efibootmgr file gzip jq net-tools openssl redhat-lsb syslinux tuned util-linux virt-what wget xz --skip-broken -y
+			dnf install bind-utils cpio curl dmidecode dnsutils efibootmgr file gzip jq net-tools openssl redhat-lsb sudo syslinux tuned util-linux virt-what wget xz --skip-broken -y
 			# Oracle Linux 7 doesn't support DNF.
 		elif [[ $(grep -i "no package" /root/yum_execute.log) ]]; then
 			yum install epel-release -y
-			yum install bind-utils cpio curl dmidecode dnsutils efibootmgr file gzip jq net-tools openssl redhat-lsb syslinux tuned util-linux virt-what wget xz --skip-broken -y
+			yum install bind-utils cpio curl dmidecode dnsutils efibootmgr file gzip jq net-tools openssl redhat-lsb sudo syslinux tuned util-linux virt-what wget xz --skip-broken -y
 		fi
 		rm -rf /root/yum_execute.log
 	fi
@@ -1519,7 +1519,7 @@ function checkSys() {
 		# [[ ! `grep -i "testing" /etc/apk/repositories` ]] && sed -i '$a\http://ftp.udx.icscoe.jp/Linux/alpine/edge/testing' /etc/apk/repositories
 		# Alpine Linux use "apk" as package management.
 		apk update
-		apk add bash bind-tools coreutils cpio curl dmidecode efibootmgr file gawk grep gzip jq lsblk net-tools openssl sed shadow tzdata util-linux virt-what wget xz
+		apk add bash bind-tools coreutils cpio curl dmidecode efibootmgr file gawk grep gzip jq lsblk net-tools openssl sed shadow sudo tzdata util-linux virt-what wget xz
 		# Use bash to replace ash.
 		sed -i 's/root:\/bin\/ash/root:\/bin\/bash/g' /etc/passwd
 	}
