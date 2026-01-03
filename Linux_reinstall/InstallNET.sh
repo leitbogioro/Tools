@@ -2664,6 +2664,10 @@ function ipv6ForRedhatGrub() {
 # $1 is $CurrentOS, $2 is $CurrentOSVer, $3 is $IPStackType
 function checkDHCP() {
 	getInterface "$1"
+	IPv4DhcpStatus=$(ip -4 -o addr show dev $interface4 | grep -w "inet" | grep -wv "lo\|host" | grep -w "scope global*\|link*" | grep -i "dynamic" | head -n1)
+	# IPv6 DHCPv6 can’t be reliably by detecting via `ip -6 addr show`: the `dynamic` flag is common for SLAAC/temporary privacy addresses,
+	# and many networks use SLAAC for addressing while DHCPv6 only provides options (e.g., DNS), so the presence of an IPv6 address doesn’t prove DHCPv6 is in use.
+	IPv6DhcpStatus=$(ss -uapn 2>/dev/null | grep -w $interface6 | awk '/:546[[:space:]]/{print $NF}' | sed -n 's/.*pid=\([0-9]\+\).*/\1/p' | head -n1)
 	[[ -z "$tmpDHCP" ]] && {
 		if [[ "$1" == 'CentOS' || "$1" == 'AlmaLinux' || "$1" == 'RockyLinux' || "$1" == 'Fedora' || "$1" == 'Vzlinux' || "$1" == 'OracleLinux' || "$1" == 'OpenCloudOS' || "$1" == 'AlibabaCloudLinux' || "$1" == 'ScientificLinux' || "$1" == 'AmazonLinux' || "$1" == 'RedHatEnterpriseLinux' || "$1" == 'OpenAnolis' || "$1" == 'CloudLinux' ]]; then
 			# RedHat like linux system 8 and before network config name is "ifcfg-interface", deposited in /etc/sysconfig/network-scripts/
@@ -2759,6 +2763,8 @@ function checkDHCP() {
 		fi
 		rm -rf "$tmpNetcfgDir"
 	}
+	[[ -z "$IPv4DhcpStatus" ]] && Network4Config="isStatic"
+	[[ -z "$IPv6DhcpStatus" ]] && Network6Config="isStatic"
 	[[ "$Network4Config" == "" ]] && Network4Config="isStatic"
 	[[ "$Network6Config" == "" ]] && Network6Config="isStatic"
 }
