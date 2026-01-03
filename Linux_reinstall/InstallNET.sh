@@ -2466,12 +2466,13 @@ function getInterface() {
 				NetCfgDir="$Count""/"
 				# If "NetworkManager" replaced "network-scripts", there is a file called "readme-ifcfg-rh.txt" in dir: /etc/sysconfig/network-scripts/
 				# NetCfgFile=`ls -Sl $NetCfgDir 2>/dev/null | awk -F' ' '{print $NF}' | grep -iv 'lo\|sit\|stf\|gif\|dummy\|vmnet\|vir\|gre\|ipip\|ppp\|bond\|tun\|tap\|ip6gre\|ip6tnl\|teql\|ocserv\|vpn\|readme' | grep -s "$interface" | head -n 1`
+				# Only filter files similar as "lo.nmconnections".
 				# Condition of "grep -iv 'lo\|sit\|stf..." has been deperated because the config file name of "NetworkManager" which initiated by "cloud init" is like "cloud-init-eth0.nmconnection".
 				# Different from command "grep", command "ls" can only show file name but not full file direction.
 				# There are 3 files named "ifcfg-ens18  ifcfg-eth0  ifcfg-eth1" in dir "/etc/sysconfig/network-scripts/" of Almalinux 8 of Bandwagonhosts template.
 				# We should select the correct one by adjust whether includes interface name and file size.
 				# Files in "/etc/sysconfig/network-scripts/", reference: https://zetawiki.com/wiki/%EB%B6%84%EB%A5%98:/etc/sysconfig/network-scripts
-				NetCfgFiles=$(ls -Sl $NetCfgDir 2>/dev/null | awk -F' ' '{print $NF}' | grep -iv 'readme-\|ifcfg-lo\|ifcfg-bond\|ifup\|ifdown\|vpn\|init.ipv6-global\|network-functions\|lo.' | grep -s "ifcfg\|nmconnection")
+				NetCfgFiles=$(ls -Sl $NetCfgDir 2>/dev/null | grep -v '^total ' | awk -F' ' '{print $NF}' | grep -iv 'readme-\|ifcfg-lo\|ifcfg-bond\|ifup\|ifdown\|vpn\|init.ipv6-global\|network-functions\|lo\.' | grep -s "ifcfg\|nmconnection")
 				for Files in $NetCfgFiles; do
 					if [[ $(grep -w "$interface4\|$interface6" "$NetCfgDir$Files") != "" ]]; then
 						tmpNetCfgFiles+=$(echo -e "\n""$NetCfgDir$Files")
